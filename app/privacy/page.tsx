@@ -16,7 +16,7 @@ export default function PrivacyPolicy() {
         <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-12">
           <h2 className="font-semibold text-green-900 mb-3">🔒 Privacy at a Glance</h2>
           <ul className="text-green-800 text-sm space-y-2">
-            <li><strong>We collect minimal data:</strong> Just what&apos;s needed to run the service (email, store URL, wallet addresses).</li>
+            <li><strong>We collect minimal data:</strong> Just what&apos;s needed to run the service (email, account URL, wallet addresses).</li>
             <li><strong>We never sell your data:</strong> Your information is never sold to third parties. Period.</li>
             <li><strong>Blockchain is public:</strong> Wallet addresses and transactions are visible on the XRP Ledger — that&apos;s how blockchain works.</li>
             <li><strong>You can delete your account:</strong> Request deletion and we&apos;ll remove your data (except blockchain records, which are immutable).</li>
@@ -76,7 +76,7 @@ export default function PrivacyPolicy() {
               <tbody className="text-slate-600">
                 <tr className="border-t">
                   <td className="px-4 py-2">Account Information</td>
-                  <td className="px-4 py-2">Store name, store URL, email address</td>
+                  <td className="px-4 py-2">Vendor name, account URL, email address</td>
                   <td className="px-4 py-2">Account creation and communication</td>
                 </tr>
                 <tr className="border-t bg-slate-50">
@@ -237,7 +237,7 @@ export default function PrivacyPolicy() {
                 </tr>
                 <tr className="border-t bg-slate-50">
                   <td className="px-4 py-2">Xaman/Crossmark</td>
-                  <td className="px-4 py-2">Store name (in signing requests)</td>
+                  <td className="px-4 py-2">Vendor name (in signing requests)</td>
                   <td className="px-4 py-2">Wallet connection</td>
                 </tr>
                 <tr className="border-t">
@@ -293,7 +293,7 @@ export default function PrivacyPolicy() {
             <h3 className="text-lg font-semibold text-slate-800 mt-6 mb-3">6.2 What&apos;s NOT on the Blockchain</h3>
             <ul className="list-disc pl-6 text-slate-700 space-y-2 mb-4">
               <li>Your name or email address</li>
-              <li>Your store name or URL</li>
+              <li>Your name or URL</li>
               <li>Any personal identification</li>
             </ul>
 

@@ -344,7 +344,7 @@ export default function DLTPaysDocs() {
 
             <h3 className="font-semibold text-slate-900 mt-6 mb-3">Signature Verification</h3>
             <p className="text-slate-600 mb-2">Verify the webhook using HMAC-SHA256:</p>
-            <CodeBlock>{`$signature = $_SERVER['HTTP_X_YESALLOFUS_SIGNATURE'];
+            <CodeBlock>{`$signature = $_SERVER['HTTP_X_DLTPAYS_SIGNATURE'];
 $payload = file_get_contents('php://input');
 $expected = hash_hmac('sha256', $payload, $api_secret);
 

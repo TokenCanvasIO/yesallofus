@@ -71,13 +71,13 @@ export default function Home() {
       <main className="max-w-6xl mx-auto px-6">
         
         {/* Hero */}
-        <section className="py-20 md:py-32">
+        <section className="py-12 md:py-20">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-[1.1]">
-              Turn your affiliate program into a global machine.
+              Built on XRPL. Turn your affiliate program into a global machine.
             </h1>
             <p className="text-xl text-zinc-400 mb-8 max-w-xl mx-auto">
-              Pay anyone, anywhere, instantly. No bank accounts. $1 minimums (yes, really). Just a wallet and a phone.
+              Pay anyone, anywhere, instantly in RLUSD. No bank accounts. $1 minimums (yes, really). Just a wallet and a phone.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a 
@@ -97,22 +97,25 @@ export default function Home() {
         </section>
 
         {/* The point */}
-        <section className="py-16 border-t border-zinc-800">
-          <div className="grid md:grid-cols-3 gap-8 text-center">
-            <div>
-              <p className="text-zinc-500 text-sm mb-2">Sale completes</p>
-              <p className="text-2xl font-semibold">£49 course</p>
-            </div>
-            <div>
-              <p className="text-zinc-500 text-sm mb-2">4 seconds later</p>
-              <p className="text-2xl font-semibold text-emerald-400">£12.25 in affiliate's wallet</p>
-            </div>
-            <div>
-              <p className="text-zinc-500 text-sm mb-2">Your effort</p>
-              <p className="text-2xl font-semibold">Zero</p>
-            </div>
-          </div>
-        </section>
+<section className="py-16 border-t border-zinc-800">
+  <div className="grid md:grid-cols-3 gap-8 text-center">
+    <div>
+      <p className="text-zinc-500 text-sm mb-2">Payout speed</p>
+      <p className="text-2xl font-semibold text-emerald-400">4 seconds</p>
+      <p className="text-zinc-500 text-sm mt-2">Not 30 days</p>
+    </div>
+    <div>
+  <p className="text-zinc-500 text-sm mb-2">$1 product sale</p>
+  <p className="text-2xl font-semibold text-emerald-400">5 affiliates paid</p>
+  <p className="text-zinc-500 text-sm mt-2">Micro-commissions, finally possible</p>
+</div>
+    <div>
+      <p className="text-zinc-500 text-sm mb-2">International fees</p>
+      <p className="text-2xl font-semibold text-emerald-400">$0</p>
+      <p className="text-zinc-500 text-sm mt-2">Not $25-50 per wire</p>
+    </div>
+  </div>
+</section>
 
         {/* Global access */}
         <section className="py-20 border-t border-zinc-800">
@@ -120,7 +123,7 @@ export default function Home() {
             <div>
               <h2 className="text-3xl font-bold mb-6">Your affiliates are everywhere.</h2>
               <p className="text-zinc-400 mb-4">
-                An affiliate in Lagos gets paid the same speed as one in London. No bank account. No PayPal. No minimum threshold. Just a wallet and a phone.
+                An affiliate in Lagos gets paid the same speed as one in London. No bank account. No minimum threshold. Just a wallet and a phone.
               </p>
               <p className="text-zinc-400">
                 $15/month is survival wages in some countries. Your affiliate program just became their path to 3x that.
@@ -177,7 +180,7 @@ export default function Home() {
                 <span className="text-zinc-500">$</span> npx yesallofus
               </div>
               <p className="text-zinc-400 text-sm">
-                Creates your store. Returns API keys. Add one snippet to your checkout. Done.
+                Creates your account. Returns API keys. Add one snippet to your checkout. Done.
               </p>
               <a href="/docs" className="inline-block mt-6 text-white hover:text-zinc-300 transition">
                 API docs →
@@ -206,45 +209,45 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Security */}
-        <section className="py-20 border-t border-zinc-800 text-center">
+       {/* Security */}
+<section className="py-20 border-t border-zinc-800 text-center">
   <h2 className="text-3xl font-bold mb-4">Your wallet. Your keys. Your limits.</h2>
   <p className="text-zinc-400 mb-12 max-w-xl mx-auto">
-            YesAllofUs never holds your funds. You grant permission to trigger payments. Set daily limits. Revoke anytime.
-          </p>
-          
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="font-semibold">Xaman</span>
-                <span className="text-zinc-500 text-sm">Mobile</span>
-              </div>
-              <p className="text-zinc-400 mb-6">Approve each payout via push notification. Maximum control.</p>
-              <ul className="space-y-2 text-sm text-zinc-300">
-                <li>✓ Manual approval for every payment</li>
-                <li>✓ See exactly what's being sent</li>
-                <li>✓ Best for lower volume</li>
-              </ul>
-            </div>
-            
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="font-semibold">Crossmark</span>
-                <span className="text-zinc-500 text-sm">Browser</span>
-              </div>
-              <p className="text-zinc-400 mb-6">Automatic payouts within limits you set. Hands-off.</p>
-              <ul className="space-y-2 text-sm text-zinc-300">
-                <li>✓ Set max per transaction</li>
-                <li>✓ Set daily limit</li>
-                <li>✓ Revoke permission anytime</li>
-              </ul>
-            </div>
-          </div>
-          
-          <p className="text-zinc-500 text-sm mt-8 text-center">
-  Every transaction is public on the XRP Ledger. Anyone can verify. Nothing hidden.
-</p>
-        </section>
+    YesAllofUs never holds your funds. You grant permission to trigger payments. Set daily limits. Revoke anytime.
+  </p>
+  <div className="grid md:grid-cols-2 gap-8">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
+      <div className="flex items-center justify-center gap-3 mb-4">
+        <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded" />
+        <span className="font-semibold">Xaman</span>
+        <span className="text-zinc-500 text-sm">Mobile</span>
+      </div>
+      <p className="text-zinc-400 mb-6">Approve each payout via push notification. Maximum control.</p>
+      <ul className="space-y-2 text-sm text-zinc-300">
+        <li>✓ Manual approval for every payment</li>
+        <li>✓ See exactly what's being sent</li>
+        <li>✓ Best for lower volume</li>
+      </ul>
+    </div>
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
+      <div className="flex items-center justify-center gap-3 mb-4">
+        <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
+        <span className="font-semibold">Crossmark</span>
+        <span className="text-zinc-500 text-sm">Browser</span>
+      </div>
+      <p className="text-zinc-400 mb-6">Automatic payouts within limits you set. Hands-off.</p>
+      <ul className="space-y-2 text-sm text-zinc-300">
+        <li>✓ Revoke permission anytime</li>
+        <li>✓ Set max per transaction</li>
+        <li>✓ Set daily limit</li>
+        
+      </ul>
+    </div>
+  </div>
+  <p className="text-zinc-500 text-sm mt-8 text-center">
+    Every transaction is public on the XRP Ledger. Anyone can verify. Nothing hidden.
+  </p>
+</section>
 
         {/* Multi-level */}
         <section className="py-20 border-t border-zinc-800 text-center">
@@ -295,7 +298,7 @@ export default function Home() {
               </p>
             </div>
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
-              <p className="text-zinc-500 text-sm mb-2">Store B processes $10k in commissions</p>
+              <p className="text-zinc-500 text-sm mb-2">Vendor B processes $10k in commissions</p>
               <p className="text-zinc-500 text-sm mb-2">Platform fee: $290</p>
               <p className="text-2xl font-semibold text-emerald-400">You earn: $72.50</p>
               <p className="text-zinc-500 text-sm mt-4">Every month. Automatically.</p>

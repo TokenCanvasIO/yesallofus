@@ -440,13 +440,13 @@ export default function StoreDashboard() {
         <Script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" />
         
         <main className="max-w-xl mx-auto px-6 py-16">
-          <h1 className="text-3xl font-bold mb-2">Store Dashboard</h1>
-          <p className="text-zinc-400 mb-8">Sign in with your wallet to manage your store.</p>
+          <h1 className="text-3xl font-bold mb-2">Vendor Dashboard</h1>
+          <p className="text-zinc-400 mb-8">Sign in with your wallet to manage your commissions.</p>
 
           {/* Show claim store info if coming from CLI */}
           {claimStore && (
             <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6 mb-6">
-              <h3 className="font-semibold text-emerald-400 mb-2">✓ Store ready to connect</h3>
+              <h3 className="font-semibold text-emerald-400 mb-2">✓ Dashboard ready to connect</h3>
               <p className="text-zinc-300 text-sm mb-1">
                 <strong>{claimStore.store_name}</strong>
               </p>
@@ -617,7 +617,7 @@ export default function StoreDashboard() {
         
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-1">{store?.store_name || 'Create Store'}</h1>
+            <h1 className="text-3xl font-bold mb-1">{store?.store_name || 'Get Started'}</h1>
             <p className="text-zinc-500 text-sm font-mono">{walletAddress}</p>
           </div>
           <button
@@ -638,7 +638,7 @@ export default function StoreDashboard() {
         {/* No store yet - show create form */}
         {!store && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
-            <h2 className="text-xl font-bold mb-6">Create your store</h2>
+            <h2 className="text-xl font-bold mb-6">Get Started</h2>
             <form onSubmit={(e) => {
               e.preventDefault();
               const form = e.target as HTMLFormElement;
@@ -650,7 +650,7 @@ export default function StoreDashboard() {
             }}>
               <div className="space-y-4">
                 <div>
-                  <label className="text-zinc-400 text-sm block mb-2">Store name</label>
+                  <label className="text-zinc-400 text-sm block mb-2">Name</label>
                   <input name="storeName" required className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white" placeholder="My Store" />
                 </div>
                 <div>
@@ -680,31 +680,34 @@ export default function StoreDashboard() {
               <h2 className="text-lg font-bold mb-4">Payout Method</h2>
               
               {/* Auto-sign enabled - show status */}
-              {store.auto_signing_enabled ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
-                      <div>
-                        <p className="text-blue-400 font-medium">⚡ Auto-sign enabled</p>
-                        <p className="text-zinc-500 text-sm font-mono">
-                          {store.wallet_address?.substring(0, 12)}...{store.wallet_address?.slice(-8)}
-                        </p>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={revokeAutoSign}
-                      disabled={loading}
-                      className="text-orange-400 text-sm hover:text-orange-300"
-                    >
-                      Revoke
-                    </button>
-                  </div>
-                  <p className="text-zinc-500 text-xs">
-                    Daily limit: ${store.daily_limit || dailyLimit} • Max single: ${store.auto_sign_max_single_payout || maxSinglePayout}
-                  </p>
-                </div>
-              ) : store.xaman_connected ? (
+{store.auto_signing_enabled ? (
+  <div className="space-y-3">
+    <div className="flex items-center justify-between p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
+      <div className="flex items-center gap-3">
+        <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-green-500 text-sm" style={{ textShadow: '0 0 8px rgba(34,197,94,0.9)' }}>●</span>
+            <span className="text-green-500 text-sm font-medium">Connection Good</span>
+          </div>
+          <p className="text-zinc-500 text-sm font-mono">
+            {store.wallet_address?.substring(0, 12)}...{store.wallet_address?.slice(-8)}
+          </p>
+        </div>
+      </div>
+      <button 
+        onClick={revokeAutoSign}
+        disabled={loading}
+        className="text-zinc-400 hover:text-red-400 text-sm transition-colors"
+      >
+        Revoke to amend limits
+      </button>
+    </div>
+    <p className="text-zinc-500 text-xs">
+      Daily limit: ${store.daily_limit || dailyLimit} • Max single: ${store.auto_sign_max_single_payout || maxSinglePayout}
+    </p>
+  </div>
+) : store.xaman_connected ? (
                 /* Xaman connected - show manual payout status + option to switch to auto-sign */
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
@@ -736,31 +739,36 @@ export default function StoreDashboard() {
                   </div>
                 </div>
               ) : (
-                /* No payout method chosen - show options */
-                <div className="space-y-4">
-                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-4">
-                    <p className="text-yellow-400 font-medium">⚠️ Choose a payout method</p>
-                    <p className="text-zinc-400 text-sm">Select how you want to pay your affiliates.</p>
-                  </div>
-                  
-                  {/* Option 1: Connect Xaman for manual */}
-                  <button
-                    onClick={loginXaman}
-                    className="w-full bg-zinc-800 border border-zinc-700 hover:border-emerald-500 rounded-xl p-4 text-left transition"
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded" />
-                      <span className="font-semibold">Connect Xaman for Manual Payouts</span>
-                    </div>
-                    <p className="text-zinc-400 text-sm">Approve each payout via push notification on your phone.</p>
-                  </button>
-                  
-                  {/* Option 2: Enable Auto-sign - this will show the auto-sign section below */}
-                  <div className="text-center text-zinc-500 text-sm py-2">— or —</div>
-                  
-                  <p className="text-zinc-400 text-sm">Enable auto-sign below to process payouts automatically.</p>
-                </div>
-              )}
+  /* No payout method chosen - show options */
+  <div className="space-y-4">
+    <div className="flex items-center gap-2 mb-2">
+      <span className="text-red-500 text-sm" style={{ textShadow: '0 0 8px rgba(239,68,68,0.9)' }}>●</span>
+      <span className="text-red-500 text-sm font-medium">No connection</span>
+    </div>
+    
+    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-4">
+      <p className="text-yellow-400 font-medium">⚠️ Choose a payout method</p>
+      <p className="text-zinc-400 text-sm">Select how you want to pay your affiliates.</p>
+    </div>
+    
+    {/* Option 1: Connect Xaman for manual */}
+    <button
+      onClick={loginXaman}
+      className="w-full bg-zinc-800 border border-zinc-700 hover:border-emerald-500 rounded-xl p-4 text-left transition"
+    >
+      <div className="flex items-center gap-3 mb-2">
+        <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded" />
+        <span className="font-semibold">Connect Xaman for Manual Payouts</span>
+      </div>
+      <p className="text-zinc-400 text-sm">Approve each payout via push notification on your phone.</p>
+    </button>
+    
+    {/* Option 2: Enable Auto-sign - this will show the auto-sign section below */}
+    <div className="text-center text-zinc-500 text-sm py-2">— or —</div>
+    
+    <p className="text-zinc-400 text-sm">Enable auto-sign below to process payouts automatically.</p>
+  </div>
+)}
             </div>
 
             {/* ============================================================= */}
@@ -1012,7 +1020,7 @@ export default function StoreDashboard() {
                     {copied === 'referral' ? '✓' : 'Copy'}
                   </button>
                 </div>
-                <p className="text-zinc-500 text-xs mt-2">Share with other store owners to earn from their platform fees.</p>
+                <p className="text-zinc-500 text-xs mt-2">Share with other vendors to earn from their platform fees.</p>
                 <p className="text-zinc-600 text-xs mt-1">Earn 25% L1 · 5% L2 · 3% L3 · 2% L4 · 1% L5 of their fees, paid instantly in RLUSD.</p>
               </div>
             </div>
@@ -1051,14 +1059,14 @@ export default function StoreDashboard() {
             <div className="border-2 border-red-500/30 rounded-xl p-6 bg-red-500/5">
               <h2 className="text-lg font-bold text-red-400 mb-2">⚠️ Danger Zone</h2>
               <p className="text-zinc-400 text-sm mb-4">
-                Permanently delete your store and all associated data. This action cannot be undone.
+                Permanently delete your account and all associated data. This action cannot be undone.
               </p>
               <button
                 onClick={deleteStore}
                 disabled={loading}
                 className="bg-zinc-900 border-2 border-red-500 text-red-400 hover:bg-red-500 hover:text-white px-6 py-2 rounded-lg font-semibold transition disabled:opacity-50"
               >
-                Permanently Delete Store
+                Permanently Delete
               </button>
             </div>
 

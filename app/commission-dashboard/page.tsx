@@ -164,7 +164,7 @@ export default function RLUSDCommissions() {
                 </div>
               </div>
               <div className="mt-6 pt-6 border-t border-zinc-800">
-                <p className="text-zinc-500 text-sm">Example rates. Fully configurable per store.</p>
+                <p className="text-zinc-500 text-sm">Example rates. Fully configurable per vendor.</p>
               </div>
             </div>
           </div>
