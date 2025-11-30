@@ -285,7 +285,7 @@ export default function DLTPaysDocs() {
             <div className="grid md:grid-cols-2 gap-6 mb-6">
               <div className="p-5 border border-slate-200 rounded-lg">
                 <div className="flex items-center gap-3 mb-3">
-                  <img src="/xamanlogo.png" alt="Xaman" className="w-8 h-8 rounded" />
+                  <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded" />
                   <h4 className="font-semibold text-slate-900">Xaman (Mobile)</h4>
                 </div>
                 <p className="text-sm text-slate-600 mb-3">Scan QR code to connect. Supports push notifications for manual approval mode.</p>

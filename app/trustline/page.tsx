@@ -12,19 +12,6 @@ export default function TrustlineGuide() {
 
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
-      {/* Header */}
-      <header className="border-b border-zinc-800 bg-[#0d0d0d]/95 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-3">
-            <img src="/dltpayslogo1.png" alt="YesAllofUs" className="w-10 h-10 rounded-lg" />
-            <span className="font-bold text-xl hidden sm:inline">YesAllofUs</span>
-          </a>
-          <nav className="flex items-center gap-6">
-            <a href="/docs" className="text-zinc-400 hover:text-white text-sm transition">Docs</a>
-            <a href="/#pricing" className="text-zinc-400 hover:text-white text-sm transition">Pricing</a>
-          </nav>
-        </div>
-      </header>
 
       <main className="max-w-4xl mx-auto px-6 py-12">
         {/* Hero */}

@@ -315,7 +315,8 @@ export default function AffiliateDashboard() {
     <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
       <main className="max-w-4xl mx-auto px-6 py-10 mt-10">
   {/* Title */}
-  <div className="mb-8 flex items-start justify-between">
+<div className="mb-8">
+  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
     <div>
       <h1 className="text-3xl font-bold mb-2">Affiliate Dashboard</h1>
       <p className="text-zinc-400">Track your earnings across all stores</p>
@@ -335,6 +336,7 @@ export default function AffiliateDashboard() {
       </button>
     </div>
   </div>
+</div>
 
         {/* Error State */}
         {error && (

@@ -3,20 +3,6 @@
 export default function About() {
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
-      {/* Header */}
-      <header className="border-b border-zinc-800 bg-[#0d0d0d]/95 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-3">
-            <img src="/dltpayslogo1.png" alt="YesAllofUs" className="w-10 h-10 rounded-lg" />
-            <span className="font-bold text-xl hidden sm:inline">YesAllofUs</span>
-          </a>
-          <nav className="flex gap-6 text-sm">
-            <a href="/" className="text-zinc-400 hover:text-white">Home</a>
-            <a href="/docs" className="text-zinc-400 hover:text-white">Docs</a>
-            <a href="/#get-started" className="bg-white text-black px-4 py-2 rounded-lg hover:bg-zinc-200">Get Started</a>
-          </nav>
-        </div>
-      </header>
 
       <main className="max-w-3xl mx-auto px-6 py-16">
         {/* Hero */}
@@ -57,10 +43,11 @@ export default function About() {
           <h2 className="text-xl font-bold mb-4">Why I Built This</h2>
           <div className="text-zinc-300 space-y-4">
             <p>
-              $15/month is survival wages in some countries. With a phone and an internet 
+              XRPL proclaimed to be able to create a level playing field.
+              This is a profound notion. With a phone and an internet 
               connection, someone can promote a product, earn a commission, and get paid 
               instantly. No bank account. No payment country restrictions. No 30-day wait. 
-              No minimum threshold.
+              No minimum threshold. Any where in the world.
             </p>
             <p>
               That&apos;s economic mobility. That&apos;s what I want to build.
@@ -100,7 +87,7 @@ export default function About() {
           <div className="text-zinc-300 space-y-4">
             <p>
               I&apos;m a family therapist. I&apos;ve spent years working with children in care, 
-              helping people navigate systems that often feel stacked against them.
+              helping people navigate systems.
             </p>
             <p>
               That work taught me something: connection matters. People thrive when they&apos;re 
@@ -151,9 +138,6 @@ export default function About() {
             <p>
               Be grateful every day. Give OTHERS a chance. Take your chances. 
               Build things that matter. Die knowing you tried with everything you had.
-            </p>
-            <p className="text-zinc-500 italic">
-              Own your reputation. Built on your hard work. Proven on-chain.
             </p>
           </div>
         </section>

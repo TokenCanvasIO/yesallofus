@@ -261,33 +261,32 @@ export default function WordPressGuide() {
         </section>
 
         {/* Support */}
-        <section className="mb-12">
-          <h2 className="text-xl font-bold mb-4">Need help?</h2>
-          
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
-            <p className="text-zinc-400 text-sm mb-4">
-              Stuck? I'll help you get set up.
-            </p>
-            <div className="flex gap-4">
-              <a 
-                href="mailto:mark@YesAllofUs.com" 
-                className="text-sky-500 hover:underline text-sm"
-              >
-                mark@YesAllofUs.com
-              </a>
-              <a 
-                href="https://x.com/YesAllofUs" 
-                className="text-sky-500 hover:underline text-sm"
-              >
-                @YesAllofUs
-              </a>
-            </div>
-            <p className="text-zinc-500 text-sm mt-4">
-              <a href="https://calendly.com/tokencanvasio/30min" target="_blank" className="text-sky-500 hover:underline">done-for-you setup</a>
-              I'll configure everything on a call.
-            </p>
-          </div>
-        </section>
+<section className="mb-12">
+  <h2 className="text-xl font-bold mb-4">Need help?</h2>
+  <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+    <p className="text-zinc-400 text-sm mb-4">
+      Stuck? I'll help you get set up.
+    </p>
+    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+      <a 
+        href="mailto:mark@YesAllofUs.com" 
+        className="text-sky-500 hover:underline text-sm"
+      >
+        mark@YesAllofUs.com
+      </a>
+      <a 
+        href="https://x.com/YesAllofUs" 
+        className="text-sky-500 hover:underline text-sm"
+      >
+        @YesAllofUs
+      </a>
+    </div>
+    <p className="text-zinc-500 text-sm mt-4">
+      <a href="https://calendly.com/tokencanvasio/30min" target="_blank" className="text-sky-500 hover:underline">Done-for-you setup</a>
+      <span className="block sm:inline sm:ml-1">— I'll configure everything on a call.</span>
+    </p>
+  </div>
+</section>
 
         {/* CTA */}
         <section className="text-center py-8 border-t border-zinc-800">
@@ -298,19 +297,7 @@ export default function WordPressGuide() {
             Download Plugin
           </a>
         </section>
-
       </main>
-
-      <footer className="border-t border-zinc-800 py-8">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-zinc-600 text-sm">Built on XRPL · Powered by RLUSD</p>
-          <div className="flex gap-6 text-zinc-600 text-sm">
-            <a href="/docs" className="hover:text-white">Docs</a>
-            <a href="/wallet-guide" className="hover:text-white">Security</a>
-            <a href="https://x.com/YesAllofUs" className="hover:text-white">X</a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

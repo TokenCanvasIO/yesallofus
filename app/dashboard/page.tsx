@@ -615,18 +615,36 @@ export default function StoreDashboard() {
       
       <main className="max-w-3xl mx-auto px-6 py-16">
         
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-1">{store?.store_name || 'Get Started'}</h1>
-            <p className="text-zinc-500 text-sm font-mono">{walletAddress}</p>
-          </div>
-          <button
-            onClick={() => { setWalletAddress(null); setStore(null); setStep('login'); }}
-            className="text-zinc-500 text-sm hover:text-white"
-          >
-            Sign out
-          </button>
-        </div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+  <div>
+    <div className="flex items-center justify-between">
+      <h1 className="text-3xl font-bold mb-1">{store?.store_name || 'Get Started'}</h1>
+      <button
+        onClick={() => { setWalletAddress(null); setStore(null); setStep('login'); }}
+        className="text-zinc-500 text-sm hover:text-white sm:hidden"
+      >
+        Sign out
+      </button>
+    </div>
+    <div className="flex items-center gap-2">
+      <p className="text-zinc-500 text-sm font-mono">
+        {walletAddress?.substring(0, 8)}...{walletAddress?.slice(-6)}
+      </p>
+      <button 
+        onClick={() => copyToClipboard(walletAddress || '', 'wallet')}
+        className="text-zinc-500 hover:text-white text-xs"
+      >
+        {copied === 'wallet' ? '✓' : '📋'}
+      </button>
+    </div>
+  </div>
+  <button
+    onClick={() => { setWalletAddress(null); setStore(null); setStep('login'); }}
+    className="text-zinc-500 text-sm hover:text-white hidden sm:block"
+  >
+    Sign out
+  </button>
+</div>
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
@@ -682,7 +700,7 @@ export default function StoreDashboard() {
               {/* Auto-sign enabled - show status */}
 {store.auto_signing_enabled ? (
   <div className="space-y-3">
-    <div className="flex items-center justify-between p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
       <div className="flex items-center gap-3">
         <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
         <div>
@@ -691,14 +709,14 @@ export default function StoreDashboard() {
             <span className="text-green-500 text-sm font-medium">Connection Good</span>
           </div>
           <p className="text-zinc-500 text-sm font-mono">
-            {store.wallet_address?.substring(0, 12)}...{store.wallet_address?.slice(-8)}
+            {store.wallet_address?.substring(0, 8)}...{store.wallet_address?.slice(-6)}
           </p>
         </div>
       </div>
       <button 
         onClick={revokeAutoSign}
         disabled={loading}
-        className="text-zinc-400 hover:text-red-400 text-sm transition-colors"
+        className="text-zinc-400 hover:text-red-400 text-sm transition-colors whitespace-nowrap"
       >
         Revoke to amend limits
       </button>
