@@ -1,0 +1,27 @@
+{
+  "name": "yesallofus",
+  "version": "1.1.0",
+  "description": "CLI for YesAllofUs - instant affiliate commissions on XRPL",
+  "bin": {
+    "yesallofus": "./index.js"
+  },
+  "keywords": [
+    "affiliate",
+    "xrpl",
+    "rlusd",
+    "commissions",
+    "payouts",
+    "crypto",
+    "instant-payments",
+    "woocommerce",
+    "shopify",
+    "ecommerce"
+  ],
+  "author": "Mark <mark@yesallofus.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TokenCanvasIO/yesallofus-cli.git"
+  },
+  "homepage": "https://yesallofus.com"
+}
