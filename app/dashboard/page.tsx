@@ -656,7 +656,7 @@ export default function StoreDashboard() {
         {/* No store yet - show create form */}
         {!store && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
-            <h2 className="text-xl font-bold mb-6">Get Started</h2>
+            <h2 className="text-xl font-bold mb-6">Sign Up</h2>
             <form onSubmit={(e) => {
               e.preventDefault();
               const form = e.target as HTMLFormElement;
@@ -728,20 +728,23 @@ export default function StoreDashboard() {
 ) : store.xaman_connected ? (
                 /* Xaman connected - show manual payout status + option to switch to auto-sign */
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
                     <div className="flex items-center gap-3">
                       <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded" />
                       <div>
-                        <p className="text-emerald-400 font-medium">📱 Manual approval via Xaman</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-green-500 text-sm" style={{ textShadow: '0 0 8px rgba(34,197,94,0.9)' }}>●</span>
+                          <span className="text-green-500 text-sm font-medium">Connection Good</span>
+                        </div>
                         <p className="text-zinc-500 text-sm font-mono">
-                          {store.wallet_address?.substring(0, 12)}...{store.wallet_address?.slice(-8)}
+                          {store.wallet_address?.substring(0, 8)}...{store.wallet_address?.slice(-6)}
                         </p>
                       </div>
                     </div>
                     <button 
                       onClick={disconnectWallet}
                       disabled={loading}
-                      className="text-red-400 text-sm hover:text-red-300"
+                      className="text-zinc-400 hover:text-red-400 text-sm transition-colors whitespace-nowrap"
                     >
                       Disconnect
                     </button>
