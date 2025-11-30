@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import StoreActivity from '@/components/StoreActivity';
 import Script from 'next/script';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
@@ -1012,6 +1013,7 @@ export default function StoreDashboard() {
                   </button>
                 </div>
                 <p className="text-zinc-500 text-xs mt-2">Share with other store owners to earn from their platform fees.</p>
+                <p className="text-zinc-600 text-xs mt-1">Earn 25% L1 · 5% L2 · 3% L3 · 2% L4 · 1% L5 of their fees, paid instantly in RLUSD.</p>
               </div>
             </div>
 
@@ -1039,8 +1041,11 @@ export default function StoreDashboard() {
                 </a>
               </div>
             </div>
+        {store && walletAddress && (
+  <StoreActivity storeId={store.store_id} walletAddress={walletAddress} />
+)}
 
-            {/* ============================================================= */}
+{/* ============================================================= */}
             {/* DANGER ZONE */}
             {/* ============================================================= */}
             <div className="border-2 border-red-500/30 rounded-xl p-6 bg-red-500/5">

@@ -451,7 +451,7 @@ export default function AffiliateDashboard() {
               <td className="px-4 py-3 text-sm text-right">
                 {payout.tx_hash ? (
   
-    <a href={`https://xrpscan.com/tx/${payout.tx_hash}`}
+    <a href={`https://livenet.xrpl.org/transactions/${payout.tx_hash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sky-400 hover:text-sky-300 font-mono"

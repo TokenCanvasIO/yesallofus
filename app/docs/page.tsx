@@ -174,8 +174,12 @@ export default function DLTPaysDocs() {
           <Section id="quick-start" title="Quick Start">
             <h3 className="font-semibold text-slate-900 mb-3">Option 1: CLI Tool (Recommended)</h3>
             <p className="text-slate-600 mb-4">The fastest way to get started. No installation required.</p>
-            <CodeBlock>npx YesAllofUs</CodeBlock>
-            <p className="text-sm text-slate-500 mt-2 mb-6">Follow the interactive prompts to register and configure your store.</p>
+            <CodeBlock>npx yesallofus</CodeBlock>
+            <p className="text-sm text-slate-500 mt-2 mb-4">Follow the interactive prompts to register and configure your store.</p>
+            
+            <p className="text-slate-600 mb-4">After registration, you&apos;ll receive a unique dashboard URL to connect your wallet:</p>
+            <CodeBlock>https://yesallofus.com/dashboard?claim=YOUR_CLAIM_TOKEN</CodeBlock>
+            <p className="text-sm text-slate-500 mt-2 mb-6">Use Chrome or Brave for best experience (required for Crossmark wallet).</p>
 
             <h3 className="font-semibold text-slate-900 mb-3">Option 2: API Registration</h3>
             <CodeBlock>{`curl -X POST https://api.dltpays.com/api/v1/store/register \\
@@ -192,7 +196,8 @@ export default function DLTPaysDocs() {
   "store_id": "store_abc123def456",
   "api_key": "pk_abc123def456",
   "api_secret": "sk_xyz789ghi012",
-  "store_referral_code": "A1B2C3D4"
+  "store_referral_code": "A1B2C3D4",
+  "claim_token": "abc123def456..."
 }`}</CodeBlock>
 
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-6">
@@ -239,7 +244,7 @@ export default function DLTPaysDocs() {
 
             <h3 className="font-semibold text-slate-900 mb-3">Installation</h3>
             <ol className="space-y-2 text-slate-600 mb-6">
-              <li>1. Download the plugin from <a href="https://YesAllofUs.com/plugin" className="text-blue-600 hover:underline">YesAllofUs.com/plugin</a></li>
+              <li>1. Download the plugin from <a href="https://yesallofus.com/plugin" className="text-blue-600 hover:underline">yesallofus.com/plugin</a></li>
               <li>2. Upload to <code className="bg-slate-100 px-1.5 py-0.5 rounded text-sm">/wp-content/plugins/</code></li>
               <li>3. Activate in WordPress admin</li>
               <li>4. Navigate to <strong>YesAllofUs → Settings</strong></li>
@@ -257,11 +262,11 @@ export default function DLTPaysDocs() {
             <h3 className="font-semibold text-slate-900 mb-3">Shortcodes</h3>
             <div className="space-y-4">
               <div className="p-4 bg-slate-50 rounded-lg">
-                <code className="text-blue-600 font-mono">[dltpays_affiliate_signup]</code>
+                <code className="text-blue-600 font-mono">[yesallofus_affiliate_signup]</code>
                 <p className="text-sm text-slate-600 mt-1">Displays affiliate registration form with wallet input</p>
               </div>
               <div className="p-4 bg-slate-50 rounded-lg">
-                <code className="text-blue-600 font-mono">[dltpays_affiliate_dashboard]</code>
+                <code className="text-blue-600 font-mono">[yesallofus_affiliate_dashboard]</code>
                 <p className="text-sm text-slate-600 mt-1">Shows affiliate&apos;s referral link, earnings, and stats</p>
               </div>
             </div>
@@ -279,7 +284,10 @@ export default function DLTPaysDocs() {
 
             <div className="grid md:grid-cols-2 gap-6 mb-6">
               <div className="p-5 border border-slate-200 rounded-lg">
-                <h4 className="font-semibold text-slate-900 mb-2">📱 Xaman (Mobile)</h4>
+                <div className="flex items-center gap-3 mb-3">
+                  <img src="/xamanlogo.png" alt="Xaman" className="w-8 h-8 rounded" />
+                  <h4 className="font-semibold text-slate-900">Xaman (Mobile)</h4>
+                </div>
                 <p className="text-sm text-slate-600 mb-3">Scan QR code to connect. Supports push notifications for manual approval mode.</p>
                 <ol className="text-sm text-slate-600 space-y-1">
                   <li>1. Click &quot;Connect Xaman&quot;</li>
@@ -288,8 +296,11 @@ export default function DLTPaysDocs() {
                 </ol>
               </div>
               <div className="p-5 border border-slate-200 rounded-lg">
-                <h4 className="font-semibold text-slate-900 mb-2">🖥️ Crossmark (Browser)</h4>
-                <p className="text-sm text-slate-600 mb-3">Browser extension for desktop users. Instant connection.</p>
+                <div className="flex items-center gap-3 mb-3">
+                  <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
+                  <h4 className="font-semibold text-slate-900">Crossmark (Browser)</h4>
+                </div>
+                <p className="text-sm text-slate-600 mb-3">Browser extension for desktop users. Requires Chrome or Brave.</p>
                 <ol className="text-sm text-slate-600 space-y-1">
                   <li>1. Install Crossmark extension</li>
                   <li>2. Click &quot;Connect Crossmark&quot;</li>
@@ -314,7 +325,7 @@ export default function DLTPaysDocs() {
             </p>
 
             <h3 className="font-semibold text-slate-900 mb-3">Endpoint</h3>
-            <CodeBlock>POST https://yourstore.com/wp-json/dltpays/v1/webhook</CodeBlock>
+            <CodeBlock>POST https://yourstore.com/wp-json/yesallofus/v1/webhook</CodeBlock>
 
             <h3 className="font-semibold text-slate-900 mt-6 mb-3">Payload</h3>
             <CodeBlock>{`{
@@ -333,7 +344,7 @@ export default function DLTPaysDocs() {
 
             <h3 className="font-semibold text-slate-900 mt-6 mb-3">Signature Verification</h3>
             <p className="text-slate-600 mb-2">Verify the webhook using HMAC-SHA256:</p>
-            <CodeBlock>{`$signature = $_SERVER['HTTP_X_DLTPAYS_SIGNATURE'];
+            <CodeBlock>{`$signature = $_SERVER['HTTP_X_YESALLOFUS_SIGNATURE'];
 $payload = file_get_contents('php://input');
 $expected = hash_hmac('sha256', $payload, $api_secret);
 
@@ -345,7 +356,7 @@ if (!hash_equals($expected, $signature)) {
 
           {/* API Reference - Stores */}
           <Section id="api-stores" title="API: Stores">
-            <Endpoint method="POST" path="/api/v1/store/register" description="Register a new store. Returns API credentials.">
+            <Endpoint method="POST" path="/api/v1/store/register" description="Register a new store. Returns API credentials and claim token.">
               <h5 className="font-semibold text-slate-700 text-sm mb-2">Request Body</h5>
               <CodeBlock>{`{
   "store_name": "My Store",
@@ -365,6 +376,55 @@ if (!hash_equals($expected, $signature)) {
   "wallet_address": "rWallet123...",
   "affiliates_count": 42,
   "total_paid": 1234.56
+}`}</CodeBlock>
+            </Endpoint>
+
+            <Endpoint method="GET" path="/api/v1/store/:store_id/affiliates" description="Get all affiliates for a store. Requires wallet query param for verification.">
+              <CodeBlock>{`GET /api/v1/store/store_abc123/affiliates?wallet=rWallet123...
+
+{
+  "success": true,
+  "affiliates": [
+    {
+      "affiliate_id": "aff_xyz789",
+      "wallet": "rAffWallet...",
+      "referral_code": "ABC123",
+      "total_earned": 150.00,
+      "level": 1,
+      "created_at": "2025-01-15T10:30:00Z"
+    }
+  ]
+}`}</CodeBlock>
+            </Endpoint>
+
+            <Endpoint method="GET" path="/api/v1/store/:store_id/payouts" description="Get all payouts for a store. Requires wallet query param for verification.">
+              <CodeBlock>{`GET /api/v1/store/store_abc123/payouts?wallet=rWallet123...
+
+{
+  "success": true,
+  "payouts": [
+    {
+      "payout_id": "payout_abc123",
+      "order_id": "wc_12345",
+      "order_total": 99.99,
+      "payments": [...],
+      "tx_hashes": [...],
+      "paid_at": "2025-01-15T10:30:00Z",
+      "auto_signed": true
+    }
+  ]
+}`}</CodeBlock>
+            </Endpoint>
+
+            <Endpoint method="GET" path="/api/v1/store/by-claim/:token" description="Look up store by claim token (used in dashboard flow).">
+              <CodeBlock>{`{ "success": true, "store": { "store_id": "store_abc123", "store_name": "My Store" } }`}</CodeBlock>
+            </Endpoint>
+
+            <Endpoint method="POST" path="/api/v1/store/claim" description="Attach wallet to store using claim token (one-time use).">
+              <CodeBlock>{`{
+  "claim_token": "abc123def456...",
+  "wallet_address": "rWallet123...",
+  "wallet_type": "crossmark"
 }`}</CodeBlock>
             </Endpoint>
 
@@ -418,11 +478,35 @@ if (!hash_equals($expected, $signature)) {
   "level": 2
 }`}</CodeBlock>
             </Endpoint>
+
+            <Endpoint method="GET" path="/api/v1/affiliate/dashboard/:wallet" description="Get affiliate dashboard data across all stores.">
+              <CodeBlock>{`{
+  "success": true,
+  "wallet": "rAffWallet...",
+  "total_earned": 250.00,
+  "stores": [...],
+  "recent_payouts": [...]
+}`}</CodeBlock>
+            </Endpoint>
           </Section>
 
           {/* API Reference - Xaman */}
           <Section id="api-xaman" title="API: Xaman Wallet">
-            <Endpoint method="POST" path="/api/v1/xaman/connect" description="Initiate Xaman wallet connection. Returns QR code.">
+            <Endpoint method="POST" path="/api/v1/xaman/login" description="Initiate Xaman login (for affiliate dashboard). Returns QR code.">
+              <CodeBlock>{`{
+  "success": true,
+  "login_id": "login_xyz789",
+  "qr_png": "https://xumm.app/sign/...",
+  "deep_link": "xumm://...",
+  "expires_in": 300
+}`}</CodeBlock>
+            </Endpoint>
+
+            <Endpoint method="GET" path="/api/v1/xaman/login/poll/:login_id" description="Poll login status. Call every 3-5 seconds.">
+              <CodeBlock>{`{ "status": "signed", "wallet_address": "rWallet123..." }`}</CodeBlock>
+            </Endpoint>
+
+            <Endpoint method="POST" path="/api/v1/xaman/connect" description="Initiate Xaman wallet connection for store. Returns QR code.">
               <CodeBlock>{`{ "store_id": "store_abc123" }`}</CodeBlock>
               <h5 className="font-semibold text-slate-700 text-sm mt-4 mb-2">Response</h5>
               <CodeBlock>{`{
@@ -452,19 +536,17 @@ if (!hash_equals($expected, $signature)) {
               </p>
             </div>
 
-            <Endpoint method="POST" path="/api/v1/xaman/setup-autosign" description="Get instructions for enabling auto-sign.">
+            <Endpoint method="POST" path="/api/v1/store/enable-autosign" description="Enable auto-sign for a store (after Crossmark signature).">
               <CodeBlock>{`{
-  "platform_signer_address": "rQsRwh841n8DDwx4Bs2KZ4fHPKSt7VeULH",
-  "instructions": ["1. Open Xaman wallet", "2. Go to Settings → Signers", "..."]
+  "store_id": "store_abc123",
+  "wallet_address": "rWallet123...",
+  "daily_limit": 1000,
+  "max_single_payout": 100
 }`}</CodeBlock>
             </Endpoint>
 
-            <Endpoint method="GET" path="/api/v1/xaman/verify-autosign" description="Verify auto-sign setup is complete.">
-              <CodeBlock>{`GET /api/v1/xaman/verify-autosign?store_id=store_abc123`}</CodeBlock>
-            </Endpoint>
-
-            <Endpoint method="POST" path="/api/v1/xaman/revoke-autosign" description="Disable auto-sign (immediate effect).">
-              <CodeBlock>{`{ "store_id": "store_abc123" }`}</CodeBlock>
+            <Endpoint method="POST" path="/api/v1/store/revoke-autosign" description="Disable auto-sign (immediate effect).">
+              <CodeBlock>{`{ "store_id": "store_abc123", "wallet_address": "rWallet123..." }`}</CodeBlock>
             </Endpoint>
 
             <Endpoint method="POST" path="/api/v1/store/autosign-settings" auth description="Update auto-sign limits and accept terms.">
@@ -472,6 +554,16 @@ if (!hash_equals($expected, $signature)) {
   "auto_sign_terms_accepted": true,
   "auto_sign_max_single_payout": 100,
   "auto_sign_daily_limit": 1000
+}`}</CodeBlock>
+            </Endpoint>
+
+            <Endpoint method="GET" path="/api/v1/store/autosign-settings" auth description="Get current auto-sign settings.">
+              <CodeBlock>{`{
+  "success": true,
+  "auto_signing_enabled": true,
+  "auto_sign_max_single_payout": 100,
+  "auto_sign_daily_limit": 1000,
+  "platform_signer_address": "rQsRwh841n8DDwx4Bs2KZ4fHPKSt7VeULH"
 }`}</CodeBlock>
             </Endpoint>
           </Section>
@@ -537,6 +629,7 @@ if (!hash_equals($expected, $signature)) {
                   <th className="px-4 py-2 text-left text-slate-700 font-semibold">Tier</th>
                   <th className="px-4 py-2 text-left text-slate-700 font-semibold">Fee</th>
                   <th className="px-4 py-2 text-left text-slate-700 font-semibold">Price</th>
+                  <th className="px-4 py-2 text-left text-slate-700 font-semibold">Best For</th>
                 </tr>
               </thead>
               <tbody className="text-slate-700">
@@ -544,19 +637,29 @@ if (!hash_equals($expected, $signature)) {
                   <td className="px-4 py-2 text-slate-900">Free</td>
                   <td className="px-4 py-2 font-mono text-slate-800">2.9%</td>
                   <td className="px-4 py-2">$0/month</td>
+                  <td className="px-4 py-2">Under $3,400/month in commissions</td>
                 </tr>
                 <tr className="border-t border-slate-100 bg-slate-50">
                   <td className="px-4 py-2 text-slate-900">Pro</td>
                   <td className="px-4 py-2 font-mono text-slate-800">0.9%</td>
                   <td className="px-4 py-2">$99/month</td>
+                  <td className="px-4 py-2">$3,400 - $50,000/month</td>
                 </tr>
                 <tr className="border-t border-slate-100">
                   <td className="px-4 py-2 text-slate-900">Enterprise</td>
                   <td className="px-4 py-2 font-mono text-slate-800">0%</td>
                   <td className="px-4 py-2">$499/month</td>
+                  <td className="px-4 py-2">Over $50,000/month</td>
                 </tr>
               </tbody>
             </table>
+            
+            <div className="p-4 bg-slate-50 rounded-lg mt-4">
+              <p className="text-sm text-slate-600">
+                <strong>Tip:</strong> At $3,400/month in commissions, Pro tier saves you money (2.9% = $98.60 vs $99 flat). 
+                At $50,000/month, Enterprise pays for itself. Upgrades are manual — contact <a href="mailto:mark@yesallofus.com" className="text-blue-600 hover:underline">mark@yesallofus.com</a> when you&apos;re ready.
+              </p>
+            </div>
           </Section>
 
           {/* Chain B */}

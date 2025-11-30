@@ -181,12 +181,12 @@ export default function FAQ() {
           question: 'Can YesAllofUs drain my wallet?',
           answer: (
             <>
-              <p className="mb-2">No. Even with Auto-Sign enabled:</p>
+              <p className="mb-2">No. Our software only triggers payments to registered affiliates within your configured limits:</p>
               <ul className="list-disc pl-4 space-y-1">
-                <li>We can only send payments to registered affiliates for valid orders</li>
-                <li>We respect your daily and per-transaction limits</li>
-                <li>Every transaction is logged publicly on the XRP Ledger</li>
-                <li>You can revoke our signer access at any moment</li>
+                <li>However, the multi-signature setup does grant signing permission.</li>
+                <li>Your protection is our code, our reputation, and full transparency on the public ledger.</li>
+                <li>Every transaction is logged publicly on the XRP Ledger.</li>
+                <li>You can revoke access instantly by removing the signer.</li>
               </ul>
               <p className="mt-2">We&apos;re software that triggers payments — we don&apos;t have custody or control of your funds.</p>
             </>
@@ -361,7 +361,7 @@ export default function FAQ() {
       category: 'Troubleshooting',
       items: [
         {
-          question: 'My wallet connection isn&apos;t working',
+          question: 'My wallet connection is not working',
           answer: (
             <>
               <p className="mb-2">Try these steps:</p>
@@ -377,7 +377,7 @@ export default function FAQ() {
           )
         },
         {
-          question: 'Payouts are failing with &quot;insufficient balance&quot;',
+          question: 'Payouts are failing with insufficient balance;',
           answer: (
             <>
               <p className="mb-2">Your wallet needs:</p>
@@ -390,7 +390,7 @@ export default function FAQ() {
           )
         },
         {
-          question: 'An affiliate says they didn&apos;t receive payment',
+          question: 'An affiliate says they did not receive payment',
           answer: (
             <>
               <p className="mb-2">Check the following:</p>
@@ -404,7 +404,7 @@ export default function FAQ() {
           )
         },
         {
-          question: 'I&apos;m getting rate limited (429 errors)',
+          question: 'I am getting rate limited (429 errors)',
           answer: (
             <>
               <p className="mb-2">Our rate limits are:</p>
@@ -464,19 +464,6 @@ export default function FAQ() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="border-b border-slate-200 bg-white sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-3">
-            <img src="/dltpayslogo1.png" alt="YesAllofUs" className="w-8 h-8 rounded-lg" />
-            <span className="font-bold text-slate-900">YesAllofUs</span>
-          </a>
-          <nav className="flex gap-6 text-sm">
-            <a href="/docs" className="text-slate-600 hover:text-slate-900">Docs</a>
-            <a href="/#get-started" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Get Started</a>
-          </nav>
-        </div>
-      </header>
 
       <main className="max-w-4xl mx-auto px-6 py-12">
         {/* Title */}
@@ -550,19 +537,6 @@ export default function FAQ() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-200 py-8 mt-12">
-        <div className="max-w-4xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-slate-500 text-sm">© 2025 YesAllofUs. All rights reserved.</p>
-          <div className="flex gap-6 text-slate-500 text-sm">
-            <a href="/terms" className="hover:text-slate-900">Terms</a>
-            <a href="/privacy" className="hover:text-slate-900">Privacy</a>
-            <a href="/acceptable-use" className="hover:text-slate-900">Acceptable Use</a>
-            <a href="/cookies" className="hover:text-slate-900">Cookies</a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
