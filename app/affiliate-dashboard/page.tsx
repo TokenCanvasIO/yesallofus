@@ -313,36 +313,28 @@ export default function AffiliateDashboard() {
 
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
-      {/* Header */}
-      <header className="border-b border-zinc-800 bg-[#0d0d0d]/95 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-3">
-            <img src="/dltpayslogo1.png" alt="YesAllofUs" className="w-10 h-10 rounded-lg" />
-            <span className="font-bold text-xl">YesAllofUs</span>
-          </a>
-          <div className="flex items-center gap-4">
-            <div className="bg-zinc-800 px-3 py-1.5 rounded-lg text-sm">
-              <span className="text-zinc-400">Wallet: </span>
-              <span className="text-white font-mono">
-                {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-              </span>
-            </div>
-            <button
-              onClick={handleDisconnect}
-              className="text-zinc-400 hover:text-white text-sm transition-colors"
-            >
-              Disconnect
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        {/* Title */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Affiliate Dashboard</h1>
-          <p className="text-zinc-400">Track your earnings across all stores</p>
-        </div>
+      <main className="max-w-4xl mx-auto px-6 py-10 mt-10">
+  {/* Title */}
+  <div className="mb-8 flex items-start justify-between">
+    <div>
+      <h1 className="text-3xl font-bold mb-2">Affiliate Dashboard</h1>
+      <p className="text-zinc-400">Track your earnings across all stores</p>
+    </div>
+    <div className="flex items-center gap-4">
+      <div className="bg-zinc-800 px-3 py-1.5 rounded-lg text-sm">
+        <span className="text-zinc-400">Wallet: </span>
+        <span className="text-white font-mono">
+          {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+        </span>
+      </div>
+      <button
+        onClick={handleDisconnect}
+        className="text-zinc-400 hover:text-white text-sm transition-colors"
+      >
+        Disconnect
+      </button>
+    </div>
+  </div>
 
         {/* Error State */}
         {error && (

@@ -452,30 +452,21 @@ async function main() {
   console.log(`${c.dim}     Lagos to London, same speed. That's the future.${c.reset}`);
   console.log('');
 
-  // Wallet connection - open browser
+  // Wallet connection
   section('👛', 'Connect Your Wallet');
   console.log('');
-  console.log(`${c.bold}  Next step: Connect your wallet to receive and pay commissions.${c.reset}`);
-  console.log('');
-  console.log(`${c.dim}  Choose your payout method:${c.reset}`);
+  console.log(`${c.dim}  Payout options:${c.reset}`);
   console.log(`${c.green}  • Xaman${c.reset} ${c.dim}- Manual approval via push notification${c.reset}`);
   console.log(`${c.blue}  • Crossmark${c.reset} ${c.dim}- Automatic payouts within your limits${c.reset}`);
   console.log('');
   
-  const dashboardUrl = `https://yesallofus.com/dashboard`;
+  const dashboardUrl = `https://yesallofus.com/dashboard?claim=${result.claim_token}`;
   
-  const openNow = await ask(`${c.cyan}  Open dashboard in browser now? [Y/n]: ${c.reset}`);
-  
-  if (openNow.toLowerCase() !== 'n') {
-    console.log('');
-    console.log(`${c.green}  ✓ Opening browser...${c.reset}`);
-    openBrowser(dashboardUrl);
-    console.log(`${c.dim}  Sign in with your wallet to complete setup.${c.reset}`);
-  } else {
-    console.log('');
-    console.log(`${c.dim}  Open this URL when ready:${c.reset}`);
-    console.log(`${c.bold}${c.cyan}  ${dashboardUrl}${c.reset}`);
-  }
+  console.log(`${c.bold}  Open this URL to connect your wallet:${c.reset}`);
+  console.log('');
+  console.log(`${c.cyan}  ${dashboardUrl}${c.reset}`);
+  console.log('');
+  console.log(`${c.yellow}  💡 Use Chrome or Brave for best experience (required for Crossmark)${c.reset}`)
   
   console.log('');
   console.log(`${c.gray}  ════════════════════════════════════════════════════════════════════════════════════${c.reset}`);

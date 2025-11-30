@@ -34,6 +34,29 @@ export default function StoreDashboard() {
   
   // Trustline confirmation (login screen)
   const [trustlineConfirmed, setTrustlineConfirmed] = useState(false);
+  
+  // Claim token (from CLI)
+  const [claimToken, setClaimToken] = useState<string | null>(null);
+  const [claimStore, setClaimStore] = useState<any>(null);
+
+  // Check URL for claim token on load
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const claim = params.get('claim');
+      if (claim) {
+        setClaimToken(claim);
+        fetch(`${API_URL}/store/by-claim/${claim}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.store) {
+              setClaimStore(data.store);
+            }
+          })
+          .catch(console.error);
+      }
+    }
+  }, []);
 
   // Poll for Xaman login
   useEffect(() => {
@@ -65,6 +88,34 @@ export default function StoreDashboard() {
   const loadOrCreateStore = async (wallet: string, type: 'xaman' | 'crossmark') => {
     setLoading(true);
     try {
+      // If we have a claim token, attach wallet to that store
+      if (claimToken && claimStore) {
+        const res = await fetch(`${API_URL}/store/claim`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            claim_token: claimToken,
+            wallet_address: wallet,
+            wallet_type: type
+          })
+        });
+        const data = await res.json();
+        
+        if (data.success && data.store) {
+          setStore(data.store);
+          if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
+          if (data.store.daily_limit) setDailyLimit(data.store.daily_limit);
+          setStep('dashboard');
+          setClaimToken(null);
+          setClaimStore(null);
+          setLoading(false);
+          return;
+        } else {
+          setError(data.error || 'Failed to claim store');
+        }
+      }
+      
+      // Normal flow - check if wallet has existing store
       const res = await fetch(`${API_URL}/store/by-wallet/${wallet}`);
       const data = await res.json();
       
@@ -390,6 +441,19 @@ export default function StoreDashboard() {
         <main className="max-w-xl mx-auto px-6 py-16">
           <h1 className="text-3xl font-bold mb-2">Store Dashboard</h1>
           <p className="text-zinc-400 mb-8">Sign in with your wallet to manage your store.</p>
+
+          {/* Show claim store info if coming from CLI */}
+          {claimStore && (
+            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6 mb-6">
+              <h3 className="font-semibold text-emerald-400 mb-2">✓ Store ready to connect</h3>
+              <p className="text-zinc-300 text-sm mb-1">
+                <strong>{claimStore.store_name}</strong>
+              </p>
+              <p className="text-zinc-500 text-sm">
+                Connect your wallet below to complete setup.
+              </p>
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">

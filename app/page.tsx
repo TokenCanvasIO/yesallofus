@@ -74,10 +74,10 @@ export default function Home() {
         <section className="py-20 md:py-32">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-[1.1]">
-              Pay affiliates the second the sale completes.
+              Turn your affiliate program into a global machine.
             </h1>
             <p className="text-xl text-zinc-400 mb-8 max-w-xl mx-auto">
-              No waiting. Not next month. Now. Direct to their wallet. Anywhere in the world.
+              Pay anyone, anywhere, instantly. No bank accounts. $1 minimums (yes, really). Just a wallet and a phone.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a 
