@@ -118,42 +118,91 @@ export default function Home() {
 </section>
 
         {/* Global access */}
-        <section className="py-20 border-t border-zinc-800">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-bold mb-6">Your affiliates are everywhere.</h2>
-              <p className="text-zinc-400 mb-4">
-                An affiliate in Lagos gets paid the same speed as one in London. No bank account. No minimum threshold. Just a wallet and a phone.
-              </p>
-              <p className="text-zinc-400">
-                $15/month is survival wages in some countries. Your affiliate program just became their path to 3x that.
-              </p>
-            </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400">London</span>
-                  <span className="text-emerald-400">4 seconds</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400">Lagos</span>
-                  <span className="text-emerald-400">4 seconds</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400">Manila</span>
-                  <span className="text-emerald-400">4 seconds</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400">São Paulo</span>
-                  <span className="text-emerald-400">4 seconds</span>
-                </div>
-              </div>
-              <div className="border-t border-zinc-800 mt-6 pt-6">
-                <p className="text-zinc-500 text-sm">Paid in RLUSD. $1 = $1. No volatility.</p>
-              </div>
-            </div>
-          </div>
-        </section>
+<section className="py-20 border-t border-zinc-800">
+  <div className="grid md:grid-cols-2 gap-12 items-center px-4 md:px-0">
+    <div className="text-center md:text-left">
+      <h2 className="text-3xl font-bold mb-6">Your affiliates are everywhere.</h2>
+      <p className="text-zinc-400 mb-4">
+        An affiliate in Lagos gets paid the same speed as one in London. No bank account. No minimum threshold. Just a wallet and a phone.
+      </p>
+      <p className="text-zinc-400">
+        $15/month is survival wages in some countries. Your affiliate program just became their path to 3x that.
+      </p>
+    </div>
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <span className="text-zinc-400">London</span>
+          <span className="text-emerald-400">4 seconds</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-zinc-400">Lagos</span>
+          <span className="text-emerald-400">4 seconds</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-zinc-400">Manila</span>
+          <span className="text-emerald-400">4 seconds</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-zinc-400">São Paulo</span>
+          <span className="text-emerald-400">4 seconds</span>
+        </div>
+      </div>
+      <div className="border-t border-zinc-800 mt-6 pt-6">
+        <p className="text-zinc-500 text-sm">Paid in RLUSD. $1 = $1. No volatility.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+        {/* Why we're different */}
+<section className="py-20 border-t border-zinc-800">
+  <div className="text-center mb-12">
+    <p className="text-emerald-400 text-sm font-semibold mb-4">Why this exists</p>
+    <h2 className="text-3xl font-bold mb-4">Four things. No one else combines them.</h2>
+    <p className="text-zinc-400 max-w-xl mx-auto">
+      Plenty of affiliate software. Plenty of crypto rails. Nobody built the bridge.
+    </p>
+  </div>
+  
+  <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center md:text-left">
+      <div className="text-2xl mb-3">🔌</div>
+      <h3 className="font-bold mb-2">Built for affiliate payouts</h3>
+      <p className="text-zinc-400 text-sm">
+        Not a generic payment rail. Purpose-built for e-commerce stores paying affiliates. WooCommerce plugin. 5-tier MLM logic. Store dashboards.
+      </p>
+    </div>
+    
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center md:text-left">
+      <div className="text-2xl mb-3">⚡</div>
+      <h3 className="font-bold mb-2">Instant & automatic</h3>
+      <p className="text-zinc-400 text-sm">
+        Sale happens → affiliates paid. 4 seconds. No batching. No manual runs. No "payments processed on the 15th."
+      </p>
+    </div>
+    
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center md:text-left">
+      <div className="text-2xl mb-3">🔐</div>
+      <h3 className="font-bold mb-2">Non-custodial</h3>
+      <p className="text-zinc-400 text-sm">
+        Your wallet. Your keys. We never touch your funds. You grant permission to trigger payments within limits you set. Revoke anytime.
+      </p>
+    </div>
+    
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center md:text-left">
+      <div className="text-2xl mb-3">🌐</div>
+      <h3 className="font-bold mb-2">XRPL + RLUSD native</h3>
+      <p className="text-zinc-400 text-sm">
+        Built on the XRP Ledger. Paid in RLUSD stablecoin. $1 = $1. Near-zero fees. Settlement in seconds, not days.
+      </p>
+    </div>
+  </div>
+  
+  <p className="text-zinc-500 text-sm text-center mt-8 max-w-2xl mx-auto">
+    Traditional affiliate platforms make you wait 30 days for a wire transfer. Crypto gateways don't understand commission structures. We built what should have existed.
+  </p>
+</section>
 
         {/* How it works */}
         <section id="how-it-works" className="py-20 border-t border-zinc-800 text-center">
@@ -285,26 +334,26 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Refer stores */}
-        <section className="py-20 border-t border-zinc-800">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-bold mb-4">Refer other stores.</h2>
-              <p className="text-zinc-400 mb-4">
-                Know someone who should use this? Give them your referral code. You earn 25% of their platform fees. Forever.
-              </p>
-              <p className="text-zinc-400">
-                They get 50% off their first month. You get passive income every time they pay affiliates.
-              </p>
-            </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
-              <p className="text-zinc-500 text-sm mb-2">Vendor B processes $10k in commissions</p>
-              <p className="text-zinc-500 text-sm mb-2">Platform fee: $290</p>
-              <p className="text-2xl font-semibold text-emerald-400">You earn: $72.50</p>
-              <p className="text-zinc-500 text-sm mt-4">Every month. Automatically.</p>
-            </div>
-          </div>
-        </section>
+       {/* Refer stores */}
+<section className="py-20 border-t border-zinc-800">
+  <div className="grid md:grid-cols-2 gap-12 items-center">
+    <div className="text-center md:text-left max-w-md mx-auto md:mx-0 md:max-w-none">
+      <h2 className="text-3xl font-bold mb-4">Refer other stores.</h2>
+      <p className="text-zinc-400 mb-4">
+        Know someone who should use this? Give them your referral code. You earn 25% of their platform fees. Forever.
+      </p>
+      <p className="text-zinc-400">
+        They get 50% off their first month. You get passive income every time they pay affiliates.
+      </p>
+    </div>
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center md:text-left max-w-md mx-auto md:mx-0 md:max-w-none">
+      <p className="text-zinc-500 text-sm mb-2">Vendor B processes $10k in commissions</p>
+      <p className="text-zinc-500 text-sm mb-2">Platform fee: $290</p>
+      <p className="text-2xl font-semibold text-emerald-400">You earn: $72.50</p>
+      <p className="text-zinc-500 text-sm mt-4">Every month. Automatically.</p>
+    </div>
+  </div>
+</section>
 
         {/* Reputation */}
         <section className="py-20 border-t border-zinc-800 text-center">
