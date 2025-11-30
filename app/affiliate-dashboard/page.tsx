@@ -254,28 +254,30 @@ export default function AffiliateDashboard() {
                 
                 <div className="space-y-4">
                   <button
-                    onClick={connectXaman}
-                    className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 py-4 px-6 rounded-lg transition-colors text-left"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-semibold">Xaman</div>
-                        <div className="text-zinc-400 text-sm">Mobile wallet</div>
-                      </div>
-                    </div>
-                  </button>
+  onClick={connectXaman}
+  className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 py-4 px-6 rounded-lg transition-colors text-left"
+>
+  <div className="flex items-center gap-4">
+    <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-10 h-10 rounded-lg object-cover" />
+    <div>
+      <div className="font-semibold">Xaman</div>
+      <div className="text-zinc-400 text-sm">Mobile wallet</div>
+    </div>
+  </div>
+</button>
                   
                   <button
-                    onClick={connectCrossmark}
-                    className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 py-4 px-6 rounded-lg transition-colors text-left"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-semibold">Crossmark</div>
-                        <div className="text-zinc-400 text-sm">Browser extension</div>
-                      </div>
-                    </div>
-                  </button>
+  onClick={connectCrossmark}
+  className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 py-4 px-6 rounded-lg transition-colors text-left"
+>
+  <div className="flex items-center gap-4">
+    <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-10 h-10 rounded-lg object-cover" />
+    <div>
+      <div className="font-semibold">Crossmark</div>
+      <div className="text-zinc-400 text-sm">Browser extension</div>
+    </div>
+  </div>
+</button>
                 </div>
                 
                 <p className="text-zinc-500 text-xs mt-6">
