@@ -72,7 +72,7 @@ export default function StoreDashboard() {
           setWalletAddress(data.wallet_address);
           setWalletType('xaman');
           setPolling(false);
-          loadOrCreateStore(data.wallet_address, 'xaman');
+          loadOrCreateStore(data.wallet_address, 'xaman', data.xaman_user_token);
         } else if (data.status === 'expired' || data.status === 'cancelled') {
           setPolling(false);
           setError('Connection ' + data.status + '. Please try again.');
@@ -86,7 +86,7 @@ export default function StoreDashboard() {
     return () => clearInterval(interval);
   }, [polling, loginId]);
 
-  const loadOrCreateStore = async (wallet: string, type: 'xaman' | 'crossmark') => {
+  const loadOrCreateStore = async (wallet: string, type: 'xaman' | 'crossmark', xamanUserToken?: string | null) => {
     setLoading(true);
     try {
       // If we have a claim token, attach wallet to that store
@@ -95,10 +95,11 @@ export default function StoreDashboard() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            claim_token: claimToken,
-            wallet_address: wallet,
-            wallet_type: type
-          })
+  claim_token: claimToken,
+  wallet_address: wallet,
+  wallet_type: type,
+  xaman_user_token: xamanUserToken || null
+})
         });
         const data = await res.json();
         

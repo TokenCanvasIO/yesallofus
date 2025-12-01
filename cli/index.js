@@ -367,6 +367,20 @@ async function main() {
     'Please enter a valid email address'
   );
 
+  // Referral code (optional)
+  const referralCode = await ask(`${c.cyan}  Referral code (optional): ${c.reset}`);
+  
+  let referred_by_store = null;
+  if (referralCode.trim()) {
+    const lookupResult = await apiCall('GET', `/store/lookup-referral/${referralCode.trim()}`);
+    if (lookupResult.success) {
+      referred_by_store = lookupResult.store_id;
+      console.log(`${c.green}  ✓ Referred by: ${lookupResult.store_name} (50% off first month!)${c.reset}`);
+    } else {
+      console.log(`${c.yellow}  ⚠ Referral code not found - continuing without referral${c.reset}`);
+    }
+  }
+
   // Platform selection
   showPlatformMenu();
   const platformChoice = await ask(`${c.cyan}  Select platform [1-7]: ${c.reset}`);
@@ -378,7 +392,8 @@ async function main() {
     store_name: storeName,
     store_url: storeUrl,
     email: email,
-    platform: platform.key
+    platform: platform.key,
+    referred_by_store: referred_by_store
   });
 
   stopSpinner(spin);
