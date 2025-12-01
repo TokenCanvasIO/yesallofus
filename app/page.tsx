@@ -405,8 +405,8 @@ export default function Home() {
 
         {/* CTA */}
         <section id="get-started" className="py-20 border-t border-zinc-800 text-center">
-          <h2 className="text-3xl font-bold mb-4">Stop doing payout runs.</h2>
-          <p className="text-zinc-400 mb-8">Pick your path.</p>
+          <h2 className="text-3xl font-bold mb-4">No more payment spreadsheets.</h2>
+<p className="text-zinc-400 mb-8">Let the Ledger take care of it. It's automatic.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a 
               href="/guides/wordpress" 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -95,6 +96,13 @@ export default function RootLayout({
         <Header />
         {children}
         <Footer />
+        
+        {/* 3D Model Viewer - lazy loaded for Logo component */}
+        <Script 
+          src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" 
+          type="module"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );

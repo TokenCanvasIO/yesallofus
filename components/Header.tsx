@@ -1,8 +1,7 @@
 'use client';
-
 import { useState } from 'react';
-import Image from "next/image";
 import Link from "next/link";
+import Logo from "./Logo";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -11,7 +10,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-[#0d0d0d]/90 backdrop-blur border-b border-zinc-800/50">
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
-          <Image src="/dltpayslogo1.png" alt="YesAllofUs" width={40} height={40} className="rounded-lg" />
+          <Logo size={40} />
           <span className="font-bold text-xl hidden sm:inline">YesAllofUs</span>
         </Link>
 
