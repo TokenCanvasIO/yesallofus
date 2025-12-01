@@ -129,6 +129,22 @@ export default function StoreDashboard() {
         if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
         if (data.store.daily_limit) setDailyLimit(data.store.daily_limit);
         if (data.store.auto_sign_max_single_payout) setMaxSinglePayout(data.store.auto_sign_max_single_payout);
+        
+        // ADD THIS BLOCK - Save Xaman connection for existing store
+        if (type === 'xaman' && xamanUserToken) {
+          await fetch(`${API_URL}/store/save-xaman-wallet`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              store_id: data.store.store_id,
+              wallet_address: wallet,
+              xaman_user_token: xamanUserToken
+            })
+          });
+          data.store.xaman_connected = true;
+          data.store.xaman_user_token = xamanUserToken;
+        }
+        
         setStep('dashboard');
       } else {
         setStore(null);
