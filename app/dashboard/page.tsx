@@ -35,6 +35,7 @@ export default function StoreDashboard() {
   
   // Trustline confirmation (login screen)
   const [trustlineConfirmed, setTrustlineConfirmed] = useState(false);
+  const [xamanUserToken, setXamanUserToken] = useState<string | null>(null);
   
   // Claim token (from CLI)
   const [claimToken, setClaimToken] = useState<string | null>(null);
@@ -69,10 +70,11 @@ export default function StoreDashboard() {
         const data = await res.json();
         
         if (data.status === 'signed' && data.wallet_address) {
-          setWalletAddress(data.wallet_address);
-          setWalletType('xaman');
-          setPolling(false);
-          loadOrCreateStore(data.wallet_address, 'xaman', data.xaman_user_token);
+  setWalletAddress(data.wallet_address);
+  setWalletType('xaman');
+  setXamanUserToken(data.xaman_user_token || null);
+  setPolling(false);
+  loadOrCreateStore(data.wallet_address, 'xaman', data.xaman_user_token);
         } else if (data.status === 'expired' || data.status === 'cancelled') {
           setPolling(false);
           setError('Connection ' + data.status + '. Please try again.');
@@ -150,12 +152,11 @@ export default function StoreDashboard() {
           store_url: storeUrl,
           email: email,
           wallet_address: walletAddress,
-          wallet_type: walletType
+          wallet_type: walletType,
+          xaman_user_token: xamanUserToken
         })
       });
-      
       const data = await res.json();
-      
       if (data.error) {
         setError(data.error);
         setLoading(false);
