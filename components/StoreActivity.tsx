@@ -171,55 +171,57 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
             </div>
           ) : (
             <div className="bg-zinc-900/50 rounded-xl overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-zinc-500 text-xs uppercase tracking-wider">
-                    <th className="text-left px-4 py-3 font-medium">#</th>
-                    <th className="text-left px-4 py-3 font-medium">Wallet</th>
-                    <th className="text-left px-4 py-3 font-medium">Code</th>
-                    <th className="text-center px-4 py-3 font-medium">Level</th>
-                    <th className="text-right px-4 py-3 font-medium">Earned</th>
-                    <th className="text-right px-4 py-3 font-medium">Joined</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedAffiliates.map((aff) => {
-                    const rank = getRank(aff.wallet) as number;
-                    return (
-                      <tr key={aff.affiliate_id} className="border-t border-zinc-800/50 hover:bg-zinc-800/30 transition">
-                        <td className="px-4 py-3 text-sm">
-                          <span className="text-zinc-400">{rank}</span>
-                          <span className="ml-1">{getRankEmoji(rank)}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <a
-                            href={`https://livenet.xrpl.org/accounts/${aff.wallet}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-mono text-sm text-zinc-300 hover:text-emerald-400 transition"
-                          >
-                            {formatWallet(aff.wallet)}
-                          </a>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="font-mono text-sm text-zinc-400">{aff.referral_code}</span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-1 rounded">L{aff.level}</span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <span className={`text-sm font-medium ${aff.total_earned > 0 ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                            ${aff.total_earned.toFixed(2)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <span className="text-sm text-zinc-500">{formatDate(aff.created_at)}</span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div className="overflow-x-auto sm:overflow-visible">
+                <table className="min-w-[600px] sm:min-w-0 w-full">
+                  <thead>
+                    <tr className="text-zinc-500 text-xs uppercase tracking-wider">
+                      <th className="text-left px-4 py-3 font-medium">#</th>
+                      <th className="text-left px-4 py-3 font-medium">Wallet</th>
+                      <th className="text-left px-4 py-3 font-medium">Code</th>
+                      <th className="text-center px-4 py-3 font-medium">Level</th>
+                      <th className="text-right px-4 py-3 font-medium">Earned</th>
+                      <th className="text-right px-4 py-3 font-medium">Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedAffiliates.map((aff) => {
+                      const rank = getRank(aff.wallet) as number;
+                      return (
+                        <tr key={aff.affiliate_id} className="border-t border-zinc-800/50 hover:bg-zinc-800/30 transition">
+                          <td className="px-4 py-3 text-sm">
+                            <span className="text-zinc-400">{rank}</span>
+                            <span className="ml-1">{getRankEmoji(rank)}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <a
+                              href={`https://livenet.xrpl.org/accounts/${aff.wallet}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-mono text-sm text-zinc-300 hover:text-emerald-400 transition"
+                            >
+                              {formatWallet(aff.wallet)}
+                            </a>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="font-mono text-sm text-zinc-400">{aff.referral_code}</span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-1 rounded">L{aff.level}</span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className={`text-sm font-medium ${aff.total_earned > 0 ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                              ${aff.total_earned.toFixed(2)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className="text-sm text-zinc-500">{formatDate(aff.created_at)}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
@@ -258,67 +260,69 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
             </div>
           ) : (
             <div className="bg-zinc-900/50 rounded-xl overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-zinc-500 text-xs uppercase tracking-wider">
-                    <th className="text-left px-4 py-3 font-medium">Order</th>
-                    <th className="text-right px-4 py-3 font-medium">Total</th>
-                    <th className="text-right px-4 py-3 font-medium">Commissions</th>
-                    <th className="text-center px-4 py-3 font-medium">Mode</th>
-                    <th className="text-right px-4 py-3 font-medium">Date</th>
-                    <th className="text-right px-4 py-3 font-medium">TX</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedPayments.map((pay) => {
-                    const commissionTotal = pay.payments
-                      .filter(p => p.type !== 'platform_fee')
-                      .reduce((sum, p) => sum + p.amount, 0);
-                    const txCount = pay.tx_hashes?.length || 0;
-                    const firstTx = pay.tx_hashes?.[0]?.tx_hash;
-                    
-                    return (
-                      <tr key={pay.payout_id} className="border-t border-zinc-800/50 hover:bg-zinc-800/30 transition">
-                        <td className="px-4 py-3">
-                          <span className="font-mono text-sm text-zinc-300">{pay.order_id}</span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <span className="text-sm text-zinc-400">${pay.order_total.toFixed(2)}</span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <span className="text-sm font-medium text-emerald-400">${commissionTotal.toFixed(2)}</span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`text-xs px-2 py-1 rounded ${
-                            pay.auto_signed 
-                              ? 'bg-emerald-500/20 text-emerald-400' 
-                              : 'bg-sky-500/20 text-sky-400'
-                          }`}>
-                            {pay.auto_signed ? '⚡ Auto' : '📱 Manual'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <span className="text-sm text-zinc-500">{formatDate(pay.paid_at)}</span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          {firstTx ? (
-                            <a
-                              href={`https://livenet.xrpl.org/transactions/${firstTx}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-zinc-400 hover:text-emerald-400 transition font-mono"
-                            >
-                              {txCount > 1 ? `${txCount} txs` : firstTx.slice(0, 8)}...
-                            </a>
-                          ) : (
-                            <span className="text-zinc-600 text-sm">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div className="overflow-x-auto sm:overflow-visible">
+                <table className="min-w-[600px] sm:min-w-0 w-full">
+                  <thead>
+                    <tr className="text-zinc-500 text-xs uppercase tracking-wider">
+                      <th className="text-left px-4 py-3 font-medium">Order</th>
+                      <th className="text-right px-4 py-3 font-medium">Total</th>
+                      <th className="text-right px-4 py-3 font-medium">Commissions</th>
+                      <th className="text-center px-4 py-3 font-medium">Mode</th>
+                      <th className="text-right px-4 py-3 font-medium">Date</th>
+                      <th className="text-right px-4 py-3 font-medium">TX</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedPayments.map((pay) => {
+                      const commissionTotal = pay.payments
+                        .filter(p => p.type !== 'platform_fee')
+                        .reduce((sum, p) => sum + p.amount, 0);
+                      const txCount = pay.tx_hashes?.length || 0;
+                      const firstTx = pay.tx_hashes?.[0]?.tx_hash;
+                      
+                      return (
+                        <tr key={pay.payout_id} className="border-t border-zinc-800/50 hover:bg-zinc-800/30 transition">
+                          <td className="px-4 py-3">
+                            <span className="font-mono text-sm text-zinc-300">{pay.order_id}</span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className="text-sm text-zinc-400">${pay.order_total.toFixed(2)}</span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className="text-sm font-medium text-emerald-400">${commissionTotal.toFixed(2)}</span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              pay.auto_signed 
+                                ? 'bg-emerald-500/20 text-emerald-400' 
+                                : 'bg-sky-500/20 text-sky-400'
+                            }`}>
+                              {pay.auto_signed ? '⚡ Auto' : '📱 Manual'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className="text-sm text-zinc-500">{formatDate(pay.paid_at)}</span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {firstTx ? (
+                              <a
+                                href={`https://livenet.xrpl.org/transactions/${firstTx}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-zinc-400 hover:text-emerald-400 transition font-mono"
+                              >
+                                {txCount > 1 ? `${txCount} txs` : firstTx.slice(0, 8)}...
+                              </a>
+                            ) : (
+                              <span className="text-zinc-600 text-sm">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 

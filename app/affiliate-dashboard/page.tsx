@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import PayoutsTable from '@/components/PayoutsTable';
 
 interface Store {
   store_id: string;
@@ -62,30 +63,30 @@ export default function AffiliateDashboard() {
   };
 
   const fetchDashboard = async (wallet: string) => {
-  try {
-    setLoading(true);
-    setError('');
-    
-    const response = await fetch(`https://api.dltpays.com/api/v1/affiliate/dashboard/${wallet}`);
-    const data = await response.json();
-    
-    if (!response.ok) {
-      if (response.status === 404) {
-        setError('No affiliate account found for this wallet. Join a YesAllofUs store affiliate program to get started.');
-      } else {
-        setError(data.error || 'Failed to load dashboard');
+    try {
+      setLoading(true);
+      setError('');
+      
+      const response = await fetch(`https://api.dltpays.com/api/v1/affiliate/dashboard/${wallet}`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          setError('No affiliate account found for this wallet. Join a YesAllofUs store affiliate program to get started.');
+        } else {
+          setError(data.error || 'Failed to load dashboard');
+        }
+        setDashboardData(null);
+        return;
       }
-      setDashboardData(null);
-      return;
+      
+      setDashboardData(data);
+    } catch (err) {
+      setError('Failed to connect to server');
+    } finally {
+      setLoading(false);
     }
-    
-    setDashboardData(data);
-  } catch (err) {
-    setError('Failed to connect to server');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleCopyLink = (referralLink: string, code: string) => {
     navigator.clipboard.writeText(referralLink);
@@ -102,146 +103,136 @@ export default function AffiliateDashboard() {
     setLoading(false);
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   const [connecting, setConnecting] = useState<'none' | 'xaman' | 'crossmark'>('none');
   const [xamanQR, setXamanQR] = useState<string | null>(null);
   const [xamanDeepLink, setXamanDeepLink] = useState<string | null>(null);
   const [loginId, setLoginId] = useState<string | null>(null);
 
   // Poll for Xaman login
-useEffect(() => {
-  if (!loginId || connecting !== 'xaman') return;
-  
-  const interval = setInterval(async () => {
+  useEffect(() => {
+    if (!loginId || connecting !== 'xaman') return;
+    
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`https://api.dltpays.com/api/v1/xaman/login/poll/${loginId}`);
+        const data = await res.json();
+        
+        if (data.status === 'signed' && data.wallet_address) {
+          // Check for store signup FIRST, before anything else
+          const params = new URLSearchParams(window.location.search);
+          const storeId = params.get('store');
+          
+          if (storeId) {
+            const parentRef = params.get('ref') || '';
+            await fetch('https://api.dltpays.com/api/v1/affiliate/register-public', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                store_id: storeId, 
+                wallet: data.wallet_address,
+                parent_referral_code: parentRef
+              })
+            });
+            window.history.replaceState({}, '', window.location.pathname);
+            await new Promise(r => setTimeout(r, 500));
+          }
+          
+          sessionStorage.setItem('walletAddress', data.wallet_address);
+          setWalletAddress(data.wallet_address);
+          setConnecting('none');
+          setXamanQR(null);
+          setLoginId(null);
+          await fetchDashboard(data.wallet_address);
+        } else if (data.status === 'expired' || data.status === 'cancelled') {
+          setError(data.status === 'expired' ? 'QR code expired. Please try again.' : 'Login cancelled.');
+          setConnecting('none');
+          setXamanQR(null);
+          setLoginId(null);
+        }
+      } catch (err) {
+        console.error('Poll error:', err);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [loginId, connecting]);
+
+  const connectXaman = async () => {
+    setConnecting('xaman');
+    setError('');
+    
     try {
-      const res = await fetch(`https://api.dltpays.com/api/v1/xaman/login/poll/${loginId}`);
+      const res = await fetch('https://api.dltpays.com/api/v1/xaman/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
       const data = await res.json();
       
-      if (data.status === 'signed' && data.wallet_address) {
-        // Check for store signup FIRST, before anything else
-        const params = new URLSearchParams(window.location.search);
-        const storeId = params.get('store');
-        
-        if (storeId) {
-  const parentRef = params.get('ref') || '';
-  await fetch('https://api.dltpays.com/api/v1/affiliate/register-public', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      store_id: storeId, 
-      wallet: data.wallet_address,
-      parent_referral_code: parentRef
-    })
-  });
-          window.history.replaceState({}, '', window.location.pathname);
-          await new Promise(r => setTimeout(r, 500));
-        }
-        
-        sessionStorage.setItem('walletAddress', data.wallet_address);
-        setWalletAddress(data.wallet_address);
+      if (data.error) {
+        setError(data.error);
         setConnecting('none');
-        setXamanQR(null);
-        setLoginId(null);
-        await fetchDashboard(data.wallet_address);
-      } else if (data.status === 'expired' || data.status === 'cancelled') {
-        setError(data.status === 'expired' ? 'QR code expired. Please try again.' : 'Login cancelled.');
-        setConnecting('none');
-        setXamanQR(null);
-        setLoginId(null);
+        return;
       }
+      
+      setXamanQR(data.qr_png);
+      setXamanDeepLink(data.deep_link);
+      setLoginId(data.login_id);
     } catch (err) {
-      console.error('Poll error:', err);
-    }
-  }, 3000);
-
-  return () => clearInterval(interval);
-}, [loginId, connecting]);
-
-const connectXaman = async () => {
-  setConnecting('xaman');
-  setError('');
-  
-  try {
-    const res = await fetch('https://api.dltpays.com/api/v1/xaman/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    
-    const data = await res.json();
-    
-    if (data.error) {
-      setError(data.error);
+      setError('Failed to connect. Please try again.');
       setConnecting('none');
-      return;
     }
+  };
+
+  const connectCrossmark = async () => {
+    setConnecting('crossmark');
+    setError('');
     
-    setXamanQR(data.qr_png);
-    setXamanDeepLink(data.deep_link);
-    setLoginId(data.login_id);
-  } catch (err) {
-    setError('Failed to connect. Please try again.');
+    try {
+      const crossmark = (window as any).crossmark;
+      if (!crossmark) {
+        setError('Crossmark not installed. Please install the browser extension.');
+        setConnecting('none');
+        return;
+      }
+      
+      const res = await crossmark.async.signInAndWait();
+      const address = res.response.data.address;
+      
+      // Register FIRST if coming from store link
+      const params = new URLSearchParams(window.location.search);
+      const storeId = params.get('store');
+      
+      if (storeId) {
+        const parentRef = params.get('ref') || '';
+        await fetch('https://api.dltpays.com/api/v1/affiliate/register-public', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            store_id: storeId, 
+            wallet: address,
+            parent_referral_code: parentRef
+          })
+        });
+        window.history.replaceState({}, '', window.location.pathname);
+        await new Promise(r => setTimeout(r, 500));
+      }
+      
+      sessionStorage.setItem('walletAddress', address);
+      setWalletAddress(address);
+      await fetchDashboard(address);
+    } catch (err) {
+      setError('Failed to connect Crossmark. Please try again.');
+    }
     setConnecting('none');
-  }
-};
+  };
 
-const connectCrossmark = async () => {
-  setConnecting('crossmark');
-  setError('');
-  
-  try {
-    const crossmark = (window as any).crossmark;
-    if (!crossmark) {
-      setError('Crossmark not installed. Please install the browser extension.');
-      setConnecting('none');
-      return;
-    }
-    
-    const res = await crossmark.async.signInAndWait();
-    const address = res.response.data.address;
-    
-    // Register FIRST if coming from store link
-    const params = new URLSearchParams(window.location.search);
-    const storeId = params.get('store');
-    
-    if (storeId) {
-  const parentRef = params.get('ref') || '';
-  await fetch('https://api.dltpays.com/api/v1/affiliate/register-public', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      store_id: storeId, 
-      wallet: address,
-      parent_referral_code: parentRef
-    })
-  });
-      window.history.replaceState({}, '', window.location.pathname);
-      await new Promise(r => setTimeout(r, 500));
-    }
-    
-    sessionStorage.setItem('walletAddress', address);
-    setWalletAddress(address);
-    await fetchDashboard(address);
-  } catch (err) {
-    setError('Failed to connect Crossmark. Please try again.');
-  }
-  setConnecting('none');
-};
-
-const cancelXamanLogin = () => {
-  setConnecting('none');
-  setXamanQR(null);
-  setXamanDeepLink(null);
-  setLoginId(null);
-};
+  const cancelXamanLogin = () => {
+    setConnecting('none');
+    setXamanQR(null);
+    setXamanDeepLink(null);
+    setLoginId(null);
+  };
 
   // Not connected
   if (!walletAddress && !loading) {
@@ -250,7 +241,7 @@ const cancelXamanLogin = () => {
         <script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" />
         
         <main className="max-w-4xl mx-auto px-6 py-16 min-h-[calc(100vh-200px)] flex items-center justify-center">
-  <div className="text-center">
+          <div className="text-center">
             <h1 className="text-3xl font-bold mb-4">Affiliate Dashboard</h1>
             <p className="text-zinc-400 mb-8">Connect your wallet to view your earnings</p>
             
@@ -293,30 +284,30 @@ const cancelXamanLogin = () => {
                 
                 <div className="space-y-4">
                   <button
-  onClick={connectXaman}
-  className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 py-4 px-6 rounded-lg transition-colors text-left"
->
-  <div className="flex items-center gap-4">
-    <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-10 h-10 rounded-lg object-cover" />
-    <div>
-      <div className="font-semibold">Xaman</div>
-      <div className="text-zinc-400 text-sm">Mobile wallet</div>
-    </div>
-  </div>
-</button>
+                    onClick={connectXaman}
+                    className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 py-4 px-6 rounded-lg transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-4">
+                      <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-10 h-10 rounded-lg object-cover" />
+                      <div>
+                        <div className="font-semibold">Xaman</div>
+                        <div className="text-zinc-400 text-sm">Mobile wallet</div>
+                      </div>
+                    </div>
+                  </button>
                   
                   <button
-  onClick={connectCrossmark}
-  className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 py-4 px-6 rounded-lg transition-colors text-left"
->
-  <div className="flex items-center gap-4">
-    <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-10 h-10 rounded-lg object-cover" />
-    <div>
-      <div className="font-semibold">Crossmark</div>
-      <div className="text-zinc-400 text-sm">Browser extension</div>
-    </div>
-  </div>
-</button>
+                    onClick={connectCrossmark}
+                    className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 py-4 px-6 rounded-lg transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-4">
+                      <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-10 h-10 rounded-lg object-cover" />
+                      <div>
+                        <div className="font-semibold">Crossmark</div>
+                        <div className="text-zinc-400 text-sm">Browser extension</div>
+                      </div>
+                    </div>
+                  </button>
                 </div>
                 
                 <p className="text-zinc-500 text-xs mt-6">
@@ -355,29 +346,29 @@ const cancelXamanLogin = () => {
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
       <main className="max-w-4xl mx-auto px-6 py-10 mt-10">
-  {/* Title */}
-<div className="mb-8">
-  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-    <div>
-      <h1 className="text-3xl font-bold mb-2">Affiliate Dashboard</h1>
-      <p className="text-zinc-400">Track your earnings across all stores</p>
-    </div>
-    <div className="flex items-center gap-4">
-      <div className="bg-zinc-800 px-3 py-1.5 rounded-lg text-sm">
-        <span className="text-zinc-400">Wallet: </span>
-        <span className="text-white font-mono">
-          {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-        </span>
-      </div>
-      <button
-        onClick={handleDisconnect}
-        className="text-zinc-400 hover:text-white text-sm transition-colors"
-      >
-        Disconnect
-      </button>
-    </div>
-  </div>
-</div>
+        {/* Title */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Affiliate Dashboard</h1>
+              <p className="text-zinc-400">Track your earnings across all stores</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="bg-zinc-800 px-3 py-1.5 rounded-lg text-sm">
+                <span className="text-zinc-400">Wallet: </span>
+                <span className="text-white font-mono">
+                  {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                </span>
+              </div>
+              <button
+                onClick={handleDisconnect}
+                className="text-zinc-400 hover:text-white text-sm transition-colors"
+              >
+                Disconnect
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Error State */}
         {error && (
@@ -415,8 +406,8 @@ const cancelXamanLogin = () => {
               ) : (
                 <div className="space-y-4">
                   {dashboardData.stores.map((store, index) => (
-  <div 
-    key={`${store.store_id}-${index}`}
+                    <div 
+                      key={`${store.store_id}-${index}`}
                       className="bg-zinc-900 border border-zinc-800 rounded-xl p-5"
                     >
                       <div className="flex items-start justify-between mb-4">
@@ -463,55 +454,10 @@ const cancelXamanLogin = () => {
             </section>
 
             {/* Recent Payouts */}
-<section>
-  <h2 className="text-xl font-bold mb-4">Recent Payouts</h2>
-  
-  {dashboardData.recent_payouts.length === 0 ? (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center">
-      <p className="text-zinc-400">No payouts yet. Share your referral links to start earning!</p>
-    </div>
-  ) : (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-zinc-800">
-            <th className="text-left text-zinc-400 text-sm font-medium px-4 py-3">Date</th>
-            <th className="text-left text-zinc-400 text-sm font-medium px-4 py-3">Store</th>
-            <th className="text-right text-zinc-400 text-sm font-medium px-4 py-3">Amount</th>
-            <th className="text-right text-zinc-400 text-sm font-medium px-4 py-3">Transaction</th>
-          </tr>
-        </thead>
-        <tbody>
-          {dashboardData.recent_payouts.map((payout, index) => (
-            <tr key={index} className="border-b border-zinc-800/50 last:border-0">
-              <td className="px-4 py-3 text-sm text-zinc-300">
-                {formatDate(payout.paid_at)}
-              </td>
-              <td className="px-4 py-3 text-sm">{payout.store_name}</td>
-              <td className="px-4 py-3 text-sm text-right text-emerald-400 font-medium">
-                ${payout.amount.toFixed(2)}
-              </td>
-              <td className="px-4 py-3 text-sm text-right">
-                {payout.tx_hash ? (
-  
-    <a href={`https://livenet.xrpl.org/transactions/${payout.tx_hash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sky-400 hover:text-sky-300 font-mono"
-                  >
-                    {payout.tx_hash.slice(0, 8)}...
-                  </a>
-                ) : (
-                  <span className="text-zinc-500">Pending</span>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )}
-</section>
+            <section>
+              <h2 className="text-xl font-bold mb-4">Recent Payouts</h2>
+              <PayoutsTable payouts={dashboardData.recent_payouts} />
+            </section>
           </>
         )}
       </main>

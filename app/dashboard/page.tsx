@@ -248,7 +248,7 @@ export default function StoreDashboard() {
         setError(data.error);
       } else {
         setSettingsSaved(true);
-        setStore({ ...store, commission_rates: commissionRates, daily_limit: dailyLimit });
+        setStore({ ...store, commission_rates: commissionRates, daily_limit: dailyLimit, auto_sign_max_single_payout: maxSinglePayout });
       }
     } catch (err) {
       setError('Failed to save settings');
@@ -366,7 +366,8 @@ export default function StoreDashboard() {
         wallet_address: address,
         crossmark_connected: true,
         xaman_connected: false,
-        daily_limit: dailyLimit
+        daily_limit: dailyLimit,
+        auto_sign_max_single_payout: maxSinglePayout
       });
       setWalletAddress(address);
       setAutoSignTermsAccepted(false);
@@ -715,16 +716,16 @@ export default function StoreDashboard() {
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
               <h2 className="text-lg font-bold mb-4">Payout Method</h2>
               
-              {/* Auto-sign enabled - show status */}
+              {/* Auto-sign enabled - show status with editable limits */}
 {store.auto_signing_enabled ? (
-  <div className="space-y-3">
+  <div className="space-y-4">
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
       <div className="flex items-center gap-3">
         <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
         <div>
           <div className="flex items-center gap-2">
             <span className="text-green-500 text-sm" style={{ textShadow: '0 0 8px rgba(34,197,94,0.9)' }}>●</span>
-            <span className="text-green-500 text-sm font-medium">Connection Good</span>
+            <span className="text-green-500 text-sm font-medium">Auto-Sign Active</span>
           </div>
           <p className="text-zinc-500 text-sm font-mono">
             {store.wallet_address?.substring(0, 8)}...{store.wallet_address?.slice(-6)}
@@ -736,12 +737,35 @@ export default function StoreDashboard() {
         disabled={loading}
         className="text-zinc-400 hover:text-red-400 text-sm transition-colors whitespace-nowrap"
       >
-        Revoke to amend limits
+        Revoke Auto-Sign
       </button>
     </div>
-    <p className="text-zinc-500 text-xs">
-      Daily limit: ${store.daily_limit || dailyLimit} • Max single: ${store.auto_sign_max_single_payout || maxSinglePayout}
-    </p>
+    
+    {/* Editable Limits - always visible */}
+    <div className="flex gap-4">
+      <div className="flex-1 min-w-0">
+        <label className="text-zinc-400 text-xs block mb-1">Max single (USD)</label>
+        <input
+          type="number"
+          min="1"
+          max="10000"
+          value={maxSinglePayout}
+          onChange={(e) => { setMaxSinglePayout(parseInt(e.target.value) || 100); setSettingsSaved(false); }}
+          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <label className="text-zinc-400 text-xs block mb-1">Daily limit (USD)</label>
+        <input
+          type="number"
+          min="10"
+          max="50000"
+          value={dailyLimit}
+          onChange={(e) => { setDailyLimit(parseInt(e.target.value) || 1000); setSettingsSaved(false); }}
+          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
+        />
+      </div>
+    </div>
   </div>
 ) : store.xaman_connected ? (
                 /* Xaman connected - show manual payout status + option to switch to auto-sign */
@@ -839,9 +863,9 @@ export default function StoreDashboard() {
                 </div>
                 
                 {/* Limits */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="text-zinc-400 text-sm block mb-2">Max single payout (USD)</label>
+                <div className="flex gap-4 mb-4">
+                  <div className="flex-1 min-w-0">
+                    <label className="text-zinc-400 text-xs block mb-1">Max single (USD)</label>
                     <input
                       type="number"
                       min="1"
@@ -851,8 +875,8 @@ export default function StoreDashboard() {
                       className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
                     />
                   </div>
-                  <div>
-                    <label className="text-zinc-400 text-sm block mb-2">Daily limit (USD)</label>
+                  <div className="flex-1 min-w-0">
+                    <label className="text-zinc-400 text-xs block mb-1">Daily limit (USD)</label>
                     <input
                       type="number"
                       min="10"
