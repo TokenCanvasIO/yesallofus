@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface Store {
   store_id: string;
@@ -34,6 +34,7 @@ export default function AffiliateDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copiedCode, setCopiedCode] = useState('');
+  const registeringRef = useRef(false);
 
   useEffect(() => {
     checkWalletConnection();
@@ -61,30 +62,30 @@ export default function AffiliateDashboard() {
   };
 
   const fetchDashboard = async (wallet: string) => {
-    try {
-      setLoading(true);
-      setError('');
-      
-      const response = await fetch(`https://api.dltpays.com/api/v1/affiliate/dashboard/${wallet}`);
-      const data = await response.json();
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          setError('No affiliate account found for this wallet. Join a YesAllofUs store affiliate program to get started.');
-        } else {
-          setError(data.error || 'Failed to load dashboard');
-        }
-        setDashboardData(null);
-        return;
+  try {
+    setLoading(true);
+    setError('');
+    
+    const response = await fetch(`https://api.dltpays.com/api/v1/affiliate/dashboard/${wallet}`);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        setError('No affiliate account found for this wallet. Join a YesAllofUs store affiliate program to get started.');
+      } else {
+        setError(data.error || 'Failed to load dashboard');
       }
-      
-      setDashboardData(data);
-    } catch (err) {
-      setError('Failed to connect to server');
-    } finally {
-      setLoading(false);
+      setDashboardData(null);
+      return;
     }
-  };
+    
+    setDashboardData(data);
+  } catch (err) {
+    setError('Failed to connect to server');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleCopyLink = (referralLink: string, code: string) => {
     navigator.clipboard.writeText(referralLink);
@@ -117,92 +118,130 @@ export default function AffiliateDashboard() {
   const [loginId, setLoginId] = useState<string | null>(null);
 
   // Poll for Xaman login
-  useEffect(() => {
-    if (!loginId || connecting !== 'xaman') return;
-    
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`https://api.dltpays.com/api/v1/xaman/login/poll/${loginId}`);
-        const data = await res.json();
-        
-        if (data.status === 'signed' && data.wallet_address) {
-          sessionStorage.setItem('walletAddress', data.wallet_address);
-          setWalletAddress(data.wallet_address);
-          setConnecting('none');
-          setXamanQR(null);
-          setLoginId(null);
-          await fetchDashboard(data.wallet_address);
-        } else if (data.status === 'expired' || data.status === 'cancelled') {
-          setError(data.status === 'expired' ? 'QR code expired. Please try again.' : 'Login cancelled.');
-          setConnecting('none');
-          setXamanQR(null);
-          setLoginId(null);
-        }
-      } catch (err) {
-        console.error('Poll error:', err);
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [loginId, connecting]);
-
-  const connectXaman = async () => {
-    setConnecting('xaman');
-    setError('');
-    
+useEffect(() => {
+  if (!loginId || connecting !== 'xaman') return;
+  
+  const interval = setInterval(async () => {
     try {
-      const res = await fetch('https://api.dltpays.com/api/v1/xaman/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
+      const res = await fetch(`https://api.dltpays.com/api/v1/xaman/login/poll/${loginId}`);
       const data = await res.json();
       
-      if (data.error) {
-        setError(data.error);
+      if (data.status === 'signed' && data.wallet_address) {
+        // Check for store signup FIRST, before anything else
+        const params = new URLSearchParams(window.location.search);
+        const storeId = params.get('store');
+        
+        if (storeId) {
+  const parentRef = document.cookie.match(/_yesallofus_ref_code=([^;]+)/)?.[1] || '';
+  await fetch('https://api.dltpays.com/api/v1/affiliate/register-public', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      store_id: storeId, 
+      wallet: data.wallet_address,
+      parent_referral_code: parentRef
+    })
+  });
+          window.history.replaceState({}, '', window.location.pathname);
+          await new Promise(r => setTimeout(r, 500));
+        }
+        
+        sessionStorage.setItem('walletAddress', data.wallet_address);
+        setWalletAddress(data.wallet_address);
         setConnecting('none');
-        return;
+        setXamanQR(null);
+        setLoginId(null);
+        await fetchDashboard(data.wallet_address);
+      } else if (data.status === 'expired' || data.status === 'cancelled') {
+        setError(data.status === 'expired' ? 'QR code expired. Please try again.' : 'Login cancelled.');
+        setConnecting('none');
+        setXamanQR(null);
+        setLoginId(null);
       }
-      
-      setXamanQR(data.qr_png);
-      setXamanDeepLink(data.deep_link);
-      setLoginId(data.login_id);
     } catch (err) {
-      setError('Failed to connect. Please try again.');
-      setConnecting('none');
+      console.error('Poll error:', err);
     }
-  };
+  }, 3000);
 
-  const connectCrossmark = async () => {
-    setConnecting('crossmark');
-    setError('');
+  return () => clearInterval(interval);
+}, [loginId, connecting]);
+
+const connectXaman = async () => {
+  setConnecting('xaman');
+  setError('');
+  
+  try {
+    const res = await fetch('https://api.dltpays.com/api/v1/xaman/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
     
-    try {
-      const crossmark = (window as any).crossmark;
-      if (!crossmark) {
-        setError('Crossmark not installed. Please install the browser extension.');
-        setConnecting('none');
-        return;
-      }
-      
-      const res = await crossmark.async.signInAndWait();
-      const address = res.response.data.address;
-      
-      sessionStorage.setItem('walletAddress', address);
-      setWalletAddress(address);
-      await fetchDashboard(address);
-    } catch (err) {
-      setError('Failed to connect Crossmark. Please try again.');
+    const data = await res.json();
+    
+    if (data.error) {
+      setError(data.error);
+      setConnecting('none');
+      return;
     }
+    
+    setXamanQR(data.qr_png);
+    setXamanDeepLink(data.deep_link);
+    setLoginId(data.login_id);
+  } catch (err) {
+    setError('Failed to connect. Please try again.');
     setConnecting('none');
-  };
+  }
+};
 
-  const cancelXamanLogin = () => {
-    setConnecting('none');
-    setXamanQR(null);
-    setXamanDeepLink(null);
-    setLoginId(null);
-  };
+const connectCrossmark = async () => {
+  setConnecting('crossmark');
+  setError('');
+  
+  try {
+    const crossmark = (window as any).crossmark;
+    if (!crossmark) {
+      setError('Crossmark not installed. Please install the browser extension.');
+      setConnecting('none');
+      return;
+    }
+    
+    const res = await crossmark.async.signInAndWait();
+    const address = res.response.data.address;
+    
+    // Register FIRST if coming from store link
+    const params = new URLSearchParams(window.location.search);
+    const storeId = params.get('store');
+    
+    if (storeId) {
+  const parentRef = document.cookie.match(/_yesallofus_ref_code=([^;]+)/)?.[1] || '';
+  await fetch('https://api.dltpays.com/api/v1/affiliate/register-public', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      store_id: storeId, 
+      wallet: address,
+      parent_referral_code: parentRef
+    })
+  });
+      window.history.replaceState({}, '', window.location.pathname);
+      await new Promise(r => setTimeout(r, 500));
+    }
+    
+    sessionStorage.setItem('walletAddress', address);
+    setWalletAddress(address);
+    await fetchDashboard(address);
+  } catch (err) {
+    setError('Failed to connect Crossmark. Please try again.');
+  }
+  setConnecting('none');
+};
+
+const cancelXamanLogin = () => {
+  setConnecting('none');
+  setXamanQR(null);
+  setXamanDeepLink(null);
+  setLoginId(null);
+};
 
   // Not connected
   if (!walletAddress && !loading) {
@@ -375,9 +414,9 @@ export default function AffiliateDashboard() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {dashboardData.stores.map((store) => (
-                    <div 
-                      key={store.store_id}
+                  {dashboardData.stores.map((store, index) => (
+  <div 
+    key={`${store.store_id}-${index}`}
                       className="bg-zinc-900 border border-zinc-800 rounded-xl p-5"
                     >
                       <div className="flex items-start justify-between mb-4">
