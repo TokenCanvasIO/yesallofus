@@ -14,7 +14,8 @@ export default function About() {
           />
           <div>
             <h1 className="text-3xl font-bold mb-2">Hey, I&apos;m Mark</h1>
-            <p className="text-zinc-400">Family therapist turned developer · Guernsey</p>
+            {/* Added emphasis to the unique background */}
+            <p className="text-zinc-400 font-semibold">Family therapist turned developer · Guernsey</p>
           </div>
         </div>
 
@@ -59,7 +60,7 @@ export default function About() {
           </div>
         </section>
 
-        {/* What Makes It Different */}
+        {/* What Makes It Different - Updated Non-Custodial Description */}
         <section className="mb-12">
           <h2 className="text-xl font-bold mb-4">How It Works</h2>
           <div className="grid sm:grid-cols-3 gap-4">
@@ -71,7 +72,7 @@ export default function About() {
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
               <div className="text-2xl mb-2">🔐</div>
               <h3 className="font-semibold mb-1">Non-Custodial</h3>
-              <p className="text-zinc-400 text-sm">Your wallet, your keys. I never touch your funds.</p>
+              <p className="text-zinc-400 text-sm">Your wallet, your keys. We never touch your funds. **You set the spending limits.**</p>
             </div>
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
               <div className="text-2xl mb-2">🌍</div>
@@ -81,7 +82,7 @@ export default function About() {
           </div>
         </section>
 
-        {/* Background */}
+        {/* Background - Updated with XRPL Context */}
         <section className="mb-12">
           <h2 className="text-xl font-bold mb-4">My Background</h2>
           <div className="text-zinc-300 space-y-4">
@@ -96,7 +97,7 @@ export default function About() {
             </p>
             <p>
               I started coding in June 2024. No CS degree. Just curiosity, late nights, and AI 
-              as my engineering partner. Five months later, I&apos;d built three production platforms:
+              as my engineering partner. Five months later, I&apos;d built three production platforms, all running on the XRPL:
             </p>
             <ul className="space-y-2">
               <li className="flex items-start gap-3">
