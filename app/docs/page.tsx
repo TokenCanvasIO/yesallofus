@@ -136,10 +136,66 @@ const NavLink = ({ href, children }: NavLinkProps) => (
 );
 
 export default function YesAllofUsDocs() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-white font-sans overflow-x-hidden">
+      
+      {/* Mobile Menu Button */}
+      <div className="lg:hidden fixed top-4 right-4 z-50">
+        <button 
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="bg-white border border-slate-200 rounded-lg p-2 shadow-sm"
+        >
+          {mobileMenuOpen ? (
+            <svg className="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
+      </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-12 flex gap-12">
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-40 bg-white overflow-y-auto">
+          <nav className="p-6 pt-16 space-y-6">
+            <div>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Getting Started</h3>
+              <a href="#overview" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Overview</a>
+              <a href="#quick-start" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Quick Start (5 min)</a>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Integration</h3>
+              <a href="#integration-simple" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Simple (SDK)</a>
+              <a href="#integration-full" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Full (API)</a>
+              <a href="#wordpress" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">WordPress Plugin</a>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Dashboard</h3>
+              <a href="#wallet-setup" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Wallet Setup</a>
+              <a href="#payout-modes" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Payout Modes</a>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">API Reference</h3>
+              <a href="#api-payouts" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Payouts</a>
+              <a href="#api-affiliates" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Affiliates</a>
+              <a href="#api-stores" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Stores</a>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Reference</h3>
+              <a href="#commission-system" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Commission Rates</a>
+              <a href="#webhooks" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Webhooks</a>
+              <a href="#errors" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Error Codes</a>
+            </div>
+          </nav>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 lg:flex lg:gap-12">
         {/* Sidebar */}
         <aside className="w-64 flex-shrink-0 hidden lg:block">
           <nav className="sticky top-24 space-y-6">
