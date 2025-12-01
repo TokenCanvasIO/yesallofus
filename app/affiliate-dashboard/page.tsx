@@ -132,7 +132,7 @@ useEffect(() => {
         const storeId = params.get('store');
         
         if (storeId) {
-  const parentRef = document.cookie.match(/_yesallofus_ref_code=([^;]+)/)?.[1] || '';
+  const parentRef = params.get('ref') || '';
   await fetch('https://api.dltpays.com/api/v1/affiliate/register-public', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -213,7 +213,7 @@ const connectCrossmark = async () => {
     const storeId = params.get('store');
     
     if (storeId) {
-  const parentRef = document.cookie.match(/_yesallofus_ref_code=([^;]+)/)?.[1] || '';
+  const parentRef = params.get('ref') || '';
   await fetch('https://api.dltpays.com/api/v1/affiliate/register-public', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
