@@ -40,6 +40,10 @@ export default function StoreDashboard() {
   // Claim token (from CLI)
   const [claimToken, setClaimToken] = useState<string | null>(null);
   const [claimStore, setClaimStore] = useState<any>(null);
+  
+  // Store referral (from ?ref= param)
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [referringStore, setReferringStore] = useState<any>(null);
 
   // Check URL for claim token on load
   useEffect(() => {
@@ -53,6 +57,20 @@ export default function StoreDashboard() {
           .then(data => {
             if (data.success && data.store) {
               setClaimStore(data.store);
+            }
+          })
+          .catch(console.error);
+      }
+      
+      // Check for referral code (from store referral link)
+      const ref = params.get('ref');
+      if (ref) {
+        setReferralCode(ref);
+        fetch(`${API_URL}/store/lookup-referral/${ref}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.store) {
+              setReferringStore(data.store);
             }
           })
           .catch(console.error);
@@ -169,7 +187,8 @@ export default function StoreDashboard() {
           email: email,
           wallet_address: walletAddress,
           wallet_type: walletType,
-          xaman_user_token: xamanUserToken
+          xaman_user_token: xamanUserToken,
+          referred_by_store: referringStore?.store_id || null
         })
       });
       const data = await res.json();
@@ -462,6 +481,19 @@ export default function StoreDashboard() {
           <h1 className="text-3xl font-bold mb-2">Vendor Dashboard</h1>
           <p className="text-zinc-400 mb-8">Sign in with your wallet to manage your commissions.</p>
 
+          {/* Show referral info if coming from store referral link */}
+          {referringStore && (
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6 mb-6">
+              <h3 className="font-semibold text-blue-400 mb-2">🎁 Referred by {referringStore.store_name}</h3>
+              <p className="text-zinc-300 text-sm mb-1">
+                You'll get <strong className="text-white">50% off platform fees</strong> for your first month!
+              </p>
+              <p className="text-zinc-500 text-sm">
+                Connect your wallet below to get started.
+              </p>
+            </div>
+          )}
+
           {/* Show claim store info if coming from CLI */}
           {claimStore && (
             <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6 mb-6">
@@ -676,9 +708,36 @@ export default function StoreDashboard() {
         {!store && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
             <h2 className="text-xl font-bold mb-6">Sign Up</h2>
-            <form onSubmit={(e) => {
+            
+            {/* Show referral banner in registration form */}
+            {referringStore && (
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-blue-400">🎁</span>
+                  <span className="text-blue-400 font-medium">Referred by {referringStore.store_name}</span>
+                </div>
+                <p className="text-zinc-400 text-sm">50% off platform fees for your first month!</p>
+              </div>
+            )}
+            
+            <form onSubmit={async (e) => {
               e.preventDefault();
               const form = e.target as HTMLFormElement;
+              
+              // If user entered a referral code manually, look it up first
+              const manualRef = (form.elements.namedItem('referralCode') as HTMLInputElement)?.value?.trim();
+              if (manualRef && !referringStore) {
+                try {
+                  const res = await fetch(`${API_URL}/store/lookup-referral/${manualRef}`);
+                  const data = await res.json();
+                  if (data.success && data.store) {
+                    setReferringStore(data.store);
+                  }
+                } catch (err) {
+                  console.error('Referral lookup failed:', err);
+                }
+              }
+              
               createStore(
                 (form.elements.namedItem('storeName') as HTMLInputElement).value,
                 (form.elements.namedItem('storeUrl') as HTMLInputElement).value,
@@ -698,6 +757,20 @@ export default function StoreDashboard() {
                   <label className="text-zinc-400 text-sm block mb-2">Email</label>
                   <input name="email" type="email" required className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white" placeholder="you@example.com" />
                 </div>
+                
+                {/* Referral code input - only show if not already referred */}
+                {!referringStore && (
+                  <div>
+                    <label className="text-zinc-400 text-sm block mb-2">Referral Code <span className="text-zinc-600">(optional)</span></label>
+                    <input 
+                      name="referralCode" 
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white" 
+                      placeholder="E.g. E73E22E4"
+                      defaultValue={referralCode || ''}
+                    />
+                    <p className="text-zinc-600 text-xs mt-1">Get 50% off your first month's platform fees</p>
+                  </div>
+                )}
               </div>
               <button type="submit" disabled={loading} className="w-full mt-6 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold py-3 rounded-lg transition disabled:opacity-50">
                 {loading ? 'Creating...' : 'Create Store'}
@@ -996,10 +1069,10 @@ export default function StoreDashboard() {
               
               <div className="flex items-center gap-2">
                 <code className="flex-1 bg-zinc-800 px-4 py-3 rounded-lg font-mono text-sm text-emerald-400 overflow-x-auto">
-                  {`https://yesallofus.com/affiliate/signup?store=${store.store_id}`}
+                  {`https://yesallofus.com/affiliate-dashboard?store=${store.store_id}`}
                 </code>
                 <button 
-                  onClick={() => copyToClipboard(`https://yesallofus.com/affiliate/signup?store=${store.store_id}`, 'affiliate_link')} 
+                  onClick={() => copyToClipboard(`https://yesallofus.com/affiliate-dashboard?store=${store.store_id}`, 'affiliate_link')} 
                   className="bg-zinc-800 hover:bg-zinc-700 px-4 py-3 rounded-lg text-sm transition whitespace-nowrap"
                 >
                   {copied === 'affiliate_link' ? '✓ Copied' : 'Copy'}
@@ -1085,6 +1158,18 @@ export default function StoreDashboard() {
                 </div>
                 <p className="text-zinc-500 text-xs mt-2">Share with other vendors to earn from their platform fees.</p>
                 <p className="text-zinc-600 text-xs mt-1">Earn 25% L1 · 5% L2 · 3% L3 · 2% L4 · 1% L5 of their fees, paid instantly in RLUSD.</p>
+              </div>
+              
+              {/* Referral Link */}
+              <div className="mt-4 pt-4 border-t border-zinc-700">
+                <label className="text-zinc-500 text-sm block mb-1">Your Vendor Referral Link</label>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 bg-zinc-800 px-4 py-2 rounded-lg font-mono text-sm text-blue-400 overflow-x-auto">{`https://yesallofus.com/dashboard?ref=${store.store_referral_code}`}</code>
+                  <button onClick={() => copyToClipboard(`https://yesallofus.com/dashboard?ref=${store.store_referral_code}`, 'referral_link')} className="bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg text-sm transition">
+                    {copied === 'referral_link' ? '✓' : 'Copy'}
+                  </button>
+                </div>
+                <p className="text-zinc-500 text-xs mt-2">Share this link - new vendors get 50% off their first month!</p>
               </div>
             </div>
 
