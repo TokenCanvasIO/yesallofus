@@ -51,9 +51,9 @@ export default function Footer() {
           <div>
             <h3 className="text-white font-semibold mb-4">Resources</h3>
             <ul className="space-y-3">
+              <li><a href="/wallet-guide" className="text-zinc-400 hover:text-white transition-colors text-sm">Safety | Wallet Guide</a></li>
               <li><a href="/trustline" className="text-zinc-400 hover:text-white transition-colors text-sm">RLUSD Trustline</a></li>
-              <li><a href="/guides/wordpress" className="text-zinc-400 hover:text-white transition-colors text-sm">WordPress Guide</a></li>
-              <li><a href="/guides/wordpress" className="text-zinc-400 hover:text-white transition-colors text-sm">WooCommerce Setup</a></li>
+              <li><a href="/guides/wordpress" className="text-zinc-400 hover:text-white transition-colors text-sm">WP/WooCommerce Guide</a></li>
               <li><a href="/docs" className="text-zinc-400 hover:text-white transition-colors text-sm">API Docs</a></li>
               <li><a href="/faq" className="text-zinc-400 hover:text-white transition-colors text-sm">FAQ</a></li>
             </ul>

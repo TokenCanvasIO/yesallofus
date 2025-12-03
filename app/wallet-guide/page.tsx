@@ -3,17 +3,18 @@ export default function WalletGuide() {
     <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
       <main className="max-w-3xl mx-auto px-6 py-16">
         
-        <a href="/" className="text-zinc-500 text-sm hover:text-white mb-8 inline-block">← Back</a>
+        <a href="/" className="text-zinc-500 text-sm hover:text-white mb-8 inline-block">← Home</a>
         
-        <h1 className="text-3xl font-bold mb-4">Wallet Connection Guide</h1>
+        <h1 className="text-3xl font-bold mb-4">Safety: Wallet Connection Guide</h1>
         <p className="text-zinc-400 mb-12">Two options. Both secure. Different trade-offs.</p>
 
         {/* Xaman */}
         <section className="mb-16">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-3">
-            <span className="bg-zinc-800 rounded-lg px-3 py-1 text-sm">Xaman</span>
-            <span className="text-zinc-500 text-sm font-normal">Mobile app</span>
-          </h2>
+  <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded" />
+  <span>Xaman</span>
+  <span className="text-zinc-500 text-sm font-normal">Mobile app</span>
+</h2>
           
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 mb-6">
             <h3 className="font-semibold mb-3">How it works</h3>
@@ -58,9 +59,10 @@ export default function WalletGuide() {
         {/* Crossmark */}
         <section className="mb-16">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-3">
-            <span className="bg-zinc-800 rounded-lg px-3 py-1 text-sm">Crossmark</span>
-            <span className="text-zinc-500 text-sm font-normal">Browser extension</span>
-          </h2>
+  <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
+  <span>Crossmark</span>
+  <span className="text-zinc-500 text-sm font-normal">Browser extension</span>
+</h2>
           
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 mb-6">
             <h3 className="font-semibold mb-3">How it works</h3>
@@ -104,7 +106,10 @@ export default function WalletGuide() {
 
         {/* Security */}
         <section className="mb-16">
-          <h2 className="text-xl font-bold mb-6">Wallet security</h2>
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
+  <img src="/XRP-logo.webp" alt="XRPL" className="w-8 h-8" />
+  Wallet security
+</h2>
           
           <div className="space-y-6">
             <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
@@ -143,23 +148,43 @@ export default function WalletGuide() {
 
         {/* Risks */}
         <section className="mb-16">
-          <h2 className="text-xl font-bold mb-6">Honest risks</h2>
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
+  <span className="text-2xl">⚠️</span>
+  Honest risks
+</h2>
           
           <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-6">
-            <h3 className="text-yellow-400 font-semibold mb-3">With Crossmark auto-signing</h3>
-            <ul className="text-zinc-400 text-sm space-y-3">
-              <li>
-                <strong className="text-zinc-300">If YesAllofUs were compromised:</strong> An attacker 
-                could trigger payments up to your daily limit. Mitigation: set conservative limits, 
-                monitor your wallet, revoke immediately if suspicious.
-              </li>
-              <li>
-                <strong className="text-zinc-300">If you set limits too high:</strong> A bug or 
-                attack could drain more than intended. Mitigation: start with low limits, 
-                increase as you build trust.
-              </li>
-            </ul>
-          </div>
+  <h3 className="text-yellow-400 font-semibold mb-3">With Crossmark auto-signing</h3>
+  <ul className="text-zinc-400 text-sm space-y-3">
+    <li>
+      <strong className="text-zinc-300">If YesAllofUs were compromised:</strong> An attacker 
+      could trigger payments up to your daily limit. Mitigation: set conservative limits, 
+      monitor your wallet, revoke immediately if suspicious.
+    </li>
+    <li>
+      <strong className="text-zinc-300">If you set limits too high:</strong> A bug or 
+      attack could drain more than intended. Mitigation: start with low limits, 
+      increase as you build trust.
+    </li>
+  </ul>
+  
+  <div className="mt-6 pt-6 border-t border-yellow-500/20">
+    <h4 className="text-zinc-300 font-medium mb-3">What an attacker would need to breach:</h4>
+    <ol className="text-zinc-400 text-sm space-y-2">
+      <li><span className="text-yellow-400">1.</span> Bypass Cloudflare DDoS protection</li>
+      <li><span className="text-yellow-400">2.</span> Penetrate UFW firewall (only SSH/HTTP/HTTPS open)</li>
+      <li><span className="text-yellow-400">3.</span> Crack SSH with 2FA + key-only auth on non-standard port</li>
+      <li><span className="text-yellow-400">4.</span> Evade Fail2Ban auto-banning</li>
+      <li><span className="text-yellow-400">5.</span> Bypass API rate limiting (60 req/min per IP)</li>
+      <li><span className="text-yellow-400">6.</span> Forge valid API authentication</li>
+      <li><span className="text-yellow-400">7.</span> Pass input validation and sanitization</li>
+      <li><span className="text-yellow-400">8.</span> <em>Then</em> they'd still be limited by your daily cap</li>
+    </ol>
+    <p className="text-zinc-500 text-xs mt-4">
+      Each layer must be breached in sequence. Your daily limit is the final failsafe.
+    </p>
+  </div>
+</div>
 
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 mt-4">
             <h3 className="font-semibold mb-3">With Xaman manual approval</h3>
@@ -172,7 +197,10 @@ export default function WalletGuide() {
 
         {/* Server Security */}
         <section className="mb-16">
-          <h2 className="text-xl font-bold mb-6">Server security</h2>
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
+  <span className="text-2xl">🛡️</span>
+  Server security
+</h2>
           
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 mb-6">
             <h3 className="font-semibold mb-4">What we do</h3>
@@ -222,7 +250,10 @@ export default function WalletGuide() {
 
         {/* Recommendation */}
         <section className="mb-16">
-          <h2 className="text-xl font-bold mb-6">My recommendation</h2>
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
+  <img src="/mark.jpg" alt="Mark" className="w-8 h-8 rounded-full object-cover" />
+  My recommendation
+</h2>
           <div className="bg-sky-500/10 border border-sky-500/20 rounded-xl p-6">
             <p className="text-zinc-300 text-sm mb-4">
               <strong>Start with Xaman</strong> if you're new to this. Get comfortable 

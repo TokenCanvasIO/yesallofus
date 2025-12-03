@@ -191,7 +191,7 @@ export default function Home() {
     </div>
     
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center md:text-left">
-      <div className="text-2xl mb-3">🌐</div>
+      <img src="/XRP-logo.webp" alt="XRPL" className="w-8 h-8 mb-3" />
       <h3 className="font-bold mb-2">XRPL + RLUSD native</h3>
       <p className="text-zinc-400 text-sm">
         Built on the XRP Ledger. Paid in RLUSD stablecoin. $1 = $1. Near-zero fees. Settlement in seconds, not days.
