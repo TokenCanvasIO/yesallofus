@@ -174,7 +174,7 @@ export default function StoreDashboard() {
     setLoading(false);
   };
 
-  const createStore = async (storeName: string, storeUrl: string, email: string) => {
+  const createStore = async (storeName: string, storeUrl: string, email: string, referredBy: string | null = null) => {
     setLoading(true);
     setError(null);
     try {
@@ -188,7 +188,7 @@ export default function StoreDashboard() {
           wallet_address: walletAddress,
           wallet_type: walletType,
           xaman_user_token: xamanUserToken,
-          referred_by_store: referringStore?.store_id || null
+          referred_by_store: referredBy
         })
       });
       const data = await res.json();
@@ -724,13 +724,17 @@ export default function StoreDashboard() {
               e.preventDefault();
               const form = e.target as HTMLFormElement;
               
+              // Determine the referring store - either from state or manual input
+              let finalReferrer = referringStore;
+              
               // If user entered a referral code manually, look it up first
               const manualRef = (form.elements.namedItem('referralCode') as HTMLInputElement)?.value?.trim();
-              if (manualRef && !referringStore) {
+              if (manualRef && !finalReferrer) {
                 try {
                   const res = await fetch(`${API_URL}/store/lookup-referral/${manualRef}`);
                   const data = await res.json();
                   if (data.success && data.store) {
+                    finalReferrer = data.store;
                     setReferringStore(data.store);
                   }
                 } catch (err) {
@@ -741,7 +745,8 @@ export default function StoreDashboard() {
               createStore(
                 (form.elements.namedItem('storeName') as HTMLInputElement).value,
                 (form.elements.namedItem('storeUrl') as HTMLInputElement).value,
-                (form.elements.namedItem('email') as HTMLInputElement).value
+                (form.elements.namedItem('email') as HTMLInputElement).value,
+                finalReferrer?.store_id || null
               );
             }}>
               <div className="space-y-4">

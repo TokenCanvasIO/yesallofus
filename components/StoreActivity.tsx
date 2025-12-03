@@ -23,6 +23,7 @@ interface Payment {
     amount: number;
     level: number;
     type?: string;
+    affiliate_id?: string;
   }>;
   tx_hashes: Array<{
     wallet: string;
@@ -72,6 +73,34 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
     setLoading(false);
   };
 
+  const getActualEarnings = (affiliateId: string): number => {
+    let total = 0;
+    for (const payment of payments) {
+      for (const p of payment.payments) {
+        if (p.affiliate_id === affiliateId) {
+          total += p.amount;
+        }
+      }
+    }
+    return total;
+  };
+
+  const totalPaidOut = payments.reduce((sum, payment) => {
+    const affiliatePayments = payment.payments
+      .filter(p => p.type !== 'platform_fee')
+      .reduce((s, p) => s + p.amount, 0);
+    return sum + affiliatePayments;
+  }, 0);
+
+  const totalPlatformFees = payments.reduce((sum, payment) => {
+    const platformFee = payment.payments
+      .filter(p => p.type === 'platform_fee')
+      .reduce((s, p) => s + p.amount, 0);
+    return sum + platformFee;
+  }, 0);
+
+  const totalOrderValue = payments.reduce((sum, payment) => sum + payment.order_total, 0);
+
   const sortedAffiliates = [...affiliates].sort((a, b) => {
     if (sortNewest) {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -79,7 +108,12 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
     return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
   });
 
-  const rankedAffiliates = [...affiliates].sort((a, b) => b.total_earned - a.total_earned);
+  const affiliatesWithActualEarnings = affiliates.map(aff => ({
+    ...aff,
+    actualEarned: getActualEarnings(aff.affiliate_id)
+  }));
+  
+  const rankedAffiliates = [...affiliatesWithActualEarnings].sort((a, b) => b.actualEarned - a.actualEarned);
 
   const sortedPayments = [...payments].sort((a, b) => {
     if (sortNewest) {
@@ -105,8 +139,8 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
     return `${wallet.slice(0, 6)}...${wallet.slice(-4)}`;
   };
 
-  const getRank = (wallet: string) => {
-    const idx = rankedAffiliates.findIndex(a => a.wallet === wallet);
+  const getRank = (affiliateId: string) => {
+    const idx = rankedAffiliates.findIndex(a => a.affiliate_id === affiliateId);
     return idx >= 0 ? idx + 1 : '-';
   };
 
@@ -127,7 +161,27 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
 
   return (
     <div className="mt-12">
-      {/* Tabs */}
+      {payments.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-zinc-900/50 rounded-xl p-4">
+            <p className="text-zinc-500 text-xs uppercase tracking-wider mb-1">Total Orders</p>
+            <p className="text-2xl font-bold text-white">{payments.length}</p>
+          </div>
+          <div className="bg-zinc-900/50 rounded-xl p-4">
+            <p className="text-zinc-500 text-xs uppercase tracking-wider mb-1">Order Value</p>
+            <p className="text-2xl font-bold text-white">${totalOrderValue.toFixed(2)}</p>
+          </div>
+          <div className="bg-zinc-900/50 rounded-xl p-4">
+            <p className="text-zinc-500 text-xs uppercase tracking-wider mb-1">Paid to Affiliates</p>
+            <p className="text-2xl font-bold text-emerald-400">${totalPaidOut.toFixed(2)}</p>
+          </div>
+          <div className="bg-zinc-900/50 rounded-xl p-4">
+            <p className="text-zinc-500 text-xs uppercase tracking-wider mb-1">Platform Fees</p>
+            <p className="text-2xl font-bold text-zinc-400">${totalPlatformFees.toFixed(2)}</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <div className="flex gap-1 bg-zinc-900 p-1 rounded-lg">
           <button
@@ -152,7 +206,6 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
           </button>
         </div>
 
-        {/* Sort Toggle */}
         <button
           onClick={() => setSortNewest(!sortNewest)}
           className="text-zinc-500 hover:text-white text-sm flex items-center gap-2 transition"
@@ -161,7 +214,6 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
         </button>
       </div>
 
-      {/* Affiliates Tab */}
       {tab === 'affiliates' && (
         <>
           {affiliates.length === 0 ? (
@@ -178,14 +230,14 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
                       <th className="text-left px-4 py-3 font-medium">#</th>
                       <th className="text-left px-4 py-3 font-medium">Wallet</th>
                       <th className="text-left px-4 py-3 font-medium">Code</th>
-                      <th className="text-center px-4 py-3 font-medium">Level</th>
                       <th className="text-right px-4 py-3 font-medium">Earned</th>
-                      <th className="text-right px-4 py-3 font-medium">Joined</th>
+                      <th className="text-center px-4 py-3 font-medium">Active</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedAffiliates.map((aff) => {
-                      const rank = getRank(aff.wallet) as number;
+                      const rank = getRank(aff.affiliate_id) as number;
+                      const actualEarned = getActualEarnings(aff.affiliate_id);
                       return (
                         <tr key={aff.affiliate_id} className="border-t border-zinc-800/50 hover:bg-zinc-800/30 transition">
                           <td className="px-4 py-3 text-sm">
@@ -205,17 +257,14 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
                           <td className="px-4 py-3">
                             <span className="font-mono text-sm text-zinc-400">{aff.referral_code}</span>
                           </td>
-                          <td className="px-4 py-3 text-center">
-                            <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-1 rounded">L{aff.level}</span>
-                          </td>
                           <td className="px-4 py-3 text-right">
-                            <span className={`text-sm font-medium ${aff.total_earned > 0 ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                              ${aff.total_earned.toFixed(2)}
+                            <span className={`text-sm font-medium ${actualEarned > 0 ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                              ${actualEarned.toFixed(2)}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            <span className="text-sm text-zinc-500">{formatDate(aff.created_at)}</span>
-                          </td>
+                          <td className="px-4 py-3 text-center">
+  <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 mx-auto"></span>
+</td>
                         </tr>
                       );
                     })}
@@ -225,7 +274,6 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
             </div>
           )}
 
-          {/* Pagination */}
           {totalAffiliatePages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <button
@@ -250,7 +298,6 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
         </>
       )}
 
-      {/* Payments Tab */}
       {tab === 'payments' && (
         <>
           {payments.length === 0 ? (
@@ -283,7 +330,7 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
                       return (
                         <tr key={pay.payout_id} className="border-t border-zinc-800/50 hover:bg-zinc-800/30 transition">
                           <td className="px-4 py-3">
-                            <span className="font-mono text-sm text-zinc-300">{pay.order_id}</span>
+                            <span className="font-mono text-sm text-zinc-300">{pay.order_id.slice(0, 8)}...</span>
                           </td>
                           <td className="px-4 py-3 text-right">
                             <span className="text-sm text-zinc-400">${pay.order_total.toFixed(2)}</span>
@@ -311,7 +358,7 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
                                 rel="noopener noreferrer"
                                 className="text-sm text-zinc-400 hover:text-emerald-400 transition font-mono"
                               >
-                                {txCount > 1 ? `${txCount} txs` : firstTx.slice(0, 8)}...
+                                {txCount > 1 ? `${txCount} txs` : `${firstTx.slice(0, 8)}...`}
                               </a>
                             ) : (
                               <span className="text-zinc-600 text-sm">-</span>
@@ -326,7 +373,6 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
             </div>
           )}
 
-          {/* Pagination */}
           {totalPaymentPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <button

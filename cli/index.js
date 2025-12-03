@@ -398,14 +398,29 @@ async function main() {
 
   stopSpinner(spin);
 
-  if (result.error) {
-    console.log(`\n${c.red}  ✗ Error: ${result.error}${c.reset}\n`);
-    rl.close();
-    return;
-  }
+if (result.error) {
+  console.log(`\n${c.red}  ✗ Error: ${result.error}${c.reset}\n`);
+  rl.close();
+  return;
+}
 
+// ADD THIS BLOCK
+if (result.reconnected) {
   console.log('');
-  success('Store registered successfully!');
+  console.log(`${c.yellow}  ⚠ Store already registered for ${storeUrl}${c.reset}`);
+  console.log('');
+  console.log(`${c.bold}  Log in to your dashboard:${c.reset}`);
+  console.log(`${c.cyan}  https://yesallofus.com/dashboard?claim=${result.claim_token}${c.reset}`);
+  console.log('');
+  console.log(`${c.dim}  Need a new API secret? Regenerate it from the dashboard.${c.reset}`);
+  console.log('');
+  rl.close();
+  return;
+}
+
+console.log('');
+success('Store registered successfully!');
+// ... rest of the success flow
 
   // Credentials
   section('🔐', 'Your Credentials');
