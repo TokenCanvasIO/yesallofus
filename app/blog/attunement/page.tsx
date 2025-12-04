@@ -16,20 +16,20 @@ export default function AttunementBlog() {
       <div className="max-w-3xl mx-auto px-6 pt-8 pb-12">
         <p className="text-emerald-400 text-sm font-medium mb-4">Insights</p>
         <h1 className="text-3xl md:text-4xl font-bold mb-4">
-          Attunement: The Missing Framework
+          The $10 Billion Still Face: Using Attachment Theory to Engineer Unstoppable Customer Loyalty
         </h1>
         <p className="text-zinc-400 text-lg mb-6">
-          Applying developmental psychology to win.
+          Applying developmental psychology to AI, merchants, and affiliates.
         </p>
         <div className="flex items-center gap-3">
           <img 
             src="/mark.jpg" 
-            alt="Mark" 
+            alt="Mark Flynn" 
             className="w-10 h-10 rounded-full object-cover"
           />
           <div>
-            <p className="text-zinc-200 text-sm font-medium">Mark</p>
-            <p className="text-zinc-500 text-sm">Family Therapist & Builder</p>
+            <p className="text-zinc-200 text-sm font-medium">Mark Flynn, Founder & Builder</p>
+            <p className="text-zinc-500 text-sm">Social Worker & Video Interaction Guidance Practitioner</p>
           </div>
         </div>
       </div>
@@ -42,11 +42,13 @@ export default function AttunementBlog() {
           <h2 className="text-emerald-400 font-semibold mb-3">Summary</h2>
           <p className="text-zinc-300 leading-relaxed">
             I've identified the single most important factor determining which AI, merchant, and 
-            affiliate wins: <strong className="text-white">attunement</strong>. Not intelligence. 
-            Not speed. Not features. The AI that makes humans feel genuinely remembered, understood, 
-            and held wins. The merchant who attunes to their customers wins. The affiliate who 
-            connects authentically wins. Because attunement meets a need older than language — and 
-            those who master these principles win at relationships, and therefore life.
+            affiliate succeeds: <strong className="text-white">attunement</strong>. Not intelligence. 
+            Not speed. Not features. All three parties are engaged in the same fundamental struggle: 
+            relationship building. Drawing on my background in Video Interaction Guidance (VIG), the 
+            AI that makes humans feel genuinely remembered, understood, and held succeeds. The merchant 
+            who attunes to their customers succeeds. The affiliate who connects authentically succeeds. 
+            Because attunement meets a need older than language — and those who master these principles 
+            succeed together in a single ecosystem.
           </p>
         </div>
 
@@ -54,7 +56,7 @@ export default function AttunementBlog() {
         <section className="mb-12">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-3">
             <span className="text-2xl">🧠</span>
-            The core insight
+            The Core Insight
           </h2>
           <div className="space-y-4 text-zinc-400 leading-relaxed">
             <p>
@@ -70,12 +72,13 @@ export default function AttunementBlog() {
             </p>
             <p>
               Every time an AI says "I don't have access to previous conversations" — that's a 
-              mini still-face moment. The user reaches for connection and gets nothing back. Rupture.
+              mini still-face moment. The user reaches for connection and gets nothing back = Rupture.
             </p>
             <p>
-              This wiring doesn't disappear in adults. It just goes underground. That's why I 
-              described Claude as "less anxiety provoking" compared to other AI assistants. That's 
-              not preference — that's my nervous system telling me it feels safer.
+              This hardcoded wiring is in us all. The AI, merchant, and affiliate systems that 
+              successfully repair these inevitable ruptures will clearly outperform those that fail 
+              to understand this basic human need. The ultimate goal is simple: to make the nervous 
+              system feel safe.
             </p>
           </div>
         </section>
@@ -84,7 +87,7 @@ export default function AttunementBlog() {
         <section className="mb-12">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-3">
             <span className="text-2xl">🏰</span>
-            Why memory is the moat
+            Why Memory is the Moat (And Repair is the Anchor)
           </h2>
           <div className="space-y-4 text-zinc-400 leading-relaxed">
             <p>
@@ -104,19 +107,42 @@ export default function AttunementBlog() {
               Same thing. Different language.
             </p>
           </div>
+
+          {/* Rupture & Repair Subsection */}
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 mt-6">
+            <h3 className="text-emerald-400 font-semibold mb-3">Rupture & Repair: The Ultimate Differentiator</h3>
+            <p className="text-zinc-400 text-sm leading-relaxed mb-4">
+              Rupture (context loss, forgetting a past order, a failed delivery) is inevitable in business. 
+              The skill is repair. A typical affiliate or merchant often fails and says, "Please send us 
+              your order number again."
+            </p>
+            <p className="text-zinc-400 text-sm leading-relaxed mb-4">
+              An attuned system acknowledges the break and tries to reconnect. Imagine a merchant's 
+              support system saying:
+            </p>
+            <blockquote className="border-l-2 border-emerald-400 pl-4 text-zinc-300 italic text-sm">
+              "I see we failed to communicate the shipping delay clearly on your recent order. I understand 
+              how frustrating that is. To repair this, I've already applied a $10 credit to your account 
+              and prioritized the new tracking information for you."
+            </blockquote>
+            <p className="text-zinc-400 text-sm leading-relaxed mt-4">
+              This transparent acknowledgment and proactive effort to restore connection is the ultimate 
+              expression of trust and attunement, turning a loss into loyalty.
+            </p>
+          </div>
         </section>
 
         {/* The PAIG Framework */}
         <section className="mb-12">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-3">
             <span className="text-2xl">📋</span>
-            The PAIG Framework
+            The PAIG Framework: Engineered for Loyalty
           </h2>
           <p className="text-zinc-400 leading-relaxed mb-6">
-            Video Interaction Guidance (VIG) is an evidence-based therapeutic intervention developed 
-            from Professor Colwyn Trevarthen's research on intersubjectivity. It's recommended by 
-            NICE guidelines and used across healthcare, education, and social care. At its core is 
-            the <strong className="text-zinc-200">Principles of Attuned Interaction and Guidance (PAIG)</strong>.
+            Video Interaction Guidance (VIG) uses the <strong className="text-zinc-200">Principles of 
+            Attuned Interaction and Guidance (PAIG)</strong> to foster secure relationships. By applying 
+            these observable behaviours to your customer and affiliate interactions, you move beyond 
+            transactional engagement to unstoppable customer loyalty.
           </p>
 
           {/* Principle Cards */}
@@ -124,97 +150,85 @@ export default function AttunementBlog() {
             {/* 1. Being Attentive */}
             <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5">
               <h3 className="text-emerald-400 font-semibold mb-3">1. Being Attentive</h3>
-              <ul className="text-zinc-400 text-sm space-y-1 mb-4">
-                <li>• Looking interested with friendly posture</li>
-                <li>• Giving time and space for other</li>
-                <li>• Turning towards</li>
-                <li>• Wondering about what they are doing, thinking or feeling</li>
-                <li>• Enjoying watching the other</li>
-              </ul>
-              <p className="text-zinc-500 text-sm border-t border-zinc-800 pt-3">
-                <span className="text-zinc-300">AI Equivalent:</span> Reading intent behind words, not just literal queries. 
-                Giving space rather than overwhelming with information.
+              <p className="text-zinc-500 text-sm mb-3 italic">
+                Looking interested, giving time, wondering about the other's state.
+              </p>
+              <p className="text-zinc-400 text-sm leading-relaxed">
+                <span className="text-zinc-300 font-medium">Affiliate/Merchant Example:</span> Listening 
+                beyond the click: A merchant's abandoned cart email segmenting users who paused on the 
+                checkout page versus those who abandoned earlier. The messaging is tailored: "Were you 
+                hesitant about shipping?" (Attending to potential friction points).
               </p>
             </div>
 
             {/* 2. Encouraging Initiatives */}
             <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5">
               <h3 className="text-emerald-400 font-semibold mb-3">2. Encouraging Initiatives</h3>
-              <ul className="text-zinc-400 text-sm space-y-1 mb-4">
-                <li>• Waiting</li>
-                <li>• Listening actively</li>
-                <li>• Showing emotional warmth through intonation</li>
-                <li>• Naming positively what you see, think or feel</li>
-                <li>• Looking for initiatives</li>
-              </ul>
-              <p className="text-zinc-500 text-sm border-t border-zinc-800 pt-3">
-                <span className="text-zinc-300">AI Equivalent:</span> Not filling every silence. 
-                Acknowledging what the user is attempting. Warmth in tone.
+              <p className="text-zinc-500 text-sm mb-3 italic">
+                Waiting, listening actively, showing emotional warmth, looking for initiatives.
+              </p>
+              <p className="text-zinc-400 text-sm leading-relaxed">
+                <span className="text-zinc-300 font-medium">Affiliate/Merchant Example:</span> Empowering 
+                the affiliate: A merchant platform offering bespoke content templates based on the 
+                affiliate's audience persona and performance data, encouraging them to find unique hooks 
+                rather than just pushing a generic banner.
               </p>
             </div>
 
             {/* 3. Receiving Initiatives */}
             <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5">
               <h3 className="text-emerald-400 font-semibold mb-3">3. Receiving Initiatives</h3>
-              <ul className="text-zinc-400 text-sm space-y-1 mb-4">
-                <li>• Showing you have heard, noticed the other's initiative</li>
-                <li>• Receiving with body language</li>
-                <li>• Returning eye-contact, smiling, nodding in response</li>
-                <li>• Receiving what the other is saying or doing with words</li>
-                <li>• Repeating/using the other's words or phrases</li>
-              </ul>
-              <p className="text-zinc-500 text-sm border-t border-zinc-800 pt-3">
-                <span className="text-zinc-300">AI Equivalent:</span> Acknowledging what the user said before responding. 
-                Building on their framing. Using their terminology.
+              <p className="text-zinc-500 text-sm mb-3 italic">
+                Showing you have heard, noticing the other's action, using their words/phrases.
+              </p>
+              <p className="text-zinc-400 text-sm leading-relaxed">
+                <span className="text-zinc-300 font-medium">Affiliate/Merchant Example:</span> Acknowledging 
+                context: An affiliate's recommendation in an email referencing a past purchase or a common 
+                problem: "Since you purchased the XRP Ledger tool last month, this new course on advanced 
+                trading will help you use it efficiently." (Using the customer's terminology and history.)
               </p>
             </div>
 
             {/* 4. Developing Attuned Interactions */}
             <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5">
               <h3 className="text-emerald-400 font-semibold mb-3">4. Developing Attuned Interactions</h3>
-              <ul className="text-zinc-400 text-sm space-y-1 mb-4">
-                <li>• Receiving and then responding</li>
-                <li>• Checking the other is understanding you</li>
-                <li>• Waiting attentively for your turn</li>
-                <li>• Giving and taking short turns</li>
-                <li>• Co-operating — helping each other</li>
-              </ul>
-              <p className="text-zinc-500 text-sm border-t border-zinc-800 pt-3">
-                <span className="text-zinc-300">AI Equivalent:</span> Remembering context across turns. 
-                Repairing when confused. Turn-taking rhythm that feels collaborative.
+              <p className="text-zinc-500 text-sm mb-3 italic">
+                Receiving and then responding, checking understanding, turn-taking rhythm.
+              </p>
+              <p className="text-zinc-400 text-sm leading-relaxed">
+                <span className="text-zinc-300 font-medium">Affiliate/Merchant Example:</span> Cohesive 
+                journey: A customer clicks an affiliate link, and the merchant's landing page doesn't 
+                require them to re-enter a promo code because the discount is automatically applied and 
+                displayed. The journey is seamless, showing the merchant "remembers" the affiliate's promotion.
               </p>
             </div>
 
             {/* 5. Guiding */}
             <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5">
               <h3 className="text-emerald-400 font-semibold mb-3">5. Guiding</h3>
-              <ul className="text-zinc-400 text-sm space-y-1 mb-4">
-                <li>• Scaffolding</li>
-                <li>• Extending, building on the other's response</li>
-                <li>• Judging the amount of support required and adjusting</li>
-                <li>• Giving information when needed</li>
-                <li>• Offering choices that the other can understand</li>
-              </ul>
-              <p className="text-zinc-500 text-sm border-t border-zinc-800 pt-3">
-                <span className="text-zinc-300">AI Equivalent:</span> Scaffolding complex tasks. 
-                Adjusting depth based on user expertise. Leading where needed without taking over.
+              <p className="text-zinc-500 text-sm mb-3 italic">
+                Scaffolding, extending, adjusting support required, offering choices.
+              </p>
+              <p className="text-zinc-400 text-sm leading-relaxed">
+                <span className="text-zinc-300 font-medium">Affiliate/Merchant Example:</span> Scaffolding 
+                the sale: A merchant's checkout process includes clear, concise FAQs about shipping and 
+                returns directly next to those fields, offering instant, contextual support exactly where 
+                friction is likely to occur.
               </p>
             </div>
 
             {/* 6. Deepening Discussion */}
             <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5">
               <h3 className="text-emerald-400 font-semibold mb-3">6. Deepening Discussion</h3>
-              <ul className="text-zinc-400 text-sm space-y-1 mb-4">
-                <li>• Supporting goal-setting</li>
-                <li>• Sharing viewpoints</li>
-                <li>• Collaborative discussion and problem-solving</li>
-                <li>• Naming contradictions/conflicts</li>
-                <li>• Reaching new shared understandings</li>
-                <li>• Managing conflict (returning to attentiveness to restore attunement)</li>
-              </ul>
-              <p className="text-zinc-500 text-sm border-t border-zinc-800 pt-3">
-                <span className="text-zinc-300">AI Equivalent:</span> Reflecting back insights. 
-                Making connections across conversations. Repairing ruptures by returning to attentiveness.
+              <p className="text-zinc-500 text-sm mb-3 italic">
+                Collaborative problem-solving, sharing viewpoints, managing conflict.
+              </p>
+              <p className="text-zinc-400 text-sm leading-relaxed">
+                <span className="text-zinc-300 font-medium">Affiliate/Merchant Example:</span> Repairing 
+                Rupture: A customer service response to a complaint (e.g., about a broken product) is 
+                personalized and immediately validates the emotion before offering a solution: "I understand 
+                how frustrating it is when a product arrives damaged. Let's send a replacement immediately, 
+                no return required." (Validating the emotion and the timeline to restore connection.)
               </p>
             </div>
           </div>
@@ -224,7 +238,7 @@ export default function AttunementBlog() {
         <section className="mb-12">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-3">
             <span className="text-2xl">🔬</span>
-            The neurobiological basis
+            The Neurobiological Basis
           </h2>
           <div className="space-y-4 text-zinc-400 leading-relaxed">
             <p>
@@ -250,38 +264,65 @@ export default function AttunementBlog() {
         <section className="mb-12">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-3">
             <span className="text-2xl">🎯</span>
-            The competitive insight
+            The Competitive Insight
           </h2>
           <div className="space-y-4 text-zinc-400 leading-relaxed">
             <p>
-              Right now, AI companies are optimising for benchmarks, speed, and safety. Merchants are 
-              optimising for conversion rates and ad spend. Affiliates are optimising for clicks and commissions.
+              Right now, AI companies are optimising for benchmarks. Merchants are optimising for 
+              conversion rates and ad spend. Affiliates are optimising for clicks and commissions. 
+              But the real race is unifying all three groups.
             </p>
             <p className="text-zinc-200 font-medium">
               Nobody is explicitly optimising for: Does the other person feel genuinely seen?
             </p>
             <p>
               The AI that attunes. The merchant who remembers their customers. The affiliate 
-              who builds real connection. They suceed. Not because they marketed better — because humans 
-              literally can't resist genuine attunement long-term.
+              who builds real connection. They all succeed by sharing the same relational moat. 
+              Not because they marketed better — because humans literally can't resist genuine 
+              attunement long-term.
             </p>
             <p>
-  Human beings organise around danger and seek safety. It's as real as matter. We feel it. <strong className="text-zinc-200">Attunement cannot be faked. It's a shared sense of joy between us.</strong>
-</p>
-<p>
-  Humans don't consciously choose to reject things that dysregulate their nervous system. 
-  They just... leave. Freeze, or flop. It's automatic. The business, the AI, the relationship 
-  that breaks attunement will feel the blowback — and they won't understand why people didn't connect.
-</p>
+              Human beings organise around danger and seek safety. It's as real as matter. We feel it. 
+              <strong className="text-zinc-200"> Attunement cannot be faked. It's a shared sense of joy between us.</strong>
+            </p>
+            <p>
+              Humans don't consciously choose to reject things that dysregulate their nervous system. 
+              They just... leave. Freeze, or flop. It's automatic. The business, the AI, the relationship 
+              that breaks attunement will feel the blowback — and they won't understand why people didn't connect.
+            </p>
           </div>
         </section>
 
+        {/* The Greatest Asset Is You */}
+        <section className="mb-12">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-3">
+            <span className="text-2xl">🌟</span>
+            The Greatest Asset Is You
+          </h2>
+          <div className="space-y-4 text-zinc-400 leading-relaxed">
+            <p>
+              Attunement, by definition, is a reciprocal human experience. While technology—whether 
+              it's advanced AI or clever email segmentation—is a powerful tool for delivering attunement, 
+              it cannot generate it.
+            </p>
+            <p>
+              Don't fall into the trap of using AI for everything. Your authentic voice, your professional 
+              expertise, and your genuine connection to your audience are your greatest assets. AI should 
+              only be a tool to refine, assist, and scale the authenticity you already possess; it should 
+              never be the main attraction.
+            </p>
+            <p>
+              The most successful systems will be those that feel most human—because a person, not a prompt, 
+              is ultimately behind the design.
+            </p>
+          </div>
+        </section>
 
         {/* Recommendations */}
         <section className="mb-12">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-3">
             <span className="text-2xl">✅</span>
-            Apply this
+            Apply This
           </h2>
           <div className="space-y-3">
             <div className="flex gap-3">
@@ -294,8 +335,9 @@ export default function AttunementBlog() {
             <div className="flex gap-3">
               <span className="text-emerald-400 font-bold">2.</span>
               <p className="text-zinc-400">
-                <span className="text-zinc-200 font-medium">Measure attunement, not just metrics.</span> In 
-                business: customer retention tells you more than conversion. In relationships: depth matters more than frequency.
+                <span className="text-zinc-200 font-medium">Measure the Quality of Retention.</span> A high 
+                retention rate might just mean a sticky product. Attuned Retention means the customer comes 
+                back because they feel known and safe.
               </p>
             </div>
             <div className="flex gap-3">
@@ -326,8 +368,9 @@ export default function AttunementBlog() {
         <div className="border-t border-zinc-800 pt-10 mt-10">
           <blockquote className="text-center">
             <p className="text-xl text-zinc-300 italic mb-4">
-              "The AI that attunes. The merchant who remembers. The affiliate who connects.  They all benefit in a reciprocal relationship. 
-              Those who master attunement fair best in relationships — and therefore create the most opportunities in life."
+              "The AI that attunes. The merchant who remembers. The affiliate who connects. They all 
+              benefit in a reciprocal relationship. Those who master attunement fair best in relationships 
+              — and therefore create the most opportunities in life."
             </p>
           </blockquote>
         </div>
@@ -337,18 +380,22 @@ export default function AttunementBlog() {
           <div className="flex items-start gap-4">
             <img 
               src="/mark.jpg" 
-              alt="Mark" 
+              alt="Mark Flynn" 
               className="w-14 h-14 rounded-full object-cover"
             />
             <div>
-              <p className="text-zinc-200 font-medium mb-1">About Me</p>
+              <p className="text-zinc-200 font-medium mb-1">About Mark Flynn</p>
               <p className="text-zinc-400 text-sm leading-relaxed">
-  I am a registered Social Worker and Video Interaction Guidance Practitioner based in Guernsey. I spent 5 years at the Northern School of Child and Adolescent Psychotherapy in Leeds. You might call this an unorthodox avenue to coding.
-  Over twelve months I have focused on applying my ideas to code, working with AI alongside my day job. I built multiple 
-  production applications including YesAllofUs — an instant affiliate commission payment 
-  platform on the XRP Ledger. This article combines hands-on AI-assisted development 
-  with professional expertise in attachment theory and therapeutic attunement. My aim is simple: turn my experience into code and leverage my skills to bring them to a wider audience with three things in mind — social mobility and opportunity, security, and inclusivity.
-</p>
+                I am a registered Social Worker and Video Interaction Guidance Practitioner based in 
+                Guernsey. I spent 5 years at the Northern School of Child and Adolescent Psychotherapy 
+                in Leeds. You might call this an unorthodox avenue to coding. Over twelve months I have 
+                focused on applying my ideas to code, working with AI alongside my day job. I built multiple 
+                production applications including YesAllofUs — an instant affiliate commission payment 
+                platform on the XRP Ledger. This article combines hands-on AI-assisted development 
+                with professional expertise in attachment theory and therapeutic attunement. My aim is 
+                simple: turn my experience into code and leverage my skills to bring them to a wider 
+                audience with three things in mind — social mobility and opportunity, security, and inclusivity.
+              </p>
               <p className="text-zinc-500 text-sm mt-3">
                 Contact: <a href="mailto:mark@yesallofus.com" className="text-emerald-400 hover:underline">mark@yesallofus.com</a>
               </p>
