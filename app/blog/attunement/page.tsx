@@ -261,8 +261,8 @@ export default function AttunementBlog() {
               Nobody is explicitly optimising for: Does the other person feel genuinely seen?
             </p>
             <p>
-              The AI that attunes wins. The merchant who remembers their customer wins. The affiliate 
-              who builds real connection wins. Not because they marketed better — because humans 
+              The AI that attunes. The merchant who remembers their customers. The affiliate 
+              who builds real connection. They suceed. Not because they marketed better — because humans 
               literally can't resist genuine attunement long-term.
             </p>
             <p>
@@ -326,8 +326,8 @@ export default function AttunementBlog() {
         <div className="border-t border-zinc-800 pt-10 mt-10">
           <blockquote className="text-center">
             <p className="text-xl text-zinc-300 italic mb-4">
-              "The AI that attunes wins. The merchant who remembers wins. The affiliate who connects wins. 
-              Those who master attunement win at relationships — and therefore life."
+              "The AI that attunes. The merchant who remembers. The affiliate who connects.  They all benefit in a reciprocal relationship. 
+              Those who master attunement fair best in relationships — and therefore create the most opportunities in life."
             </p>
           </blockquote>
         </div>
