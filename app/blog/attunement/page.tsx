@@ -78,7 +78,7 @@ export default function AttunementBlog() {
               This hardcoded wiring is in us all. The AI, merchant, and affiliate systems that 
               successfully repair these inevitable ruptures will clearly outperform those that fail 
               to understand this basic human need. The ultimate goal is simple: to make the nervous 
-              system feel safe.
+              system feel safe, and rewarded.
             </p>
           </div>
         </section>
@@ -392,7 +392,7 @@ export default function AttunementBlog() {
                 focused on applying my ideas to code, working with AI alongside my day job. I built multiple 
                 production applications including YesAllofUs — an instant affiliate commission payment 
                 platform on the XRP Ledger. This article combines hands-on AI-assisted development 
-                with professional expertise in attachment theory and therapeutic attunement. My aim is 
+                with professional expertise in attachment theory and therapeutic practice. My aim is 
                 simple: turn my experience into code and leverage my skills to bring them to a wider 
                 audience with three things in mind — social mobility and opportunity, security, and inclusivity.
               </p>

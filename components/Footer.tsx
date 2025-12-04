@@ -94,9 +94,10 @@ export default function Footer() {
       <div className="border-t border-zinc-800">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-zinc-500 text-sm">
-              © 2025 YesAllofUs. All rights reserved.
-            </p>
+            <p className="text-zinc-500 text-sm flex items-center gap-2">
+  © 2025 YesAllofUs. All rights reserved.
+  <img src="/favicon.svg" alt="YesAllofUs" className="w-5 h-5 rounded-md" />
+</p>
             <div className="flex items-center gap-6">
               <span className="text-zinc-600 text-sm">Built on</span>
               <a href="https://xrpl.org" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors">
