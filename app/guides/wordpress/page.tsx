@@ -29,7 +29,7 @@ export default function WordPressGuide() {
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
             <p className="text-zinc-400 text-sm mb-4">Download and install:</p>
             <a 
-              href="https://github.com/TokenCanvasIO/YesAllofUs-wordpress/releases/download/v1.0.0/YesAllofUs.zip" 
+              href="https://github.com/TokenCanvasIO/YesAllofUs-Wordpress/releases/download/v1.0.1/yesallofus.zip" 
               className="bg-sky-500 hover:bg-sky-400 text-black font-semibold px-4 py-2 rounded text-sm inline-block mb-4"
             >
               Download Plugin (.zip)
@@ -291,7 +291,7 @@ export default function WordPressGuide() {
         {/* CTA */}
         <section className="text-center py-8 border-t border-zinc-800">
           <a 
-            href="https://github.com/TokenCanvasIO/YesAllofUs-wordpress/releases/download/v1.0.0/YesAllofUs.zip" 
+            href="https://github.com/TokenCanvasIO/YesAllofUs-Wordpress/releases/latest/download/yesallofus.zip" 
             className="bg-sky-500 hover:bg-sky-400 text-black font-semibold px-6 py-3 rounded transition inline-block"
           >
             Download Plugin
