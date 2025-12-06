@@ -32,7 +32,7 @@ export async function getWeb3Auth() {
     privateKeyProvider: privateKeyProvider as any,
   });
 
-  await (web3auth as any).initModal();
+  await web3auth.init();
   return web3auth;
 }
 
