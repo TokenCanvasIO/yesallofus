@@ -57,7 +57,7 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
   const fetchExchanges = async () => {
     setLoadingExchanges(true);
     try {
-      const res = await fetch('https://tokencanvas.io/api/coingecko/coins/ripple/tickers');
+      const res = await fetch('/api/exchanges');
       const data = await res.json();
       
       const manualExchanges: Exchange[] = [
@@ -161,11 +161,11 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
 
   if (status === 'unfunded') {
     return (
-      <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-6">
-        <div className="flex items-start gap-4">
+  <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-6">
+    <div className="flex items-start gap-4">
           <div className="text-3xl">💰</div>
           <div className="flex-1">
-            <h3 className="text-lg font-bold text-orange-400 mb-2">Activate Your Wallet</h3>
+            <h3 className="text-lg font-bold text-white mb-2">Activate Your Wallet</h3>
             <p className="text-zinc-400 text-sm mb-4">
               Your wallet needs at least <strong className="text-white">1 XRP</strong> to be activated on the XRP Ledger.
               Send XRP from an exchange or another wallet.
