@@ -22,8 +22,8 @@ const TRUSTED_EXCHANGES = [
   'bitvavo'
 ];
 
-// Fiat currencies we care about
-const FIAT_TARGETS = ['USD', 'EUR', 'GBP', 'AUD', 'CAD'];
+// Fiat and stablecoin currencies we care about
+const FIAT_TARGETS = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'USDT', 'USDC'];
 
 interface Exchange {
   name: string;
@@ -171,16 +171,16 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
           <div className="flex-1">
             <h3 className="text-lg font-bold text-orange-400 mb-2">Activate Your Wallet</h3>
             <p className="text-zinc-400 text-sm mb-4">
-              Your wallet needs at least <strong className="text-white">10 XRP</strong> to be activated on the XRP Ledger.
-              Send XRP from an exchange (Coinbase, Binance, Kraken) or another wallet.
+              Your wallet needs at least <strong className="text-white">1 XRP</strong> to be activated on the XRP Ledger.
+              Send XRP from an exchange or another wallet.
             </p>
 
             {/* Wallet Address */}
             <div className="bg-zinc-900 rounded-lg p-4 mb-4">
               <p className="text-zinc-500 text-xs mb-2">Your wallet address:</p>
               <div className="flex items-center gap-2">
-                <code className="text-emerald-400 text-sm font-mono flex-1 break-all">
-                  {walletAddress}
+                <code className="text-emerald-400 text-sm font-mono flex-1">
+                  {walletAddress.substring(0, 8)}...{walletAddress.slice(-6)}
                 </code>
                 <button
                   onClick={copyAddress}
@@ -191,16 +191,13 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
               </div>
             </div>
 
-            {/* QR Code placeholder - you can add a real QR library */}
+            {/* QR Code */}
             <div className="bg-white rounded-lg p-4 w-fit mx-auto mb-4">
-              <div className="w-32 h-32 bg-zinc-200 flex items-center justify-center text-zinc-500 text-xs">
-                {/* Add QR code library like 'qrcode.react' */}
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${walletAddress}`}
-                  alt="Wallet QR Code"
-                  className="w-32 h-32"
-                />
-              </div>
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${walletAddress}`}
+                alt="Wallet QR Code"
+                className="w-32 h-32"
+              />
             </div>
 
             {/* Buy XRP Dropdown */}
@@ -210,9 +207,10 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
               <div className="relative">
                 <button
                   onClick={() => setShowExchanges(!showExchanges)}
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 px-4 rounded-lg font-medium transition flex items-center justify-between"
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 px-4 rounded-lg font-medium transition flex items-center justify-center gap-2"
                 >
-                  <span>🏦 Buy XRP Now</span>
+                  <img src="/XRP-logo.webp" alt="XRP" className="w-5 h-5" />
+                  <span>Buy XRP Now</span>
                   <svg 
                     className={`w-5 h-5 transition-transform ${showExchanges ? 'rotate-180' : ''}`} 
                     fill="none" 
@@ -232,7 +230,7 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
                       </div>
                     ) : exchanges.length > 0 ? (
                       exchanges.map((exchange, i) => (
-                        <a
+                        
                           key={`${exchange.name}-${exchange.target}-${i}`}
                           href={exchange.url}
                           target="_blank"
@@ -254,7 +252,7 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
                 )}
               </div>
               
-              <p className="text-zinc-600 text-xs mt-3">
+              <p className="text-zinc-600 text-xs mt-3 text-center">
                 Buy XRP on any exchange, then withdraw to your wallet address above.
               </p>
             </div>
