@@ -4,10 +4,9 @@ import { useState, useEffect } from 'react';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
 
-// Trusted exchanges - only show these
 const TRUSTED_EXCHANGES = [
   'binance',
-  'gdax', // Coinbase
+  'gdax',
   'kraken',
   'kucoin',
   'bybit_spot',
@@ -22,7 +21,6 @@ const TRUSTED_EXCHANGES = [
   'bitvavo'
 ];
 
-// Fiat and stablecoin currencies we care about
 const FIAT_TARGETS = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'USDT', 'USDC'];
 
 interface Exchange {
@@ -42,7 +40,6 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
   const [status, setStatus] = useState<'checking' | 'unfunded' | 'funded_no_trustline' | 'ready'>('checking');
   const [xrpBalance, setXrpBalance] = useState(0);
   const [rlusdBalance, setRlusdBalance] = useState(0);
-  const [hasTrustline, setHasTrustline] = useState(false);
   const [copied, setCopied] = useState(false);
   const [checking, setChecking] = useState(false);
   const [settingTrustline, setSettingTrustline] = useState(false);
@@ -63,6 +60,10 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
       const res = await fetch('https://tokencanvas.io/api/coingecko/coins/ripple/tickers');
       const data = await res.json();
       
+      const manualExchanges: Exchange[] = [
+        { name: 'Uphold', url: 'https://uphold.com/assets/crypto/buy-xrp', target: 'USD', price: 0 }
+      ];
+      
       if (data.tickers) {
         const filtered = data.tickers
           .filter((t: any) => 
@@ -76,14 +77,14 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
             target: t.target,
             price: t.last
           }))
-          // Remove duplicates (same exchange, same fiat)
           .filter((exchange: Exchange, index: number, self: Exchange[]) => 
             index === self.findIndex(e => e.name === exchange.name && e.target === exchange.target)
           )
-          // Sort by exchange name
           .sort((a: Exchange, b: Exchange) => a.name.localeCompare(b.name));
         
-        setExchanges(filtered);
+        setExchanges([...manualExchanges, ...filtered]);
+      } else {
+        setExchanges(manualExchanges);
       }
     } catch (err) {
       console.error('Failed to fetch exchanges:', err);
@@ -100,7 +101,6 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
       if (data.success) {
         setXrpBalance(data.xrp_balance || 0);
         setRlusdBalance(data.rlusd_balance || 0);
-        setHasTrustline(data.rlusd_trustline || false);
 
         if (!data.funded) {
           setStatus('unfunded');
@@ -128,7 +128,6 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
   const setTrustline = async () => {
     setSettingTrustline(true);
     try {
-      // For Web3Auth, we sign via the browser
       const { getWeb3Auth } = await import('@/lib/web3auth');
       const web3auth = await getWeb3Auth();
 
@@ -152,8 +151,6 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
       });
 
       console.log('Trustline set:', result);
-
-      // Re-check status
       await checkWalletStatus();
     } catch (err: any) {
       console.error('Failed to set trustline:', err);
@@ -162,7 +159,6 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
     setSettingTrustline(false);
   };
 
-  // UNFUNDED STATE
   if (status === 'unfunded') {
     return (
       <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-6">
@@ -175,7 +171,6 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
               Send XRP from an exchange or another wallet.
             </p>
 
-            {/* Wallet Address */}
             <div className="bg-zinc-900 rounded-lg p-4 mb-4">
               <p className="text-zinc-500 text-xs mb-2">Your wallet address:</p>
               <div className="flex items-center gap-2">
@@ -191,7 +186,6 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
               </div>
             </div>
 
-            {/* QR Code */}
             <div className="bg-white rounded-lg p-4 w-fit mx-auto mb-4">
               <img 
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${walletAddress}`}
@@ -200,7 +194,6 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
               />
             </div>
 
-            {/* Buy XRP Dropdown */}
             <div className="border-t border-zinc-800 pt-4 mt-4">
               <p className="text-zinc-500 text-xs mb-3">Buy XRP from an exchange:</p>
               
@@ -230,7 +223,7 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
                       </div>
                     ) : exchanges.length > 0 ? (
                       exchanges.map((exchange, i) => (
-                        
+                        <a
                           key={`${exchange.name}-${exchange.target}-${i}`}
                           href={exchange.url}
                           target="_blank"
@@ -238,15 +231,11 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
                           className="flex items-center justify-between px-4 py-3 hover:bg-zinc-700 transition border-b border-zinc-700 last:border-0"
                         >
                           <span className="text-white font-medium">{exchange.name}</span>
-                          <span className="text-zinc-400 text-sm">
-                            XRP/{exchange.target}
-                          </span>
+                          <span className="text-zinc-400 text-sm">XRP/{exchange.target}</span>
                         </a>
                       ))
                     ) : (
-                      <div className="p-4 text-center text-zinc-400">
-                        No exchanges available
-                      </div>
+                      <div className="p-4 text-center text-zinc-400">No exchanges available</div>
                     )}
                   </div>
                 )}
@@ -257,7 +246,6 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
               </p>
             </div>
 
-            {/* Refresh Button */}
             <button
               onClick={checkWalletStatus}
               disabled={checking}
@@ -269,7 +257,7 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
                   Checking...
                 </span>
               ) : (
-                '🔄 I\'ve sent XRP - Check again'
+                "🔄 I've sent XRP - Check again"
               )}
             </button>
           </div>
@@ -278,7 +266,6 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
     );
   }
 
-  // FUNDED BUT NO TRUSTLINE
   if (status === 'funded_no_trustline') {
     return (
       <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6">
@@ -294,7 +281,7 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
             <div className="bg-zinc-900/50 rounded-lg p-4 mb-4">
               <p className="text-zinc-500 text-xs mb-2">What is a trustline?</p>
               <p className="text-zinc-400 text-sm">
-                A trustline lets your wallet hold RLUSD (Ripple's USD stablecoin). 
+                A trustline lets your wallet hold RLUSD (Ripple USD stablecoin). 
                 This is a one-time setup that costs ~0.2 XRP in reserve.
               </p>
             </div>
@@ -319,7 +306,6 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
     );
   }
 
-  // READY STATE
   if (status === 'ready') {
     return (
       <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6">
@@ -345,12 +331,8 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
             {rlusdBalance < 10 && (
               <div className="mt-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
                 <p className="text-yellow-400 text-sm">
-                  💡 You'll need RLUSD to pay affiliate commissions. 
-                  <a 
-                    href="https://xrpl.org/decentralized-exchange.html" 
-                    target="_blank" 
-                    className="underline ml-1"
-                  >
+                  💡 You need RLUSD to pay affiliate commissions. 
+                  <a href="https://xrpl.org/decentralized-exchange.html" target="_blank" className="underline ml-1">
                     Swap XRP → RLUSD on the DEX
                   </a>
                 </p>
@@ -362,7 +344,6 @@ export default function WalletFunding({ walletAddress, onFunded, onTrustlineSet 
     );
   }
 
-  // CHECKING STATE
   return (
     <div className="bg-zinc-900/50 rounded-xl p-6">
       <div className="flex items-center justify-center gap-3">
