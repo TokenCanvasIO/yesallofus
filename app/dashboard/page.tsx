@@ -983,18 +983,18 @@ useEffect(() => {
           </button>
 
           {/* Comparison Table */}
-          <div className="mt-8 bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-            <h3 className="font-semibold mb-4">Compare Options</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-zinc-400 text-left">
-                    <th className="pb-3"></th>
-                    <th className="pb-3">Google</th>
-                    <th className="pb-3">Xaman</th>
-                    <th className="pb-3">Crossmark</th>
-                  </tr>
-                </thead>
+<div className="mt-8 bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+  <h3 className="font-semibold mb-4">Compare Options</h3>
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="text-zinc-400 text-left">
+          <th className="pb-3"></th>
+          <th className="pb-3">Social</th>
+          <th className="pb-3">Xaman</th>
+          <th className="pb-3">Crossmark</th>
+        </tr>
+      </thead>
                 <tbody className="text-zinc-300">
                   <tr className="border-t border-zinc-800">
                     <td className="py-2 text-zinc-400">Setup</td>
