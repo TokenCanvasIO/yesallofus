@@ -58,7 +58,7 @@ export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance, sh
   url: 'https://sologenic.org',
   description: 'AMM liquidity pools',
   recommended: false,
-  logo: '/Sologeniclogo.png',
+  logo: '/Sologeniclogo1.png',
 },
   ];
 
