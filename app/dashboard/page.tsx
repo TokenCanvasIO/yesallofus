@@ -824,15 +824,15 @@ useEffect(() => {
   </p>
 
   {/* Web3Auth Disclaimer */}
-  <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-4">
-    <p className="text-blue-400 text-sm font-bold mb-2">ℹ️ How It Works</p>
-    <ul className="text-blue-300/80 text-sm space-y-2">
-      <li>• Your wallet is created via Web3Auth, linked to your social account</li>
-      <li>• After a one-time setup, payouts are processed automatically by our platform</li>
-      <li>• No browser session required — payouts happen 24/7 without you being online</li>
-      <li>• You can export your private key anytime if you want full custody</li>
-    </ul>
-  </div>
+<div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-4">
+  <p className="text-blue-400 text-sm font-bold mb-2">ℹ️ How It Works</p>
+  <ul className="text-blue-300/80 text-sm space-y-2">
+    <li>• Your wallet is created via Web3Auth, linked to your social account</li>
+    <li>• After a one-time setup, payouts are processed automatically by our platform</li>
+    <li>• No browser session required — payouts happen 24/7 without you being online</li>
+    <li>• Withdraw your funds anytime from the dashboard</li>
+  </ul>
+</div>
 
   {/* Terms Checkbox */}
   <label className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg cursor-pointer mb-4">
