@@ -25,14 +25,14 @@ export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance }: 
       url: `https://guardarian.com/buy-rlusd?address=${walletAddress}`,
       description: 'No KYC for small amounts',
       methods: ['visa', 'mastercard', 'googlepay', 'applepay'],
-      logo: 'https://guardarian.com/favicon.ico',
+      logo: '/guardarian-blue.svg',
     },
     {
       name: 'Transak',
       url: `https://global.transak.com/?cryptoCurrencyCode=RLUSD&walletAddress=${walletAddress}`,
       description: 'Global coverage',
       methods: ['visa', 'mastercard', 'googlepay', 'applepay'],
-      logo: 'https://assets.transak.com/images/favicon.png',
+      logo: '/transak.svg',
     },
   ];
 
@@ -43,30 +43,21 @@ export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance }: 
       url: 'https://xpmarket.com/dex/XRP/RLUSD-rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
       description: 'Best liquidity, easy UI',
       recommended: true,
+      logo: '/XPMarketLogo.png',
     },
     {
       name: 'Magnetic X',
       url: 'https://xmagnetic.org/dex/RLUSD%2BrMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De_XRP%2BXRP',
       description: 'Real-time spread analysis',
       recommended: false,
+      logo: null,
     },
     {
       name: 'Sologenic DEX',
       url: 'https://sologenic.org',
       description: 'AMM liquidity pools',
       recommended: false,
-    },
-    {
-      name: 'XRP Toolkit',
-      url: 'https://www.xrptoolkit.com',
-      description: 'Advanced order book trading',
-      recommended: false,
-    },
-    {
-      name: 'The World Exchange',
-      url: 'https://theworldexchange.net',
-      description: 'Simple, lightweight UI',
-      recommended: false,
+      logo: null,
     },
   ];
 
@@ -76,16 +67,25 @@ export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance }: 
       name: 'Bitstamp',
       url: 'https://www.bitstamp.net/markets/xrp/rlusd/',
       description: 'EU/US regulated, low fees',
+      logo: '/Bitstamp.png',
     },
     {
       name: 'Uphold',
       url: 'https://uphold.com',
       description: 'Instant conversions',
+      logo: '/uphold.svg',
     },
     {
-      name: 'Bitget',
-      url: 'https://www.bitget.com',
+      name: 'Bitrue',
+      url: 'https://www.bitrue.com',
+      description: 'XRPL native support',
+      logo: '/Bitruewhitelogo-2.png',
+    },
+    {
+      name: 'MEXC',
+      url: 'https://www.mexc.com',
       description: 'High liquidity',
+      logo: '/mexc-global-logo.png',
     },
   ];
 
@@ -229,54 +229,84 @@ export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance }: 
           </p>
 
           {/* DEX Options */}
-          <div className="space-y-2">
-            {swapOptions.map((option) => (
-              <a
-                key={option.name}
-                href={option.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`flex items-center justify-between p-3 rounded-lg transition ${
-                  option.recommended
-                    ? 'bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20'
-                    : 'bg-zinc-800 hover:bg-zinc-700'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-white font-medium">{option.name}</p>
-                    {option.recommended && (
-                      <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded">
-                        Recommended
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-zinc-500 text-xs">{option.description}</p>
-                </div>
-                <svg className="w-5 h-5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </a>
-            ))}
+<div className="space-y-2">
+  {swapOptions.map((option) => (
+    <a
+      key={option.name}
+      href={option.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`flex items-center justify-between p-3 rounded-lg transition ${
+        option.recommended
+          ? 'bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20'
+          : 'bg-zinc-800 hover:bg-zinc-700'
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        {option.logo && (
+          <div className="w-8 h-8 bg-zinc-700 rounded-lg flex items-center justify-center overflow-hidden">
+            <img
+              src={option.logo}
+              alt={option.name}
+              className="w-6 h-6 object-contain"
+            />
           </div>
+        )}
+        <div>
+          <div className="flex items-center gap-2">
+            <p className="text-white font-medium">{option.name}</p>
+            {option.recommended && (
+              <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded">
+                Recommended
+              </span>
+            )}
+          </div>
+          <p className="text-zinc-500 text-xs">{option.description}</p>
+        </div>
+      </div>
+      <svg
+        className="w-5 h-5 text-zinc-500"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M9 5l7 7-7 7"
+        />
+      </svg>
+    </a>
+  ))}
+</div>
 
           {/* CEX Options for larger trades */}
-          <div className="border-t border-zinc-800 pt-4 mt-4">
-            <p className="text-zinc-500 text-xs mb-3">For larger trades (centralized exchanges):</p>
-            <div className="flex flex-wrap gap-2">
-              {cexOptions.map((option) => (
-                <a
-                  key={option.name}
-                  href={option.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg text-sm transition"
-                >
-                  {option.name}
-                </a>
-              ))}
-            </div>
-          </div>
+<div className="border-t border-zinc-800 pt-4 mt-4">
+  <p className="text-zinc-500 text-xs mb-3">
+    For larger trades (centralized exchanges):
+  </p>
+  <div className="flex flex-wrap gap-2">
+    {cexOptions.map((option) => (
+      <a
+        key={option.name}
+        href={option.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg text-sm transition flex items-center gap-2"
+      >
+        {option.logo && (
+          <img
+            src={option.logo}
+            alt={option.name}
+            className="w-4 h-4 object-contain"
+          />
+        )}
+        <span>{option.name}</span>
+      </a>
+    ))}
+  </div>
+</div>
 
           {/* How to swap instructions */}
           <div className="bg-zinc-800/50 rounded-lg p-4 mt-4">
