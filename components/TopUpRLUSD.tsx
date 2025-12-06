@@ -6,9 +6,10 @@ interface TopUpRLUSDProps {
   walletAddress: string;
   xrpBalance: number;
   rlusdBalance: number;
+  showAmounts: boolean;
 }
 
-export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance }: TopUpRLUSDProps) {
+export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance, showAmounts }: TopUpRLUSDProps) {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'card' | 'swap'>('card');
 
@@ -47,18 +48,18 @@ export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance }: 
     },
     {
       name: 'Magnetic X',
-      url: 'https://xmagnetic.org/dex/RLUSD%2BrMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De_XRP%2BXRP',
-      description: 'Real-time spread analysis',
-      recommended: false,
-      logo: null,
-    },
-    {
-      name: 'Sologenic DEX',
-      url: 'https://sologenic.org',
-      description: 'AMM liquidity pools',
-      recommended: false,
-      logo: null,
-    },
+  url: 'https://xmagnetic.org/dex/RLUSD%2BrMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De_XRP%2BXRP',
+  description: 'Real-time spread analysis',
+  recommended: false,
+  logo: '/XMagneticWhitelogo.png',
+},
+{
+  name: 'Sologenic DEX',
+  url: 'https://sologenic.org',
+  description: 'AMM liquidity pools',
+  recommended: false,
+  logo: '/Sologeniclogo.png',
+},
   ];
 
   // CEX options for larger trades
@@ -92,28 +93,31 @@ export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance }: 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold">💰 Top Up RLUSD</h2>
-        <div className="text-right">
-          <p className="text-zinc-500 text-xs">Current Balance</p>
-          <p className="text-emerald-400 font-bold">${rlusdBalance.toFixed(2)} RLUSD</p>
-        </div>
-      </div>
+  <h2 className="text-lg font-bold">💰 Top Up RLUSD</h2>
+  <div className="text-right">
+    <p className="text-zinc-500 text-xs">Current Balance</p>
+    <div className="flex items-center gap-3">
+      <p className="text-white font-bold">{showAmounts ? `${xrpBalance.toFixed(2)} XRP` : '••••'}</p>
+      <p className="text-emerald-400 font-bold">{showAmounts ? `$${rlusdBalance.toFixed(2)} RLUSD` : '••••'}</p>
+    </div>
+  </div>
+</div>
 
-      {rlusdBalance < 10 && (
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
-          <p className="text-yellow-400 text-sm">
-            ⚠️ Low balance — add RLUSD to pay affiliate commissions
-          </p>
-        </div>
-      )}
+      {rlusdBalance < 10 && showAmounts && (
+  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+    <p className="text-yellow-400 text-sm">
+      ⚠️ Low balance — add RLUSD to pay affiliate commissions
+    </p>
+  </div>
+)}
 
       {/* Wallet Address */}
       <div className="bg-zinc-800 rounded-lg p-3 mb-4">
         <p className="text-zinc-500 text-xs mb-1">Your payout wallet:</p>
         <div className="flex items-center gap-2">
-          <code className="text-emerald-400 text-sm font-mono flex-1 truncate">
-            {walletAddress}
-          </code>
+          <code className="text-emerald-400 text-sm font-mono flex-1">
+  {walletAddress.substring(0, 8)}...{walletAddress.slice(-6)}
+</code>
           <button
             onClick={copyAddress}
             className="bg-zinc-700 hover:bg-zinc-600 px-3 py-1 rounded text-xs transition shrink-0"
@@ -208,21 +212,21 @@ export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance }: 
       {activeTab === 'swap' && (
         <div className="space-y-4">
           {/* Current XRP balance notice */}
-          {xrpBalance > 1.5 && (
-            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">
-              <p className="text-emerald-400 text-sm">
-                ✓ You have <strong>{xrpBalance.toFixed(2)} XRP</strong> available to swap
-              </p>
-            </div>
-          )}
+          {xrpBalance > 1.5 && showAmounts && (
+  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">
+    <p className="text-emerald-400 text-sm">
+      ✓ You have <strong>{xrpBalance.toFixed(2)} XRP</strong> available to swap
+    </p>
+  </div>
+)}
 
-          {xrpBalance <= 1.5 && (
-            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-              <p className="text-yellow-400 text-sm">
-                ⚠️ You have <strong>{xrpBalance.toFixed(2)} XRP</strong> — send more XRP first, then swap to RLUSD
-              </p>
-            </div>
-          )}
+{xrpBalance <= 1.5 && showAmounts && (
+  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+    <p className="text-yellow-400 text-sm">
+      ⚠️ You have <strong>{xrpBalance.toFixed(2)} XRP</strong> — send more XRP first, then swap to RLUSD
+    </p>
+  </div>
+)}
 
           <p className="text-zinc-400 text-sm">
             Swap XRP to RLUSD on the XRPL DEX (3-5 second settlement):
@@ -244,7 +248,7 @@ export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance }: 
     >
       <div className="flex items-center gap-3">
         {option.logo && (
-          <div className="w-8 h-8 bg-zinc-700 rounded-lg flex items-center justify-center overflow-hidden">
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center overflow-hidden p-1">
             <img
               src={option.logo}
               alt={option.name}
@@ -312,11 +316,11 @@ export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance }: 
           <div className="bg-zinc-800/50 rounded-lg p-4 mt-4">
             <p className="text-zinc-400 text-sm font-medium mb-2">How to swap:</p>
             <ol className="text-zinc-500 text-xs space-y-1 list-decimal list-inside">
-              <li>Click a DEX link above</li>
-              <li>Connect your wallet (Xaman, Crossmark, or GemWallet)</li>
-              <li>Enter the amount of XRP to swap</li>
-              <li>Confirm the transaction — RLUSD arrives in ~3 seconds</li>
-            </ol>
+  <li>Click a Exchange link above</li>
+  <li>Connect any XRPL wallet (or use your existing exchange account)</li>
+  <li>Enter the amount of XRP to swap</li>
+  <li>Send the RLUSD to your payout wallet address above</li>
+</ol>
           </div>
         </div>
       )}

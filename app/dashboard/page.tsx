@@ -4,6 +4,7 @@ import StoreActivity from '@/components/StoreActivity';
 import WalletFunding from '@/components/WalletFunding';
 import Script from 'next/script';
 import TopUpRLUSD from '@/components/TopUpRLUSD';
+import WithdrawRLUSD from '@/components/WithdrawRLUSD';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
 
@@ -1213,32 +1214,6 @@ useEffect(() => {
           <div className="space-y-6">
 
             {/* ============================================================= */}
-            {/* WALLET FUNDING (show for Web3Auth wallets that need funding or trustline) */}
-            {/* ============================================================= */}
-            {(walletNeedsFunding || walletNeedsTrustline) && walletType === 'web3auth' && walletAddress && (
-              <WalletFunding 
-                walletAddress={walletAddress}
-                onFunded={() => {
-                  console.log('Wallet funded!');
-                  setWalletNeedsFunding(false);
-                }}
-                onTrustlineSet={() => {
-                  console.log('Trustline set!');
-                  setWalletNeedsFunding(false);
-                  setWalletNeedsTrustline(false);
-                }}
-              />
-            )}
-            {/* Show Top-Up component when wallet is ready but needs RLUSD */}
-{!walletNeedsFunding && !walletNeedsTrustline && walletType === 'web3auth' && walletAddress && (
-  <TopUpRLUSD 
-    walletAddress={walletAddress}
-    xrpBalance={walletXrpBalance}
-    rlusdBalance={walletRlusdBalance}
-  />
-)}
-
-            {/* ============================================================= */}
             {/* PAYOUT METHOD STATUS */}
             {/* ============================================================= */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
@@ -1401,6 +1376,49 @@ useEffect(() => {
                 </div>
               )}
             </div>
+
+            {/* ============================================================= */}
+            {/* WALLET FUNDING (show for Web3Auth wallets that need funding or trustline) */}
+            {/* ============================================================= */}
+            {(walletNeedsFunding || walletNeedsTrustline) && walletType === 'web3auth' && walletAddress && (
+              <WalletFunding 
+                walletAddress={walletAddress}
+                onFunded={() => {
+                  console.log('Wallet funded!');
+                  setWalletNeedsFunding(false);
+                }}
+                onTrustlineSet={() => {
+                  console.log('Trustline set!');
+                  setWalletNeedsFunding(false);
+                  setWalletNeedsTrustline(false);
+                }}
+              />
+            )}
+            {/* Show Top-Up and Withdraw components when wallet is ready */}
+{!walletNeedsFunding && !walletNeedsTrustline && walletType === 'web3auth' && walletAddress && (
+  <>
+   <TopUpRLUSD 
+  walletAddress={walletAddress}
+  xrpBalance={walletXrpBalance}
+  rlusdBalance={walletRlusdBalance}
+  showAmounts={showAmounts}
+/>
+    <WithdrawRLUSD
+      walletAddress={walletAddress}
+      rlusdBalance={walletRlusdBalance}
+      onSuccess={() => {
+        fetch(`${API_URL}/wallet/status/${walletAddress}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              setWalletXrpBalance(data.xrp_balance || 0);
+              setWalletRlusdBalance(data.rlusd_balance || 0);
+            }
+          });
+      }}
+    />
+  </>
+)}
 
             {/* ============================================================= */}
             {/* AUTO-SIGN SETUP (show if auto-sign not enabled yet) */}
