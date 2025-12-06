@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
 
+// RLUSD is 5 chars, so must be hex-encoded (padded to 40 chars) for XRPL
+const RLUSD_HEX = '524C555344000000000000000000000000000000';
+const RLUSD_ISSUER = 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De';
+
 const TRUSTED_EXCHANGES = [
   'binance',
   'gdax',
@@ -294,12 +298,13 @@ export default function WalletFunding({
         throw new Error('Web3Auth not connected. Please refresh and try again.');
       }
 
+      // Use hex-encoded RLUSD currency code (required for 5-char currency names)
       const trustlineTx = {
         TransactionType: 'TrustSet' as const,
         Account: walletAddress,
         LimitAmount: {
-          currency: 'RLUSD',
-          issuer: 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
+          currency: RLUSD_HEX,
+          issuer: RLUSD_ISSUER,
           value: '1000000',
         },
       };
@@ -340,9 +345,16 @@ export default function WalletFunding({
           <div className="flex-1">
             <h3 className="text-lg font-bold text-white mb-2">Activate Your Wallet</h3>
             <p className="text-zinc-400 text-sm mb-4">
-              Your wallet needs at least <strong className="text-white">1 XRP</strong> to be activated on the XRP Ledger.
+              Your wallet needs at least <strong className="text-white">1.5 XRP</strong> to be activated on the XRP Ledger
+              and set up the RLUSD trustline.
               Send XRP from an exchange or another wallet.
             </p>
+
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-4">
+              <p className="text-blue-400 text-sm">
+                <strong>Why 1.5 XRP?</strong> 1 XRP activates your wallet + 0.2 XRP reserves the RLUSD trustline + buffer for transaction fees.
+              </p>
+            </div>
 
             <div className="bg-zinc-900 rounded-lg p-4 mb-4">
               <p className="text-zinc-500 text-xs mb-2">Your wallet address:</p>
@@ -455,7 +467,7 @@ export default function WalletFunding({
               </div>
 
               <p className="text-zinc-600 text-xs mt-3 text-center">
-                Buy XRP on any exchange, then withdraw to your wallet address above.
+                Buy at least 1.5 XRP on any exchange, then withdraw to your wallet address above.
               </p>
             </div>
 
@@ -481,6 +493,9 @@ export default function WalletFunding({
 
   // Funded but no trustline
   if (status === 'funded_no_trustline') {
+    // Check if they have enough for trustline (need 0.2 XRP reserve + some for fees)
+    const needsMoreXrp = xrpBalance < 1.2;
+    
     return (
       <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6">
         <div className="flex items-start gap-4">
@@ -492,6 +507,16 @@ export default function WalletFunding({
               Now you need to enable <strong className="text-white">RLUSD</strong> to receive and send stablecoin payments.
             </p>
 
+            {needsMoreXrp && (
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-4">
+                <p className="text-yellow-400 text-sm font-bold mb-1">⚠️ Need More XRP</p>
+                <p className="text-yellow-300/80 text-sm">
+                  Setting up a trustline requires 0.2 XRP reserve. You currently have {xrpBalance.toFixed(2)} XRP.
+                  Please add at least {(1.3 - xrpBalance).toFixed(2)} more XRP to proceed.
+                </p>
+              </div>
+            )}
+
             <div className="bg-zinc-900/50 rounded-lg p-4 mb-4">
               <p className="text-zinc-500 text-xs mb-2">What is a trustline?</p>
               <p className="text-zinc-400 text-sm">
@@ -501,14 +526,16 @@ export default function WalletFunding({
 
             <button
               onClick={setTrustline}
-              disabled={settingTrustline}
-              className="w-full bg-blue-500 hover:bg-blue-400 text-white py-3 rounded-lg font-semibold transition disabled:opacity-50"
+              disabled={settingTrustline || needsMoreXrp}
+              className="w-full bg-blue-500 hover:bg-blue-400 text-white py-3 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {settingTrustline ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                   Setting up RLUSD...
                 </span>
+              ) : needsMoreXrp ? (
+                '⚠️ Add more XRP first'
               ) : (
                 '🔓 Enable RLUSD Trustline'
               )}
@@ -528,7 +555,7 @@ export default function WalletFunding({
           <div className="flex-1">
             <h3 className="text-lg font-bold text-emerald-400 mb-2">Wallet Ready!</h3>
             <p className="text-zinc-400 text-sm mb-4">
-              Your wallet is fully set up and ready to process affiliate payouts.
+              Your wallet is fully set up and ready to receive affiliate payouts.
             </p>
 
             <div className="grid grid-cols-2 gap-4">
