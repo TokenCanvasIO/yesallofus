@@ -54,6 +54,7 @@ export default function StoreDashboard() {
 
   // Wallet funding state (for new Web3Auth wallets)
   const [walletNeedsFunding, setWalletNeedsFunding] = useState(false);
+  const [walletNeedsTrustline, setWalletNeedsTrustline] = useState(false);
 
   // Check URL for claim token on load
   useEffect(() => {
@@ -134,8 +135,17 @@ useEffect(() => {
     fetch(`${API_URL}/wallet/status/${walletAddress}`)
       .then(res => res.json())
       .then(data => {
-        if (data.success && !data.funded) {
-          setWalletNeedsFunding(true);
+        if (data.success) {
+          if (!data.funded) {
+            setWalletNeedsFunding(true);
+            setWalletNeedsTrustline(false);
+          } else if (!data.rlusd_trustline) {
+            setWalletNeedsFunding(false);
+            setWalletNeedsTrustline(true);
+          } else {
+            setWalletNeedsFunding(false);
+            setWalletNeedsTrustline(false);
+          }
         }
       })
       .catch(console.error);
@@ -1197,16 +1207,19 @@ useEffect(() => {
           <div className="space-y-6">
 
             {/* ============================================================= */}
-            {/* WALLET FUNDING (show for Web3Auth wallets that need funding) */}
+            {/* WALLET FUNDING (show for Web3Auth wallets that need funding or trustline) */}
             {/* ============================================================= */}
-            {walletNeedsFunding && walletType === 'web3auth' && walletAddress && (
+            {(walletNeedsFunding || walletNeedsTrustline) && walletType === 'web3auth' && walletAddress && (
               <WalletFunding 
                 walletAddress={walletAddress}
                 onFunded={() => {
                   console.log('Wallet funded!');
+                  setWalletNeedsFunding(false);
                 }}
                 onTrustlineSet={() => {
+                  console.log('Trustline set!');
                   setWalletNeedsFunding(false);
+                  setWalletNeedsTrustline(false);
                 }}
               />
             )}
