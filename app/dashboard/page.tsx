@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import StoreActivity from '@/components/StoreActivity';
 import WalletFunding from '@/components/WalletFunding';
 import Script from 'next/script';
+import TopUpRLUSD from '@/components/TopUpRLUSD';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
 
@@ -55,6 +56,8 @@ export default function StoreDashboard() {
   // Wallet funding state (for new Web3Auth wallets)
   const [walletNeedsFunding, setWalletNeedsFunding] = useState(false);
   const [walletNeedsTrustline, setWalletNeedsTrustline] = useState(false);
+  const [walletXrpBalance, setWalletXrpBalance] = useState(0);
+  const [walletRlusdBalance, setWalletRlusdBalance] = useState(0);
 
   // Check URL for claim token on load
   useEffect(() => {
@@ -136,6 +139,9 @@ useEffect(() => {
       .then(res => res.json())
       .then(data => {
         if (data.success) {
+          setWalletXrpBalance(data.xrp_balance || 0);
+          setWalletRlusdBalance(data.rlusd_balance || 0);
+          
           if (!data.funded) {
             setWalletNeedsFunding(true);
             setWalletNeedsTrustline(false);
@@ -1223,6 +1229,14 @@ useEffect(() => {
                 }}
               />
             )}
+            {/* Show Top-Up component when wallet is ready but needs RLUSD */}
+{!walletNeedsFunding && !walletNeedsTrustline && walletType === 'web3auth' && walletAddress && (
+  <TopUpRLUSD 
+    walletAddress={walletAddress}
+    xrpBalance={walletXrpBalance}
+    rlusdBalance={walletRlusdBalance}
+  />
+)}
 
             {/* ============================================================= */}
             {/* PAYOUT METHOD STATUS */}
