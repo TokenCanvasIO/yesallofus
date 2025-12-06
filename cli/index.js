@@ -484,10 +484,11 @@ success('Store registered successfully!');
 
   // Wallet connection
   section('👛', 'Connect Your Wallet');
-  console.log('');
-  console.log(`${c.dim}  Payout options:${c.reset}`);
-  console.log(`${c.green}  • Xaman${c.reset} ${c.dim}- Manual approval via push notification${c.reset}`);
-  console.log(`${c.blue}  • Crossmark${c.reset} ${c.dim}- Automatic payouts within your limits${c.reset}`);
+console.log('');
+console.log(`${c.dim}  Payout options:${c.reset}`);
+console.log(`${c.white}  • Google${c.reset} ${c.dim}- Easiest setup, automatic 24/7 payouts${c.reset}`);
+console.log(`${c.green}  • Xaman${c.reset} ${c.dim}- Manual approval via push notification${c.reset}`);
+console.log(`${c.blue}  • Crossmark${c.reset} ${c.dim}- Automatic 24/7 payouts (browser extension)${c.reset}`);
   console.log('');
   
   const dashboardUrl = `https://yesallofus.com/dashboard?claim=${result.claim_token}`;

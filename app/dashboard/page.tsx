@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import StoreActivity from '@/components/StoreActivity';
+import WalletFunding from '@/components/WalletFunding';
 import Script from 'next/script';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
@@ -50,6 +51,9 @@ export default function StoreDashboard() {
 
   // Amount visibility toggle
   const [showAmounts, setShowAmounts] = useState(false);
+
+  // Wallet funding state (for new Web3Auth wallets)
+  const [walletNeedsFunding, setWalletNeedsFunding] = useState(false);
 
   // Check URL for claim token on load
   useEffect(() => {
@@ -527,6 +531,13 @@ export default function StoreDashboard() {
       
       if (settingsData.error) {
         throw new Error(settingsData.error);
+      }
+
+      // Handle unfunded wallet - show funding component
+      if (settingsData.needs_funding) {
+        setWalletNeedsFunding(true);
+        setSettingUpAutoSign(false);
+        return;
       }
 
       // If signer already exists, just verify
@@ -1169,6 +1180,21 @@ export default function StoreDashboard() {
         {/* Has store - show dashboard */}
         {store && (
           <div className="space-y-6">
+
+            {/* ============================================================= */}
+            {/* WALLET FUNDING (show for Web3Auth wallets that need funding) */}
+            {/* ============================================================= */}
+            {walletNeedsFunding && walletType === 'web3auth' && walletAddress && (
+              <WalletFunding 
+                walletAddress={walletAddress}
+                onFunded={() => {
+                  console.log('Wallet funded!');
+                }}
+                onTrustlineSet={() => {
+                  setWalletNeedsFunding(false);
+                }}
+              />
+            )}
 
             {/* ============================================================= */}
             {/* PAYOUT METHOD STATUS */}
