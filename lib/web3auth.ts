@@ -14,7 +14,7 @@ export async function getWeb3Auth() {
   const chainConfig = {
     chainNamespace: "xrpl" as const,
     chainId: "0x1",
-    rpcTarget: "wss://xrplcluster.com",
+    rpcTarget: "https://xrplcluster.com",
     wsTarget: "wss://xrplcluster.com",
     ticker: "XRP",
     tickerName: "XRPL",
