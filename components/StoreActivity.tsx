@@ -37,9 +37,10 @@ interface Payment {
 interface StoreActivityProps {
   storeId: string;
   walletAddress: string;
+  showAmounts?: boolean;
 }
 
-export default function StoreActivity({ storeId, walletAddress }: StoreActivityProps) {
+export default function StoreActivity({ storeId, walletAddress, showAmounts = false }: StoreActivityProps) {
   const [tab, setTab] = useState<'affiliates' | 'payments'>('affiliates');
   const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -139,6 +140,10 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
     return `${wallet.slice(0, 6)}...${wallet.slice(-4)}`;
   };
 
+  const formatAmount = (amount: number) => {
+    return showAmounts ? `$${amount.toFixed(2)}` : '$•••••';
+  };
+
   const getRank = (affiliateId: string) => {
     const idx = rankedAffiliates.findIndex(a => a.affiliate_id === affiliateId);
     return idx >= 0 ? idx + 1 : '-';
@@ -169,15 +174,15 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
           </div>
           <div className="bg-zinc-900/50 rounded-xl p-4">
             <p className="text-zinc-500 text-xs uppercase tracking-wider mb-1">Order Value</p>
-            <p className="text-2xl font-bold text-white">${totalOrderValue.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-white">{formatAmount(totalOrderValue)}</p>
           </div>
           <div className="bg-zinc-900/50 rounded-xl p-4">
             <p className="text-zinc-500 text-xs uppercase tracking-wider mb-1">Paid to Affiliates</p>
-            <p className="text-2xl font-bold text-emerald-400">${totalPaidOut.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-emerald-400">{formatAmount(totalPaidOut)}</p>
           </div>
           <div className="bg-zinc-900/50 rounded-xl p-4">
             <p className="text-zinc-500 text-xs uppercase tracking-wider mb-1">Platform Fees</p>
-            <p className="text-2xl font-bold text-zinc-400">${totalPlatformFees.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-zinc-400">{formatAmount(totalPlatformFees)}</p>
           </div>
         </div>
       )}
@@ -259,12 +264,12 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
                           </td>
                           <td className="px-4 py-3 text-right">
                             <span className={`text-sm font-medium ${actualEarned > 0 ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                              ${actualEarned.toFixed(2)}
+                              {formatAmount(actualEarned)}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-center">
-  <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 mx-auto"></span>
-</td>
+                            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 mx-auto"></span>
+                          </td>
                         </tr>
                       );
                     })}
@@ -333,10 +338,10 @@ export default function StoreActivity({ storeId, walletAddress }: StoreActivityP
                             <span className="font-mono text-sm text-zinc-300">{pay.order_id.slice(0, 8)}...</span>
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <span className="text-sm text-zinc-400">${pay.order_total.toFixed(2)}</span>
+                            <span className="text-sm text-zinc-400">{formatAmount(pay.order_total)}</span>
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <span className="text-sm font-medium text-emerald-400">${commissionTotal.toFixed(2)}</span>
+                            <span className="text-sm font-medium text-emerald-400">{formatAmount(commissionTotal)}</span>
                           </td>
                           <td className="px-4 py-3 text-center">
                             <span className={`text-xs px-2 py-1 rounded ${
