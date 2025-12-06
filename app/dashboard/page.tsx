@@ -127,6 +127,21 @@ export default function StoreDashboard() {
     return () => clearInterval(interval);
   }, [polling, loginId]);
 
+  // Check if Web3Auth wallet needs funding on load
+useEffect(() => {
+  if (walletType === 'web3auth' && walletAddress && store) {
+    // Check wallet funding status
+    fetch(`${API_URL}/wallet/status/${walletAddress}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && !data.funded) {
+          setWalletNeedsFunding(true);
+        }
+      })
+      .catch(console.error);
+  }
+}, [walletType, walletAddress, store]);
+
   // =========================================================================
   // WEB3AUTH GOOGLE LOGIN
   // =========================================================================
