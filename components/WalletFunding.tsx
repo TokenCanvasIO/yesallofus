@@ -112,6 +112,9 @@ export default function WalletFunding({
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [showExchanges, setShowExchanges] = useState(false);
   const [loadingExchanges, setLoadingExchanges] = useState(false);
+  // Re-authentication modal state
+const [showReauthModal, setShowReauthModal] = useState(false);
+const [reauthing, setReauthing] = useState(false);
 
   useEffect(() => {
     if (walletAddress) {
@@ -289,14 +292,17 @@ export default function WalletFunding({
   };
 
   const setTrustline = async () => {
-    setSettingTrustline(true);
-    try {
-      const { getWeb3Auth } = await import('@/lib/web3auth');
-      const web3auth = await getWeb3Auth();
+  setSettingTrustline(true);
+  try {
+    const { getWeb3Auth } = await import('@/lib/web3auth');
+    const web3auth = await getWeb3Auth();
 
-      if (!web3auth?.provider) {
-        throw new Error('Web3Auth not connected. Please refresh and try again.');
-      }
+    // Check if Web3Auth session is still active
+    if (!web3auth?.connected || !web3auth?.provider) {
+      setSettingTrustline(false);
+      setShowReauthModal(true);
+      return;
+    }
 
       // Use hex-encoded RLUSD currency code (required for 5-char currency names)
       const trustlineTx = {
@@ -323,6 +329,25 @@ export default function WalletFunding({
       setSettingTrustline(false);
     }
   };
+
+  const handleReauthAndRetry = async () => {
+  setReauthing(true);
+  try {
+    const { getWeb3Auth } = await import('@/lib/web3auth');
+    const web3auth = await getWeb3Auth();
+    
+    if (web3auth) {
+      await web3auth.connect();
+      setShowReauthModal(false);
+      // Auto-retry trustline after successful re-auth
+      setTimeout(() => setTrustline(), 500);
+    }
+  } catch (err) {
+    console.error('Re-auth failed:', err);
+    alert('Failed to reconnect. Please try again.');
+  }
+  setReauthing(false);
+};
 
   // Loading state
   if (status === 'checking') {
@@ -582,6 +607,72 @@ export default function WalletFunding({
           </div>
         </div>
       </div>
+    );
+  }
+
+  {/* Re-authentication Modal */}
+  if (showReauthModal) {
+    return (
+      <>
+        {/* Show the current funding status underneath */}
+        {status === 'funded_no_trustline' && (
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6 mb-4 opacity-50">
+            <div className="flex items-start gap-4">
+              <div className="text-3xl">✅</div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-blue-400 mb-2">Wallet Activated!</h3>
+                <p className="text-zinc-400 text-sm">
+                  Your wallet has <strong className="text-white">{xrpBalance.toFixed(2)} XRP</strong>.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Modal Overlay */}
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 max-w-md w-full">
+            <div className="text-center">
+              <div className="text-4xl mb-4">🔐</div>
+              <h3 className="text-xl font-bold text-white mb-3">Session Expired</h3>
+              <p className="text-zinc-400 mb-4">
+                For your security, social login sessions expire after you close the browser or after some time passes.
+              </p>
+              <p className="text-zinc-400 mb-6">
+                Please sign in again with the <strong className="text-white">same social account</strong> to set up the RLUSD trustline.
+              </p>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={handleReauthAndRetry}
+                  disabled={reauthing}
+                  className="w-full bg-blue-500 hover:bg-blue-400 disabled:opacity-50 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2"
+                >
+                  {reauthing ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                      Connecting...
+                    </>
+                  ) : (
+                    '🔑 Sign In Again'
+                  )}
+                </button>
+                
+                <button
+                  onClick={() => setShowReauthModal(false)}
+                  className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium py-3 px-6 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+              </div>
+              
+              <p className="text-zinc-500 text-xs mt-4">
+                Your wallet address and XRP balance are safe — we just need to reconnect to sign the trustline transaction.
+              </p>
+            </div>
+          </div>
+        </div>
+      </>
     );
   }
 
