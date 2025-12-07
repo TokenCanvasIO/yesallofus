@@ -1873,16 +1873,29 @@ setStep('dashboard');
 {/* ============================================================= */}
 {/* RETURN TO WORDPRESS/PLATFORM */}
 {store?.platform_return_url && (
-  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6">
-    <h2>Setup Complete!</h2>
+  <div
+    className={`${
+      !walletNeedsFunding && !walletNeedsTrustline
+        ? 'bg-emerald-500/10 border-emerald-500/30'
+        : 'bg-yellow-500/10 border-yellow-500/30'
+    } border rounded-xl p-6`}
+  >
+    <h2 className="text-lg font-bold mb-2">
+      {!walletNeedsFunding && !walletNeedsTrustline ? 'Setup Complete!' : 'Setup In Progress'}
+    </h2>
+    <p className="text-zinc-400 text-sm mb-4">
+      {walletNeedsFunding
+        ? 'Step 1: Fund your wallet with at least 1.5 XRP to continue.'
+        : walletNeedsTrustline
+          ? 'Step 2: Add the RLUSD trustline to receive payments.'
+          : 'Your wallet is ready to receive affiliate commissions.'}
+    </p>
 
     <a
       href={`${store.platform_return_url}${store.platform_return_url.includes('?') ? '&' : '?'}wallet=${walletAddress}&store_id=${store.store_id}`}
       onClick={async (e) => {
         e.preventDefault();
-        // Capture the URL BEFORE any async operations
         const targetUrl = e.currentTarget.href;
-
         try {
           await fetch(`${API_URL}/store/clear-platform-return`, {
             method: 'POST',
@@ -1895,16 +1908,20 @@ setStep('dashboard');
         } catch (err) {
           console.error('Failed to clear platform return:', err);
         }
-
         sessionStorage.removeItem('wordpress_return');
         window.location.href = targetUrl;
       }}
-      className="inline-block bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-6 py-3 rounded-lg transition mt-4"
+      className={`inline-block ${
+        !walletNeedsFunding && !walletNeedsTrustline
+          ? 'bg-emerald-500 hover:bg-emerald-400'
+          : 'bg-yellow-500 hover:bg-yellow-400'
+      } text-black font-semibold px-6 py-3 rounded-lg transition mt-4`}
     >
       Return to {store.platform_type === 'wordpress' ? 'WordPress' : 'Your Site'}
     </a>
   </div>
 )}
+
 
             {/* ============================================================= */}
             {/* QUICK LINKS */}
