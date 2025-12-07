@@ -1875,20 +1875,24 @@ setStep('dashboard');
 {store?.platform_return_url && (
   <div
     className={`${
-      !walletNeedsFunding && !walletNeedsTrustline
+      !walletNeedsFunding && !walletNeedsTrustline && (walletType !== 'web3auth' || store.auto_signing_enabled)
         ? 'bg-emerald-500/10 border-emerald-500/30'
         : 'bg-yellow-500/10 border-yellow-500/30'
     } border rounded-xl p-6`}
   >
     <h2 className="text-lg font-bold mb-2">
-      {!walletNeedsFunding && !walletNeedsTrustline ? 'Setup Complete!' : 'Setup In Progress'}
+      {!walletNeedsFunding && !walletNeedsTrustline && (walletType !== 'web3auth' || store.auto_signing_enabled) 
+        ? '✅ Setup Complete!' 
+        : '⏳ Setup In Progress'}
     </h2>
     <p className="text-zinc-400 text-sm mb-4">
       {walletNeedsFunding
         ? 'Step 1: Fund your wallet with at least 1.5 XRP to continue.'
         : walletNeedsTrustline
           ? 'Step 2: Add the RLUSD trustline to receive payments.'
-          : 'Your wallet is ready to receive affiliate commissions.'}
+          : walletType === 'web3auth' && !store.auto_signing_enabled
+            ? 'Step 3: Enable auto-sign to process payouts automatically.'
+            : 'Your wallet is ready to receive affiliate commissions.'}
     </p>
 
     <a
@@ -1912,7 +1916,7 @@ setStep('dashboard');
         window.location.href = targetUrl;
       }}
       className={`inline-block ${
-        !walletNeedsFunding && !walletNeedsTrustline
+        !walletNeedsFunding && !walletNeedsTrustline && (walletType !== 'web3auth' || store.auto_signing_enabled)
           ? 'bg-emerald-500 hover:bg-emerald-400'
           : 'bg-yellow-500 hover:bg-yellow-400'
       } text-black font-semibold px-6 py-3 rounded-lg transition mt-4`}
