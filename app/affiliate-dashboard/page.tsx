@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import PayoutsTable from '@/components/PayoutsTable';
 import { loginWithWeb3Auth } from '@/lib/web3auth';
+import DashboardHeader from "@/components/DashboardHeader";
 
 interface Store {
   store_id: string;
@@ -580,8 +581,10 @@ const SocialIcon = ({ provider, size = 'sm' }: { provider: string; size?: 'sm' |
   };
 
   // Not connected
-  if (!walletAddress && !loading) {
-    return (
+if (!walletAddress && !loading) {
+  return (
+    <>
+      <DashboardHeader />
       <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
         <script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" />
         
@@ -712,23 +715,32 @@ const SocialIcon = ({ provider, size = 'sm' }: { provider: string; size?: 'sm' |
               </div>
             )}
           </div>
-        </main>
-      </div>
+          </main>
+        </div>
+      </>
     );
   }
 
   if (loading) {
-    return (
+  return (
+    <>
+      <DashboardHeader />
       <div className="min-h-screen bg-[#0d0d0d] text-white font-sans flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-zinc-400">Loading dashboard...</p>
         </div>
       </div>
-    );
-  }
+    </>
+  );
+}
 
   return (
+  <>
+    <DashboardHeader 
+      walletAddress={walletAddress || undefined}
+      onSignOut={handleDisconnect}
+    />
     <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
       <main className="max-w-4xl mx-auto px-6 py-10">
         {/* Header */}
@@ -1261,6 +1273,7 @@ const SocialIcon = ({ provider, size = 'sm' }: { provider: string; size?: 'sm' |
           </div>
         )}
       </main>
-    </div>
+      </div>
+    </>
   );
 }
