@@ -173,45 +173,45 @@ export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance, sh
           {cardOptions.map((option) => (
             <a
               key={option.name}
-              href={option.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between p-4 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                  <img
-                    src={option.logo}
-                    alt={option.name}
-                    className="w-6 h-6"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                </div>
-                <div>
-                  <p className="text-white font-medium">{option.name}</p>
-                  <p className="text-zinc-500 text-xs">{option.description}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {/* Payment method icons */}
-                <div className="flex gap-1">
-                  {option.methods.includes('visa') && (
-                    <span className="text-xs bg-zinc-700 px-1.5 py-0.5 rounded">Visa</span>
-                  )}
-                  {option.methods.includes('googlepay') && (
-                    <span className="text-xs bg-zinc-700 px-1.5 py-0.5 rounded">GPay</span>
-                  )}
-                  {option.methods.includes('applepay') && (
-                    <span className="text-xs bg-zinc-700 px-1.5 py-0.5 rounded">Apple</span>
-                  )}
-                </div>
-                <svg className="w-5 h-5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </a>
+  href={option.url}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="block p-4 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition"
+>
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-3">
+      <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shrink-0">
+        <img
+          src={option.logo}
+          alt={option.name}
+          className="w-6 h-6"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
+        />
+      </div>
+      <div>
+        <p className="text-white font-medium">{option.name}</p>
+        <p className="text-zinc-500 text-xs">{option.description}</p>
+      </div>
+    </div>
+    <svg className="w-5 h-5 text-zinc-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
+  </div>
+  {/* Payment methods on separate row */}
+  <div className="flex gap-1 mt-2 ml-13 pl-13">
+    {option.methods.includes('visa') && (
+      <span className="text-xs bg-zinc-700 px-1.5 py-0.5 rounded">Visa</span>
+    )}
+    {option.methods.includes('googlepay') && (
+      <span className="text-xs bg-zinc-700 px-1.5 py-0.5 rounded">GPay</span>
+    )}
+    {option.methods.includes('applepay') && (
+      <span className="text-xs bg-zinc-700 px-1.5 py-0.5 rounded">Apple</span>
+    )}
+  </div>
+</a>
           ))}
 
           <p className="text-zinc-600 text-xs mt-2">

@@ -217,8 +217,6 @@ useEffect(() => {
       // Get the social provider type
       // Get the social provider type
       const userInfo = await web3auth.getUserInfo();
-      console.log('Web3Auth userInfo:', userInfo);
-      console.log('typeOfLogin:', userInfo?.typeOfLogin);
       const socialProviderType = userInfo?.authConnection;
       
       setWalletAddress(address);
@@ -1876,16 +1874,15 @@ setStep('dashboard');
 {/* RETURN TO WORDPRESS/PLATFORM */}
 {store?.platform_return_url && (
   <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6">
-    <h2 className="text-lg font-bold mb-2 text-emerald-400">Setup Complete!</h2>
-    <p className="text-zinc-400 text-sm mb-4">
-      Your wallet is connected and ready to process affiliate commissions.
-    </p>
+    <h2>Setup Complete!</h2>
 
     <a
-      href={`${store.platform_return_url}${store.platform_return_url.includes('?') ? '&' : '?'}wallet=${walletAddress}&store_id=${store.store_id}`}
+      href={`${store.platform_return_url}?wallet=${walletAddress}&store_id=${store.store_id}`}
       onClick={async (e) => {
-        // Prevent navigation until cleanup is attempted (fire-and-forget)
         e.preventDefault();
+        // Capture the URL BEFORE any async operations
+        const targetUrl = e.currentTarget.href;
+
         try {
           await fetch(`${API_URL}/store/clear-platform-return`, {
             method: 'POST',
@@ -1896,14 +1893,13 @@ setStep('dashboard');
             }),
           });
         } catch (err) {
-          console.warn('Failed to clear platform return URL:', err);
-        } finally {
-          sessionStorage.removeItem('wordpress_return');
-          // Now navigate
-          window.location.href = e.currentTarget.href;
+          console.error('Failed to clear platform return:', err);
         }
+
+        sessionStorage.removeItem('wordpress_return');
+        window.location.href = targetUrl;
       }}
-      className="inline-block bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-6 py-3 rounded-lg transition"
+      className="inline-block bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-6 py-3 rounded-lg transition mt-4"
     >
       Return to {store.platform_type === 'wordpress' ? 'WordPress' : 'Your Site'}
     </a>
