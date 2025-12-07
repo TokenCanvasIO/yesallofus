@@ -45,16 +45,23 @@ export async function getWeb3Auth() {
   return web3auth;
 }
 
-export async function loginWithWeb3Auth(): Promise<string | null> {
+export async function loginWithWeb3Auth(): Promise<{ address: string; provider: string } | null> {
   try {
     const web3auth = await getWeb3Auth();
     if (!web3auth) return null;
-    
-    const provider = await web3auth.connect();
-    if (!provider) return null;
-    
-    const accounts = await provider.request({ method: "xrpl_getAccounts" }) as string[];
-    return accounts?.[0] || null;
+
+    await web3auth.connect();
+    if (!web3auth.provider) return null;
+
+    const accounts = await web3auth.provider.request({ method: "xrpl_getAccounts" }) as string[];
+    const address = accounts?.[0];
+    if (!address) return null;
+
+    // Get the social provider (github, google, discord, etc.)
+    const userInfo = await web3auth.getUserInfo();
+    const socialProvider = userInfo?.authConnection || 'google';
+
+    return { address, provider: socialProvider };
   } catch (error) {
     console.error("Web3Auth login error:", error);
     return null;
