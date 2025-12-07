@@ -25,6 +25,7 @@ export default function StoreDashboard() {
   const [loading, setLoading] = useState(false);
   const [web3authTermsAccepted, setWeb3authTermsAccepted] = useState(false);
 const [connectingGoogle, setConnectingGoogle] = useState(false);
+const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Settings state
   const [commissionRates, setCommissionRates] = useState([25, 5, 3, 2, 1]);
@@ -75,6 +76,12 @@ const [connectingGoogle, setConnectingGoogle] = useState(false);
     } catch (err) {
       console.error('Failed to refresh wallet status:', err);
     }
+  };
+
+  // Sidebar scroll function
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    setSidebarOpen(false);
   };
 
   // Check URL for claim token on load
@@ -1206,7 +1213,21 @@ setStep('dashboard');
       </div>
     );
   }
-
+// =========================================================================
+  // DASHBOARD - Navigation items for sidebar
+  // =========================================================================
+  const navItems = [
+    { id: 'payout-method', label: 'Payout Method', icon: '💳' },
+    { id: 'wallet-funding', label: 'Wallet', icon: '💰', show: walletType === 'web3auth' },
+    { id: 'auto-sign', label: 'Auto-Sign', icon: '⚡', show: !store?.auto_signing_enabled },
+    { id: 'commission-rates', label: 'Commission Rates', icon: '📊' },
+    { id: 'affiliate-link', label: 'Affiliate Link', icon: '🔗' },
+    { id: 'api-credentials', label: 'API Credentials', icon: '🔑' },
+    { id: 'return-wordpress', label: 'Return to Site', icon: '↩️', show: !!store?.platform_return_url },
+    { id: 'quick-links', label: 'Quick Links', icon: '📚' },
+    { id: 'activity', label: 'Activity', icon: '📈' },
+    { id: 'danger-zone', label: 'Danger Zone', icon: '⚠️' },
+  ].filter(item => item.show !== false);
   // =========================================================================
   // DASHBOARD
   // =========================================================================
@@ -1214,68 +1235,45 @@ setStep('dashboard');
     <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
       <Script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" />
 
-      <main className="max-w-3xl mx-auto px-6 py-16">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div>
-            <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-bold mb-1">{store?.store_name || 'Get Started'}</h1>
-              <div className="flex items-center gap-3">
-                {/* Amount visibility toggle */}
-                {store && (
-                  <button
-                    onClick={() => setShowAmounts(!showAmounts)}
-                    className="text-zinc-500 hover:text-white p-2 rounded-lg hover:bg-zinc-800 transition"
-                    title={showAmounts ? 'Hide amounts' : 'Show amounts'}
-                  >
-                    {showAmounts ? (
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    ) : (
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                      </svg>
-                    )}
-                  </button>
-                )}
-                <button
-                  onClick={signOut}
-                  className="text-zinc-500 text-sm hover:text-white sm:hidden"
-                >
-                  Sign out
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <p className="text-zinc-500 text-sm font-mono">
-                {walletAddress?.substring(0, 8)}...{walletAddress?.slice(-6)}
-              </p>
-              <button
-                onClick={() => copyToClipboard(walletAddress || '', 'wallet')}
-                className="text-zinc-500 hover:text-white text-xs"
-              >
-                {copied === 'wallet' ? '✓' : '📋'}
-              </button>
-              {walletType === 'web3auth' && (
-  <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded capitalize">{socialProvider || 'Social'}</span>
-)}
-              {walletType === 'xaman' && (
-                <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded">Xaman</span>
-              )}
-              {walletType === 'crossmark' && (
-                <span className="bg-purple-500/20 text-purple-400 text-xs px-2 py-0.5 rounded">Crossmark</span>
-              )}
-            </div>
-          </div>
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-zinc-900 border-b border-zinc-800 z-40 flex items-center justify-between px-4">
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-zinc-400 hover:text-white p-2">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <span className="font-semibold truncate">{store?.store_name || 'Dashboard'}</span>
+        <button onClick={signOut} className="text-zinc-500 text-sm hover:text-white">Sign out</button>
+      </div>
 
-          <button
-            onClick={signOut}
-            className="text-zinc-500 text-sm hover:text-white hidden sm:block"
-          >
-            Sign out
+      {/* Mobile Overlay */}
+      {sidebarOpen && <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />}
+
+      {/* Sidebar */}
+      <aside className={`fixed top-0 left-0 h-full w-64 bg-zinc-900 border-r border-zinc-800 z-50 transform transition-transform duration-200 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-6 border-b border-zinc-800">
+          <h2 className="font-bold text-lg truncate">{store?.store_name || 'Get Started'}</h2>
+          <p className="text-zinc-500 text-xs font-mono mt-1">{walletAddress?.substring(0, 8)}...{walletAddress?.slice(-6)}</p>
+        </div>
+        <nav className="p-4 space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+          {store && navItems.map((item) => (
+            <button key={item.id} onClick={() => scrollToSection(item.id)} className="w-full flex items-center gap-3 px-3 py-2 text-left text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition">
+              <span>{item.icon}</span>
+              <span className="text-sm">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-zinc-800">
+          <button onClick={signOut} className="w-full flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition">
+            <span>🚪</span>
+            <span className="text-sm">Sign out</span>
           </button>
         </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="lg:ml-64 min-h-screen pt-14 lg:pt-0">
+        <div className="max-w-3xl mx-auto px-6 py-8">
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
@@ -1372,7 +1370,7 @@ setStep('dashboard');
             {/* ============================================================= */}
 {/* PAYOUT METHOD STATUS */}
 {/* ============================================================= */}
-<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+<div id="payout-method" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
   <h2 className="text-lg font-bold mb-4">Payout Method</h2>
 
   {/* Auto-sign enabled (works same for Web3Auth and Crossmark) */}
@@ -1541,6 +1539,7 @@ setStep('dashboard');
 {/* WALLET FUNDING (show for Web3Auth wallets that need funding or trustline) */}
 {/* ============================================================= */}
 {(walletNeedsFunding || walletNeedsTrustline) && walletType === 'web3auth' && walletAddress && (
+  <div id="wallet-funding">
   <WalletFunding
     walletAddress={walletAddress}
     onFunded={() => {
@@ -1553,11 +1552,12 @@ setStep('dashboard');
       setWalletNeedsTrustline(false);
     }}
   />
+  </div>
 )}
 
 {/* Show Top-Up and Withdraw components when wallet is ready */}
 {!walletNeedsFunding && !walletNeedsTrustline && walletType === 'web3auth' && walletAddress && (
-  <>
+  <div id="wallet-funding">
     <TopUpRLUSD
       walletAddress={walletAddress}
       xrpBalance={walletXrpBalance}
@@ -1578,16 +1578,16 @@ setStep('dashboard');
             }
           });
       }}
-    />
-  </>
+  />
+  </div>
 )}
 
             {/* ============================================================= */}
             {/* AUTO-SIGN SETUP (show if auto-sign not enabled yet) */}
             {/* ============================================================= */}
             {!store.auto_signing_enabled && (
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-                <h2 className="text-lg font-bold mb-4">Enable Auto-Sign</h2>
+  <div id="auto-sign" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+    <h2 className="text-lg font-bold mb-4">Enable Auto-Sign</h2>
                 <p className="text-zinc-400 text-sm mb-4">
                   Process affiliate payouts automatically without manual approval for each transaction.
                 </p>
@@ -1697,8 +1697,8 @@ setStep('dashboard');
             {/* ============================================================= */}
             {/* COMMISSION RATES */}
             {/* ============================================================= */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-              <h2 className="text-lg font-bold mb-4">Commission Rates</h2>
+            <div id="commission-rates" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+  <h2 className="text-lg font-bold mb-4">Commission Rates</h2>
               <p className="text-zinc-500 text-sm mb-6">Set the percentage affiliates earn on each level.</p>
 
               <div className="space-y-4">
@@ -1759,8 +1759,8 @@ setStep('dashboard');
             {/* ============================================================= */}
             {/* AFFILIATE SIGNUP LINK */}
             {/* ============================================================= */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-              <h2 className="text-lg font-bold mb-2">Your Affiliate Signup Link</h2>
+            <div id="affiliate-link" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+  <h2 className="text-lg font-bold mb-2">Your Affiliate Signup Link</h2>
               <p className="text-zinc-500 text-sm mb-4">Share this link or add it to your website.</p>
 
               <div className="flex items-center gap-2">
@@ -1779,8 +1779,8 @@ setStep('dashboard');
             {/* ============================================================= */}
             {/* API CREDENTIALS */}
             {/* ============================================================= */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-              <h2 className="text-lg font-bold mb-4">API Credentials</h2>
+            <div id="api-credentials" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+  <h2 className="text-lg font-bold mb-4">API Credentials</h2>
 
               {/* Store ID */}
               <div className="mb-4">
@@ -1874,6 +1874,7 @@ setStep('dashboard');
 {/* RETURN TO WORDPRESS/PLATFORM */}
 {store?.platform_return_url && (
   <div
+    id="return-wordpress"
     className={`${
       !walletNeedsFunding && !walletNeedsTrustline && (walletType !== 'web3auth' || store.auto_signing_enabled)
         ? 'bg-emerald-500/10 border-emerald-500/30'
@@ -1896,7 +1897,7 @@ setStep('dashboard');
     </p>
 
     <a
-      href={`${store.platform_return_url}${store.platform_return_url.includes('?') ? '&' : '?'}wallet=${walletAddress}&store_id=${store.store_id}`}
+      href={`${store.platform_return_url}${store.platform_return_url.includes('?') ? '&' : '?'}claim_token=${store.claim_token}`}
       onClick={async (e) => {
         e.preventDefault();
         const targetUrl = e.currentTarget.href;
@@ -1930,8 +1931,8 @@ setStep('dashboard');
             {/* ============================================================= */}
             {/* QUICK LINKS */}
             {/* ============================================================= */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-              <h2 className="text-lg font-bold mb-4">Quick Links</h2>
+            <div id="quick-links" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+  <h2 className="text-lg font-bold mb-4">Quick Links</h2>
 
               <div className="grid grid-cols-2 gap-4">
                 <a href="/docs" className="bg-zinc-800 hover:bg-zinc-700 rounded-lg p-4 text-center transition">
@@ -1954,14 +1955,16 @@ setStep('dashboard');
             </div>
 
             {store && walletAddress && (
-              <StoreActivity storeId={store.store_id} walletAddress={walletAddress} showAmounts={showAmounts} />
-            )}
+  <div id="activity">
+    <StoreActivity storeId={store.store_id} walletAddress={walletAddress} showAmounts={showAmounts} />
+  </div>
+)}
 
             {/* ============================================================= */}
             {/* DANGER ZONE */}
             {/* ============================================================= */}
-            <div className="border-2 border-red-500/30 rounded-xl p-6 bg-red-500/5">
-              <h2 className="text-lg font-bold text-red-400 mb-2">⚠️ Danger Zone</h2>
+            <div id="danger-zone" className="border-2 border-red-500/30 rounded-xl p-6 bg-red-500/5">
+  <h2 className="text-lg font-bold text-red-400 mb-2">⚠️ Danger Zone</h2>
               <p className="text-zinc-400 text-sm mb-4">
                 Permanently delete your account and all associated data. This action cannot be undone.
               </p>
@@ -1976,6 +1979,7 @@ setStep('dashboard');
 
           </div>
         )}
+     </div>
       </main>
     </div>
   );
