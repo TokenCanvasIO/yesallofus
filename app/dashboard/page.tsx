@@ -1194,8 +1194,8 @@ useEffect(() => {
                 {copied === 'wallet' ? '✓' : '📋'}
               </button>
               {walletType === 'web3auth' && (
-                <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded">Google</span>
-              )}
+  <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded capitalize">{socialProvider || 'Social'}</span>
+)}
               {walletType === 'xaman' && (
                 <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded">Xaman</span>
               )}

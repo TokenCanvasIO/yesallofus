@@ -29,12 +29,12 @@ export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance, sh
       logo: '/guardarian-blue.svg',
     },
     {
-      name: 'Transak',
-      url: `https://global.transak.com/?cryptoCurrencyCode=RLUSD&walletAddress=${walletAddress}`,
-      description: 'Global coverage',
-      methods: ['visa', 'mastercard', 'googlepay', 'applepay'],
-      logo: '/transak.svg',
-    },
+  name: 'Transak',
+  url: 'https://global.transak.com/',
+  description: 'Global coverage',
+  methods: ['visa', 'mastercard', 'googlepay', 'applepay'],
+  logo: '/transak.svg',
+},
   ];
 
   // XRP to RLUSD swap options (DEX)
