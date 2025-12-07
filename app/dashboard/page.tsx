@@ -196,7 +196,7 @@ useEffect(() => {
       const userInfo = await web3auth.getUserInfo();
       console.log('Web3Auth userInfo:', userInfo);
       console.log('typeOfLogin:', userInfo?.typeOfLogin);
-      const socialProviderType = userInfo?.typeOfLogin || 'google';
+      const socialProviderType = userInfo?.authConnection;
       
       setWalletAddress(address);
       setWalletType('web3auth');
