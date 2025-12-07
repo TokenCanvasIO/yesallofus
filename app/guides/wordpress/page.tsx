@@ -14,7 +14,7 @@ export default function WordPressGuide() {
           <ul className="text-zinc-400 text-sm space-y-2">
             <li>✓ WordPress 5.0+</li>
             <li>✓ WooCommerce 5.0+</li>
-            <li>✓ XRPL wallet (Xaman or Crossmark)</li>
+            <li>✓ XRPL wallet (Xaman, Crossmark, or Web3Auth)</li>
             <li>✓ RLUSD balance for payouts</li>
           </ul>
         </section>
@@ -55,7 +55,7 @@ export default function WordPressGuide() {
             <ol className="text-zinc-400 text-sm space-y-3">
               <li>1. Go to WordPress Admin → YesAllofUs</li>
               <li>2. Click "Connect Wallet"</li>
-              <li>3. Choose Xaman (mobile) or Crossmark (browser)</li>
+              <li>3. Choose Xaman (mobile), Crossmark (browser), or Web3Auth (social login)</li>
               <li>4. Approve the connection in your wallet</li>
             </ol>
             
@@ -73,6 +73,14 @@ export default function WordPressGuide() {
               </p>
             </div>
 
+            <div className="mt-3 p-4 bg-zinc-800/50 rounded-lg">
+              <p className="text-zinc-500 text-sm">
+                <strong className="text-zinc-300">Web3Auth:</strong> Sign in with Google, Apple, or email. 
+                No crypto wallet needed — we create one for you automatically. 
+                Supports automatic payouts with no manual approval required.
+              </p>
+            </div>
+
             <p className="text-zinc-500 text-sm mt-4">
               <a href="/wallet-guide" className="text-sky-500 hover:underline">
                 Not sure which to choose? Read the full comparison →
@@ -85,12 +93,12 @@ export default function WordPressGuide() {
         <section className="mb-12">
           <div className="flex items-center gap-4 mb-4">
             <span className="bg-sky-500 text-black font-bold w-8 h-8 rounded-full flex items-center justify-center">3</span>
-            <h2 className="text-xl font-bold">Configure payouts (Crossmark only)</h2>
+            <h2 className="text-xl font-bold">Configure payouts (Crossmark & Web3Auth)</h2>
           </div>
           
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
             <p className="text-zinc-400 text-sm mb-4">
-              If using Crossmark for automatic payouts, set your limits:
+              If using Crossmark or Web3Auth for automatic payouts, set your limits:
             </p>
             <ol className="text-zinc-400 text-sm space-y-2">
               <li>1. Go to YesAllofUs → Settings</li>
@@ -98,10 +106,17 @@ export default function WordPressGuide() {
               <li>3. Set maximum single payout (e.g. $100)</li>
               <li>4. Set daily limit (e.g. $1,000)</li>
               <li>5. Click "Enable Auto-Sign"</li>
-              <li>6. Approve the SignerList transaction in Crossmark</li>
+              <li>6. Approve the SignerList transaction in your wallet</li>
             </ol>
             
-            <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+            <div className="mt-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <p className="text-green-400 text-sm">
+                <strong>Web3Auth users:</strong> Auto-sign is enabled by default. Your wallet is created 
+                with YesAllofUs as an authorised signer, so payouts happen instantly with no manual approval.
+              </p>
+            </div>
+            
+            <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
               <p className="text-yellow-400 text-sm">
                 <strong>Tip:</strong> Start with conservative limits. You can always increase later.
               </p>
@@ -129,6 +144,13 @@ export default function WordPressGuide() {
               <li>• <a href="https://gatehub.net" className="text-sky-500 hover:underline">GateHub</a></li>
               <li>• XRPL DEX (via Xaman or Crossmark)</li>
             </ul>
+            
+            <div className="mt-6 p-4 bg-zinc-800/50 rounded-lg">
+              <p className="text-zinc-500 text-sm">
+                <strong className="text-zinc-300">Web3Auth users:</strong> Your wallet address is shown in your dashboard. 
+                Send RLUSD and XRP to this address from any exchange or wallet.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -245,6 +267,7 @@ export default function WordPressGuide() {
               <ul className="text-zinc-400 text-sm space-y-1">
                 <li>• For Xaman: ensure push notifications are enabled</li>
                 <li>• For Crossmark: check extension is installed and unlocked</li>
+                <li>• For Web3Auth: try a different browser or clear cookies</li>
                 <li>• Try refreshing the page and reconnecting</li>
               </ul>
             </div>
@@ -255,38 +278,39 @@ export default function WordPressGuide() {
                 <li>• Check you've accepted the terms</li>
                 <li>• Verify SignerList is set on your wallet (check XRPScan)</li>
                 <li>• Ensure payout amount is within your limits</li>
+                <li>• Web3Auth users: auto-sign is enabled by default — check RLUSD balance</li>
               </ul>
             </div>
           </div>
         </section>
 
         {/* Support */}
-<section className="mb-12">
-  <h2 className="text-xl font-bold mb-4">Need help?</h2>
-  <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
-    <p className="text-zinc-400 text-sm mb-4">
-      Stuck? I'll help you get set up.
-    </p>
-    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-      <a 
-        href="mailto:mark@YesAllofUs.com" 
-        className="text-sky-500 hover:underline text-sm"
-      >
-        mark@YesAllofUs.com
-      </a>
-      <a 
-        href="https://x.com/YesAllofUs" 
-        className="text-sky-500 hover:underline text-sm"
-      >
-        @YesAllofUs
-      </a>
-    </div>
-    <p className="text-zinc-500 text-sm mt-4">
-      <a href="https://calendly.com/tokencanvasio/30min" target="_blank" className="text-sky-500 hover:underline">Done-for-you setup</a>
-      <span className="block sm:inline sm:ml-1">— I'll configure everything on a call.</span>
-    </p>
-  </div>
-</section>
+        <section className="mb-12">
+          <h2 className="text-xl font-bold mb-4">Need help?</h2>
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+            <p className="text-zinc-400 text-sm mb-4">
+              Stuck? I'll help you get set up.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+              <a 
+                href="mailto:mark@YesAllofUs.com" 
+                className="text-sky-500 hover:underline text-sm"
+              >
+                mark@YesAllofUs.com
+              </a>
+              <a 
+                href="https://x.com/YesAllofUs" 
+                className="text-sky-500 hover:underline text-sm"
+              >
+                @YesAllofUs
+              </a>
+            </div>
+            <p className="text-zinc-500 text-sm mt-4">
+              <a href="https://calendly.com/tokencanvasio/30min" target="_blank" className="text-sky-500 hover:underline">Done-for-you setup</a>
+              <span className="block sm:inline sm:ml-1">— I'll configure everything on a call.</span>
+            </p>
+          </div>
+        </section>
 
         {/* CTA */}
         <section className="text-center py-8 border-t border-zinc-800">

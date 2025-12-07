@@ -77,7 +77,7 @@ export default function Home() {
       Turn your affiliate program into a global growth machine.
     </h1>
     <p className="text-xl text-zinc-400 mb-8 max-w-xl mx-auto">
-      Pay affiliates instantly in RLUSD — not in 30 days. Free for everyone. No subscriptions. No bank accounts. No minimums.
+      Pay affiliates instantly in RLUSD — not in 30 days. Free to join. No subscriptions. No bank accounts. No minimums.
     </p>
     <div className="flex flex-col sm:flex-row gap-4 justify-center">
       <a 
