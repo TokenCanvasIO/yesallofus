@@ -43,12 +43,12 @@ export default function FAQ() {
       items: [
         {
           question: 'What is YesAllofUs?',
-          answer: (
-            <>
-              <p className="mb-2">YesAllofUs is an affiliate commission payment platform built on the XRP Ledger. It allows you to pay affiliate commissions instantly in RLUSD (Ripple&apos;s stablecoin) when a sale completes — no more monthly payout spreadsheets or 30-60 day delays.</p>
-              <p>We support 5-level MLM commission structures, WordPress/WooCommerce integration, and two wallet connection methods (Xaman and Crossmark).</p>
-            </>
-          )
+answer: (
+  <>
+    <p className="mb-2">YesAllofUs is B2B payment infrastructure built on the XRP Ledger. We provide technology that enables instant affiliate commission payments in RLUSD (Ripple&apos;s stablecoin) — no more monthly payout spreadsheets or 30-60 day delays.</p>
+    <p>Our infrastructure is licensed to authorised entities and supports 5-level MLM commission structures, WordPress/WooCommerce integration, and multiple wallet connection methods.</p>
+  </>
+)
         },
         {
           question: 'How do I get started?',

@@ -16,7 +16,7 @@ export default function AttunementBlog() {
       <div className="max-w-3xl mx-auto px-6 pt-8 pb-12">
         <p className="text-emerald-400 text-sm font-medium mb-4">Insights</p>
         <h1 className="text-3xl md:text-4xl font-bold mb-4">
-          The $10 Billion Still Face: Using Attachment Theory to Engineer Unstoppable Customer Loyalty
+          The $18 Billion Still Face: Using Attachment Theory to Engineer Unstoppable Customer Loyalty
         </h1>
         <p className="text-zinc-400 text-lg mb-6">
           Applying developmental psychology to AI, merchants, and affiliates.

@@ -51,7 +51,7 @@ export default function PrivacyPolicy() {
           <section id="who-we-are" className="mb-12">
             <h2 className="text-2xl font-bold text-slate-900 mb-4">1. Who We Are</h2>
             <p className="text-slate-700 mb-4">
-              YesAllofUs is operated by Mark Flynn, a sole proprietorship based in Guernsey, Channel Islands. We are the data controller for the personal data processed through our service.
+              YesAllofUs is a B2B payment infrastructure technology provider operated by Mark Flynn, based in Guernsey, Channel Islands. We are the data controller for the personal data processed through our service.
             </p>
             <div className="bg-slate-50 rounded-lg p-4">
               <p className="text-slate-700"><strong>Data Controller:</strong> Mark Flynn (YesAllofUs)</p>
@@ -93,6 +93,11 @@ export default function PrivacyPolicy() {
                   <td className="px-4 py-2">Payment Information</td>
                   <td className="px-4 py-2">PayPal email (for subscriptions)</td>
                   <td className="px-4 py-2">Subscription billing</td>
+                  <tr className="border-t bg-slate-50">
+  <td className="px-4 py-2">Web3Auth</td>
+  <td className="px-4 py-2">Authentication tokens</td>
+  <td className="px-4 py-2">Social login wallet creation</td>
+</tr>
                 </tr>
               </tbody>
             </table>

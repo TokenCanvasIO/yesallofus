@@ -137,6 +137,29 @@ const NavLink = ({ href, children }: NavLinkProps) => (
 
 export default function YesAllofUsDocs() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isStuck, setIsStuck] = useState(true);
+  const navRef = React.useRef<HTMLElement>(null);
+  const mainRef = React.useRef<HTMLElement>(null);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      if (!mainRef.current || !navRef.current) return;
+      
+      const mainRect = mainRef.current.getBoundingClientRect();
+      const navHeight = navRef.current.offsetHeight;
+      const topOffset = 96;
+      const buffer = 150;
+      
+      // Check if we've scrolled past where nav should stop
+      const shouldStop = mainRect.bottom < navHeight + topOffset + buffer;
+      setIsStuck(!shouldStop);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   
   return (
     <div className="min-h-screen bg-white font-sans overflow-x-hidden">
@@ -175,8 +198,9 @@ export default function YesAllofUsDocs() {
               <a href="#backend-integration" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Backend Integration</a>
             </div>
             <div>
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Dashboard</h3>
-              <a href="#wallet-setup" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Wallet Setup</a>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Wallet Options</h3>
+              <a href="#wallet-setup" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Xaman & Crossmark</a>
+              <a href="#web3auth" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Social Login (Web3Auth)</a>
               <a href="#payout-modes" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Payout Modes</a>
             </div>
             <div>
@@ -196,9 +220,17 @@ export default function YesAllofUsDocs() {
       )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 lg:flex lg:gap-12">
-        {/* Sidebar */}
+        {/* Sidebar - Fixed position */}
         <aside className="w-64 flex-shrink-0 hidden lg:block">
-          <nav className="sticky top-24 space-y-6">
+          {/* Placeholder to maintain layout spacing */}
+        </aside>
+        
+        {/* Fixed sidebar navigation */}
+        <nav 
+          ref={navRef}
+          className={`hidden lg:block w-64 max-h-[calc(100vh-12rem)] overflow-y-auto space-y-6 z-40 fixed top-24 transition-opacity duration-200 ${isStuck ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          style={{ left: 'max(1.5rem, calc((100vw - 80rem) / 2 + 1.5rem))' }}
+        >
             <div>
               <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Getting Started</h3>
               <NavLink href="#overview">Overview</NavLink>
@@ -211,8 +243,9 @@ export default function YesAllofUsDocs() {
               <NavLink href="#backend-integration">Backend Integration</NavLink>
             </div>
             <div>
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Dashboard</h3>
-              <NavLink href="#wallet-setup">Wallet Setup</NavLink>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Wallet Options</h3>
+              <NavLink href="#wallet-setup">Xaman & Crossmark</NavLink>
+              <NavLink href="#web3auth">Social Login (Web3Auth)</NavLink>
               <NavLink href="#payout-modes">Payout Modes</NavLink>
             </div>
             <div>
@@ -228,10 +261,9 @@ export default function YesAllofUsDocs() {
               <NavLink href="#errors">Error Codes</NavLink>
             </div>
           </nav>
-        </aside>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0">
+        <main ref={mainRef} className="flex-1 min-w-0">
           {/* Overview */}
           <Section id="overview" title="Overview">
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 mb-8 border border-blue-100">
@@ -600,7 +632,7 @@ function handle_payment_success($order, $referral_code) {
           </Section>
 
           {/* Wallet Setup */}
-          <Section id="wallet-setup" title="Wallet Setup">
+          <Section id="wallet-setup" title="Wallet Setup: Xaman & Crossmark">
             <p className="text-slate-600 mb-6">
               Connect your XRPL wallet to pay affiliates. Choose based on your preference:
             </p>
@@ -653,6 +685,200 @@ function handle_payment_success($order, $referral_code) {
             </div>
           </Section>
 
+          {/* Web3Auth Social Login */}
+          <Section id="web3auth" title="Social Login (Web3Auth)">
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 mb-8 border border-indigo-200">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="bg-indigo-500 text-white text-xs font-bold px-2 py-0.5 rounded">NEW</span>
+                <h3 className="text-xl font-semibold text-slate-900">No Wallet? No Problem.</h3>
+              </div>
+              <p className="text-slate-600 leading-relaxed">
+                Affiliates can sign up with Google, Apple, Facebook, X, Discord, or GitHub. 
+                We create a real XRPL wallet for them automatically using Web3Auth&apos;s Multi-Party Computation (MPC) technology.
+              </p>
+            </div>
+
+            <h3 className="font-semibold text-slate-900 mb-4">How It Works</h3>
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0 text-indigo-600 font-bold text-sm">1</div>
+                  <div>
+                    <div className="font-medium text-slate-900">Affiliate clicks &quot;Sign Up&quot;</div>
+                    <div className="text-sm text-slate-500">Chooses their preferred social provider</div>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0 text-indigo-600 font-bold text-sm">2</div>
+                  <div>
+                    <div className="font-medium text-slate-900">Web3Auth creates MPC wallet</div>
+                    <div className="text-sm text-slate-500">Private key split across distributed nodes</div>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0 text-indigo-600 font-bold text-sm">3</div>
+                  <div>
+                    <div className="font-medium text-slate-900">Real XRPL address generated</div>
+                    <div className="text-sm text-slate-500">Native <code className="bg-slate-100 px-1 rounded">r...</code> address, not a wrapper</div>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0 text-indigo-600 font-bold text-sm">4</div>
+                  <div>
+                    <div className="font-medium text-slate-900">Automatic SignerList setup</div>
+                    <div className="text-sm text-slate-500">Enables 24/7 payouts without browser session</div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-6">
+                <h4 className="font-semibold text-slate-900 mb-3">Supported Providers</h4>
+                <div className="grid grid-cols-4 gap-3">
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-200">
+                      <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                    </div>
+                    <span className="text-xs text-slate-500">Google</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                    </div>
+                    <span className="text-xs text-slate-500">Apple</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-10 h-10 bg-[#1877F2] rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    </div>
+                    <span className="text-xs text-slate-500">Facebook</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                    </div>
+                    <span className="text-xs text-slate-500">X</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-10 h-10 bg-[#5865F2] rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+                    </div>
+                    <span className="text-xs text-slate-500">Discord</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-10 h-10 bg-[#24292e] rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    </div>
+                    <span className="text-xs text-slate-500">GitHub</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-10 h-10 bg-[#9146FF] rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
+                    </div>
+                    <span className="text-xs text-slate-500">Twitch</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="w-10 h-10 bg-slate-200 rounded-lg flex items-center justify-center">
+                      <span className="text-slate-600 text-xs font-bold">+5</span>
+                    </div>
+                    <span className="text-xs text-slate-500">More</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <h3 className="font-semibold text-slate-900 mb-4">Multi-Party Computation (MPC) Security</h3>
+            <div className="bg-slate-50 rounded-xl p-6 mb-8">
+              <p className="text-slate-600 mb-4">
+                Web3Auth uses MPC to split private keys across multiple nodes. The full key is <strong>never</strong> assembled 
+                in one place — it&apos;s reconstructed momentarily only when signing transactions.
+              </p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-emerald-500 mt-0.5">✓</span>
+                  <div>
+                    <div className="font-medium text-slate-900">No single point of failure</div>
+                    <div className="text-sm text-slate-500">Compromising one node doesn&apos;t expose the key</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-emerald-500 mt-0.5">✓</span>
+                  <div>
+                    <div className="font-medium text-slate-900">Non-custodial</div>
+                    <div className="text-sm text-slate-500">YesAllofUs never has access to full private keys</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-emerald-500 mt-0.5">✓</span>
+                  <div>
+                    <div className="font-medium text-slate-900">Social recovery</div>
+                    <div className="text-sm text-slate-500">Lost access? Re-authenticate with same social account</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-emerald-500 mt-0.5">✓</span>
+                  <div>
+                    <div className="flex items-start gap-3">
+  <span className="text-emerald-500 mt-0.5">✓</span>
+  <div>
+    <div className="font-medium text-slate-900">Upgrade anytime</div>
+    <div className="text-sm text-slate-500">Switch to Xaman or Crossmark from your dashboard</div>
+  </div>
+</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <h3 className="font-semibold text-slate-900 mb-4">Pending Commissions System</h3>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+              <p className="text-slate-700 mb-4">
+                New XRPL wallets need ~1 XRP to activate. Until then, commissions are held in a <strong>pending balance</strong>.
+              </p>
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  <div className="w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center flex-shrink-0 text-blue-700 font-bold text-xs">1</div>
+                  <span className="text-slate-600">Affiliate earns commission → stored in pending balance</span>
+                </div>
+                <div className="flex gap-3">
+                  <div className="w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center flex-shrink-0 text-blue-700 font-bold text-xs">2</div>
+                  <span className="text-slate-600">When pending ≥ 1 XRP → we fund wallet activation</span>
+                </div>
+                <div className="flex gap-3">
+                  <div className="w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center flex-shrink-0 text-blue-700 font-bold text-xs">3</div>
+                  <span className="text-slate-600">RLUSD trustline auto-added → pending balance released</span>
+                </div>
+                <div className="flex gap-3">
+                  <div className="w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center flex-shrink-0 text-blue-700 font-bold text-xs">4</div>
+                  <span className="text-slate-600">Future commissions paid instantly</span>
+                </div>
+              </div>
+            </div>
+
+            <h3 className="font-semibold text-slate-900 mb-4">24/7 Auto-Sign via SignerList</h3>
+            <p className="text-slate-600 mb-4">
+              Social login wallets automatically add our platform as an authorized signer. This enables instant payouts 
+              without requiring the affiliate to be logged in.
+            </p>
+            <CodeBlock title="SignerList Configuration">{`// Automatically configured on wallet creation
+{
+  "TransactionType": "SignerListSet",
+  "SignerQuorum": 1,
+  "SignerEntries": [
+    {
+      "SignerEntry": {
+        "Account": "rQsRwh841n8DDwx4Bs2KZ4fHPKSt7VeULH",  // YesAllofUs platform
+        "SignerWeight": 1
+      }
+    }
+  ]
+}`}</CodeBlock>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
+              <p className="text-sm text-amber-800">
+                <strong>User control:</strong> Affiliates can revoke auto-sign permissions anytime from their dashboard, 
+                or export their private key to manage the wallet directly in Xaman.
+              </p>
+            </div>
+          </Section>
+
           {/* Payout Modes */}
           <Section id="payout-modes" title="Payout Modes">
             <div className="overflow-x-auto mb-6">
@@ -662,6 +888,7 @@ function handle_payment_success($order, $referral_code) {
                     <th className="px-4 py-3 text-left text-slate-700 font-semibold">Feature</th>
                     <th className="px-4 py-3 text-left text-slate-700 font-semibold">Manual (Xaman)</th>
                     <th className="px-4 py-3 text-left text-slate-700 font-semibold">Auto-Sign (Crossmark)</th>
+                    <th className="px-4 py-3 text-left text-slate-700 font-semibold">Social Login</th>
                   </tr>
                 </thead>
                 <tbody className="text-slate-700">
@@ -669,26 +896,31 @@ function handle_payment_success($order, $referral_code) {
                     <td className="px-4 py-3 font-medium">Approval</td>
                     <td className="px-4 py-3">Push notification each time</td>
                     <td className="px-4 py-3">None - instant</td>
+                    <td className="px-4 py-3">None - instant</td>
                   </tr>
                   <tr className="border-t border-slate-100 bg-slate-50">
                     <td className="px-4 py-3 font-medium">Speed</td>
                     <td className="px-4 py-3">Depends on your approval</td>
                     <td className="px-4 py-3">~3-5 seconds</td>
+                    <td className="px-4 py-3">~3-5 seconds</td>
                   </tr>
                   <tr className="border-t border-slate-100">
-                    <td className="px-4 py-3 font-medium">Max Single Payout</td>
-                    <td className="px-4 py-3">Unlimited</td>
-                    <td className="px-4 py-3">Configurable ($1-$10,000)</td>
+                    <td className="px-4 py-3 font-medium">Crypto Knowledge</td>
+                    <td className="px-4 py-3">Basic (seed phrase)</td>
+                    <td className="px-4 py-3">Intermediate</td>
+                    <td className="px-4 py-3">None required</td>
                   </tr>
                   <tr className="border-t border-slate-100 bg-slate-50">
-                    <td className="px-4 py-3 font-medium">Daily Limit</td>
-                    <td className="px-4 py-3">Unlimited</td>
-                    <td className="px-4 py-3">Configurable ($10-$50,000)</td>
+                    <td className="px-4 py-3 font-medium">Key Storage</td>
+                    <td className="px-4 py-3">Your device only</td>
+                    <td className="px-4 py-3">Your device only</td>
+                    <td className="px-4 py-3">MPC (distributed)</td>
                   </tr>
                   <tr className="border-t border-slate-100">
                     <td className="px-4 py-3 font-medium">Best For</td>
-                    <td className="px-4 py-3">Low volume, maximum control</td>
+                    <td className="px-4 py-3">Security-conscious users</td>
                     <td className="px-4 py-3">High volume, hands-off</td>
+                    <td className="px-4 py-3">Beginners, mass onboarding</td>
                   </tr>
                 </tbody>
               </table>
