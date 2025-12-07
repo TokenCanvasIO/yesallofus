@@ -355,20 +355,43 @@ useEffect(() => {
       }
 
       setNewSecret(data.api_secret);
-      setStore({
-        store_id: data.store_id,
-        store_name: storeName,
-        store_url: storeUrl,
-        api_key: data.api_key,
-        store_referral_code: data.store_referral_code,
-        wallet_address: walletAddress,
-        payout_mode: 'manual',
-        auto_signing_enabled: false,
-        xaman_connected: walletType === 'xaman',
-        crossmark_connected: walletType === 'crossmark',
-        web3auth_connected: walletType === 'web3auth'
-      });
-      setStep('dashboard');
+
+// Save platform return URL if we came from WordPress
+const wpReturn = new URLSearchParams(window.location.search).get('wordpress_return') 
+  || sessionStorage.getItem('wordpress_return');
+
+const newStore = {
+  store_id: data.store_id,
+  store_name: storeName,
+  store_url: storeUrl,
+  api_key: data.api_key,
+  store_referral_code: data.store_referral_code,
+  wallet_address: walletAddress,
+  payout_mode: 'manual',
+  auto_signing_enabled: false,
+  xaman_connected: walletType === 'xaman',
+  crossmark_connected: walletType === 'crossmark',
+  web3auth_connected: walletType === 'web3auth',
+  platform_return_url: wpReturn || null,
+  platform_type: wpReturn ? 'wordpress' : null
+};
+
+if (wpReturn) {
+  // Save to Firebase
+  fetch(`${API_URL}/store/set-platform-return`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      store_id: data.store_id,
+      wallet_address: walletAddress,
+      platform_return_url: wpReturn,
+      platform_type: 'wordpress'
+    })
+  });
+}
+
+setStore(newStore);
+setStep('dashboard');
     } catch (err) {
       setError('Failed to create store');
     }
@@ -1793,11 +1816,11 @@ useEffect(() => {
                         ••••••••••••••••
                       </code>
                       <button
-                        onClick={() => { copyToClipboard(newSecret, 'secret'); setSecretRevealed(true); }}
-                        className="bg-emerald-500 hover:bg-emerald-400 text-black px-4 py-2 rounded-lg text-sm font-semibold transition"
-                      >
-                        {copied === 'secret' ? '✓ Copied' : 'Copy Secret'}
-                      </button>
+  onClick={() => { copyToClipboard(newSecret, 'secret'); setSecretRevealed(true); }}
+  className="bg-emerald-500 hover:bg-emerald-400 text-black px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition whitespace-nowrap"
+>
+  {copied === 'secret' ? '✓' : 'Copy'}
+</button>
                     </div>
 
                     <div className="bg-yellow-500/20 rounded-lg p-3 mb-3">
