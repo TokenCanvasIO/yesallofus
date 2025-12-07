@@ -5,7 +5,7 @@ import WalletFunding from '@/components/WalletFunding';
 import Script from 'next/script';
 import TopUpRLUSD from '@/components/TopUpRLUSD';
 import WithdrawRLUSD from '@/components/WithdrawRLUSD';
-import Header from "@/components/Header";
+import DashboardHeader from "@/components/DashboardHeader";
 import Link from 'next/link';
 import Logo from '@/components/Logo';
 
@@ -794,9 +794,12 @@ setStep('dashboard');
 
       const data = await res.json();
       if (data.success) {
-        alert('Store permanently deleted.');
-        signOut();
-      } else {
+  sessionStorage.removeItem('vendorWalletAddress');
+  sessionStorage.removeItem('vendorLoginMethod');
+  sessionStorage.removeItem('socialProvider');
+  alert('Store permanently deleted.');
+  window.location.href = '/dashboard';
+} else {
         setError(data.error || 'Failed to delete');
       }
     } catch (err) {
@@ -872,7 +875,9 @@ setStep('dashboard');
   // LOGIN SCREEN
   // =========================================================================
   if (step === 'login') {
-    return (
+  return (
+    <>
+      <DashboardHeader />
       <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
         <Script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" />
 
@@ -1169,8 +1174,9 @@ setStep('dashboard');
           </div>
         </main>
       </div>
-    );
-  }
+    </>
+  );
+}
 
   // =========================================================================
   // XAMAN QR SCREEN
@@ -1232,52 +1238,46 @@ setStep('dashboard');
     { id: 'danger-zone', label: 'Danger Zone', icon: '⚠️' },
   ].filter(item => item.show !== false);
  // =========================================================================
-  // DASHBOARD
-  // =========================================================================
-  return (
-    <>
-      <Header 
-        variant="dashboard"
-        storeName={store?.store_name}
-        walletAddress={walletAddress || undefined}
-        onSignOut={signOut}
-      />
-      <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
+// DASHBOARD
+// =========================================================================
+return (
+  <>
+    <DashboardHeader 
+      walletAddress={walletAddress || undefined}
+      onSignOut={signOut}
+    />
+    <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
       <Script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" />
 
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-zinc-900 border-b border-zinc-800 z-40 flex items-center justify-between px-4">
-        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-zinc-400 hover:text-white p-2">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-        <span className="font-semibold truncate">{store?.store_name || 'Dashboard'}</span>
-        <button onClick={signOut} className="text-zinc-500 text-sm hover:text-white">Sign out</button>
-      </div>
+      {/* Mobile Menu Button - NOT a full header, just the hamburger */}
+      <button 
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="lg:hidden fixed top-3 left-4 z-50 text-zinc-400 hover:text-white p-2 bg-zinc-900/80 rounded-lg backdrop-blur"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
 
       {/* Mobile Overlay */}
       {sidebarOpen && <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />}
 
-      {/* Sidebar */}
-<aside
-  className={`
-    fixed top-0 left-0 h-full w-64 bg-zinc-900 border-r border-zinc-800 z-50 transform transition-transform duration-300
-    lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-  `}
->
+      {/* Sidebar - remove the duplicate logo/branding since DashboardHeader has it */}
+      <aside
+        className={`
+          fixed top-0 left-0 h-full w-64 bg-zinc-900 border-r border-zinc-800 z-50 transform transition-transform duration-300
+          lg:translate-x-0 lg:top-14 lg:h-[calc(100vh-3.5rem)] ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
+      >
   <div className="p-6 border-b border-zinc-800">
-    <Link href="/" className="flex items-center gap-2 mb-4 hover:opacity-80 transition">
-      <Logo size={28} />
-      <span className="font-bold text-white">YesAllofUs</span>
-    </Link>
-    <h2 className="font-bold text-lg truncate text-zinc-300">
-      {store?.store_name || 'Get Started'}
-    </h2>
-    <p className="text-zinc-500 text-xs font-mono mt-1">
-      {walletAddress?.substring(0, 8)}...{walletAddress?.slice(-6)}
-    </p>
-  </div>
+  <h2 className="font-bold text-lg text-white mb-2">Dashboard</h2>
+  <p className="font-medium text-zinc-300 truncate">
+    {store?.store_name || 'Get Started'}
+  </p>
+  <p className="text-zinc-500 text-xs font-mono mt-1">
+    {walletAddress?.substring(0, 8)}...{walletAddress?.slice(-6)}
+  </p>
+</div>
 
   <nav className="p-4 space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
     {store &&
@@ -1305,7 +1305,7 @@ setStep('dashboard');
 </aside>
 
       {/* Main Content */}
-      <main className="lg:ml-64 min-h-screen pt-14 lg:pt-0">
+<main className="lg:ml-64 min-h-screen pt-20 lg:pt-16">
         <div className="max-w-3xl mx-auto px-6 py-8">
 
         {error && (

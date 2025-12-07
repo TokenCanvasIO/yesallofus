@@ -1,6 +1,14 @@
 'use client';
+import { usePathname } from 'next/navigation';
 
 export default function Footer() {
+  const pathname = usePathname();
+  
+  // Hide on dashboard pages
+  if (pathname?.startsWith('/dashboard') || pathname?.startsWith('/affiliate-dashboard')) {
+    return null;
+  }
+
   return (
     <footer className="bg-[#080808] border-t border-zinc-800">
       {/* Main Footer */}
