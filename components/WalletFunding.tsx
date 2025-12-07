@@ -297,6 +297,11 @@ const [reauthing, setReauthing] = useState(false);
     const { getWeb3Auth } = await import('@/lib/web3auth');
     const web3auth = await getWeb3Auth();
 
+    // Wait a moment for Web3Auth to fully initialize if needed
+    if (web3auth && !web3auth.connected) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
     // Check if Web3Auth session is still active
     if (!web3auth?.connected || !web3auth?.provider) {
       setSettingTrustline(false);

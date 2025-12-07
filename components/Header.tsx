@@ -23,16 +23,16 @@ export default function Header({ variant = 'marketing', storeName, walletAddress
     return (
       <header className="sticky top-0 z-50 bg-[#0d0d0d]/95 backdrop-blur">
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-          {/* Left: Logo + Store Name */}
-          <div className="flex items-center gap-3">
-            <Logo size={32} />
-            <div className="hidden sm:block">
-              <div className="font-semibold text-white text-sm leading-tight">{storeName || 'Dashboard'}</div>
-              {shortWallet && (
-                <div className="text-zinc-500 text-xs font-mono">{shortWallet}</div>
-              )}
-            </div>
-          </div>
+          {/* Left: Logo + Store Name - hidden on dashboard since sidebar shows this */}
+<div className="hidden">
+  <Logo size={32} />
+  <div className="hidden sm:block">
+    <div className="font-semibold text-white text-sm leading-tight">{storeName || 'Dashboard'}</div>
+    {shortWallet && (
+      <div className="text-zinc-500 text-xs font-mono">{shortWallet}</div>
+    )}
+  </div>
+</div>
 
           {/* Right: Wallet badge + Sign out */}
           <div className="flex items-center gap-3">

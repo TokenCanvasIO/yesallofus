@@ -563,7 +563,7 @@ setStep('dashboard');
   // AUTO-SIGN SETUP (Crossmark)
   // =========================================================================
   const setupAutoSign = async () => {
-    if (!autoSignTermsAccepted || !store) return;
+  if (!store) return;
 
     const sdk = (window as any).xrpl?.crossmark;
     if (!sdk) {
@@ -626,7 +626,7 @@ setStep('dashboard');
   // AUTO-SIGN SETUP (Web3Auth) - Signs SignerListSet via Web3Auth
   // =========================================================================
   const setupAutoSignWeb3Auth = async () => {
-    if (!autoSignTermsAccepted || !store || !walletAddress) return;
+  if (!store || !walletAddress) return;
 
     setSettingUpAutoSign(true);
     setError(null);
@@ -1930,25 +1930,48 @@ setStep('dashboard');
     </p>
 
     <a
-      href={`${store.platform_return_url}${store.platform_return_url.includes('?') ? '&' : '?'}claim_token=${store.claim_token}`}
-      onClick={async (e) => {
-        e.preventDefault();
-        const targetUrl = e.currentTarget.href;
-        try {
-          await fetch(`${API_URL}/store/clear-platform-return`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              store_id: store.store_id,
-              wallet_address: walletAddress,
-            }),
-          });
-        } catch (err) {
-          console.error('Failed to clear platform return:', err);
-        }
-        sessionStorage.removeItem('wordpress_return');
-        window.location.href = targetUrl;
-      }}
+      href="#"
+  onClick={async (e) => {
+  e.preventDefault();
+  const targetUrl = store.platform_return_url;
+  
+  try {
+    // Generate fresh claim token
+    const tokenRes = await fetch(`${API_URL}/store/generate-claim-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        store_id: store.store_id,
+        wallet_address: walletAddress,
+      }),
+    });
+    const tokenData = await tokenRes.json();
+    
+    if (!tokenData.success || !tokenData.claim_token) {
+      throw new Error('Failed to generate token');
+    }
+    
+    // Clear platform return
+    await fetch(`${API_URL}/store/clear-platform-return`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        store_id: store.store_id,
+        wallet_address: walletAddress,
+      }),
+    });
+    
+    sessionStorage.removeItem('wordpress_return');
+    
+    // Redirect with fresh token
+    const separator = targetUrl.includes('?') ? '&' : '?';
+    window.location.href = `${targetUrl}${separator}claim_token=${tokenData.claim_token}`;
+    
+  } catch (err) {
+    console.error('Failed to generate claim token:', err);
+    alert('Failed to return to WordPress. Please try again.');
+  }
+}}
       className={`inline-block ${
         !walletNeedsFunding && !walletNeedsTrustline && (walletType !== 'web3auth' || store.auto_signing_enabled)
           ? 'bg-emerald-500 hover:bg-emerald-400'
