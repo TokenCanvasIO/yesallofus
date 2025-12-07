@@ -23,6 +23,8 @@ export default function StoreDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [web3authTermsAccepted, setWeb3authTermsAccepted] = useState(false);
+const [connectingGoogle, setConnectingGoogle] = useState(false);
 
   // Settings state
   const [commissionRates, setCommissionRates] = useState([25, 5, 3, 2, 1]);
@@ -40,8 +42,7 @@ export default function StoreDashboard() {
   const [xamanUserToken, setXamanUserToken] = useState<string | null>(null);
 
   // Web3Auth specific state
-  const [web3authTermsAccepted, setWeb3authTermsAccepted] = useState(false);
-  const [connectingGoogle, setConnectingGoogle] = useState(false);
+  const [socialProvider, setSocialProvider] = useState<string | null>(null);
 
   // Claim token (from CLI)
   const [claimToken, setClaimToken] = useState<string | null>(null);
@@ -92,13 +93,15 @@ export default function StoreDashboard() {
       }
 
       // Check for existing Web3Auth session
-      const savedWallet = sessionStorage.getItem('vendorWalletAddress');
-      const savedType = sessionStorage.getItem('vendorLoginMethod');
-      if (savedWallet && savedType) {
-        setWalletAddress(savedWallet);
-        setWalletType(savedType as 'xaman' | 'crossmark' | 'web3auth');
-        loadOrCreateStore(savedWallet, savedType as 'xaman' | 'crossmark' | 'web3auth');
-      }
+const savedWallet = sessionStorage.getItem('vendorWalletAddress');
+const savedType = sessionStorage.getItem('vendorLoginMethod');
+const savedSocialProvider = sessionStorage.getItem('socialProvider');
+if (savedWallet && savedType) {
+  setWalletAddress(savedWallet);
+  setWalletType(savedType as 'xaman' | 'crossmark' | 'web3auth');
+  if (savedSocialProvider) setSocialProvider(savedSocialProvider);
+  loadOrCreateStore(savedWallet, savedType as 'xaman' | 'crossmark' | 'web3auth');
+}
     }
   }, []);
 
@@ -188,10 +191,16 @@ useEffect(() => {
         throw new Error('No wallet address returned');
       }
       
+      // Get the social provider type
+      const userInfo = await web3auth.getUserInfo();
+      const socialProviderType = userInfo?.typeOfLogin || 'google';
+      
       setWalletAddress(address);
       setWalletType('web3auth');
+      setSocialProvider(socialProviderType);
       sessionStorage.setItem('vendorWalletAddress', address);
       sessionStorage.setItem('vendorLoginMethod', 'web3auth');
+      sessionStorage.setItem('socialProvider', socialProviderType);
       
       loadOrCreateStore(address, 'web3auth');
     } catch (err: unknown) {
@@ -725,6 +734,63 @@ useEffect(() => {
     setTimeout(() => setCopied(null), 2000);
   };
 
+  const SocialIcon = ({ provider }: { provider: string | null }) => {
+    switch (provider) {
+      case 'github':
+        return (
+          <div className="w-8 h-8 bg-[#24292e] rounded-lg flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            </svg>
+          </div>
+        );
+      case 'twitter':
+        return (
+          <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+          </div>
+        );
+      case 'discord':
+        return (
+          <div className="w-8 h-8 bg-[#5865F2] rounded-lg flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+            </svg>
+          </div>
+        );
+      case 'facebook':
+        return (
+          <div className="w-8 h-8 bg-[#1877F2] rounded-lg flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+          </div>
+        );
+      case 'apple':
+        return (
+          <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+            </svg>
+          </div>
+        );
+      case 'google':
+      default:
+        return (
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+          </div>
+        );
+    }
+  };
+
   // =========================================================================
   // LOGIN SCREEN
   // =========================================================================
@@ -1237,195 +1303,200 @@ useEffect(() => {
           <div className="space-y-6">
 
             {/* ============================================================= */}
-            {/* PAYOUT METHOD STATUS */}
-            {/* ============================================================= */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-              <h2 className="text-lg font-bold mb-4">Payout Method</h2>
+{/* PAYOUT METHOD STATUS */}
+{/* ============================================================= */}
+<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+  <h2 className="text-lg font-bold mb-4">Payout Method</h2>
 
-              {/* Auto-sign enabled (works same for Web3Auth and Crossmark) */}
-              {store.auto_signing_enabled ? (
-                <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      {walletType === 'web3auth' ? (
-                        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                          <svg className="w-5 h-5" viewBox="0 0 24 24">
-                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                          </svg>
-                        </div>
-                      ) : (
-                        <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
-                      )}
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-green-500 text-sm" style={{ textShadow: '0 0 8px rgba(34,197,94,0.9)' }}>●</span>
-                          <span className="text-green-500 text-sm font-medium">Auto-Sign Active</span>
-                        </div>
-                        <p className="text-zinc-500 text-sm font-mono">
-                          {store.wallet_address?.substring(0, 8)}...{store.wallet_address?.slice(-6)}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={revokeAutoSign}
-                      disabled={loading}
-                      className="text-zinc-400 hover:text-red-400 text-sm transition-colors whitespace-nowrap"
-                    >
-                      Revoke Auto-Sign
-                    </button>
-                  </div>
-
-                  {/* Editable Limits */}
-                  <div className="flex gap-4">
-                    <div className="flex-1 min-w-0">
-                      <label className="text-zinc-400 text-xs block mb-1">Max single (USD)</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="10000"
-                        value={maxSinglePayout}
-                        onChange={(e) => { setMaxSinglePayout(parseInt(e.target.value) || 100); setSettingsSaved(false); }}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <label className="text-zinc-400 text-xs block mb-1">Daily limit (USD)</label>
-                      <input
-                        type="number"
-                        min="10"
-                        max="50000"
-                        value={dailyLimit}
-                        onChange={(e) => { setDailyLimit(parseInt(e.target.value) || 1000); setSettingsSaved(false); }}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ) : walletType === 'web3auth' ? (
-                /* Web3Auth connected but auto-sign not enabled yet */
-                <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5" viewBox="0 0 24 24">
-                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                        </svg>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-yellow-500 text-sm" style={{ textShadow: '0 0 8px rgba(234,179,8,0.9)' }}>●</span>
-                          <span className="text-yellow-500 text-sm font-medium">Connected - Setup Required</span>
-                        </div>
-                        <p className="text-zinc-500 text-sm font-mono">
-                          {store.wallet_address?.substring(0, 8)}...{store.wallet_address?.slice(-6)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-                    <p className="text-yellow-400 font-medium">⚠️ Enable Auto-Sign to process payouts</p>
-                    <p className="text-zinc-400 text-sm">Complete the auto-sign setup below to start paying affiliates automatically.</p>
-                  </div>
-                </div>
-              ) : store.xaman_connected ? (
-                /* Xaman connected - manual payouts */
-                <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded" />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-green-500 text-sm" style={{ textShadow: '0 0 8px rgba(34,197,94,0.9)' }}>●</span>
-                          <span className="text-green-500 text-sm font-medium">Connection Good</span>
-                        </div>
-                        <p className="text-zinc-500 text-sm font-mono">
-                          {store.wallet_address?.substring(0, 8)}...{store.wallet_address?.slice(-6)}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={disconnectWallet}
-                      disabled={loading}
-                      className="text-zinc-400 hover:text-red-400 text-sm transition-colors whitespace-nowrap"
-                    >
-                      Disconnect
-                    </button>
-                  </div>
-
-                  <p className="text-zinc-500 text-xs">
-                    You'll receive a push notification to approve each payout.
-                  </p>
-
-                  {/* Option to switch to auto-sign */}
-                  <div className="border-t border-zinc-800 pt-4 mt-4">
-                    <p className="text-zinc-400 text-sm mb-2">Prefer automatic payouts?</p>
-                    <p className="text-zinc-500 text-xs">Enable auto-sign below to process payouts automatically with Crossmark.</p>
-                  </div>
-                </div>
-              ) : (
-                /* No payout method - show options */
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-red-500 text-sm" style={{ textShadow: '0 0 8px rgba(239,68,68,0.9)' }}>●</span>
-                    <span className="text-red-500 text-sm font-medium">No connection</span>
-                  </div>
-
-                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-4">
-                    <p className="text-yellow-400 font-medium">⚠️ Choose a payout method</p>
-                    <p className="text-zinc-400 text-sm">Select how you want to pay your affiliates.</p>
-                  </div>
-
-                  {/* Option 1: Connect Xaman for manual */}
-                  <button
-                    onClick={loginXaman}
-                    className="w-full bg-zinc-800 border border-zinc-700 hover:border-emerald-500 rounded-xl p-4 text-left transition"
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded" />
-                      <span className="font-semibold">Connect Xaman for Manual Payouts</span>
-                    </div>
-                    <p className="text-zinc-400 text-sm">Approve each payout via push notification on your phone.</p>
-                  </button>
-
-                  <div className="text-center text-zinc-500 text-sm py-2">— or —</div>
-                  <p className="text-zinc-400 text-sm">Enable auto-sign below to process payouts automatically.</p>
-                </div>
-              )}
+  {/* Auto-sign enabled (works same for Web3Auth and Crossmark) */}
+  {store.auto_signing_enabled ? (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
+        <div className="flex items-center gap-3">
+          {walletType === 'web3auth' ? (
+            <SocialIcon provider={socialProvider} />
+          ) : (
+            <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
+          )}
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-green-500 text-sm" style={{ textShadow: '0 0 8px rgba(34,197,94,0.9)' }}>●</span>
+              <span className="text-green-500 text-sm font-medium">Auto-Sign Active</span>
             </div>
+            <p className="text-zinc-500 text-sm font-mono">
+              {store.wallet_address?.substring(0, 8)}...{store.wallet_address?.slice(-6)}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={revokeAutoSign}
+          disabled={loading}
+          className="text-zinc-400 hover:text-red-400 text-sm transition-colors whitespace-nowrap"
+        >
+          Revoke Auto-Sign
+        </button>
+      </div>
 
-            {/* ============================================================= */}
-            {/* WALLET FUNDING (show for Web3Auth wallets that need funding or trustline) */}
-            {/* ============================================================= */}
-            {(walletNeedsFunding || walletNeedsTrustline) && walletType === 'web3auth' && walletAddress && (
-              <WalletFunding 
-                walletAddress={walletAddress}
-                onFunded={() => {
-                  console.log('Wallet funded!');
-                  setWalletNeedsFunding(false);
-                }}
-                onTrustlineSet={() => {
-                  console.log('Trustline set!');
-                  setWalletNeedsFunding(false);
-                  setWalletNeedsTrustline(false);
-                }}
-              />
-            )}
-            {/* Show Top-Up and Withdraw components when wallet is ready */}
+      {/* Editable Limits */}
+      <div className="flex gap-4">
+        <div className="flex-1 min-w-0">
+          <label className="text-zinc-400 text-xs block mb-1">Max single (USD)</label>
+          <input
+            type="number"
+            min="1"
+            max="10000"
+            value={maxSinglePayout}
+            onChange={(e) => {
+              setMaxSinglePayout(parseInt(e.target.value) || 100);
+              setSettingsSaved(false);
+            }}
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <label className="text-zinc-400 text-xs block mb-1">Daily limit (USD)</label>
+          <input
+            type="number"
+            min="10"
+            max="50000"
+            value={dailyLimit}
+            onChange={(e) => {
+              setDailyLimit(parseInt(e.target.value) || 1000);
+              setSettingsSaved(false);
+            }}
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
+          />
+        </div>
+      </div>
+      {/* End of Editable Limits */}
+    </div>
+  ) : walletType === 'web3auth' ? (
+    /* Web3Auth connected but auto-sign not enabled yet */
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+        <div className="flex items-center gap-3">
+          <SocialIcon provider={socialProvider} />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-yellow-500 text-sm" style={{ textShadow: '0 0 8px rgba(234,179,8,0.9)' }}>
+                ●
+              </span>
+              <span className="text-yellow-500 text-sm font-medium">Connected - Setup Required</span>
+            </div>
+            <p className="text-zinc-500 text-sm font-mono">
+              {store.wallet_address?.substring(0, 8)}...{store.wallet_address?.slice(-6)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+        <p className="text-yellow-400 font-medium">Enable Auto-Sign to process payouts</p>
+        <p className="text-zinc-400 text-sm">
+          Complete the auto-sign setup below to start paying affiliates automatically.
+        </p>
+      </div>
+    </div>
+  ) : store.xaman_connected ? (
+    /* Xaman connected - manual payouts */
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+        <div className="flex items-center gap-3">
+          <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded" />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-green-500 text-sm" style={{ textShadow: '0 0 8px rgba(34,197,94,0.9)' }}>●</span>
+              <span className="text-green-500 text-sm font-medium">Connection Good</span>
+            </div>
+            <p className="text-zinc-500 text-sm font-mono">
+              {store.wallet_address?.substring(0, 8)}...{store.wallet_address?.slice(-6)}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={disconnectWallet}
+          disabled={loading}
+          className="text-zinc-400 hover:text-red-400 text-sm transition-colors whitespace-nowrap"
+        >
+          Disconnect
+        </button>
+      </div>
+
+      <p className="text-zinc-500 text-xs">
+        You'll receive a push notification to approve each payout.
+      </p>
+
+      {/* Option to switch to auto-sign */}
+      <div className="border-t border-zinc-800 pt-4 mt-4">
+        <p className="text-zinc-400 text-sm mb-2">Prefer automatic payouts?</p>
+        <p className="text-zinc-500 text-xs">
+          Enable auto-sign below to process payouts automatically with Crossmark.
+        </p>
+      </div>
+    </div>
+  ) : (
+    /* No payout method - show options */
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-red-500 text-sm" style={{ textShadow: '0 0 8px rgba(239,68,68,0.9)' }}>●</span>
+        <span className="text-red-500 text-sm font-medium">No connection</span>
+      </div>
+
+      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-4">
+        <p className="text-yellow-400 font-medium">Choose a payout method</p>
+        <p className="text-zinc-400 text-sm">Select how you want to pay your affiliates.</p>
+      </div>
+
+      {/* Option 1: Connect Xaman for manual */}
+      <button
+        onClick={loginXaman}
+        className="w-full bg-zinc-800 border border-zinc-700 hover:border-emerald-500 rounded-xl p-4 text-left transition"
+      >
+        <div className="flex items-center gap-3 mb-2">
+          <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded" />
+          <span className="font-semibold">Connect Xaman for Manual Payouts</span>
+        </div>
+        <p className="text-zinc-400 text-sm">
+          Approve each payout via push notification on your phone.
+        </p>
+      </button>
+
+      <div className="text-center text-zinc-500 text-sm py-2">— or —</div>
+
+      <p className="text-zinc-400 text-sm">
+        Enable auto-sign below to process payouts automatically.
+      </p>
+    </div>
+  )}
+</div>
+
+{/* ============================================================= */}
+{/* WALLET FUNDING (show for Web3Auth wallets that need funding or trustline) */}
+{/* ============================================================= */}
+{(walletNeedsFunding || walletNeedsTrustline) && walletType === 'web3auth' && walletAddress && (
+  <WalletFunding
+    walletAddress={walletAddress}
+    onFunded={() => {
+      console.log('Wallet funded!');
+      setWalletNeedsFunding(false);
+    }}
+    onTrustlineSet={() => {
+      console.log('Trustline set!');
+      setWalletNeedsFunding(false);
+      setWalletNeedsTrustline(false);
+    }}
+  />
+)}
+
+{/* Show Top-Up and Withdraw components when wallet is ready */}
 {!walletNeedsFunding && !walletNeedsTrustline && walletType === 'web3auth' && walletAddress && (
   <>
-   <TopUpRLUSD 
-  walletAddress={walletAddress}
-  xrpBalance={walletXrpBalance}
-  rlusdBalance={walletRlusdBalance}
-  showAmounts={showAmounts}
-/>
+    <TopUpRLUSD
+      walletAddress={walletAddress}
+      xrpBalance={walletXrpBalance}
+      rlusdBalance={walletRlusdBalance}
+      showAmounts={showAmounts}
+    />
     <WithdrawRLUSD
       walletAddress={walletAddress}
       rlusdBalance={walletRlusdBalance}
