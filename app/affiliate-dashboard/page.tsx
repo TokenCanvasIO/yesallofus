@@ -730,7 +730,7 @@ const SocialIcon = ({ provider, size = 'sm' }: { provider: string; size?: 'sm' |
 
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
-      <main className="max-w-4xl mx-auto px-6 py-10 mt-10">
+      <main className="max-w-4xl mx-auto px-6 py-10">
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">

@@ -54,12 +54,34 @@ const [connectingGoogle, setConnectingGoogle] = useState(false);
 
   // Amount visibility toggle
   const [showAmounts, setShowAmounts] = useState(false);
+  // WordPress return URL
+  const [wordpressReturn, setWordpressReturn] = useState<string | null>(null);
 
   // Wallet funding state (for new Web3Auth wallets)
   const [walletNeedsFunding, setWalletNeedsFunding] = useState(false);
   const [walletNeedsTrustline, setWalletNeedsTrustline] = useState(false);
   const [walletXrpBalance, setWalletXrpBalance] = useState(0);
   const [walletRlusdBalance, setWalletRlusdBalance] = useState(0);
+
+  // Capture wordpress_return IMMEDIATELY on mount - before auth loads
+useEffect(() => {
+    if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const wpReturn = params.get('wordpress_return');
+        if (wpReturn) {
+            console.log('Capturing wordpress_return:', wpReturn);
+            sessionStorage.setItem('wordpress_return', wpReturn);
+            setWordpressReturn(wpReturn);
+        } else {
+            // Check if already stored from previous page load
+            const stored = sessionStorage.getItem('wordpress_return');
+            if (stored) {
+                console.log('Found stored wordpress_return:', stored);
+                setWordpressReturn(stored);
+            }
+        }
+    }
+}, []);
 
   // Check URL for claim token on load
   useEffect(() => {
@@ -77,6 +99,13 @@ const [connectingGoogle, setConnectingGoogle] = useState(false);
           })
           .catch(console.error);
       }
+
+      // Check for WordPress return URL
+  const wpReturn = params.get('wordpress_return') || sessionStorage.getItem('wordpress_return');
+if (wpReturn) {
+    sessionStorage.setItem('wordpress_return', wpReturn);
+    setWordpressReturn(wpReturn);
+}
 
       // Check for referral code (from store referral link)
       const ref = params.get('ref');
@@ -1802,6 +1831,26 @@ useEffect(() => {
                 <p className="text-zinc-500 text-xs mt-2">Share this link - new vendors get 50% off their first month!</p>
               </div>
             </div>
+
+            {/* ============================================================= */}
+{/* RETURN TO WORDPRESS */}
+{/* ============================================================= */}
+{wordpressReturn && store && (
+  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6">
+    <h2 className="text-lg font-bold mb-2 text-emerald-400">Setup Complete!</h2>
+    <p className="text-zinc-400 text-sm mb-4">
+      Your store is connected and ready to process affiliate commissions.
+    </p>
+
+    <a
+      href={`${wordpressReturn}${wordpressReturn.includes('?') ? '&' : '?'}wallet=${walletAddress}&store_id=${store.store_id}`}
+      onClick={() => sessionStorage.removeItem('wordpress_return')}
+      className="inline-block bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-6 py-3 rounded-lg transition"
+    >
+      Return to WordPress Dashboard
+    </a>
+  </div>
+)}
 
             {/* ============================================================= */}
             {/* QUICK LINKS */}
