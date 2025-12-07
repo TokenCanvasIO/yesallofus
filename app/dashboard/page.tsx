@@ -1877,7 +1877,7 @@ setStep('dashboard');
     <h2>Setup Complete!</h2>
 
     <a
-      href={`${store.platform_return_url}?wallet=${walletAddress}&store_id=${store.store_id}`}
+      href={`${store.platform_return_url}${store.platform_return_url.includes('?') ? '&' : '?'}wallet=${walletAddress}&store_id=${store.store_id}`}
       onClick={async (e) => {
         e.preventDefault();
         // Capture the URL BEFORE any async operations
