@@ -337,10 +337,16 @@ const [reauthing, setReauthing] = useState(false);
     const web3auth = await getWeb3Auth();
     
     if (web3auth) {
-      await web3auth.connect();
-      setShowReauthModal(false);
-      // Auto-retry trustline after successful re-auth
-      setTimeout(() => setTrustline(), 500);
+      const provider = await web3auth.connect();
+      
+      // Only proceed if we got a provider back
+      if (provider) {
+        setShowReauthModal(false);
+        // Small delay then retry
+        setTimeout(() => setTrustline(), 500);
+      } else {
+        throw new Error('No provider returned');
+      }
     }
   } catch (err) {
     console.error('Re-auth failed:', err);

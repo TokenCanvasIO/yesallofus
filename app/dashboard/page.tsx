@@ -54,8 +54,6 @@ const [connectingGoogle, setConnectingGoogle] = useState(false);
 
   // Amount visibility toggle
   const [showAmounts, setShowAmounts] = useState(false);
-  // WordPress return URL
-  const [wordpressReturn, setWordpressReturn] = useState<string | null>(null);
 
   // Wallet funding state (for new Web3Auth wallets)
   const [walletNeedsFunding, setWalletNeedsFunding] = useState(false);
@@ -79,26 +77,6 @@ const [connectingGoogle, setConnectingGoogle] = useState(false);
     }
   };
 
-  // Capture wordpress_return IMMEDIATELY on mount - before auth loads
-useEffect(() => {
-    if (typeof window !== 'undefined') {
-        const params = new URLSearchParams(window.location.search);
-        const wpReturn = params.get('wordpress_return');
-        if (wpReturn) {
-            console.log('Capturing wordpress_return:', wpReturn);
-            sessionStorage.setItem('wordpress_return', wpReturn);
-            setWordpressReturn(wpReturn);
-        } else {
-            // Check if already stored from previous page load
-            const stored = sessionStorage.getItem('wordpress_return');
-            if (stored) {
-                console.log('Found stored wordpress_return:', stored);
-                setWordpressReturn(stored);
-            }
-        }
-    }
-}, []);
-
   // Check URL for claim token on load
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -116,11 +94,11 @@ useEffect(() => {
           .catch(console.error);
       }
 
-      // Check for WordPress return URL
-  const wpReturn = params.get('wordpress_return') || sessionStorage.getItem('wordpress_return');
+      // Check for WordPress return URL - just store in sessionStorage for now
+// It will be saved to Firebase in loadOrCreateStore
+const wpReturn = params.get('wordpress_return') || sessionStorage.getItem('wordpress_return');
 if (wpReturn) {
     sessionStorage.setItem('wordpress_return', wpReturn);
-    setWordpressReturn(wpReturn);
 }
 
       // Check for referral code (from store referral link)
@@ -297,14 +275,34 @@ useEffect(() => {
       const data = await res.json();
 
       if (data.success && data.store) {
-        setStore(data.store);
-        setNewSecret(null);
-        if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
-        if (data.store.daily_limit) setDailyLimit(data.store.daily_limit);
-        if (data.store.auto_sign_max_single_payout) setMaxSinglePayout(data.store.auto_sign_max_single_payout);
+  setStore(data.store);
+  setNewSecret(null);
+  if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
+  if (data.store.daily_limit) setDailyLimit(data.store.daily_limit);
+  if (data.store.auto_sign_max_single_payout) setMaxSinglePayout(data.store.auto_sign_max_single_payout);
 
-        // Save Xaman connection for existing store
-        if (type === 'xaman' && xamanUserToken) {
+  // If we have a wordpress_return in URL/session, save it to Firebase
+  const wpReturn = new URLSearchParams(window.location.search).get('wordpress_return') 
+    || sessionStorage.getItem('wordpress_return');
+  
+  if (wpReturn && !data.store.platform_return_url) {
+    await fetch(`${API_URL}/store/set-platform-return`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        store_id: data.store.store_id,
+        wallet_address: wallet,
+        platform_return_url: wpReturn,
+        platform_type: 'wordpress'
+      })
+    });
+    data.store.platform_return_url = wpReturn;
+    data.store.platform_type = 'wordpress';
+    setStore({ ...data.store, platform_return_url: wpReturn, platform_type: 'wordpress' });
+  }
+
+  // Save Xaman connection for existing store
+  if (type === 'xaman' && xamanUserToken) {
           await fetch(`${API_URL}/store/save-xaman-wallet`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1852,19 +1850,39 @@ useEffect(() => {
             {/* ============================================================= */}
 {/* RETURN TO WORDPRESS */}
 {/* ============================================================= */}
-{wordpressReturn && store && (
+{/* RETURN TO WORDPRESS/PLATFORM */}
+{store?.platform_return_url && (
   <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6">
     <h2 className="text-lg font-bold mb-2 text-emerald-400">Setup Complete!</h2>
     <p className="text-zinc-400 text-sm mb-4">
-      Your store is connected and ready to process affiliate commissions.
+      Your wallet is connected and ready to process affiliate commissions.
     </p>
 
     <a
-      href={`${wordpressReturn}${wordpressReturn.includes('?') ? '&' : '?'}wallet=${walletAddress}&store_id=${store.store_id}`}
-      onClick={() => sessionStorage.removeItem('wordpress_return')}
+      href={`${store.platform_return_url}${store.platform_return_url.includes('?') ? '&' : '?'}wallet=${walletAddress}&store_id=${store.store_id}`}
+      onClick={async (e) => {
+        // Prevent navigation until cleanup is attempted (fire-and-forget)
+        e.preventDefault();
+        try {
+          await fetch(`${API_URL}/store/clear-platform-return`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              store_id: store.store_id,
+              wallet_address: walletAddress,
+            }),
+          });
+        } catch (err) {
+          console.warn('Failed to clear platform return URL:', err);
+        } finally {
+          sessionStorage.removeItem('wordpress_return');
+          // Now navigate
+          window.location.href = e.currentTarget.href;
+        }
+      }}
       className="inline-block bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-6 py-3 rounded-lg transition"
     >
-      Return to WordPress Dashboard
+      Return to {store.platform_type === 'wordpress' ? 'WordPress' : 'Your Site'}
     </a>
   </div>
 )}
