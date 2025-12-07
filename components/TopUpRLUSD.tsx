@@ -7,9 +7,10 @@ interface TopUpRLUSDProps {
   xrpBalance: number;
   rlusdBalance: number;
   showAmounts: boolean;
+  onRefresh?: () => void;
 }
 
-export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance, showAmounts }: TopUpRLUSDProps) {
+export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance, showAmounts, onRefresh }: TopUpRLUSDProps) {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'card' | 'swap'>('card');
 
@@ -91,25 +92,36 @@ export default function TopUpRLUSD({ walletAddress, xrpBalance, rlusdBalance, sh
   ];
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-      <div className="flex items-center justify-between mb-4">
-  <h2 className="text-lg font-bold">💰 Top Up RLUSD</h2>
-  <div className="text-right">
-    <p className="text-zinc-500 text-xs">Current Balance</p>
-    <div className="flex items-center gap-3">
-      <p className="text-white font-bold">{showAmounts ? `${xrpBalance.toFixed(2)} XRP` : '••••'}</p>
-      <p className="text-emerald-400 font-bold">{showAmounts ? `$${rlusdBalance.toFixed(2)} RLUSD` : '••••'}</p>
+  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="text-lg font-bold">💰 Top Up RLUSD</h2>
+      <div className="text-right flex items-center gap-3">
+        {onRefresh && (
+          <button
+            onClick={onRefresh}
+            className="text-zinc-400 hover:text-white transition p-1"
+            title="Refresh balance"
+          >
+            🔄
+          </button>
+        )}
+        <div>
+          <p className="text-zinc-500 text-xs">Current Balance</p>
+          <div className="flex items-center gap-3">
+            <p className="text-white font-bold">{showAmounts ? `${xrpBalance.toFixed(2)} XRP` : '••••'}</p>
+            <p className="text-emerald-400 font-bold">{showAmounts ? `$${rlusdBalance.toFixed(2)} RLUSD` : '••••'}</p>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
-      {rlusdBalance < 10 && showAmounts && (
-  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
-    <p className="text-yellow-400 text-sm">
-      ⚠️ Low balance — add RLUSD to pay affiliate commissions
-    </p>
-  </div>
-)}
+    {rlusdBalance < 10 && showAmounts && (
+      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+        <p className="text-yellow-400 text-sm">
+          ⚠️ Low balance — add RLUSD to pay affiliate commissions
+        </p>
+      </div>
+    )}
 
       {/* Wallet Address */}
       <div className="bg-zinc-800 rounded-lg p-3 mb-4">

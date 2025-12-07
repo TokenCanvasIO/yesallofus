@@ -63,6 +63,22 @@ const [connectingGoogle, setConnectingGoogle] = useState(false);
   const [walletXrpBalance, setWalletXrpBalance] = useState(0);
   const [walletRlusdBalance, setWalletRlusdBalance] = useState(0);
 
+  const refreshWalletStatus = async () => {
+    if (!walletAddress) return;
+    try {
+      const res = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${walletAddress}`);
+      const data = await res.json();
+      if (data.success) {
+        setWalletXrpBalance(data.xrp_balance || 0);
+        setWalletRlusdBalance(data.rlusd_balance || 0);
+        setWalletNeedsFunding(!data.funded);
+        setWalletNeedsTrustline(!data.rlusd_trustline);
+      }
+    } catch (err) {
+      console.error('Failed to refresh wallet status:', err);
+    }
+  };
+
   // Capture wordpress_return IMMEDIATELY on mount - before auth loads
 useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -1528,6 +1544,7 @@ useEffect(() => {
       xrpBalance={walletXrpBalance}
       rlusdBalance={walletRlusdBalance}
       showAmounts={showAmounts}
+      onRefresh={refreshWalletStatus} 
     />
     <WithdrawRLUSD
       walletAddress={walletAddress}
