@@ -5,6 +5,9 @@ import WalletFunding from '@/components/WalletFunding';
 import Script from 'next/script';
 import TopUpRLUSD from '@/components/TopUpRLUSD';
 import WithdrawRLUSD from '@/components/WithdrawRLUSD';
+import Header from "@/components/Header";
+import Link from 'next/link';
+import Logo from '@/components/Logo';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
 
@@ -1228,11 +1231,18 @@ setStep('dashboard');
     { id: 'activity', label: 'Activity', icon: '📈' },
     { id: 'danger-zone', label: 'Danger Zone', icon: '⚠️' },
   ].filter(item => item.show !== false);
-  // =========================================================================
+ // =========================================================================
   // DASHBOARD
   // =========================================================================
   return (
-    <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
+    <>
+      <Header 
+        variant="dashboard"
+        storeName={store?.store_name}
+        walletAddress={walletAddress || undefined}
+        onSignOut={signOut}
+      />
+      <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
       <Script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" />
 
       {/* Mobile Header */}
@@ -1250,26 +1260,49 @@ setStep('dashboard');
       {sidebarOpen && <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />}
 
       {/* Sidebar */}
-      <aside className={`fixed top-0 left-0 h-full w-64 bg-zinc-900 border-r border-zinc-800 z-50 transform transition-transform duration-200 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-6 border-b border-zinc-800">
-          <h2 className="font-bold text-lg truncate">{store?.store_name || 'Get Started'}</h2>
-          <p className="text-zinc-500 text-xs font-mono mt-1">{walletAddress?.substring(0, 8)}...{walletAddress?.slice(-6)}</p>
-        </div>
-        <nav className="p-4 space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
-          {store && navItems.map((item) => (
-            <button key={item.id} onClick={() => scrollToSection(item.id)} className="w-full flex items-center gap-3 px-3 py-2 text-left text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition">
-              <span>{item.icon}</span>
-              <span className="text-sm">{item.label}</span>
-            </button>
-          ))}
-        </nav>
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-zinc-800">
-          <button onClick={signOut} className="w-full flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition">
-            <span>🚪</span>
-            <span className="text-sm">Sign out</span>
-          </button>
-        </div>
-      </aside>
+<aside
+  className={`
+    fixed top-0 left-0 h-full w-64 bg-zinc-900 border-r border-zinc-800 z-50 transform transition-transform duration-300
+    lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+  `}
+>
+  <div className="p-6 border-b border-zinc-800">
+    <Link href="/" className="flex items-center gap-2 mb-4 hover:opacity-80 transition">
+      <Logo size={28} />
+      <span className="font-bold text-white">YesAllofUs</span>
+    </Link>
+    <h2 className="font-bold text-lg truncate text-zinc-300">
+      {store?.store_name || 'Get Started'}
+    </h2>
+    <p className="text-zinc-500 text-xs font-mono mt-1">
+      {walletAddress?.substring(0, 8)}...{walletAddress?.slice(-6)}
+    </p>
+  </div>
+
+  <nav className="p-4 space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+    {store &&
+      navItems.map((item) => (
+        <button
+          key={item.id}
+          onClick={() => scrollToSection(item.id)}
+          className="w-full flex items-center gap-3 px-3 py-2 text-left text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition"
+        >
+          <span>{item.icon}</span>
+          <span className="text-sm">{item.label}</span>
+        </button>
+      ))}
+  </nav>
+
+  <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-zinc-800">
+    <button
+      onClick={signOut}
+      className="w-full flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition"
+    >
+      <span>🚪</span>
+      <span className="text-sm">Sign out</span>
+    </button>
+  </div>
+</aside>
 
       {/* Main Content */}
       <main className="lg:ml-64 min-h-screen pt-14 lg:pt-0">
@@ -1982,5 +2015,6 @@ setStep('dashboard');
      </div>
       </main>
     </div>
+    </>
   );
 }

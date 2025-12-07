@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -79,7 +77,6 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0d0d0d" />
         <script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" async></script>
-        {/* Google Analytics */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-13PHKRLJ2R"></script>
         <script
           dangerouslySetInnerHTML={{
@@ -93,11 +90,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Header />
         {children}
-        <Footer />
-        
-        {/* 3D Model Viewer - lazy loaded for Logo component */}
         <Script 
           src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" 
           type="module"
