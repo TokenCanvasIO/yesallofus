@@ -9,7 +9,7 @@ interface TopUpRLUSDProps {
   rlusdBalance: number;
   showAmounts: boolean;
   onToggleAmounts: () => void;
-  onRefresh?: () => void;
+  onRefresh?: () => Promise<void>;
 }
 
 export default function TopUpRLUSD({
@@ -23,6 +23,16 @@ export default function TopUpRLUSD({
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'card' | 'swap'>('card');
   const [showQR, setShowQR] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await onRefresh?.();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const copyAddress = () => {
     navigator.clipboard.writeText(walletAddress);
@@ -103,7 +113,21 @@ export default function TopUpRLUSD({
           </button>
 
           {onRefresh && (
-            <button onClick={onRefresh} className="text-zinc-400 hover:text-white p-1" title="Refresh">
+            <button 
+              onClick={handleRefresh} 
+              disabled={refreshing}
+              className="text-zinc-400 hover:text-white p-1 disabled:opacity-50" 
+              title="Refresh balance"
+            >
+              <svg 
+                className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor" 
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
             </button>
           )}
 

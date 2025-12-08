@@ -1600,19 +1600,22 @@ return (
       onRefresh={refreshWalletStatus} 
     />
     <WithdrawRLUSD
-      walletAddress={walletAddress}
-      rlusdBalance={walletRlusdBalance}
-      onSuccess={() => {
-        fetch(`${API_URL}/wallet/status/${walletAddress}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              setWalletXrpBalance(data.xrp_balance || 0);
-              setWalletRlusdBalance(data.rlusd_balance || 0);
-            }
-          });
-      }}
-  />
+  walletAddress={walletAddress}
+  rlusdBalance={walletRlusdBalance}
+  showAmounts={showAmounts}
+  onToggleAmounts={() => setShowAmounts(!showAmounts)}
+  onRefresh={refreshWalletStatus}
+  onSuccess={() => {
+    fetch(`${API_URL}/wallet/status/${walletAddress}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setWalletXrpBalance(data.xrp_balance || 0);
+          setWalletRlusdBalance(data.rlusd_balance || 0);
+        }
+      });
+  }}
+/>
   </div>
 )}
 

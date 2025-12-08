@@ -8,15 +8,35 @@ const RLUSD_ISSUER = 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De';
 interface WithdrawRLUSDProps {
   walletAddress: string;
   rlusdBalance: number;
+  showAmounts: boolean;
+  onToggleAmounts: () => void;
+  onRefresh: () => Promise<void>;
   onSuccess?: () => void;
 }
 
-export default function WithdrawRLUSD({ walletAddress, rlusdBalance, onSuccess }: WithdrawRLUSDProps) {
+export default function WithdrawRLUSD({ 
+  walletAddress, 
+  rlusdBalance, 
+  showAmounts,
+  onToggleAmounts,
+  onRefresh,
+  onSuccess 
+}: WithdrawRLUSDProps) {
   const [destinationAddress, setDestinationAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [sending, setSending] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await onRefresh();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const validateXRPAddress = (address: string): boolean => {
     return /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(address);
@@ -85,6 +105,9 @@ export default function WithdrawRLUSD({ walletAddress, rlusdBalance, onSuccess }
       setSuccess(`Successfully sent ${amountNum.toFixed(2)} RLUSD to ${destinationAddress.substring(0, 8)}...${destinationAddress.slice(-6)}`);
       setAmount('');
       setDestinationAddress('');
+      
+      // Refresh balance after successful withdrawal
+      await onRefresh();
       onSuccess?.();
     } catch (err: any) {
       console.error('Withdrawal failed:', err);
@@ -102,9 +125,47 @@ export default function WithdrawRLUSD({ walletAddress, rlusdBalance, onSuccess }
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold">💸 Withdraw RLUSD</h2>
-        <div className="text-right">
-          <p className="text-zinc-500 text-xs">Available</p>
-          <p className="text-emerald-400 font-bold">${rlusdBalance.toFixed(2)} RLUSD</p>
+        <div className="flex items-center gap-2">
+          <div className="text-right">
+            <p className="text-zinc-500 text-xs">Available</p>
+            <p className="text-emerald-400 font-bold">
+              {showAmounts ? `$${rlusdBalance.toFixed(2)} RLUSD` : '••••••'}
+            </p>
+          </div>
+          {/* Refresh button */}
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="text-zinc-400 hover:text-white transition p-1 disabled:opacity-50"
+            title="Refresh balance"
+          >
+            <svg 
+              className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor" 
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+          {/* Eye toggle */}
+          <button
+            onClick={onToggleAmounts}
+            className="text-zinc-400 hover:text-white transition p-1"
+            title={showAmounts ? 'Hide balance' : 'Show balance'}
+          >
+            {showAmounts ? (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
 
