@@ -1596,6 +1596,7 @@ return (
       xrpBalance={walletXrpBalance}
       rlusdBalance={walletRlusdBalance}
       showAmounts={showAmounts}
+      onToggleAmounts={() => setShowAmounts(!showAmounts)} 
       onRefresh={refreshWalletStatus} 
     />
     <WithdrawRLUSD
