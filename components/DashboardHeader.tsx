@@ -15,13 +15,13 @@ export default function DashboardHeader({ walletAddress, onSignOut }: DashboardH
   const isConnected = !!walletAddress;
 
   return (
-    <header className="sticky top-0 z-50 bg-[#0d0d0d]">
+    <header className="hidden sm:block sticky top-0 z-50 bg-[#0d0d0d]">
       <div className="px-6 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 hover:opacity-80">
           <Logo size={32} />
           <span className="font-bold text-white text-xl">YesAllofUs</span>
         </Link>
-
+        
         <div className="flex items-center gap-3">
           {isConnected ? (
             <>
