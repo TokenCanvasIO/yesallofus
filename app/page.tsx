@@ -155,7 +155,7 @@ export default function Home() {
   </div>
 </section>
 
-        {/* Why we're different */}
+       {/* Why we're different */}
 <section className="py-20 border-t border-zinc-800">
   <div className="text-center mb-12">
     <p className="text-emerald-400 text-sm font-semibold mb-4">Why this exists</p>
@@ -166,7 +166,7 @@ export default function Home() {
   </div>
   
   <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center md:text-left">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center">
       <div className="text-2xl mb-3">🔌</div>
       <h3 className="font-bold mb-2">Built for affiliate payouts</h3>
       <p className="text-zinc-400 text-sm">
@@ -174,7 +174,7 @@ export default function Home() {
       </p>
     </div>
     
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center md:text-left">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center">
       <div className="text-2xl mb-3">⚡</div>
       <h3 className="font-bold mb-2">Instant & automatic</h3>
       <p className="text-zinc-400 text-sm">
@@ -182,7 +182,7 @@ export default function Home() {
       </p>
     </div>
     
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center md:text-left">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center">
       <div className="text-2xl mb-3">🔐</div>
       <h3 className="font-bold mb-2">Non-custodial</h3>
       <p className="text-zinc-400 text-sm">
@@ -190,8 +190,8 @@ export default function Home() {
       </p>
     </div>
     
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center md:text-left">
-      <img src="/XRP-logo.webp" alt="XRPL" className="w-8 h-8 mb-3" />
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center">
+      <img src="/XRP-logo.webp" alt="XRPL" className="w-8 h-8 mb-3 mx-auto" />
       <h3 className="font-bold mb-2">XRPL + RLUSD native</h3>
       <p className="text-zinc-400 text-sm">
         Built on the XRP Ledger. Paid in RLUSD stablecoin. $1 = $1. Near-zero fees. Settlement in seconds, not days.

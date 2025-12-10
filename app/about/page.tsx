@@ -6,7 +6,7 @@ export default function About() {
 
       <main className="max-w-3xl mx-auto px-6 py-16">
         {/* Hero */}
-        <div className="flex items-center gap-6 mb-12">
+        <div className="flex flex-col sm:flex-row items-center gap-6 mb-12 text-center sm:text-left">
           <img 
             src="/mark.jpg" 
             alt="Mark" 
@@ -61,26 +61,26 @@ export default function About() {
         </section>
 
         {/* What Makes It Different - Updated Non-Custodial Description */}
-        <section className="mb-12">
-          <h2 className="text-xl font-bold mb-4">How It Works</h2>
-          <div className="grid sm:grid-cols-3 gap-4">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
-              <div className="text-2xl mb-2">⚡</div>
-              <h3 className="font-semibold mb-1">4 Seconds</h3>
-              <p className="text-zinc-400 text-sm">Sale completes, affiliate gets paid. Not 30 days. Now.</p>
-            </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
-              <div className="text-2xl mb-2">🔐</div>
-              <h3 className="font-semibold mb-1">Non-Custodial</h3>
-              <p className="text-zinc-400 text-sm">Your wallet, your keys. We never touch your funds. **You set the spending limits.**</p>
-            </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
-              <div className="text-2xl mb-2">🌍</div>
-              <h3 className="font-semibold mb-1">Everywhere</h3>
-              <p className="text-zinc-400 text-sm">No borders. No bank required. Just a wallet and a phone.</p>
-            </div>
-          </div>
-        </section>
+<section className="mb-12">
+  <h2 className="text-xl font-bold mb-4 text-center sm:text-left">How It Works</h2>
+  <div className="grid sm:grid-cols-3 gap-4">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 text-center">
+      <div className="text-2xl mb-2">⚡</div>
+      <h3 className="font-semibold mb-1">4 Seconds</h3>
+      <p className="text-zinc-400 text-sm">Sale completes, affiliate gets paid. Not 30 days. Now.</p>
+    </div>
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 text-center">
+      <div className="text-2xl mb-2">🔐</div>
+      <h3 className="font-semibold mb-1">Non-Custodial</h3>
+      <p className="text-zinc-400 text-sm">Your wallet, your keys. We never touch your funds. You set the spending limits.</p>
+    </div>
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 text-center">
+      <div className="text-2xl mb-2">🌍</div>
+      <h3 className="font-semibold mb-1">Everywhere</h3>
+      <p className="text-zinc-400 text-sm">No borders. No bank required. Just a wallet and a phone.</p>
+    </div>
+  </div>
+</section>
 
         {/* Background - Updated with XRPL Context */}
         <section className="mb-12">
@@ -96,7 +96,7 @@ export default function About() {
               to build here — infrastructure that includes everyone.
             </p>
             <p>
-              I started coding in June 2024. No CS degree. Just curiosity, late nights, and AI 
+              I started coding in June 2025. No CS degree. Just curiosity, late nights, and AI 
               as my engineering partner. Five months later, I&apos;d built three production platforms, all running on the XRPL:
             </p>
             <ul className="space-y-2">

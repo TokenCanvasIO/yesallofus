@@ -840,7 +840,7 @@ function handle_payment_success($order, $referral_code) {
                 </div>
                 <div className="flex gap-3">
                   <div className="w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center flex-shrink-0 text-blue-700 font-bold text-xs">2</div>
-                  <span className="text-slate-600">When pending ≥ 1 XRP → we fund wallet activation</span>
+                  <span className="text-slate-600">When pending ≥ 1 XRP → The Ledger completes wallet activation</span>
                 </div>
                 <div className="flex gap-3">
                   <div className="w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center flex-shrink-0 text-blue-700 font-bold text-xs">3</div>
