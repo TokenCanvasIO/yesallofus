@@ -88,6 +88,49 @@ export default function Announcements() {
             </div>
           </article>
 
+          {/* Partnership Progress - NEW */}
+<article className="relative">
+  <div className="absolute -left-3 top-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+    <svg className="w-3 h-3 text-black" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+    </svg>
+  </div>
+  <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6 ml-6">
+    <div className="flex items-center gap-3 mb-3">
+      <span className="bg-blue-500/20 text-blue-400 text-xs font-semibold px-2 py-1 rounded">UPDATE</span>
+      <span className="text-zinc-500 text-sm">December 2025</span>
+    </div>
+    <h2 className="text-xl font-bold mb-3">🤝 Partnerships & Regulatory Progress</h2>
+    <div className="text-zinc-300 space-y-4">
+      
+      <div className="bg-zinc-800/50 rounded-lg p-4">
+        <h3 className="font-semibold text-white mb-2">🇫🇷 XRPL Commons Residency? — Paris 2026</h3>
+        <p className="text-zinc-400 text-sm">
+          Working with XRPL Commons. 
+          Met the team in Paris December 2025 to discuss scaling YesAllofUs across the XRPL ecosystem.
+        </p>
+      </div>
+
+      <div className="bg-zinc-800/50 rounded-lg p-4">
+        <h3 className="font-semibold text-white mb-2">🇬🇬 GFSC Sandbox Discussions — Guernsey</h3>
+        <p className="text-zinc-400 text-sm">
+          In active discussions with the Guernsey Financial Services Commission regarding 
+          their regulatory sandbox. Working to ensure YesAllofUs is compliant from day one.
+        </p>
+      </div>
+
+      <div className="bg-zinc-800/50 rounded-lg p-4">
+        <h3 className="font-semibold text-white mb-2">🔒 Strategic Partnership (Unannounced)</h3>
+        <p className="text-zinc-400 text-sm">
+          In talks with a newly forming stablecoin and tokenized asset exchange based in Guernsey. 
+          Can&apos;t share details yet, but this could significantly accelerate our go-to-market.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</article>
+
           {/* Launch Announcement */}
           <article className="relative">
             <div className="absolute -left-3 top-0 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
