@@ -1618,9 +1618,9 @@ return (
 )}
 
             {/* ============================================================= */}
-            {/* AUTO-SIGN SETUP (show if auto-sign not enabled yet) */}
-            {/* ============================================================= */}
-            {!store.auto_signing_enabled && (
+{/* AUTO-SIGN SETUP (show if auto-sign not enabled yet - NOT for Xaman) */}
+{/* ============================================================= */}
+{!store.auto_signing_enabled && walletType !== 'xaman' && (
   <div id="auto-sign" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
     <h2 className="text-lg font-bold mb-4">Enable Auto-Sign</h2>
                 <p className="text-zinc-400 text-sm mb-4">
