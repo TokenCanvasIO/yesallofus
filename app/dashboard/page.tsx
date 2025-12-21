@@ -2005,7 +2005,7 @@ return (
                   <div className="text-2xl mb-2">👥</div>
                   <p className="text-sm font-medium">Affiliate Dashboard</p>
                 </a>
-                <a href="https://github.com/TokenCanvasIO/YesAllofUs-wordpress/releases/download/v1.0.0/YesAllofUs.zip" className="bg-zinc-800 hover:bg-zinc-700 rounded-lg p-4 text-center transition">
+                <a href="https://github.com/TokenCanvasIO/YesAllofUs-wordpress/releases/download/v1.0.2/yesallofus.zip" className="bg-zinc-800 hover:bg-zinc-700 rounded-lg p-4 text-center transition">
                   <div className="text-2xl mb-2">📦</div>
                   <p className="text-sm font-medium">WordPress Plugin</p>
                 </a>
