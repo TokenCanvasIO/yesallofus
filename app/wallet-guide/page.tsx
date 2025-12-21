@@ -75,7 +75,7 @@ export default function WalletGuide() {
               <div className="text-left">
                 <div className="font-semibold flex items-center gap-2">
                   Xaman
-                  <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded">Most Secure</span>
+                  <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded">✓ Live</span>
                 </div>
                 <div className="text-zinc-500 text-sm">Mobile app</div>
               </div>
@@ -111,7 +111,7 @@ export default function WalletGuide() {
               <div className="text-left">
                 <div className="font-semibold flex items-center gap-2">
                   Social Login
-                  <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded">Auto Set Up</span>
+                  <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded">Coming Soon</span>
                 </div>
                 <div className="text-zinc-500 text-sm">No wallet needed</div>
               </div>
@@ -129,7 +129,7 @@ export default function WalletGuide() {
               <div className="text-left">
                 <div className="font-semibold flex items-center gap-2">
                   Crossmark
-                  <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-0.5 rounded">Auto-Sign</span>
+                  <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded">Coming Soon</span>
                 </div>
                 <div className="text-zinc-500 text-sm">Browser extension</div>
               </div>
@@ -208,12 +208,13 @@ export default function WalletGuide() {
                     </div>
 
                     <div className="flex flex-wrap gap-3">
-                      <Link 
-                        href="/affiliate-dashboard"
-                        className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white px-6 py-3 rounded-lg font-semibold transition"
-                      >
-                        Sign Up with Social
-                      </Link>
+                      <button 
+  disabled
+  className="bg-zinc-700 text-zinc-400 px-6 py-3 rounded-lg font-semibold cursor-not-allowed"
+>
+  Sign Up with Social
+  <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded ml-2">Coming Soon</span>
+</button>
                       <Link 
                         href="/docs/web3auth"
                         className="bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-lg font-medium transition"
@@ -495,12 +496,13 @@ export default function WalletGuide() {
                     </div>
 
                     <div className="flex flex-wrap gap-3">
-                      <Link 
-                        href="/dashboard"
-                        className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-400 hover:to-yellow-400 text-black px-6 py-3 rounded-lg font-semibold transition"
-                      >
-                        Connect Crossmark
-                      </Link>
+                      <button 
+  disabled
+  className="bg-zinc-700 text-zinc-400 px-6 py-3 rounded-lg font-semibold cursor-not-allowed"
+>
+  Connect Crossmark
+  <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded ml-2">Coming Soon</span>
+</button>
                       <a 
                         href="https://crossmark.io"
                         target="_blank"
@@ -575,18 +577,21 @@ export default function WalletGuide() {
                         </div>
                       </div>
                       <span className="font-semibold">Social Login</span>
+<span className="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded ml-1">Soon</span>
                     </div>
                   </th>
                   <th className="text-center py-4 px-4">
                     <div className="flex flex-col items-center gap-2">
                       <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded-lg" />
                       <span className="font-semibold">Xaman</span>
+<span className="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded ml-1">✓ Live</span>
                     </div>
                   </th>
                   <th className="text-center py-4 px-4">
                     <div className="flex flex-col items-center gap-2">
                       <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded-lg" />
                       <span className="font-semibold">Crossmark</span>
+<span className="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded ml-1">Soon</span>
                     </div>
                   </th>
                 </tr>

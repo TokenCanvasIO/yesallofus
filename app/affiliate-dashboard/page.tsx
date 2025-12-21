@@ -637,17 +637,20 @@ if (!walletAddress && !loading) {
                   </button>
                   
                   <button
-                    onClick={connectCrossmark}
-                    className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 py-4 px-6 rounded-lg transition-colors text-left"
-                  >
-                    <div className="flex items-center gap-4">
-                      <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-10 h-10 rounded-lg object-cover" />
-                      <div>
-                        <div className="font-semibold">Crossmark</div>
-                        <div className="text-zinc-400 text-sm">Browser extension</div>
-                      </div>
-                    </div>
-                  </button>
+  disabled
+  className="w-full bg-zinc-800/50 border border-zinc-700/50 py-4 px-6 rounded-lg text-left opacity-50 cursor-not-allowed"
+>
+  <div className="flex items-center gap-4">
+    <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-10 h-10 rounded-lg object-cover grayscale" />
+    <div className="flex-1">
+      <div className="font-semibold text-zinc-400">Crossmark</div>
+      <div className="text-zinc-500 text-sm">Browser extension</div>
+    </div>
+    <span className="bg-amber-500/20 text-amber-400 text-xs px-2 py-1 rounded font-medium">
+      Coming Soon
+    </span>
+  </div>
+</button>
                 </div>
 
                 <div className="relative my-6">
@@ -660,9 +663,8 @@ if (!walletAddress && !loading) {
                 </div>
 
                 <button
-  onClick={connectGoogle}
-  disabled={connecting !== 'none'}
-  className="w-full bg-white hover:bg-zinc-100 text-black py-4 px-6 rounded-lg transition-colors flex items-center justify-center gap-3 font-medium"
+  disabled
+  className="w-full bg-zinc-700 text-zinc-400 py-4 px-6 rounded-lg flex items-center justify-center gap-3 font-medium cursor-not-allowed"
 >
   <div className="flex -space-x-1.5">
     {/* Google */}
@@ -698,6 +700,9 @@ if (!walletAddress && !loading) {
     </div>
   </div>
   Continue with Social
+<span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-1 rounded font-medium ml-2">
+  Coming Soon
+</span>
 </button>
 
                 <p className="text-zinc-500 text-xs mt-6">

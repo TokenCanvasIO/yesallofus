@@ -885,6 +885,26 @@ setStep('dashboard');
           <h1 className="text-3xl font-bold mb-2">Vendor Dashboard</h1>
           <p className="text-zinc-400 mb-8">Sign in to manage your affiliate commissions.</p>
 
+          {/* ============================================================= */}
+          {/* OPTION 2: XAMAN */}
+          {/* ============================================================= */}
+          <button
+            onClick={loginXaman}
+            disabled={!trustlineConfirmed}
+            className={`w-full bg-zinc-900 border rounded-xl p-6 text-left transition mb-4 ${
+              trustlineConfirmed
+                ? 'border-zinc-800 hover:border-blue-500'
+                : 'border-zinc-800 opacity-50 cursor-not-allowed'
+            }`}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded" />
+              <span className="font-semibold">Xaman Mobile App</span>
+<span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-1 rounded font-medium ml-2">✓ Live</span>
+            </div>
+            <p className="text-zinc-400 text-sm">Approve each payout via push notification on your phone. Best for security.</p>
+          </button>
+
           {/* Show referral info if coming from store referral link */}
           {referringStore && (
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6 mb-6">
@@ -897,6 +917,85 @@ setStep('dashboard');
               </p>
             </div>
           )}
+
+{/* ============================================================= */}
+          {/* OPTION 3: CROSSMARK */}
+          {/* ============================================================= */}
+          <button
+            disabled
+            onClick={async () => {
+              if (!trustlineConfirmed) return;
+
+              const sdk = (window as any).xrpl?.crossmark;
+              if (!sdk) {
+                setError('Crossmark wallet not detected. Please install the Crossmark browser extension and refresh.');
+                return;
+              }
+
+              setError(null);
+
+              try {
+                const signIn = await sdk.methods.signInAndWait();
+                if (!signIn.response?.data?.address) {
+                  throw new Error('Connection cancelled');
+                }
+                const address = signIn.response.data.address;
+
+                // Save to Firebase via API
+                const res = await fetch(`${API_URL}/store/save-crossmark-wallet`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    wallet_address: address,
+                    store_id: null
+                  })
+                });
+
+                const data = await res.json();
+                if (data.error) {
+                  throw new Error(data.error);
+                }
+
+                setWalletAddress(address);
+                setWalletType('crossmark');
+                sessionStorage.setItem('vendorWalletAddress', address);
+                sessionStorage.setItem('vendorLoginMethod', 'crossmark');
+                loadOrCreateStore(address, 'crossmark');
+              } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Crossmark error';
+                setError(message);
+              }
+            }}
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-left transition mb-4 opacity-50 cursor-not-allowed"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
+              <span className="font-semibold">Crossmark Browser Extension</span>
+<span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-1 rounded font-medium ml-2">Coming Soon</span>
+            </div>
+            <p className="text-zinc-400 text-sm">Desktop browser wallet. Enable auto-sign for automatic payouts.</p>
+          </button>
+
+          {/* RLUSD Trustline Confirmation (for wallet options) */}
+<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-4">
+  <h3 className="font-semibold mb-3">⚠️ Wallet Requirements</h3>
+  <p className="text-zinc-400 text-sm mb-4">
+    YesAllofUs pays affiliate commissions in <strong className="text-white">RLUSD</strong> (Ripple USD stablecoin).
+    Your wallet must have an RLUSD trustline set up before commissions can be paid.
+  </p>
+
+  <label className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg cursor-pointer">
+    <input
+      type="checkbox"
+      checked={trustlineConfirmed}
+      onChange={(e) => setTrustlineConfirmed(e.target.checked)}
+      className="mt-1"
+    />
+    <span className="text-zinc-300 text-sm">
+      I confirm my wallet has an <strong>RLUSD trustline</strong> enabled
+    </span>
+  </label>
+</div>
 
           {/* Show claim store info if coming from CLI */}
           {claimStore && (
@@ -998,7 +1097,7 @@ setStep('dashboard');
 
   <button
     onClick={connectGoogle}
-    disabled={!web3authTermsAccepted || connectingGoogle}
+    disabled
     className={`w-full py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
       web3authTermsAccepted
         ? 'bg-white hover:bg-gray-100 text-black'
@@ -1011,7 +1110,7 @@ setStep('dashboard');
         Connecting...
       </>
     ) : (
-      'Sign in with Social Account'
+      <>Sign in with Social Account<span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-1 rounded font-medium ml-2">Coming Soon</span></>
     )}
   </button>
 
@@ -1028,107 +1127,6 @@ setStep('dashboard');
   <span className="text-zinc-500 text-sm">or use a crypto wallet</span>
   <div className="flex-1 h-px bg-zinc-800"></div>
 </div>
-
-{/* RLUSD Trustline Confirmation (for wallet options) */}
-<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-4">
-  <h3 className="font-semibold mb-3">⚠️ Wallet Requirements</h3>
-  <p className="text-zinc-400 text-sm mb-4">
-    YesAllofUs pays affiliate commissions in <strong className="text-white">RLUSD</strong> (Ripple USD stablecoin).
-    Your wallet must have an RLUSD trustline set up before commissions can be paid.
-  </p>
-
-  <label className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg cursor-pointer">
-    <input
-      type="checkbox"
-      checked={trustlineConfirmed}
-      onChange={(e) => setTrustlineConfirmed(e.target.checked)}
-      className="mt-1"
-    />
-    <span className="text-zinc-300 text-sm">
-      I confirm my wallet has an <strong>RLUSD trustline</strong> enabled
-    </span>
-  </label>
-</div>
-
-          {/* ============================================================= */}
-          {/* OPTION 2: XAMAN */}
-          {/* ============================================================= */}
-          <button
-            onClick={loginXaman}
-            disabled={!trustlineConfirmed}
-            className={`w-full bg-zinc-900 border rounded-xl p-6 text-left transition mb-4 ${
-              trustlineConfirmed
-                ? 'border-zinc-800 hover:border-blue-500'
-                : 'border-zinc-800 opacity-50 cursor-not-allowed'
-            }`}
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded" />
-              <span className="font-semibold">Xaman Mobile App</span>
-            </div>
-            <p className="text-zinc-400 text-sm">Approve each payout via push notification on your phone. Best for security.</p>
-          </button>
-
-          {/* ============================================================= */}
-          {/* OPTION 3: CROSSMARK */}
-          {/* ============================================================= */}
-          <button
-            disabled={!trustlineConfirmed}
-            onClick={async () => {
-              if (!trustlineConfirmed) return;
-
-              const sdk = (window as any).xrpl?.crossmark;
-              if (!sdk) {
-                setError('Crossmark wallet not detected. Please install the Crossmark browser extension and refresh.');
-                return;
-              }
-
-              setError(null);
-
-              try {
-                const signIn = await sdk.methods.signInAndWait();
-                if (!signIn.response?.data?.address) {
-                  throw new Error('Connection cancelled');
-                }
-                const address = signIn.response.data.address;
-
-                // Save to Firebase via API
-                const res = await fetch(`${API_URL}/store/save-crossmark-wallet`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    wallet_address: address,
-                    store_id: null
-                  })
-                });
-
-                const data = await res.json();
-                if (data.error) {
-                  throw new Error(data.error);
-                }
-
-                setWalletAddress(address);
-                setWalletType('crossmark');
-                sessionStorage.setItem('vendorWalletAddress', address);
-                sessionStorage.setItem('vendorLoginMethod', 'crossmark');
-                loadOrCreateStore(address, 'crossmark');
-              } catch (err: unknown) {
-                const message = err instanceof Error ? err.message : 'Crossmark error';
-                setError(message);
-              }
-            }}
-            className={`w-full bg-zinc-900 border rounded-xl p-6 text-left transition ${
-              trustlineConfirmed
-                ? 'border-zinc-800 hover:border-blue-500'
-                : 'border-zinc-800 opacity-50 cursor-not-allowed'
-            }`}
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
-              <span className="font-semibold">Crossmark Browser Extension</span>
-            </div>
-            <p className="text-zinc-400 text-sm">Desktop browser wallet. Enable auto-sign for automatic payouts.</p>
-          </button>
 
           {/* Comparison Table */}
 <div className="mt-8 bg-zinc-900 border border-zinc-800 rounded-xl p-6">

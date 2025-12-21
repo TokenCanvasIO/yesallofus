@@ -643,7 +643,7 @@ function handle_payment_success($order, $referral_code) {
                   <div className="w-10 h-10 bg-white border border-slate-300 rounded-lg flex items-center justify-center text-slate-900 font-bold">X</div>
                   <div>
                     <h4 className="font-semibold text-slate-900">Xaman (Mobile)</h4>
-                    <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded">Manual Approval</span>
+                    <span className="text-xs bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded">✓ Live</span>
                   </div>
                 </div>
                 <p className="text-sm text-slate-600 mb-4">
@@ -655,12 +655,12 @@ function handle_payment_success($order, $referral_code) {
                   <li>✓ Maximum control</li>
                 </ul>
               </div>
-              <div className="p-6 border-2 border-emerald-200 bg-emerald-50 rounded-xl">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold">C</div>
-                  <div>
-                    <h4 className="font-semibold text-slate-900">Crossmark (Browser)</h4>
-                    <span className="text-xs bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded">Auto-Sign</span>
+              <div className="p-6 border-2 border-slate-200 bg-slate-50 rounded-xl opacity-60">
+  <div className="flex items-center gap-3 mb-3">
+    <div className="w-10 h-10 bg-slate-400 rounded-lg flex items-center justify-center text-white font-bold">C</div>
+    <div>
+      <h4 className="font-semibold text-slate-900">Crossmark (Browser)</h4>
+      <span className="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded">Coming Soon</span>
                   </div>
                 </div>
                 <p className="text-sm text-slate-600 mb-4">
@@ -687,9 +687,9 @@ function handle_payment_success($order, $referral_code) {
 
           {/* Web3Auth Social Login */}
           <Section id="web3auth" title="Social Login (Web3Auth)">
-            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 mb-8 border border-indigo-200">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="bg-indigo-500 text-white text-xs font-bold px-2 py-0.5 rounded">NEW</span>
+            <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-6 mb-8 border border-slate-200 opacity-60">
+  <div className="flex items-center gap-3 mb-3">
+    <span className="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded">Coming Soon</span>
                 <h3 className="text-xl font-semibold text-slate-900">No Wallet? No Problem.</h3>
               </div>
               <p className="text-slate-600 leading-relaxed">
@@ -887,8 +887,8 @@ function handle_payment_success($order, $referral_code) {
                   <tr>
                     <th className="px-4 py-3 text-left text-slate-700 font-semibold">Feature</th>
                     <th className="px-4 py-3 text-left text-slate-700 font-semibold">Manual (Xaman)</th>
-                    <th className="px-4 py-3 text-left text-slate-700 font-semibold">Auto-Sign (Crossmark)</th>
-                    <th className="px-4 py-3 text-left text-slate-700 font-semibold">Social Login</th>
+                    <th className="px-4 py-3 text-left text-slate-400 font-semibold">Auto-Sign (Crossmark) <span className="text-xs bg-amber-100 text-amber-700 px-1 rounded">Soon</span></th>
+<th className="px-4 py-3 text-left text-slate-400 font-semibold">Social Login <span className="text-xs bg-amber-100 text-amber-700 px-1 rounded">Soon</span></th>
                   </tr>
                 </thead>
                 <tbody className="text-slate-700">

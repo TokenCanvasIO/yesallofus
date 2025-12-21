@@ -266,7 +266,7 @@ export default function Home() {
   </p>
   
   {/* Web3Auth - Full Width */}
-  <div className="bg-gradient-to-br from-indigo-900/50 to-purple-900/50 border border-indigo-700/50 rounded-xl p-8 mb-8">
+  <div className="bg-gradient-to-br from-indigo-900/50 to-purple-900/50 border border-indigo-700/50 rounded-xl p-8 mb-8 opacity-50">
     <div className="flex items-center justify-center gap-3 mb-4">
       <div className="flex -space-x-2">
         <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center border-2 border-zinc-900">
@@ -304,7 +304,7 @@ export default function Home() {
         </div>
       </div>
       <span className="font-semibold text-xl">Social Login</span>
-      <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded">New</span>
+      <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded">Coming Soon</span>
     </div>
     <p className="text-zinc-400 mb-6 max-w-2xl mx-auto">
       No wallet app needed. No seed phrases. Sign in with Google, Apple, Facebook, X, Discord, or GitHub — we create a real XRPL wallet for you automatically using Web3Auth MPC technology.
@@ -334,7 +334,8 @@ export default function Home() {
       <div className="flex items-center justify-center gap-3 mb-4">
         <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded" />
         <span className="font-semibold">Xaman</span>
-        <span className="text-zinc-500 text-sm">Mobile</span>
+<span className="text-zinc-500 text-sm">Mobile</span>
+<span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded">✓ Live</span>
       </div>
       <p className="text-zinc-400 mb-6">Approve each payout via push notification. Maximum control.</p>
       <ul className="space-y-2 text-sm text-zinc-300">
@@ -343,12 +344,13 @@ export default function Home() {
         <li>✓ Best for lower volume</li>
       </ul>
     </div>
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
-      <div className="flex items-center justify-center gap-3 mb-4">
-        <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
-        <span className="font-semibold">Crossmark</span>
-        <span className="text-zinc-500 text-sm">Browser</span>
-      </div>
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 opacity-50">
+  <div className="flex items-center justify-center gap-3 mb-4">
+    <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
+    <span className="font-semibold">Crossmark</span>
+    <span className="text-zinc-500 text-sm">Browser</span>
+    <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded">Coming Soon</span>
+  </div>
       <p className="text-zinc-400 mb-6">Automatic payouts within limits you set. Hands-off.</p>
       <ul className="space-y-2 text-sm text-zinc-300">
         <li>✓ Revoke permission anytime</li>
