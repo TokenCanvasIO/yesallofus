@@ -45,7 +45,8 @@ export default function StoreActivity({ storeId, walletAddress, showAmounts = fa
   const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortNewest, setSortNewest] = useState(true);
+  const [sortOption, setSortOption] = useState<'rank' | 'oldest' | 'newest' | 'lowest'>('rank');
+  const [paymentSortNewest, setPaymentSortNewest] = useState(true);
   const [page, setPage] = useState(0);
   const perPage = 20;
 
@@ -102,22 +103,32 @@ export default function StoreActivity({ storeId, walletAddress, showAmounts = fa
 
   const totalOrderValue = payments.reduce((sum, payment) => sum + payment.order_total, 0);
 
-  const sortedAffiliates = [...affiliates].sort((a, b) => {
-    if (sortNewest) {
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    }
-    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-  });
-
   const affiliatesWithActualEarnings = affiliates.map(aff => ({
     ...aff,
     actualEarned: getActualEarnings(aff.affiliate_id)
   }));
-  
+
+  // Sort affiliates based on selected option
+  const sortedAffiliates = [...affiliatesWithActualEarnings].sort((a, b) => {
+    switch (sortOption) {
+      case 'rank':
+        return b.actualEarned - a.actualEarned; // Highest earner first
+      case 'lowest':
+        return a.actualEarned - b.actualEarned; // Lowest earner first
+      case 'newest':
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      case 'oldest':
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      default:
+        return 0;
+    }
+  });
+
+  // Ranked affiliates always by earnings (for showing rank number)
   const rankedAffiliates = [...affiliatesWithActualEarnings].sort((a, b) => b.actualEarned - a.actualEarned);
 
   const sortedPayments = [...payments].sort((a, b) => {
-    if (sortNewest) {
+    if (paymentSortNewest) {
       return new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime();
     }
     return new Date(a.paid_at).getTime() - new Date(b.paid_at).getTime();
@@ -154,6 +165,15 @@ export default function StoreActivity({ storeId, walletAddress, showAmounts = fa
     if (rank === 2) return '🥈';
     if (rank === 3) return '🥉';
     return '';
+  };
+
+  const getSortLabel = () => {
+    switch (sortOption) {
+      case 'rank': return '🏆 Top Earners';
+      case 'lowest': return '📉 Lowest First';
+      case 'newest': return '🆕 Newest First';
+      case 'oldest': return '📅 Oldest First';
+    }
   };
 
   if (loading) {
@@ -211,12 +231,30 @@ export default function StoreActivity({ storeId, walletAddress, showAmounts = fa
           </button>
         </div>
 
-        <button
-          onClick={() => setSortNewest(!sortNewest)}
-          className="text-zinc-500 hover:text-white text-sm flex items-center gap-2 transition"
-        >
-          {sortNewest ? '↓ Newest first' : '↑ Oldest first'}
-        </button>
+        {tab === 'affiliates' ? (
+          <div className="relative">
+            <select
+              value={sortOption}
+              onChange={(e) => { setSortOption(e.target.value as any); setPage(0); }}
+              className="appearance-none bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 pr-8 text-sm text-zinc-300 cursor-pointer hover:border-zinc-700 transition focus:outline-none focus:border-emerald-500"
+            >
+              <option value="rank">🏆 Top Earners</option>
+              <option value="lowest">📉 Lowest First</option>
+              <option value="newest">🆕 Newest First</option>
+              <option value="oldest">📅 Oldest First</option>
+            </select>
+            <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        ) : (
+          <button
+            onClick={() => setPaymentSortNewest(!paymentSortNewest)}
+            className="text-zinc-500 hover:text-white text-sm flex items-center gap-2 transition"
+          >
+            {paymentSortNewest ? '↓ Newest first' : '↑ Oldest first'}
+          </button>
+        )}
       </div>
 
       {tab === 'affiliates' && (
@@ -242,7 +280,7 @@ export default function StoreActivity({ storeId, walletAddress, showAmounts = fa
                   <tbody>
                     {paginatedAffiliates.map((aff) => {
                       const rank = getRank(aff.affiliate_id) as number;
-                      const actualEarned = getActualEarnings(aff.affiliate_id);
+                      const actualEarned = aff.actualEarned;
                       return (
                         <tr key={aff.affiliate_id} className="border-t border-zinc-800/50 hover:bg-zinc-800/30 transition">
                           <td className="px-4 py-3 text-sm">
