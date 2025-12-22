@@ -1560,7 +1560,7 @@ return (
       <div className="text-center text-zinc-500 text-sm py-2">— or —</div>
 
       <p className="text-zinc-400 text-sm">
-        Enable auto-sign below to process payouts automatically.
+        Enable auto-sign below to process payouts automatically. Coming Soon.
       </p>
     </div>
   )}

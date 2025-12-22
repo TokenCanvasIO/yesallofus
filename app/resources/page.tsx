@@ -340,48 +340,46 @@ export default function Resources() {
 
             <div className="grid md:grid-cols-2 gap-6">
               {/* Traditional Timeline */}
-              <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-8">
-                <h3 className="font-bold text-lg mb-6 text-red-400">Traditional Timeline</h3>
-                <div className="space-y-4">
-                  {[
-                    { day: 'Day 1', event: 'Sale made' },
-                    { day: 'Day 30', event: 'Refund period ends' },
-                    { day: 'Day 45', event: 'Payout processed' },
-                    { day: 'Day 48', event: 'Affiliate receives $' },
-                  ].map((item, i) => (
-                    <div key={i} className="flex justify-between text-sm">
-                      <span className="text-zinc-500">{item.day}</span>
-                      <span className="text-zinc-300">{item.event}</span>
-                    </div>
-                  ))}
-                  <div className="pt-4 border-t border-red-500/20">
-                    <span className="text-red-400 font-bold">Total wait: 48+ days</span>
-                  </div>
-                </div>
-              </div>
+<div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-8 flex flex-col h-80">
+  <h3 className="font-bold text-lg mb-6 text-red-400">Traditional Timeline</h3>
+  <div className="space-y-4 flex-1">
+    {[
+      { day: 'Day 1', event: 'Sale made' },
+      { day: 'Day 30', event: 'Refund period ends' },
+      { day: 'Day 45', event: 'Payout processed' },
+      { day: 'Day 48', event: 'Affiliate receives $' },
+    ].map((item, i) => (
+      <div key={i} className="flex justify-between text-sm">
+        <span className="text-zinc-500">{item.day}</span>
+        <span className="text-zinc-300">{item.event}</span>
+      </div>
+    ))}
+  </div>
+  <div className="pt-4 border-t border-red-500/20">
+    <span className="text-red-400 font-bold">Total wait: 48+ days</span>
+  </div>
+</div>
 
-              {/* YesAllofUs Timeline */}
-              <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-8">
-                <h3 className="font-bold text-lg mb-6 text-emerald-400">YesAllofUs Timeline</h3>
-                <div className="space-y-4">
-                  {[
-                    { day: 'Second 0', event: 'Sale made' },
-                    { day: 'Second 4', event: 'Affiliate receives RLUSD', highlight: true },
-                  ].map((item, i) => (
-                    <div key={i} className="flex justify-between text-sm">
-                      <span className="text-zinc-500">{item.day}</span>
-                      <span className={item.highlight ? 'text-emerald-400 font-medium' : 'text-zinc-300'}>{item.event}</span>
-                    </div>
-                  ))}
-                  <div className="h-16" />
-                  <div className="h-8" />
-                  <div className="pt-4 border-t border-emerald-500/20">
-                    <span className="text-emerald-400 font-bold">Total wait: 4 seconds</span>
-                  </div>
-                </div>
+{/* YesAllofUs Timeline */}
+<div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-8 flex flex-col h-80">
+  <h3 className="font-bold text-lg mb-6 text-emerald-400">YesAllofUs Timeline</h3>
+  <div className="space-y-4 flex-1">
+    {[
+      { day: 'Second 0', event: 'Sale made' },
+      { day: 'Second 4', event: 'RLUSD received', highlight: true },
+    ].map((item, i) => (
+      <div key={i} className="flex justify-between text-sm">
+        <span className="text-zinc-500">{item.day}</span>
+        <span className={item.highlight ? 'text-emerald-400 font-medium' : 'text-zinc-300'}>{item.event}</span>
+      </div>
+    ))}
+  </div>
+  <div className="pt-4 border-t border-emerald-500/20">
+    <span className="text-emerald-400 font-bold">Total wait: 4 seconds</span>
+  </div>
+</div>
               </div>
             </div>
-          </div>
         </section>
 
         {/* ==================== DOCUMENT 3: ONE-PAGER ==================== */}
@@ -508,7 +506,7 @@ export default function Resources() {
               <div className="flex flex-wrap justify-center gap-4 text-sm">
                 {[
                   'Working with GFSC (Guernsey)',
-                  'XRPL Commons Residency',
+                  'XRP Ledger',
                   'All transactions on-chain',
                   'Non-custodial',
                 ].map((item, i) => (
