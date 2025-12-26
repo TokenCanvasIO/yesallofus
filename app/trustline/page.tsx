@@ -85,7 +85,7 @@ export default function TrustlineGuide() {
         </div>
 
         {/* Wallet Tabs */}
-        <h2 className="text-2xl font-bold mb-6 text-center">Choose Your Wallet</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center">Choose Your Wallet. Coming Soon.</h2>
 
         {/* Web3Auth Social Login - Full Width */}
         <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-xl overflow-hidden mb-6">
