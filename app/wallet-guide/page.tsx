@@ -9,46 +9,208 @@ export default function WalletGuide() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans">
       {/* Hero */}
-      <header className="relative overflow-hidden border-b border-zinc-800/50">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-blue-500/5" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-emerald-500/10 rounded-full blur-[120px] -translate-y-1/2" />
+<header className="relative overflow-hidden border-b border-zinc-800/50">
+  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-blue-500/5" />
+  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-emerald-500/10 rounded-full blur-[120px] -translate-y-1/2" />
 
-        <div className="relative max-w-4xl mx-auto px-6 py-20 text-center">
-          <div className="inline-flex items-center gap-2 bg-zinc-800/50 border border-zinc-700/50 rounded-full px-4 py-1.5 mb-6">
-            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-            <span className="text-zinc-400 text-sm">Built on XRPL · Secured by Design</span>
-          </div>
-          
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white via-white to-zinc-400 bg-clip-text text-transparent">
-            No Experience Needed.<br />For Affiliates we handle wallet activation.
-          </h1>
-          
-          <p className="text-xl text-zinc-400 max-w-2xl mx-auto mb-8">
-            YesAllofUs offers multiple wallet options to match your preferences and technical comfort level. 
-          </p>
+  <div className="relative max-w-4xl mx-auto px-6 py-20 text-center">
+    <div className="inline-flex items-center gap-2 bg-zinc-800/50 border border-zinc-700/50 rounded-full px-4 py-1.5 mb-6">
+      <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+      <span className="text-zinc-400 text-sm">Built on XRPL · Secured by Design</span>
+    </div>
+    
+    <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white via-white to-zinc-400 bg-clip-text text-transparent">
+      Get Started with YesAllofUs
+    </h1>
+    
+    <p className="text-xl text-zinc-400 max-w-2xl mx-auto mb-8">
+      To receive commissions, you'll need an Xaman wallet. Social Log in Coming Soon.
+    </p>
 
-          <div className="flex flex-wrap justify-center gap-4">
-            <div className="flex items-center gap-2 bg-zinc-900/50 border border-zinc-800 rounded-lg px-4 py-2">
-              <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              <span className="text-zinc-300 text-sm">Non-custodial</span>
-            </div>
-            <div className="flex items-center gap-2 bg-zinc-900/50 border border-zinc-800 rounded-lg px-4 py-2">
-              <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              <span className="text-zinc-300 text-sm">5 minute set up</span>
-            </div>
-            <div className="flex items-center gap-2 bg-zinc-900/50 border border-zinc-800 rounded-lg px-4 py-2">
-              <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-              <span className="text-zinc-300 text-sm">Fully auditable on-chain</span>
+    <div className="flex flex-wrap justify-center gap-4">
+      <div className="flex items-center gap-2 bg-zinc-900/50 border border-zinc-800 rounded-lg px-4 py-2">
+        <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+        <span className="text-zinc-300 text-sm">Non-custodial</span>
+      </div>
+      <div className="flex items-center gap-2 bg-zinc-900/50 border border-zinc-800 rounded-lg px-4 py-2">
+        <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+        <span className="text-zinc-300 text-sm">You control your keys</span>
+      </div>
+      <div className="flex items-center gap-2 bg-zinc-900/50 border border-zinc-800 rounded-lg px-4 py-2">
+        <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+        </svg>
+        <span className="text-zinc-300 text-sm">Fully auditable on-chain</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+{/* Xaman Setup Guide */}
+<section className="bg-gradient-to-b from-zinc-900/50 to-transparent border-b border-zinc-800/50">
+  <div className="max-w-4xl mx-auto px-6 py-16">
+    <div className="text-center mb-12">
+      <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 rounded-full px-4 py-1.5 mb-6">
+        <span className="text-blue-400 text-sm font-medium">Recommended for Affiliates</span>
+      </div>
+      <h2 className="text-3xl font-bold mb-4">Set Up Your Xaman Wallet</h2>
+      <p className="text-zinc-400 max-w-2xl mx-auto">
+        Follow these steps to create your wallet and start receiving RLUSD commissions. Takes about 10 minutes.
+      </p>
+    </div>
+
+    <div className="grid md:grid-cols-2 gap-8 mb-12">
+      {/* Left Column - Steps 1-3 */}
+      <div className="space-y-6">
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-lg">1</div>
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Download Xaman App</h3>
+              <p className="text-zinc-400 text-sm mb-4">
+                Xaman (formerly XUMM) is free and available on iOS and Android. Download from the official app stores only.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <a 
+                  href="https://apps.apple.com/app/xumm/id1492302343"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm px-4 py-2 rounded-lg transition"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                  </svg>
+                  App Store
+                </a>
+                <a 
+                  href="https://play.google.com/store/apps/details?id=com.xrpllabs.xumm"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm px-4 py-2 rounded-lg transition"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 010 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.802 8.99l-2.303 2.303-8.635-8.635z"/>
+                  </svg>
+                  Google Play
+                </a>
+              </div>
             </div>
           </div>
         </div>
-      </header>
+
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-lg">2</div>
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Create Your Wallet</h3>
+              <p className="text-zinc-400 text-sm mb-3">
+                Open the app and tap "Create a new account". You'll be shown secret numbers - these are your recovery phrase.
+              </p>
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+                <p className="text-amber-400 text-xs font-medium">
+                  ⚠️ Write down your secret numbers on paper. Never screenshot or share them. If you lose them, you lose access to your wallet forever. Never share these. If anyone gets access to this they can access your funds and you could lose everything.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-lg">3</div>
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Activate Your Wallet</h3>
+              <p className="text-zinc-400 text-sm mb-3">
+                Your wallet needs 1 XRP to activate (this is an XRPL requirement, not a fee). You can buy XRP from any exchange and send it to your new address. You wil need 0.5 XRP to cover future XRPl Ledger transaction fees.
+              </p>
+              <p className="text-zinc-500 text-xs">
+                Popular exchanges: Coinbase, Kraken, Bitstamp, Uphold.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Column - Steps 4-5 */}
+      <div className="space-y-6">
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-lg">4</div>
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Add RLUSD Trustline</h3>
+              <p className="text-zinc-400 text-sm mb-3">
+                To receive RLUSD commissions, you need to add a trustline. This tells the XRP Ledger you accept RLUSD.
+              </p>
+              <a 
+                href="https://yesallofus.com/trustline"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-sm px-4 py-2 rounded-lg transition border border-emerald-500/30"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                RLUSD Trustline Guide
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-lg">5</div>
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Copy Your Wallet Address</h3>
+              <p className="text-zinc-400 text-sm mb-3">
+                In Xaman, tap on your account to see your wallet address. It starts with "r" and looks like: <code className="text-blue-400 bg-zinc-800 px-1.5 py-0.5 rounded text-xs">rXXXXXXXX...</code>
+              </p>
+              <p className="text-zinc-500 text-xs">
+                This is the address you'll paste when signing up as an affiliate on any store using YesAllofUs.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-2 text-emerald-400">You're Ready!</h3>
+              <p className="text-zinc-400 text-sm">
+                Your wallet is set up. Now you can sign up as an affiliate on any store using YesAllofUs and paste your wallet address to start earning commissions.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Official Link */}
+    <div className="text-center">
+      <p className="text-zinc-500 text-sm mb-3">Need more help? Visit the official Xaman documentation</p>
+      <a 
+        href="https://xaman.app"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium transition"
+      >
+        <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-6 h-6 rounded" />
+        xaman.app
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>
 
       <main className="max-w-6xl mx-auto px-6 py-16">
         
@@ -294,142 +456,155 @@ export default function WalletGuide() {
             )}
 
             {/* Xaman Tab */}
-            {activeTab === 'xaman' && (
-              <div className="p-8 md:p-12">
-                <div className="grid lg:grid-cols-2 gap-12">
-                  <div>
-                    <div className="flex items-center gap-3 mb-6">
-                      <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-12 h-12 rounded-xl" />
-                      <div>
-                        <h3 className="text-2xl font-bold">Xaman Wallet</h3>
-                        <p className="text-zinc-500">Maximum security, manual control</p>
-                      </div>
-                    </div>
+{activeTab === 'xaman' && (
+  <div className="p-8 md:p-12">
+    <div className="grid lg:grid-cols-2 gap-12">
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-12 h-12 rounded-xl" />
+          <div>
+            <h3 className="text-2xl font-bold">Xaman Wallet</h3>
+            <p className="text-zinc-500">The recommended XRPL wallet</p>
+          </div>
+        </div>
 
-                    <p className="text-zinc-300 mb-6 leading-relaxed">
-                      The gold standard for XRPL security. Your private keys never leave your phone. Every transaction requires your explicit approval via push notification. Perfect for those who want complete control.
-                    </p>
+        <p className="text-zinc-300 mb-6 leading-relaxed">
+          Xaman (formerly XUMM) is the most trusted wallet for XRP Ledger. Your private keys stay on your phone, and you approve every transaction. Free to download and use.
+        </p>
 
-                    <div className="space-y-4 mb-8">
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <div>
-                          <div className="font-medium">Keys stay on your device</div>
-                          <div className="text-zinc-500 text-sm">Private keys never transmitted or stored elsewhere</div>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <div>
-                          <div className="font-medium">Push notifications for each payout</div>
-                          <div className="text-zinc-500 text-sm">Review amount, recipient, and details before signing</div>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <div>
-                          <div className="font-medium">Works on iOS and Android</div>
-                          <div className="text-zinc-500 text-sm">Mobile-first design, approvals anywhere</div>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <div>
-                          <div className="font-medium">Established & trusted</div>
-                          <div className="text-zinc-500 text-sm">The most popular XRPL wallet since 2018</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-3">
-                      <Link 
-                        href="/dashboard"
-                        className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400 text-white px-6 py-3 rounded-lg font-semibold transition"
-                      >
-                        Connect Xaman
-                      </Link>
-                      <a 
-                        href="https://xaman.app"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-lg font-medium transition"
-                      >
-                        Get Xaman App →
-                      </a>
-                    </div>
-                  </div>
-
-                  <div>
-                    {/* Flow Diagram */}
-                    <div className="bg-zinc-800/50 rounded-xl p-6 mb-6">
-                      <h4 className="font-semibold mb-4 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        How Payouts Work
-                      </h4>
-                      <div className="space-y-4 text-sm">
-                        <div className="flex gap-3">
-                          <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 text-blue-400 font-bold">1</div>
-                          <div>
-                            <div className="text-zinc-300 font-medium">Customer completes purchase</div>
-                            <div className="text-zinc-500">Order triggers commission calculation</div>
-                          </div>
-                        </div>
-                        <div className="flex gap-3">
-                          <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 text-blue-400 font-bold">2</div>
-                          <div>
-                            <div className="text-zinc-300 font-medium">Push notification sent</div>
-                            <div className="text-zinc-500">Xaman alerts you on your phone</div>
-                          </div>
-                        </div>
-                        <div className="flex gap-3">
-                          <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 text-blue-400 font-bold">3</div>
-                          <div>
-                            <div className="text-zinc-300 font-medium">Review & approve</div>
-                            <div className="text-zinc-500">Check details, slide to sign</div>
-                          </div>
-                        </div>
-                        <div className="flex gap-3">
-                          <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 text-blue-400 font-bold">4</div>
-                          <div>
-                            <div className="text-zinc-300 font-medium">Payment confirmed in ~4 seconds</div>
-                            <div className="text-zinc-500">RLUSD arrives in affiliate's wallet</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Best For */}
-                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6">
-                      <h4 className="font-semibold mb-3 text-blue-400">Best For</h4>
-                      <ul className="text-zinc-300 text-sm space-y-2">
-                        <li>• Security-conscious users who want manual control</li>
-                        <li>• Lower volume stores (under 50 orders/day)</li>
-                        <li>• Users who prefer mobile-first experience</li>
-                        <li>• Those new to XRPL who want to learn</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+        {/* Step by step setup */}
+        <div className="bg-zinc-800/50 rounded-xl p-6 mb-6">
+          <h4 className="font-semibold mb-4 text-emerald-400">How to Get Started</h4>
+          <div className="space-y-4 text-sm">
+            <div className="flex gap-3">
+              <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0 text-emerald-400 font-bold">1</div>
+              <div>
+                <div className="text-zinc-300 font-medium">Download Xaman</div>
+                <div className="text-zinc-500">Available on iOS App Store and Google Play</div>
               </div>
-            )}
+            </div>
+            <div className="flex gap-3">
+              <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0 text-emerald-400 font-bold">2</div>
+              <div>
+                <div className="text-zinc-300 font-medium">Create a new wallet</div>
+                <div className="text-zinc-500">Follow the app instructions, save your secret numbers safely</div>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0 text-emerald-400 font-bold">3</div>
+              <div>
+                <div className="text-zinc-300 font-medium">Activate your wallet</div>
+                <div className="text-zinc-500">You need 10 XRP to activate (buy from any exchange)</div>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0 text-emerald-400 font-bold">4</div>
+              <div>
+                <div className="text-zinc-300 font-medium">Add RLUSD trustline</div>
+                <div className="text-zinc-500">Required to receive RLUSD commissions</div>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0 text-emerald-400 font-bold">5</div>
+              <div>
+                <div className="text-zinc-300 font-medium">Copy your wallet address</div>
+                <div className="text-zinc-500">Starts with "r" - paste this when signing up as affiliate</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <a 
+            href="https://xaman.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400 text-white px-6 py-3 rounded-lg font-semibold transition"
+          >
+            Download Xaman →
+          </a>
+          <a 
+            href="https://yesallofus.com/trustline"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-lg font-medium transition"
+          >
+            RLUSD Trustline Guide
+          </a>
+        </div>
+      </div>
+
+      <div>
+        {/* Why Xaman */}
+        <div className="bg-zinc-800/50 rounded-xl p-6 mb-6">
+          <h4 className="font-semibold mb-4 flex items-center gap-2">
+            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            Why Xaman?
+          </h4>
+          <div className="space-y-4 text-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-medium text-zinc-300">Keys stay on your phone</div>
+                <div className="text-zinc-500">Your private keys are never shared</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-medium text-zinc-300">Trusted since 2018</div>
+                <div className="text-zinc-500">The most popular XRPL wallet</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-medium text-zinc-300">iOS and Android</div>
+                <div className="text-zinc-500">Works on any smartphone</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-medium text-zinc-300">Free to use</div>
+                <div className="text-zinc-500">No subscription or fees from Xaman</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Important Note */}
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6">
+          <h4 className="font-semibold mb-3 text-amber-400">Important</h4>
+          <ul className="text-zinc-300 text-sm space-y-2">
+            <li>• You need 10 XRP to activate your wallet</li>
+            <li>• You need an RLUSD trustline to receive commissions</li>
+            <li>• Never share your secret numbers with anyone</li>
+            <li>• YesAllofUs will never ask for your private keys</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
             {/* Crossmark Tab */}
             {activeTab === 'crossmark' && (
