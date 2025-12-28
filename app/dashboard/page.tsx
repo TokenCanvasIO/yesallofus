@@ -253,92 +253,123 @@ useEffect(() => {
   };
 
   const loadOrCreateStore = async (wallet: string, type: 'xaman' | 'crossmark' | 'web3auth', xamanUserToken?: string | null) => {
-    setLoading(true);
-    try {
-      // If we have a claim token, attach wallet to that store
-      if (claimToken && claimStore) {
-        const res = await fetch(`${API_URL}/store/claim`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            claim_token: claimToken,
-            wallet_address: wallet,
-            wallet_type: type,
-            xaman_user_token: xamanUserToken || null
-          })
-        });
-        const data = await res.json();
-
-        if (data.success && data.store) {
-          setStore(data.store);
-          if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
-          if (data.store.daily_limit) setDailyLimit(data.store.daily_limit);
-          setStep('dashboard');
-          setClaimToken(null);
-          setClaimStore(null);
-          setLoading(false);
-          return;
-        } else {
-          setError(data.error || 'Failed to claim store');
-        }
-      }
-
-      // Normal flow - check if wallet has existing store
-      const res = await fetch(`${API_URL}/store/by-wallet/${wallet}`);
+  setLoading(true);
+  try {
+    // If we have a claim token, attach wallet to that store
+    if (claimToken && claimStore) {
+      const res = await fetch(`${API_URL}/store/claim`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          claim_token: claimToken,
+          wallet_address: wallet,
+          wallet_type: type,
+          xaman_user_token: xamanUserToken || null
+        })
+      });
       const data = await res.json();
 
       if (data.success && data.store) {
-  setStore(data.store);
-  setNewSecret(null);
-  if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
-  if (data.store.daily_limit) setDailyLimit(data.store.daily_limit);
-  if (data.store.auto_sign_max_single_payout) setMaxSinglePayout(data.store.auto_sign_max_single_payout);
+        setStore(data.store);
+        if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
+        if (data.store.daily_limit) setDailyLimit(data.store.daily_limit);
+        setStep('dashboard');
+        setClaimToken(null);
+        setClaimStore(null);
+        setLoading(false);
+        return;
+      } else {
+        setError(data.error || 'Failed to claim store');
+      }
+    }
 
-  // If we have a wordpress_return in URL/session, save it to Firebase
-  const wpReturn = new URLSearchParams(window.location.search).get('wordpress_return') 
-    || sessionStorage.getItem('wordpress_return');
-  
-  if (wpReturn && !data.store.platform_return_url) {
-    await fetch(`${API_URL}/store/set-platform-return`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        store_id: data.store.store_id,
-        wallet_address: wallet,
-        platform_return_url: wpReturn,
-        platform_type: 'wordpress'
-      })
-    });
-    data.store.platform_return_url = wpReturn;
-    data.store.platform_type = 'wordpress';
-    setStore({ ...data.store, platform_return_url: wpReturn, platform_type: 'wordpress' });
-  }
+    // Normal flow - check if wallet has existing store
+    const res = await fetch(`${API_URL}/store/by-wallet/${wallet}`);
+    const data = await res.json();
 
-  // Save Xaman connection for existing store
-  if (type === 'xaman' && xamanUserToken) {
-          await fetch(`${API_URL}/store/save-xaman-wallet`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              store_id: data.store.store_id,
-              wallet_address: wallet,
-              xaman_user_token: xamanUserToken
-            })
-          });
-          data.store.xaman_connected = true;
-          data.store.xaman_user_token = xamanUserToken;
+    if (data.success && data.store) {
+      setStore(data.store);
+      setNewSecret(null);
+      if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
+      if (data.store.daily_limit) setDailyLimit(data.store.daily_limit);
+      if (data.store.auto_sign_max_single_payout) setMaxSinglePayout(data.store.auto_sign_max_single_payout);
+
+      // If we have a wordpress_return in URL/session, save it to Firebase
+      const wpReturn = new URLSearchParams(window.location.search).get('wordpress_return') 
+        || sessionStorage.getItem('wordpress_return');
+      
+      if (wpReturn && !data.store.platform_return_url) {
+        await fetch(`${API_URL}/store/set-platform-return`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            store_id: data.store.store_id,
+            wallet_address: wallet,
+            platform_return_url: wpReturn,
+            platform_type: 'wordpress'
+          })
+        });
+        data.store.platform_return_url = wpReturn;
+        data.store.platform_type = 'wordpress';
+        setStore({ ...data.store, platform_return_url: wpReturn, platform_type: 'wordpress' });
+      }
+
+      // Save Xaman connection for existing store
+      if (type === 'xaman' && xamanUserToken) {
+        await fetch(`${API_URL}/store/save-xaman-wallet`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            store_id: data.store.store_id,
+            wallet_address: wallet,
+            xaman_user_token: xamanUserToken
+          })
+        });
+        data.store.xaman_connected = true;
+        data.store.xaman_user_token = xamanUserToken;
+      }
+
+      setStep('dashboard');
+    } else {
+      // ========== NEW: Try to link wallet to unclaimed store ==========
+      const linkRes = await fetch(`${API_URL}/store/link-wallet`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wallet_address: wallet,
+          wallet_type: type,
+          xaman_user_token: xamanUserToken || null
+        })
+      });
+      const linkData = await linkRes.json();
+
+      if (linkData.success && linkData.store) {
+        // Store was found and linked!
+        setStore(linkData.store);
+        if (linkData.api_secret) {
+          setNewSecret(linkData.api_secret); // Show the new secret to user
         }
-
+        if (linkData.store.commission_rates) setCommissionRates(linkData.store.commission_rates);
+        if (linkData.store.daily_limit) setDailyLimit(linkData.store.daily_limit);
+        setStep('dashboard');
+      } else if (linkData.unclaimed_stores && linkData.unclaimed_stores.length > 0) {
+        // Multiple unclaimed stores - for now just show the first one
+        // TODO: Could add a store selector UI here
+        console.log('Multiple unclaimed stores found:', linkData.unclaimed_stores);
+        setStore(null);
         setStep('dashboard');
       } else {
+        // No store found at all - show create form
         setStore(null);
         setStep('dashboard');
       }
-    } catch (err) {
-      setError('Failed to load store');
+      // ========== END NEW ==========
     }
-    setLoading(false);
-  };
+  } catch (err) {
+    setError('Failed to load store');
+  }
+  setLoading(false);
+};
 
   const createStore = async (storeName: string, storeUrl: string, email: string, referredBy: string | null = null) => {
     setLoading(true);
