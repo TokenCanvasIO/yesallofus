@@ -7,8 +7,9 @@ import TopUpRLUSD from '@/components/TopUpRLUSD';
 import WithdrawRLUSD from '@/components/WithdrawRLUSD';
 import DashboardHeader from "@/components/DashboardHeader";
 import Link from 'next/link';
+import QRCodeModal from '@/components/QRCodeModal';
 import Logo from '@/components/Logo';
-
+import { useRouter } from 'next/navigation';
 const API_URL = 'https://api.dltpays.com/api/v1';
 
 export default function StoreDashboard() {
@@ -26,9 +27,11 @@ export default function StoreDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
   const [web3authTermsAccepted, setWeb3authTermsAccepted] = useState(false);
 const [connectingGoogle, setConnectingGoogle] = useState(false);
 const [sidebarOpen, setSidebarOpen] = useState(false);
+const router = useRouter();
 
   // Settings state
   const [commissionRates, setCommissionRates] = useState([25, 5, 3, 2, 1]);
@@ -271,7 +274,8 @@ useEffect(() => {
 
       if (data.success && data.store) {
         setStore(data.store);
-        if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
+        sessionStorage.setItem('storeData', JSON.stringify(data.store));
+  if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
         if (data.store.daily_limit) setDailyLimit(data.store.daily_limit);
         setStep('dashboard');
         setClaimToken(null);
@@ -288,8 +292,9 @@ useEffect(() => {
     const data = await res.json();
 
     if (data.success && data.store) {
-      setStore(data.store);
-      setNewSecret(null);
+  setStore(data.store);
+  sessionStorage.setItem('storeData', JSON.stringify(data.store));
+  setNewSecret(null);
       if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
       if (data.store.daily_limit) setDailyLimit(data.store.daily_limit);
       if (data.store.auto_sign_max_single_payout) setMaxSinglePayout(data.store.auto_sign_max_single_payout);
@@ -918,7 +923,7 @@ setStep('dashboard');
         <Script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" />
 
         <main className="max-w-xl mx-auto px-6 py-16">
-          <h1 className="text-3xl font-bold mb-2">Vendor Dashboard</h1>
+          <h1 className="text-3xl font-bold mb-2">Partners Dashboard</h1>
           <p className="text-zinc-400 mb-8">Sign in to manage your affiliate commissions.</p>
 
           {/* ============================================================= */}
@@ -957,9 +962,7 @@ setStep('dashboard');
 {/* ============================================================= */}
 {/* OPTION 3: CROSSMARK */}
 {/* ============================================================= */}
-{/*
           <button
-            disabled
             onClick={async () => {
               if (!trustlineConfirmed) return;
 
@@ -1003,16 +1006,18 @@ setStep('dashboard');
                 setError(message);
               }
             }}
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-left transition mb-4 opacity-50 cursor-not-allowed"
+            className={`w-full bg-zinc-900 border rounded-xl p-6 text-left transition mb-4 ${
+  trustlineConfirmed
+    ? 'border-zinc-800 hover:border-blue-500 cursor-pointer'
+    : 'border-zinc-800 opacity-50 cursor-not-allowed'
+}`}
           >
             <div className="flex items-center gap-3 mb-2">
               <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
               <span className="font-semibold">Crossmark Browser Extension</span>
-<span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-1 rounded font-medium ml-2">Coming Soon</span>
             </div>
             <p className="text-zinc-400 text-sm">Desktop browser wallet. Enable auto-sign for automatic payouts.</p>
           </button>
-          */}
 
           {/* RLUSD Trustline Confirmation (for wallet options) */}
 <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-4">
@@ -1057,7 +1062,7 @@ setStep('dashboard');
           {/* ============================================================= */}
 {/* OPTION 1: SOCIAL LOGIN (WEB3AUTH) - Easiest */}
 {/* ============================================================= */}
-{false && (
+{true && (
 <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-4">
   <div className="flex items-center gap-3 mb-4">
     <div className="flex -space-x-2">
@@ -1136,7 +1141,6 @@ setStep('dashboard');
 
   <button
     onClick={connectGoogle}
-    disabled
     className={`w-full py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
       web3authTermsAccepted
         ? 'bg-white hover:bg-gray-100 text-black'
@@ -1149,7 +1153,7 @@ setStep('dashboard');
         Connecting...
       </>
     ) : (
-      <>Sign in with Social Account<span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-1 rounded font-medium ml-2">Coming Soon</span></>
+      <>Sign in with Social Account</>
     )}
   </button>
 
@@ -1162,7 +1166,7 @@ setStep('dashboard');
 )}
 
 {/* Divider */}
-{false && (
+{true && (
 <div className="flex items-center gap-4 my-6">
   <div className="flex-1 h-px bg-zinc-800"></div>
   <span className="text-zinc-500 text-sm">or use a crypto wallet</span>
@@ -1171,7 +1175,7 @@ setStep('dashboard');
 )}
 
           {/* Comparison Table */}
-{false && (
+{true && (
 <div className="mt-8 bg-zinc-900 border border-zinc-800 rounded-xl p-6">
 <h3 className="font-semibold mb-4">Compare Options</h3>
 <div className="overflow-x-auto">
@@ -2002,6 +2006,33 @@ return (
               </div>
             )}
 
+            {/* TAKE PAYMENT BUTTON */}
+<div className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl p-6">
+  <button
+    onClick={() => router.push('/take-payment')}
+    className="w-full bg-white hover:bg-zinc-100 text-black font-semibold text-lg py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-lg"
+  >
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+    Take Payment
+  </button>
+  <p className="text-zinc-500 text-sm text-center mt-3">Accept contactless payments from customers</p>
+</div>
+
+{/* SIGN UP CUSTOMER BUTTON */}
+<div className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl p-6">
+  <button
+    onClick={() => router.push(`/signup-customer?store=${store.store_id}`)}
+    className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white font-semibold text-lg py-4 rounded-xl transition flex items-center justify-center gap-3"
+  >
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+    </svg>
+    Sign Up New Customer
+  </button>
+  <p className="text-zinc-500 text-sm text-center mt-3">Register customers with NFC card to earn rewards</p>
+</div>
             {/* ============================================================= */}
             {/* COMMISSION RATES */}
             {/* ============================================================= */}
@@ -2076,11 +2107,17 @@ return (
                   {`https://yesallofus.com/affiliate-dashboard?store=${store.store_id}`}
                 </code>
                 <button
-                  onClick={() => copyToClipboard(`https://yesallofus.com/affiliate-dashboard?store=${store.store_id}`, 'affiliate_link')}
-                  className="bg-zinc-800 hover:bg-zinc-700 px-4 py-3 rounded-lg text-sm transition whitespace-nowrap"
-                >
-                  {copied === 'affiliate_link' ? '✓ Copied' : 'Copy'}
-                </button>
+  onClick={() => copyToClipboard(`https://yesallofus.com/affiliate-dashboard?store=${store.store_id}`, 'affiliate_link')}
+  className="bg-zinc-800 hover:bg-zinc-700 px-4 py-3 rounded-lg text-sm transition whitespace-nowrap"
+>
+  {copied === 'affiliate_link' ? '✓ Copied' : 'Copy'}
+</button>
+<button
+  onClick={() => setShowQRModal(true)}
+  className="bg-zinc-800 hover:bg-zinc-700 px-4 py-3 rounded-lg text-sm transition whitespace-nowrap"
+>
+  QR Code
+</button>
               </div>
             </div>
 
@@ -2165,7 +2202,7 @@ return (
 
               {/* Referral Link */}
               <div className="mt-4 pt-4 border-t border-zinc-700">
-                <label className="text-zinc-500 text-sm block mb-1">Your Vendor Referral Link</label>
+                <label className="text-zinc-500 text-sm block mb-1">Your Partners Referral Link</label>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 bg-zinc-800 px-4 py-2 rounded-lg font-mono text-sm text-blue-400 overflow-x-auto">{`https://yesallofus.com/dashboard?ref=${store.store_referral_code}`}</code>
                   <button onClick={() => copyToClipboard(`https://yesallofus.com/dashboard?ref=${store.store_referral_code}`, 'referral_link')} className="bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg text-sm transition">
@@ -2313,6 +2350,14 @@ return (
      </div>
       </main>
     </div>
+    <QRCodeModal
+  isOpen={showQRModal}
+  onClose={() => setShowQRModal(false)}
+  url={`https://yesallofus.com/affiliate-dashboard?store=${store?.store_id}`}
+  title="Share Affiliate Link"
+  subtitle={store?.store_name}
+/>
     </>
+    
   );
 }

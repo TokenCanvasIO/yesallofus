@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import PayoutsTable from '@/components/PayoutsTable';
 import { loginWithWeb3Auth } from '@/lib/web3auth';
 import DashboardHeader from "@/components/DashboardHeader";
+import QRCodeModal from '@/components/QRCodeModal';
+import LinkNFCCard from '@/components/LinkNFCCard';
 
 interface Store {
   store_id: string;
@@ -73,6 +75,9 @@ export default function AffiliateDashboard() {
   const [copiedAddress, setCopiedAddress] = useState(false);
   const registeringRef = useRef(false);
   const [socialProvider, setSocialProvider] = useState<string | null>(null);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrUrl, setQrUrl] = useState('');
+  const [qrStoreName, setQrStoreName] = useState('');
 
   useEffect(() => {
     checkWalletConnection();
@@ -89,6 +94,43 @@ export default function AffiliateDashboard() {
     return () => clearInterval(interval);
   }, [walletAddress]);
 
+  // Complete customer signup from email link
+const completeCustomerSignup = async (wallet: string) => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const email = urlParams.get('email');
+  const storeId = urlParams.get('store');
+  const join = urlParams.get('join');
+  
+  if (email && join === '1') {
+    try {
+      const res = await fetch('https://api.dltpays.com/nfc/api/v1/nfc/complete-customer-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email,
+          wallet_address: wallet,
+          store_id: storeId || null
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success && data.card_linked) {
+        console.log('✅ NFC card linked to wallet:', data.card_uid);
+      }
+      
+      // Clean up URL params
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('email');
+      newUrl.searchParams.delete('join');
+      window.history.replaceState({}, '', newUrl.toString());
+      
+    } catch (err) {
+      console.error('Failed to complete customer signup:', err);
+    }
+  }
+};
+
   const checkWalletConnection = async () => {
     const stored = sessionStorage.getItem('walletAddress');
     const storedLoginMethod = sessionStorage.getItem('loginMethod');
@@ -97,7 +139,8 @@ export default function AffiliateDashboard() {
       setWalletAddress(stored);
       if (storedLoginMethod) setLoginMethod(storedLoginMethod);
       if (storedSocialProvider) setSocialProvider(storedSocialProvider); 
-      await Promise.all([
+await completeCustomerSignup(stored);  // <-- ADD THIS NEW LINE
+await Promise.all([
         fetchDashboard(stored),
         fetchWalletStatus(stored)
       ]);
@@ -390,8 +433,9 @@ export default function AffiliateDashboard() {
     sessionStorage.setItem('socialProvider', provider);  // Store provider
     setWalletAddress(address);
     setLoginMethod('web3auth');
-    setSocialProvider(provider);  // Set state
-    await Promise.all([
+    setSocialProvider(provider);
+await completeCustomerSignup(address);  // <-- ADD THIS NEW LINE
+await Promise.all([
       fetchDashboard(address),
       fetchWalletStatus(address)
     ]);
@@ -590,7 +634,7 @@ if (!walletAddress && !loading) {
         
         <main className="max-w-4xl mx-auto px-6 py-16 min-h-[calc(100vh-200px)] flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4">Affiliate Dashboard</h1>
+            <h1 className="text-3xl font-bold mb-4">Members & Affiliate Dashboard</h1>
             <p className="text-zinc-400 mb-8">Connect your wallet to view your earnings</p>
             
             {error && (
@@ -637,18 +681,15 @@ if (!walletAddress && !loading) {
                   </button>
                   
                   <button
-  disabled
-  className="w-full bg-zinc-800/50 border border-zinc-700/50 py-4 px-6 rounded-lg text-left opacity-50 cursor-not-allowed"
+  onClick={connectCrossmark}
+  className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 py-4 px-6 rounded-lg text-left transition-colors"
 >
   <div className="flex items-center gap-4">
-    <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-10 h-10 rounded-lg object-cover grayscale" />
+    <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-10 h-10 rounded-lg object-cover" />
     <div className="flex-1">
-      <div className="font-semibold text-zinc-400">Crossmark</div>
-      <div className="text-zinc-500 text-sm">Browser extension</div>
+      <div className="font-semibold">Crossmark</div>
+<div className="text-zinc-400 text-sm">Browser extension</div>
     </div>
-    <span className="bg-amber-500/20 text-amber-400 text-xs px-2 py-1 rounded font-medium">
-      Coming Soon
-    </span>
   </div>
 </button>
                 </div>
@@ -663,8 +704,9 @@ if (!walletAddress && !loading) {
                 </div>
 
                 <button
-  disabled
-  className="w-full bg-zinc-700 text-zinc-400 py-4 px-6 rounded-lg flex items-center justify-center gap-3 font-medium cursor-not-allowed"
+  onClick={connectGoogle}
+  disabled={connecting !== 'none'}
+  className="w-full bg-white hover:bg-gray-100 text-black py-4 px-6 rounded-lg flex items-center justify-center gap-3 font-medium transition-colors"
 >
   <div className="flex -space-x-1.5">
     {/* Google */}
@@ -700,9 +742,6 @@ if (!walletAddress && !loading) {
     </div>
   </div>
   Continue with Social
-<span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-1 rounded font-medium ml-2">
-  Coming Soon
-</span>
 </button>
 
                 <p className="text-zinc-500 text-xs mt-6">
@@ -752,7 +791,7 @@ if (!walletAddress && !loading) {
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Affiliate Dashboard</h1>
+              <h1 className="text-3xl font-bold mb-2">Members & Affiliate Dashboard</h1>
               <p className="text-zinc-400">Track your earnings across all vendors</p>
             </div>
             <div className="flex items-center gap-4">
@@ -948,6 +987,11 @@ if (!walletAddress && !loading) {
               </div>
             </div>
 
+            {/* NFC Card - ADD THIS */}
+{walletAddress && (
+  <LinkNFCCard walletAddress={walletAddress} />
+)}
+
             {/* Your Vendors */}
             <section className="mb-8">
               <div className="flex items-center justify-between mb-4">
@@ -989,15 +1033,25 @@ if (!walletAddress && !loading) {
                           <p className="text-sm font-mono truncate">{store.referral_link}</p>
                         </div>
                         <button
-                          onClick={() => handleCopyLink(store.referral_link, store.referral_code)}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            copiedCode === store.referral_code
-                              ? 'bg-emerald-500 text-black'
-                              : 'bg-zinc-700 hover:bg-zinc-600 text-white'
-                          }`}
-                        >
-                          {copiedCode === store.referral_code ? '✓ Copied' : 'Copy'}
-                        </button>
+  onClick={() => handleCopyLink(store.referral_link, store.referral_code)}
+  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+    copiedCode === store.referral_code
+      ? 'bg-emerald-500 text-black'
+      : 'bg-zinc-700 hover:bg-zinc-600 text-white'
+  }`}
+>
+  {copiedCode === store.referral_code ? '✓ Copied' : 'Copy'}
+</button>
+<button
+  onClick={() => {
+    setQrUrl(store.referral_link);
+    setQrStoreName(store.store_name);
+    setShowQRModal(true);
+  }}
+  className="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+>
+  QR
+</button>
                       </div>
                       <p className="text-zinc-500 text-xs mt-2">
                         Code: <span className="font-mono text-zinc-300">{store.referral_code}</span>
@@ -1279,6 +1333,13 @@ if (!walletAddress && !loading) {
         )}
       </main>
       </div>
+      <QRCodeModal
+  isOpen={showQRModal}
+  onClose={() => setShowQRModal(false)}
+  url={qrUrl}
+  title="Share Referral Link"
+  subtitle={qrStoreName}
+/>
     </>
   );
 }
