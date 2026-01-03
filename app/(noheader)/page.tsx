@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -36,18 +35,15 @@ export default function WelcomePage() {
         throw new Error('No wallet found');
       }
 
-      // Set common session data
       sessionStorage.setItem('loginMethod', 'web3auth');
       sessionStorage.setItem('socialProvider', provider);
       sessionStorage.setItem('walletAddress', address);
 
       if (userType === 'partner') {
-        // Partner (Vendor) - go to vendor dashboard
         sessionStorage.setItem('vendorWalletAddress', address);
         router.push('/dashboard');
       } else {
-        // Member or Affiliate - go to affiliate dashboard
-        router.push('/home');
+        router.push('/affiliate-dashboard');
       }
       
     } catch (err: any) {
@@ -57,150 +53,165 @@ export default function WelcomePage() {
     }
   };
 
+  const LoadingSpinner = () => (
+    <div className="flex flex-col items-center">
+      <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+      <p className="font-medium text-sm text-emerald-400">Connecting...</p>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col">
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-12">
-        <div className="w-full max-w-lg">
+      {/* Subtle gradient background */}
+      <div className="fixed inset-0 bg-gradient-to-b from-emerald-950/20 via-transparent to-transparent pointer-events-none" />
+      
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-12 relative z-10">
+        <div className="w-full max-w-md">
           
           {/* Logo */}
-          <div className="flex flex-col items-center justify-center mb-12">
-            <img 
-              src="https://yesallofus.com/dltpayslogo1.png" 
-              alt="YesAllOfUs" 
-              className="w-16 h-16 rounded-xl mb-3"
-            />
-            <span className="text-3xl font-bold">YesAllOfUs</span>
+          <div className="flex flex-col items-center justify-center mb-10">
+            <div className="relative mb-4">
+              <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full" />
+              <img 
+                src="https://yesallofus.com/dltpayslogo1.png" 
+                alt="YesAllOfUs" 
+                className="w-20 h-20 rounded-2xl relative z-10"
+              />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">YesAllOfUs</h1>
+            <p className="text-zinc-500 text-sm mt-1">Instant affiliate payments</p>
           </div>
 
           {/* User Type Selection */}
           <div className="mb-8">
-            <p className="text-zinc-400 text-sm mb-4 text-center">I am a...</p>
+            <p className="text-zinc-500 text-xs uppercase tracking-widest mb-4 text-center">Select your role</p>
+            
             <div className="grid grid-cols-2 gap-3">
+              {/* Partner */}
               <button
-  onClick={() => router.push('/dashboard')}
-  disabled={isLoading !== null}
-                className={`p-5 rounded-2xl border-2 transition-all cursor-pointer ${
+                onClick={() => router.push('/dashboard')}
+                disabled={isLoading !== null}
+                className={`group p-6 rounded-2xl border transition-all duration-300 ${
                   isLoading === 'partner'
                     ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-zinc-800 hover:border-emerald-500 hover:bg-emerald-500/5'
+                    : 'border-zinc-800 hover:border-emerald-500/50 hover:bg-zinc-900/50'
                 } disabled:opacity-50`}
               >
-                {isLoading === 'partner' ? (
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                    <p className="font-semibold text-sm">Connecting...</p>
-                  </div>
-                ) : (
+                {isLoading === 'partner' ? <LoadingSpinner /> : (
                   <>
-                    <div className="text-3xl mb-2">🏪</div>
-                    <p className="font-semibold text-sm">Partner</p>
+                    <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
+                      </svg>
+                    </div>
+                    <p className="font-semibold text-sm text-white">Partner</p>
                     <p className="text-zinc-500 text-xs mt-1">Accept payments</p>
                   </>
                 )}
               </button>
               
+              {/* Member */}
               <button
                 onClick={() => handleSelection('member')}
                 disabled={isLoading !== null}
-                className={`p-5 rounded-2xl border-2 transition-all cursor-pointer ${
+                className={`group p-6 rounded-2xl border transition-all duration-300 ${
                   isLoading === 'member'
                     ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-zinc-800 hover:border-emerald-500 hover:bg-emerald-500/5'
+                    : 'border-zinc-800 hover:border-emerald-500/50 hover:bg-zinc-900/50'
                 } disabled:opacity-50`}
               >
-                {isLoading === 'member' ? (
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                    <p className="font-semibold text-sm">Connecting...</p>
-                  </div>
-                ) : (
+                {isLoading === 'member' ? <LoadingSpinner /> : (
                   <>
-                    <div className="text-3xl mb-2">👤</div>
-                    <p className="font-semibold text-sm">Member</p>
-                    <p className="text-zinc-500 text-xs mt-1">Pay & earn</p>
+                    <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-sky-500/20 to-sky-600/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <svg className="w-5 h-5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                      </svg>
+                    </div>
+                    <p className="font-semibold text-sm text-white">Member</p>
+                    <p className="text-zinc-500 text-xs mt-1">Pay & earn rewards</p>
                   </>
                 )}
               </button>
               
+              {/* Affiliate */}
               <button
                 onClick={() => handleSelection('affiliate')}
                 disabled={isLoading !== null}
-                className={`p-5 rounded-2xl border-2 transition-all cursor-pointer ${
+                className={`group p-6 rounded-2xl border transition-all duration-300 ${
                   isLoading === 'affiliate'
                     ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-zinc-800 hover:border-emerald-500 hover:bg-emerald-500/5'
+                    : 'border-zinc-800 hover:border-emerald-500/50 hover:bg-zinc-900/50'
                 } disabled:opacity-50`}
               >
-                {isLoading === 'affiliate' ? (
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                    <p className="font-semibold text-sm">Connecting...</p>
-                  </div>
-                ) : (
+                {isLoading === 'affiliate' ? <LoadingSpinner /> : (
                   <>
-                    <div className="text-3xl mb-2">💰</div>
-                    <p className="font-semibold text-sm">Affiliate</p>
+                    <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                      </svg>
+                    </div>
+                    <p className="font-semibold text-sm text-white">Affiliate</p>
                     <p className="text-zinc-500 text-xs mt-1">Earn commissions</p>
                   </>
                 )}
               </button>
               
+              {/* Explore */}
               <button
                 onClick={() => router.push('/home')}
                 disabled={isLoading !== null}
-                className="p-5 rounded-2xl border-2 border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer disabled:opacity-50"
+                className="group p-6 rounded-2xl border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/30 transition-all duration-300 disabled:opacity-50"
               >
-                <div className="text-3xl mb-2">🌐</div>
-                <p className="font-semibold text-sm">Enter Site</p>
-                <p className="text-zinc-500 text-xs mt-1">Explore</p>
+                <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-zinc-800/50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <svg className="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+                  </svg>
+                </div>
+                <p className="font-semibold text-sm text-white">Explore</p>
+                <p className="text-zinc-500 text-xs mt-1">View site</p>
               </button>
             </div>
           </div>
 
-          {/* Terms Checkbox with Disclaimer */}
-          <div className="mb-6 bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
+          {/* Terms */}
+          <div className="mb-6 bg-zinc-900/30 border border-zinc-800/50 rounded-xl p-4 backdrop-blur-sm">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={agreedToTerms}
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="mt-1 w-5 h-5 rounded border-zinc-700 bg-zinc-900 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer"
+                className="mt-0.5 w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer"
               />
-              <span className="text-zinc-400 text-sm">
+              <span className="text-zinc-400 text-sm leading-relaxed">
                 I agree to the{' '}
-                <a href="/terms" className="text-emerald-400 hover:underline">Terms of Service</a>
+                <a href="/terms" className="text-emerald-400 hover:text-emerald-300 transition-colors">Terms of Service</a>
                 {' '}and{' '}
-                <a href="/privacy" className="text-emerald-400 hover:underline">Privacy Policy</a>
+                <a href="/privacy" className="text-emerald-400 hover:text-emerald-300 transition-colors">Privacy Policy</a>
               </span>
             </label>
-            <div className="mt-3 pt-3 border-t border-zinc-800">
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                By signing in, a secure wallet will be created for you using your social account (Google, Apple, etc.). 
-                This wallet is non-custodial — only you have access to your funds. 
-                YesAllOfUs cannot access, freeze, or control your wallet.
-              </p>
-            </div>
+            <p className="text-zinc-600 text-xs mt-3 pl-7 leading-relaxed">
+              A secure, non-custodial wallet will be created using your social account. Only you control your funds.
+            </p>
           </div>
 
           {/* Error */}
           {error && (
-            <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+            <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-xl p-4">
               <p className="text-red-400 text-sm">{error}</p>
             </div>
           )}
 
-          {/* Powered By */}
+          {/* Footer */}
           <div className="text-center">
-            <p className="text-zinc-600 text-xs">Powered by Web3Auth · XRPL · RLUSD</p>
+            <p className="text-zinc-600 text-xs">
+              Powered by <span className="text-zinc-500">Web3Auth</span> · <span className="text-zinc-500">XRPL</span> · <span className="text-zinc-500">RLUSD</span>
+            </p>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="p-6 text-center">
-        <p className="text-zinc-600 text-sm">© 2026 YesAllOfUs. All rights reserved.</p>
+      <footer className="p-6 text-center relative z-10">
+        <p className="text-zinc-700 text-xs">© 2026 YesAllOfUs. All rights reserved.</p>
       </footer>
     </div>
   );

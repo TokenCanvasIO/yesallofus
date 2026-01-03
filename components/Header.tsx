@@ -39,9 +39,18 @@ export default function Header() {
           <Link href="/docs" className="text-zinc-400 hover:text-white text-sm transition px-3 py-2 rounded-lg hover:bg-zinc-800/50">
             Docs
           </Link>
-          <Link href="/#pricing" className="text-zinc-400 hover:text-white text-sm transition px-3 py-2 rounded-lg hover:bg-zinc-800/50">
-            Pricing
-          </Link>
+          <button
+  onClick={() => {
+    if (pathname === '/' || pathname === '/home') {
+      document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.location.href = '/home#pricing';
+    }
+  }}
+  className="text-zinc-400 hover:text-white text-sm transition px-3 py-2 rounded-lg hover:bg-zinc-800/50"
+>
+  Pricing
+</button>
           <Link href="/affiliate-dashboard" className="text-zinc-400 hover:text-white text-sm transition px-3 py-2 rounded-lg hover:bg-zinc-800/50">
   Affiliates
 </Link>

@@ -303,6 +303,7 @@ await Promise.all([
           setConnecting('none');
           setXamanQR(null);
           setLoginId(null);
+          await completeCustomerSignup(data.wallet_address); 
           await Promise.all([
             fetchDashboard(data.wallet_address),
             fetchWalletStatus(data.wallet_address)
@@ -382,11 +383,12 @@ await Promise.all([
       }
       
       sessionStorage.setItem('walletAddress', address);
-      setWalletAddress(address);
-      await Promise.all([
-        fetchDashboard(address),
-        fetchWalletStatus(address)
-      ]);
+setWalletAddress(address);
+await completeCustomerSignup(address);  // <-- ADD THIS LINE
+await Promise.all([
+  fetchDashboard(address),
+  fetchWalletStatus(address)
+]);
     } catch (err) {
       setError('Failed to connect Crossmark. Please try again.');
     }
@@ -942,7 +944,7 @@ if (!walletAddress && !loading) {
             {!walletStatus.funded && (
               <div className="mt-4 bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
                 <p className="text-orange-400 text-sm">
-                  💡 Your wallet is not funded yet. Commissions will accumulate until you reach ${walletStatus.pending_commissions?.threshold || 1.5} XRP, then we&apos;ll activate your wallet automatically.
+                  💡 Your wallet is not funded yet. Commissions will accumulate until you reach {walletStatus.pending_commissions?.threshold || 1.2} XRP, or we will deduct 1.2 XRP in your local currency when you top up your account. Then we&apos;ll activate your wallet automatically.
                 </p>
               </div>
             )}
@@ -969,6 +971,11 @@ if (!walletAddress && !loading) {
           </div>
         )}
 
+        {/* NFC Card Link */}
+        {walletAddress && (
+          <LinkNFCCard walletAddress={walletAddress} />
+        )}
+
         {/* Dashboard Content */}
         {dashboardData && dashboardData.stores.length > 0 && (
           <>
@@ -986,11 +993,6 @@ if (!walletAddress && !loading) {
                 </div>
               </div>
             </div>
-
-            {/* NFC Card - ADD THIS */}
-{walletAddress && (
-  <LinkNFCCard walletAddress={walletAddress} />
-)}
 
             {/* Your Vendors */}
             <section className="mb-8">

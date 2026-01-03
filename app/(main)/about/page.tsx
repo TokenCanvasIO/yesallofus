@@ -33,7 +33,7 @@ export default function About() {
             </p>
             <p>
               YesAllofUs means everyone gets their share. The affiliate in Lagos gets paid 
-              the same speed as the one in London. The creator with 100 followers and the one 
+              the same speed as the one in Guernsey. The creator with 100 followers and the one 
               with 100,000. The small shop and the big brand. All of us.
             </p>
           </div>
