@@ -5,7 +5,7 @@ interface CartItem {
   emoji?: string;
 }
 
-export type DisplayStatus = 'idle' | 'ready' | 'processing' | 'success' | 'error';
+export type DisplayStatus = 'idle' | 'ready' | 'processing' | 'success' | 'error' | 'qr';
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
@@ -14,7 +14,8 @@ export async function updateCustomerDisplay(
   storeName: string,
   cart: CartItem[],
   total: number,
-  status: DisplayStatus = 'idle'
+  status: DisplayStatus = 'idle',
+  qrCode?: string | null
 ) {
   if (!storeId) return;
   
@@ -27,7 +28,8 @@ export async function updateCustomerDisplay(
         store_name: storeName,
         cart: cart,
         total: total,
-        status: status
+        status: status,
+        qr_code: qrCode || null
       })
     });
   } catch (error) {
@@ -36,5 +38,5 @@ export async function updateCustomerDisplay(
 }
 
 export async function clearCustomerDisplay(storeId: string, storeName: string) {
-  await updateCustomerDisplay(storeId, storeName, [], 0, 'idle');
+  await updateCustomerDisplay(storeId, storeName, [], 0, 'idle', null);
 }

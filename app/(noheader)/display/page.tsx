@@ -41,16 +41,17 @@ function CustomerDisplay() {
     if (!storeId) return;
 
     const fetchDisplay = async () => {
-      try {
-        const res = await fetch(`${API_URL}/display/${storeId}`);
-        const val = await res.json();
-        setData(val);
-        setConnected(true);
-      } catch (error) {
-        console.error('Fetch error:', error);
-        setConnected(false);
-      }
-    };
+  try {
+    const res = await fetch(`${API_URL}/display/${storeId}`);
+    if (!res.ok) throw new Error('Failed');
+    const val = await res.json();
+    setData(val);
+    setConnected(true);
+  } catch (error) {
+    // Don't spam console on localhost
+    setConnected(false);
+  }
+};
 
     fetchDisplay();
     const interval = setInterval(fetchDisplay, 500);
@@ -166,66 +167,125 @@ function CustomerDisplay() {
           </div>
         )}
 
-        {/* Idle/Ready State - Show Cart */}
-        {(status === 'idle' || status === 'ready') && (
-          <>
-            {cart && cart.length > 0 ? (
-              <div className="flex-1 flex flex-col">
-                {/* Items */}
-                <div className="flex-1 overflow-y-auto mb-4 sm:mb-8">
-                  <div className="space-y-2 sm:space-y-4">
-                    {cart.map((item, index) => (
-                      <div 
-                        key={index}
-                        className="flex items-center justify-between py-3 px-4 sm:py-4 sm:px-6 bg-zinc-900/50 rounded-xl sm:rounded-2xl border border-zinc-800/50"
-                      >
-                        <div className="flex items-center gap-3 sm:gap-4">
-                          <span className="text-2xl sm:text-4xl">{item.emoji || '📦'}</span>
-                          <div>
-                            <p className="text-base sm:text-2xl font-semibold">{item.name}</p>
-                            {item.quantity > 1 && (
-                              <p className="text-zinc-500 text-sm sm:text-lg">
-                                {item.quantity} × £{item.price.toFixed(2)}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-lg sm:text-3xl font-bold">
-                          £{(item.price * item.quantity).toFixed(2)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Total */}
-                <div className="border-t border-zinc-800 pt-4 sm:pt-8">
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <p className="text-zinc-500 text-lg sm:text-2xl mb-1 sm:mb-2">Total</p>
-                      <p className="text-zinc-600 text-sm sm:text-lg">
-                        {cart.reduce((sum, item) => sum + item.quantity, 0)} items
+        {/* Idle State - Show Cart */}
+{status === 'idle' && (
+  <>
+    {cart && cart.length > 0 ? (
+      <div className="flex-1 flex flex-col">
+        {/* Items */}
+        <div className="flex-1 overflow-y-auto mb-4 sm:mb-8">
+          <div className="space-y-2 sm:space-y-4">
+            {cart.map((item, index) => (
+              <div 
+                key={index}
+                className="flex items-center justify-between py-3 px-4 sm:py-4 sm:px-6 bg-zinc-900/50 rounded-xl sm:rounded-2xl border border-zinc-800/50"
+              >
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <span className="text-2xl sm:text-4xl">{item.emoji || '📦'}</span>
+                  <div>
+                    <p className="text-base sm:text-2xl font-semibold">{item.name}</p>
+                    {item.quantity > 1 && (
+                      <p className="text-zinc-500 text-sm sm:text-lg">
+                        {item.quantity} × £{item.price.toFixed(2)}
                       </p>
-                    </div>
-                    <p className="text-5xl sm:text-9xl font-bold tracking-tight">
-                      £{total.toFixed(2)}
-                    </p>
+                    )}
                   </div>
                 </div>
+                <p className="text-lg sm:text-3xl font-bold">
+                  £{(item.price * item.quantity).toFixed(2)}
+                </p>
               </div>
-            ) : (
-              /* Empty State */
-              <div className="flex-1 flex flex-col items-center justify-center">
-                <div className="text-zinc-800 mb-6 sm:mb-8">
-                  <svg className="w-24 h-24 sm:w-48 sm:h-48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-                <p className="text-xl sm:text-4xl text-zinc-700 font-light text-center">Ready for your order</p>
-              </div>
-            )}
-          </>
-        )}
+            ))}
+          </div>
+        </div>
+
+        {/* Total */}
+        <div className="border-t border-zinc-800 pt-4 sm:pt-8">
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-zinc-500 text-lg sm:text-2xl mb-1 sm:mb-2">Total</p>
+              <p className="text-zinc-600 text-sm sm:text-lg">
+                {cart.reduce((sum, item) => sum + item.quantity, 0)} items
+              </p>
+            </div>
+            <p className="text-5xl sm:text-9xl font-bold tracking-tight">
+              £{total.toFixed(2)}
+            </p>
+          </div>
+        </div>
+      </div>
+    ) : (
+      /* Empty State */
+      <div className="flex-1 flex flex-col items-center justify-center">
+        <div className="text-zinc-800 mb-6 sm:mb-8">
+          <svg className="w-24 h-24 sm:w-48 sm:h-48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+        <p className="text-xl sm:text-4xl text-zinc-700 font-light text-center">Ready for your order</p>
+      </div>
+    )}
+  </>
+)}
+
+{/* Ready State - Payment Instructions */}
+{status === 'ready' && (
+  <div className="flex-1 flex flex-col">
+    {/* Total at top */}
+    <div className="text-center mb-6 sm:mb-10">
+      <p className="text-zinc-500 text-lg sm:text-2xl mb-2">Total to pay</p>
+      <p className="text-6xl sm:text-9xl font-bold text-emerald-400">£{total.toFixed(2)}</p>
+    </div>
+
+    {/* Payment Options */}
+    <div className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12">
+      
+      {/* NFC Tap Zone */}
+      <div className="flex flex-col items-center">
+        <div className="w-32 h-32 sm:w-48 sm:h-48 bg-emerald-500/20 rounded-full flex items-center justify-center relative mb-4 sm:mb-6">
+          <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
+          <div className="absolute inset-4 bg-emerald-500/10 rounded-full animate-pulse"></div>
+          <svg className="w-16 h-16 sm:w-24 sm:h-24 text-emerald-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+        </div>
+        <p className="text-xl sm:text-3xl font-bold text-emerald-400 mb-2">Tap Card</p>
+        <p className="text-zinc-500 text-sm sm:text-lg text-center">Hold your NFC card<br/>to the terminal</p>
+      </div>
+
+      {/* Divider */}
+      <div className="flex items-center gap-4">
+        <div className="w-16 sm:w-24 h-px bg-zinc-800 sm:hidden"></div>
+        <div className="hidden sm:block w-px h-32 bg-zinc-800"></div>
+        <span className="text-zinc-600 text-lg sm:text-xl font-medium">or</span>
+        <div className="w-16 sm:w-24 h-px bg-zinc-800 sm:hidden"></div>
+        <div className="hidden sm:block w-px h-32 bg-zinc-800"></div>
+      </div>
+
+      {/* QR/Wallet Scan */}
+      <div className="flex flex-col items-center">
+        <div className="w-32 h-32 sm:w-48 sm:h-48 bg-sky-500/20 rounded-3xl flex items-center justify-center relative mb-4 sm:mb-6">
+          <div className="absolute inset-0 bg-sky-500/10 rounded-3xl animate-pulse"></div>
+          <svg className="w-16 h-16 sm:w-24 sm:h-24 text-sky-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h2M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+          </svg>
+        </div>
+        <p className="text-xl sm:text-3xl font-bold text-sky-400 mb-2">Scan QR</p>
+        <p className="text-zinc-500 text-sm sm:text-lg text-center">Open Xaman wallet<br/>and scan code</p>
+      </div>
+
+    </div>
+
+    {/* Items summary (collapsed) */}
+    {cart && cart.length > 0 && (
+      <div className="mt-6 sm:mt-8 pt-4 border-t border-zinc-800">
+        <p className="text-zinc-600 text-center text-sm sm:text-base">
+          {cart.reduce((sum, item) => sum + item.quantity, 0)} items: {cart.map(item => item.name).join(', ')}
+        </p>
+      </div>
+    )}
+  </div>
+)}
       </main>
 
       {/* Footer */}
