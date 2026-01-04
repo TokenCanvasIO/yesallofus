@@ -12,13 +12,13 @@ const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 export async function updateCustomerDisplay(
   storeId: string,
   storeName: string,
-  cart: CartItem[],
+  cart: any[],
   total: number,
-  status: DisplayStatus = 'idle',
-  qrCode?: string | null
+  status: DisplayStatus,
+  qrCode?: string | null,
+  tip?: number,
+  tipsEnabled?: boolean
 ) {
-  if (!storeId) return;
-  
   try {
     await fetch(`${API_URL}/display/update`, {
       method: 'POST',
@@ -26,14 +26,16 @@ export async function updateCustomerDisplay(
       body: JSON.stringify({
         store_id: storeId,
         store_name: storeName,
-        cart: cart,
-        total: total,
-        status: status,
-        qr_code: qrCode || null
+        cart,
+        total,
+        status,
+        qr_code: qrCode || null,
+        tip: tip || 0,
+        tips_enabled: tipsEnabled ?? false
       })
     });
   } catch (error) {
-    console.error('Failed to update customer display:', error);
+    console.error('Failed to update display:', error);
   }
 }
 

@@ -15,11 +15,14 @@ interface DisplayData {
   store_name: string;
   logo_url?: string; 
   cart: CartItem[];
+  subtotal: number;
   total: number;
-  status: 'idle' | 'ready' | 'processing' | 'success' | 'error';
+  status: 'idle' | 'ready' | 'processing' | 'success' | 'error' | 'qr';
+  qr_code?: string | null;
+  tip?: number;
+  tips_enabled?: boolean;
   last_updated: number | null;
 }
-
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
 function CustomerDisplay() {
@@ -36,27 +39,68 @@ function CustomerDisplay() {
     return () => clearInterval(interval);
   }, []);
 
-  // Poll API for display data
-  useEffect(() => {
-    if (!storeId) return;
+  // Fetch store logo once
+const [storeLogo, setStoreLogo] = useState<string | null>(null);
+const [selectedTip, setSelectedTip] = useState<number>(0);
+const [customTipInput, setCustomTipInput] = useState<string>('');
+const [isProcessing, setIsProcessing] = useState(false);
+const [showCustomTipModal, setShowCustomTipModal] = useState(false);
 
-    const fetchDisplay = async () => {
-  try {
-    const res = await fetch(`${API_URL}/display/${storeId}`);
-    if (!res.ok) throw new Error('Failed');
-    const val = await res.json();
-    setData(val);
-    setConnected(true);
-  } catch (error) {
-    // Don't spam console on localhost
-    setConnected(false);
+// Sync selectedTip with data from API
+useEffect(() => {
+  if (data?.tip !== undefined) {
+    setSelectedTip(data.tip);
   }
+}, [data?.tip]);
+
+// Send tip to API and confirm payment
+const addTip = (tipAmount: number) => {
+  setSelectedTip(tipAmount);
+  
+  fetch(`${API_URL}/display/${storeId}/tip`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tip: tipAmount })
+  }).catch(err => console.error('Failed to add tip:', err));
 };
 
-    fetchDisplay();
-    const interval = setInterval(fetchDisplay, 500);
-    return () => clearInterval(interval);
-  }, [storeId]);
+useEffect(() => {
+  if (!storeId) return;
+  
+  // Fetch store data for logo (once)
+  fetch(`${API_URL}/store/public/${storeId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.store) {
+        setStoreLogo(data.store.logo_url || null);
+      }
+    })
+    .catch(() => {});
+}, [storeId]);
+
+// Poll API for display data
+useEffect(() => {
+  if (!storeId) return;
+
+  const fetchDisplay = async () => {
+    try {
+      const res = await fetch(`${API_URL}/display/${storeId}`);
+      if (!res.ok) throw new Error('Failed');
+      const val = await res.json();
+setData(val);
+setConnected(true);
+if (val.status === 'qr') {
+  setIsProcessing(false);
+}
+    } catch (error) {
+      setConnected(false);
+    }
+  };
+
+  fetchDisplay();
+  const interval = setInterval(fetchDisplay, 500);
+  return () => clearInterval(interval);
+}, [storeId]);
 
   // No store ID
   if (!storeId) {
@@ -90,10 +134,10 @@ function CustomerDisplay() {
   const { store_name, cart, total, status } = data;
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col overflow-hidden">
+    <div className="min-h-screen w-full bg-black text-white flex flex-col overflow-hidden">
       
       {/* Ambient gradient */}
-      <div className="fixed inset-0 pointer-events-none">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className={`absolute top-0 left-1/4 w-64 sm:w-96 h-64 sm:h-96 rounded-full blur-[100px] sm:blur-[150px] transition-colors duration-1000 ${
           status === 'success' ? 'bg-emerald-500/30' : 
           status === 'processing' ? 'bg-amber-500/20' : 
@@ -104,66 +148,74 @@ function CustomerDisplay() {
       </div>
 
       {/* Header */}
-      <header className="relative z-10 p-4 sm:p-6 flex items-center justify-between border-b border-zinc-800/50">
-        <div className="flex items-center gap-3 sm:gap-4">
-          <img 
-            src="https://yesallofus.com/dltpayslogo1.png" 
-            alt="Logo" 
-            className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl"
-          />
-          <div>
-            <h1 className="text-lg sm:text-2xl font-bold truncate max-w-[150px] sm:max-w-none">{store_name}</h1>
-            <div className="flex items-center gap-2 text-zinc-500 text-xs sm:text-sm">
+      <header className="relative z-10 px-6 py-4 sm:px-8 sm:py-6 flex items-center justify-between border-b border-zinc-800/50">
+  <div className="flex items-center gap-3 sm:gap-4">
+    {storeLogo ? (
+      <img 
+        src={storeLogo} 
+        alt={store_name} 
+        className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover"
+      />
+    ) : (
+      <img 
+        src="https://yesallofus.com/dltpayslogo1.png" 
+        alt="YesAllOfUs" 
+        className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl"
+      />
+    )}
+    <div>
+      <h1 className="text-xl sm:text-2xl font-bold truncate max-w-[200px] sm:max-w-none">{storeLogo ? store_name : 'YesAllOfUs'}</h1>
+            <div className="flex items-center gap-2 text-zinc-500 text-sm">
               <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
               {connected ? 'Live' : 'Disconnected'}
             </div>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-2xl sm:text-4xl font-light tabular-nums">
+          <p className="text-3xl sm:text-5xl font-light tabular-nums">
             {currentTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
           </p>
-          <p className="text-zinc-500 text-xs sm:text-base hidden sm:block">
+          <p className="text-zinc-500 text-sm sm:text-base">
             {currentTime.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
           </p>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 relative z-10 flex flex-col p-4 sm:p-8">
+      <main className="flex-1 relative z-10 flex flex-col px-6 py-4 sm:px-8 sm:py-6 overflow-y-auto overflow-x-hidden">
         
         {/* Success State */}
         {status === 'success' && (
           <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="w-24 h-24 sm:w-40 sm:h-40 bg-emerald-500/20 rounded-full flex items-center justify-center mb-6 sm:mb-8">
-              <svg className="w-14 h-14 sm:w-24 sm:h-24 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-32 h-32 sm:w-48 sm:h-48 bg-emerald-500/20 rounded-full flex items-center justify-center mb-8 sm:mb-10">
+              <svg className="w-20 h-20 sm:w-28 sm:h-28 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p className="text-3xl sm:text-6xl font-bold text-emerald-400 mb-2 sm:mb-4 text-center">Payment Complete</p>
-            <p className="text-xl sm:text-3xl text-zinc-400">Thank you!</p>
+            <p className="text-4xl sm:text-7xl font-bold text-emerald-400 mb-3 sm:mb-4 text-center">Payment Complete</p>
+            <p className="text-2xl sm:text-4xl text-zinc-400">Thank you!</p>
           </div>
         )}
 
         {/* Processing State */}
         {status === 'processing' && (
           <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="w-20 h-20 sm:w-32 sm:h-32 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-6 sm:mb-8"></div>
-            <p className="text-2xl sm:text-5xl font-bold text-amber-400 mb-2 sm:mb-4">Processing...</p>
-            <p className="text-5xl sm:text-8xl font-bold mt-2 sm:mt-4">£{total.toFixed(2)}</p>
+            <div className="w-24 h-24 sm:w-40 sm:h-40 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-8 sm:mb-10"></div>
+            <p className="text-3xl sm:text-6xl font-bold text-amber-400 mb-3 sm:mb-4">Processing...</p>
+            <p className="text-6xl sm:text-9xl font-bold mt-4 sm:mt-6">£{total.toFixed(2)}</p>
           </div>
         )}
 
         {/* Error State */}
         {status === 'error' && (
           <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="w-24 h-24 sm:w-40 sm:h-40 bg-red-500/20 rounded-full flex items-center justify-center mb-6 sm:mb-8">
-              <svg className="w-14 h-14 sm:w-24 sm:h-24 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-32 h-32 sm:w-48 sm:h-48 bg-red-500/20 rounded-full flex items-center justify-center mb-8 sm:mb-10">
+              <svg className="w-20 h-20 sm:w-28 sm:h-28 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <p className="text-2xl sm:text-5xl font-bold text-red-400 text-center">Payment Failed</p>
-            <p className="text-lg sm:text-2xl text-zinc-500 mt-2 sm:mt-4">Please try again</p>
+            <p className="text-3xl sm:text-6xl font-bold text-red-400 text-center">Payment Failed</p>
+            <p className="text-xl sm:text-3xl text-zinc-500 mt-3 sm:mt-4">Please try again</p>
           </div>
         )}
 
@@ -171,27 +223,27 @@ function CustomerDisplay() {
 {status === 'idle' && (
   <>
     {cart && cart.length > 0 ? (
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Items */}
-        <div className="flex-1 overflow-y-auto mb-4 sm:mb-8">
-          <div className="space-y-2 sm:space-y-4">
+        <div className="flex-shrink-0 overflow-y-auto max-h-[35vh] mb-6">
+          <div className="space-y-3 sm:space-y-4">
             {cart.map((item, index) => (
               <div 
                 key={index}
-                className="flex items-center justify-between py-3 px-4 sm:py-4 sm:px-6 bg-zinc-900/50 rounded-xl sm:rounded-2xl border border-zinc-800/50"
+                className="flex items-center justify-between py-4 px-5 sm:py-5 sm:px-6 bg-zinc-900/50 rounded-2xl border border-zinc-800/50"
               >
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <span className="text-2xl sm:text-4xl">{item.emoji || '📦'}</span>
+                <div className="flex items-center gap-4 sm:gap-5">
+                  <span className="text-3xl sm:text-5xl">{item.emoji || '📦'}</span>
                   <div>
-                    <p className="text-base sm:text-2xl font-semibold">{item.name}</p>
+                    <p className="text-xl sm:text-3xl font-semibold">{item.name}</p>
                     {item.quantity > 1 && (
-                      <p className="text-zinc-500 text-sm sm:text-lg">
+                      <p className="text-zinc-500 text-lg sm:text-xl">
                         {item.quantity} × £{item.price.toFixed(2)}
                       </p>
                     )}
                   </div>
                 </div>
-                <p className="text-lg sm:text-3xl font-bold">
+                <p className="text-2xl sm:text-4xl font-bold">
                   £{(item.price * item.quantity).toFixed(2)}
                 </p>
               </div>
@@ -199,30 +251,97 @@ function CustomerDisplay() {
           </div>
         </div>
 
-        {/* Total */}
-        <div className="border-t border-zinc-800 pt-4 sm:pt-8">
-          <div className="flex items-end justify-between">
-            <div>
-              <p className="text-zinc-500 text-lg sm:text-2xl mb-1 sm:mb-2">Total</p>
-              <p className="text-zinc-600 text-sm sm:text-lg">
-                {cart.reduce((sum, item) => sum + item.quantity, 0)} items
+        {/* Tip Section - Customer adds tip */}
+        {data?.tips_enabled && (
+        <div className="border-t border-zinc-800 pt-6 sm:pt-8 mb-6 sm:mb-8">
+          <p className="text-zinc-400 text-center text-lg sm:text-2xl mb-4 sm:mb-6">Add a tip?</p>
+          
+          <div className="flex justify-center gap-3 sm:gap-4 flex-wrap">
+            {[0, 10, 15, 20].map((percent) => {
+              const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+              const tipValue = percent === 0 ? 0 : subtotal * percent / 100;
+              const label = percent === 0 ? 'No Tip' : `${percent}% · £${tipValue.toFixed(2)}`;
+              
+              return (
+                <div
+                  key={percent}
+                  onClick={() => addTip(tipValue)}
+                  className={`px-5 sm:px-8 py-4 sm:py-5 rounded-2xl text-lg sm:text-2xl font-semibold cursor-pointer select-none active:scale-95 transition ${
+                    selectedTip === tipValue
+                      ? 'bg-emerald-500 text-black'
+                      : 'bg-zinc-800 text-white active:bg-zinc-700'
+                  }`}
+                >
+                  {label}
+                </div>
+              );
+            })}
+            <div
+              onClick={() => setShowCustomTipModal(true)}
+              className="px-5 sm:px-8 py-4 sm:py-5 rounded-2xl text-lg sm:text-2xl font-semibold cursor-pointer select-none bg-zinc-800 text-white active:bg-zinc-700 active:scale-95 transition"
+            >
+              Custom
+            </div>
+          </div>
+          
+          {/* Show tip if added */}
+          {selectedTip > 0 && (
+            <div className="mt-5 text-center">
+              <p className="text-emerald-400 text-2xl sm:text-3xl font-semibold">
+                Tip: £{selectedTip.toFixed(2)}
               </p>
             </div>
-            <p className="text-5xl sm:text-9xl font-bold tracking-tight">
-              £{total.toFixed(2)}
-            </p>
+          )}
+          
+          {/* Confirm Payment Button */}
+          <button
+  onClick={() => {
+    setIsProcessing(true);
+    fetch(`${API_URL}/display/${storeId}/confirm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    }).catch(err => console.error('Failed to confirm:', err));
+  }}
+  disabled={isProcessing}
+  className="w-full mt-6 bg-emerald-500 hover:bg-emerald-400 disabled:bg-emerald-500/50 text-black font-bold text-xl sm:text-2xl py-5 sm:py-6 rounded-2xl transition active:scale-95 cursor-pointer flex items-center justify-center gap-3"
+>
+  {isProcessing ? (
+    <>
+      <div className="w-7 h-7 border-3 border-black border-t-transparent rounded-full animate-spin"></div>
+      Processing...
+    </>
+  ) : (
+    <>Pay £{total.toFixed(2)}</>
+  )}
+</button>
+        </div>
+        )}
+        
+        {/* Total */}
+<div className="border-t border-zinc-800 pt-6 sm:pt-8 flex-shrink-0">
+  <div className="flex items-end justify-between">
+    <div>
+      <p className="text-zinc-500 text-xl sm:text-2xl mb-1">Total</p>
+      <p className="text-zinc-600 text-base sm:text-lg">
+        {cart.reduce((sum, item) => sum + item.quantity, 0)} items
+        {selectedTip > 0 && ` + tip`}
+      </p>
+    </div>
+    <p className="text-5xl sm:text-8xl font-bold tracking-tight text-emerald-400">
+      £{total.toFixed(2)}
+    </p>
           </div>
         </div>
       </div>
     ) : (
       /* Empty State */
       <div className="flex-1 flex flex-col items-center justify-center">
-        <div className="text-zinc-800 mb-6 sm:mb-8">
-          <svg className="w-24 h-24 sm:w-48 sm:h-48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-zinc-800 mb-8 sm:mb-10">
+          <svg className="w-32 h-32 sm:w-56 sm:h-56" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
         </div>
-        <p className="text-xl sm:text-4xl text-zinc-700 font-light text-center">Ready for your order</p>
+        <p className="text-2xl sm:text-5xl text-zinc-700 font-light text-center">Ready for your order</p>
       </div>
     )}
   </>
@@ -232,77 +351,184 @@ function CustomerDisplay() {
 {status === 'ready' && (
   <div className="flex-1 flex flex-col">
     {/* Total at top */}
-    <div className="text-center mb-6 sm:mb-10">
-      <p className="text-zinc-500 text-lg sm:text-2xl mb-2">Total to pay</p>
-      <p className="text-6xl sm:text-9xl font-bold text-emerald-400">£{total.toFixed(2)}</p>
+    <div className="text-center mb-8 sm:mb-12">
+      <p className="text-zinc-500 text-xl sm:text-3xl mb-2">Total to pay</p>
+      <p className="text-7xl sm:text-[10rem] font-bold text-emerald-400">£{total.toFixed(2)}</p>
     </div>
 
     {/* Payment Options */}
-    <div className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12">
+    <div className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
       
       {/* NFC Tap Zone */}
       <div className="flex flex-col items-center">
-        <div className="w-32 h-32 sm:w-48 sm:h-48 bg-emerald-500/20 rounded-full flex items-center justify-center relative mb-4 sm:mb-6">
+        <div className="w-40 h-40 sm:w-56 sm:h-56 bg-emerald-500/20 rounded-full flex items-center justify-center relative mb-5 sm:mb-8">
           <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
           <div className="absolute inset-4 bg-emerald-500/10 rounded-full animate-pulse"></div>
-          <svg className="w-16 h-16 sm:w-24 sm:h-24 text-emerald-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-20 h-20 sm:w-28 sm:h-28 text-emerald-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
           </svg>
         </div>
-        <p className="text-xl sm:text-3xl font-bold text-emerald-400 mb-2">Tap Card</p>
-        <p className="text-zinc-500 text-sm sm:text-lg text-center">Hold your NFC card<br/>to the terminal</p>
+        <p className="text-2xl sm:text-4xl font-bold text-emerald-400 mb-2">Tap Card</p>
+        <p className="text-zinc-500 text-lg sm:text-xl text-center">Hold your NFC card<br/>to the terminal</p>
       </div>
 
       {/* Divider */}
       <div className="flex items-center gap-4">
-        <div className="w-16 sm:w-24 h-px bg-zinc-800 sm:hidden"></div>
-        <div className="hidden sm:block w-px h-32 bg-zinc-800"></div>
-        <span className="text-zinc-600 text-lg sm:text-xl font-medium">or</span>
-        <div className="w-16 sm:w-24 h-px bg-zinc-800 sm:hidden"></div>
-        <div className="hidden sm:block w-px h-32 bg-zinc-800"></div>
+        <div className="w-20 sm:w-28 h-px bg-zinc-800 sm:hidden"></div>
+        <div className="hidden sm:block w-px h-40 bg-zinc-800"></div>
+        <span className="text-zinc-600 text-xl sm:text-2xl font-medium">or</span>
+        <div className="w-20 sm:w-28 h-px bg-zinc-800 sm:hidden"></div>
+        <div className="hidden sm:block w-px h-40 bg-zinc-800"></div>
       </div>
 
       {/* QR/Wallet Scan */}
       <div className="flex flex-col items-center">
-        <div className="w-32 h-32 sm:w-48 sm:h-48 bg-sky-500/20 rounded-3xl flex items-center justify-center relative mb-4 sm:mb-6">
+        <div className="w-40 h-40 sm:w-56 sm:h-56 bg-sky-500/20 rounded-3xl flex items-center justify-center relative mb-5 sm:mb-8">
           <div className="absolute inset-0 bg-sky-500/10 rounded-3xl animate-pulse"></div>
-          <svg className="w-16 h-16 sm:w-24 sm:h-24 text-sky-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-20 h-20 sm:w-28 sm:h-28 text-sky-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h2M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
           </svg>
         </div>
-        <p className="text-xl sm:text-3xl font-bold text-sky-400 mb-2">Scan QR</p>
-        <p className="text-zinc-500 text-sm sm:text-lg text-center">Open Xaman wallet<br/>and scan code</p>
+        <p className="text-2xl sm:text-4xl font-bold text-sky-400 mb-2">Scan QR</p>
+        <p className="text-zinc-500 text-lg sm:text-xl text-center">Open Xaman wallet<br/>and scan code</p>
       </div>
 
     </div>
 
     {/* Items summary (collapsed) */}
     {cart && cart.length > 0 && (
-      <div className="mt-6 sm:mt-8 pt-4 border-t border-zinc-800">
-        <p className="text-zinc-600 text-center text-sm sm:text-base">
+      <div className="mt-8 sm:mt-10 pt-4 border-t border-zinc-800">
+        <p className="text-zinc-600 text-center text-base sm:text-lg">
           {cart.reduce((sum, item) => sum + item.quantity, 0)} items: {cart.map(item => item.name).join(', ')}
         </p>
       </div>
     )}
   </div>
 )}
+{/* QR Code State - Show both QR and Tap options */}
+{status === 'qr' && (
+  <div className="flex-1 flex flex-col">
+    {/* Total at top */}
+    <div className="text-center mb-8 sm:mb-12">
+      <p className="text-zinc-500 text-xl sm:text-3xl mb-2">Total to pay</p>
+      <p className="text-7xl sm:text-[10rem] font-bold text-emerald-400">£{total.toFixed(2)}</p>
+    </div>
+
+    {/* Payment Options */}
+    <div className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
+      
+      {/* NFC Tap Zone */}
+      <div className="flex flex-col items-center">
+        <div className="w-40 h-40 sm:w-56 sm:h-56 bg-emerald-500/20 rounded-full flex items-center justify-center relative mb-5 sm:mb-8">
+          <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
+          <div className="absolute inset-4 bg-emerald-500/10 rounded-full animate-pulse"></div>
+          <svg className="w-20 h-20 sm:w-28 sm:h-28 text-emerald-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+        </div>
+        <p className="text-2xl sm:text-4xl font-bold text-emerald-400 mb-2">Tap Card</p>
+        <p className="text-zinc-500 text-lg sm:text-xl text-center">Hold your NFC card<br/>to the terminal</p>
+      </div>
+
+      {/* Divider */}
+      <div className="flex items-center gap-4">
+        <div className="w-20 sm:w-28 h-px bg-zinc-800 sm:hidden"></div>
+        <div className="hidden sm:block w-px h-40 bg-zinc-800"></div>
+        <span className="text-zinc-600 text-xl sm:text-2xl font-medium">or</span>
+        <div className="w-20 sm:w-28 h-px bg-zinc-800 sm:hidden"></div>
+        <div className="hidden sm:block w-px h-40 bg-zinc-800"></div>
+      </div>
+
+      {/* QR Code */}
+      <div className="flex flex-col items-center">
+        {data?.qr_code ? (
+          <div className="bg-white rounded-3xl p-5 sm:p-8 mb-5 sm:mb-8">
+            <img 
+              src={data.qr_code} 
+              alt="Scan to pay" 
+              className="w-40 h-40 sm:w-56 sm:h-56"
+            />
+          </div>
+        ) : (
+          <div className="w-40 h-40 sm:w-56 sm:h-56 bg-zinc-800 rounded-3xl animate-pulse mb-5 sm:mb-8"></div>
+        )}
+        <p className="text-2xl sm:text-4xl font-bold text-sky-400 mb-2">Scan QR</p>
+        <p className="text-zinc-500 text-lg sm:text-xl text-center">Open Xaman wallet<br/>and scan code</p>
+      </div>
+
+    </div>
+
+    {/* Items summary */}
+    {cart && cart.length > 0 && (
+      <div className="mt-8 sm:mt-10 pt-4 border-t border-zinc-800">
+        <p className="text-zinc-600 text-center text-base sm:text-lg">
+          {cart.reduce((sum, item) => sum + item.quantity, 0)} items: {cart.map(item => item.name).join(', ')}
+        </p>
+      </div>
+    )}
+  </div>
+)}
+{/* Custom Tip Modal */}
+{showCustomTipModal && (
+  <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+    <div className="bg-zinc-900 rounded-2xl p-6 sm:p-8 w-full max-w-md">
+      <h3 className="text-xl sm:text-2xl font-bold mb-5">Custom Tip</h3>
+      <div className="relative mb-5">
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 text-xl sm:text-2xl">£</span>
+        <input
+          type="number"
+          inputMode="decimal"
+          step="0.01"
+          min="0"
+          placeholder="0.00"
+          value={customTipInput}
+          onChange={(e) => setCustomTipInput(e.target.value)}
+          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-10 pr-4 py-4 text-xl sm:text-2xl text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+          autoFocus
+        />
+      </div>
+      <div className="flex gap-3">
+        <button
+          onClick={() => {
+            setShowCustomTipModal(false);
+            setCustomTipInput('');
+          }}
+          className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-4 rounded-xl text-lg sm:text-xl transition active:scale-95 cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={() => {
+            const tip = parseFloat(customTipInput) || 0;
+            addTip(tip);
+            setShowCustomTipModal(false);
+            setCustomTipInput('');
+          }}
+          className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-4 rounded-xl text-lg sm:text-xl transition active:scale-95 cursor-pointer"
+        >
+          Add Tip
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 p-3 sm:p-6 border-t border-zinc-800/50 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <div className="flex items-center gap-2 sm:gap-3">
+      <footer className="relative z-10 px-6 py-4 sm:px-8 sm:py-5 border-t border-zinc-800/50 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="flex items-center gap-3">
             <img 
   src={data.logo_url || "https://yesallofus.com/dltpayslogo1.png"} 
   alt="Logo" 
   className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-cover"
 />
-          <span className="text-zinc-600 text-xs sm:text-base">Powered by YesAllOfUs</span>
+          <span className="text-zinc-600 text-sm sm:text-base">Powered by YesAllOfUs</span>
         </div>
         <div className="flex items-center gap-2 text-zinc-600">
           <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <span className="text-xs sm:text-base">Secure payments on XRPL</span>
+          <span className="text-sm sm:text-base">Secure payments on XRPL</span>
         </div>
       </footer>
     </div>

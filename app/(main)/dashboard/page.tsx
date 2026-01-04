@@ -1289,9 +1289,10 @@ setStep('dashboard');
 return (
   <>
     <DashboardHeader 
-      walletAddress={walletAddress || undefined}
-      onSignOut={signOut}
-    />
+  walletAddress={walletAddress || undefined}
+  storeId={store?.store_id}
+  onSignOut={signOut}
+/>
     <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
       <Script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" />
 

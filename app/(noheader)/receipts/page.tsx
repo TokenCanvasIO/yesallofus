@@ -56,6 +56,11 @@ function ReceiptsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const receiptsPerPage = 20;
 
+  // Email modal
+const [showEmailModal, setShowEmailModal] = useState(false);
+const [emailAddress, setEmailAddress] = useState('');
+const [sendingEmail, setSendingEmail] = useState(false);
+
   // Load store data
 useEffect(() => {
   const stored = sessionStorage.getItem('vendorWalletAddress');
@@ -323,15 +328,26 @@ const printReceipt = (receipt: Receipt) => {
     </head>
     <body>
       <div class="header">
-        ${storeLogo 
-          ? `<img src="${storeLogo}" alt="${storeName}" class="store-logo">`
-          : ''
-        }
-        <div class="store-info">
-          <div class="store-name">${storeName}</div>
-          <div class="receipt-number">${receipt.receipt_number}</div>
-        </div>
+  ${storeLogo 
+    ? `
+      <img src="${storeLogo}" alt="${storeName}" class="store-logo">
+      <div class="store-info">
+        <div class="store-name">${storeName}</div>
+        <div class="receipt-number">${receipt.receipt_number}</div>
       </div>
+    `
+    : `
+      <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="store-logo">
+      <div class="store-info">
+        <div class="store-name">YesAllOfUs</div>
+      </div>
+      <div style="text-align: right; margin-left: auto;">
+        <div class="store-name">${storeName}</div>
+        <div class="receipt-number">${receipt.receipt_number}</div>
+      </div>
+    `
+  }
+</div>
       
       <div class="date">${new Date(receipt.paid_at).toLocaleDateString('en-GB', { 
         weekday: 'long', 
@@ -375,6 +391,199 @@ const printReceipt = (receipt: Receipt) => {
   const printWindow = window.open('', '_blank');
   if (printWindow) {
     printWindow.document.write(receiptHtml);
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 500);
+  }
+};
+// Export to CSV
+const exportCSV = () => {
+  const headers = ['Receipt #', 'Date', 'Items', 'Total', 'Payment Method', 'TX Hash'];
+  const rows = filteredReceipts.map(r => [
+    r.receipt_number,
+    new Date(r.paid_at).toLocaleString('en-GB'),
+    r.items.map(i => `${i.name} x${i.quantity}`).join('; '),
+    `£${r.total.toFixed(2)}`,
+    r.payment_method === 'qr_xaman' ? 'QR' : 'NFC',
+    r.payment_tx_hash
+  ]);
+  
+  const csv = [headers, ...rows].map(row => 
+    row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+  ).join('\n');
+  
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `receipts-${storeName}-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+// Export to PDF
+const exportPDF = () => {
+  const printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Sales Report - ${storeName}</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          padding: 40px;
+          color: #1a1a1a;
+        }
+        .header {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-bottom: 30px;
+          padding-bottom: 20px;
+          border-bottom: 2px solid #e5e5e5;
+        }
+        .logo {
+          width: 50px;
+          height: 50px;
+          border-radius: 10px;
+          object-fit: cover;
+        }
+        .title {
+          font-size: 24px;
+          font-weight: 700;
+        }
+        .subtitle {
+          color: #666;
+          font-size: 14px;
+        }
+        .stats {
+          display: flex;
+          gap: 30px;
+          margin-bottom: 30px;
+          padding: 20px;
+          background: #f5f5f5;
+          border-radius: 10px;
+        }
+        .stat-item {
+          text-align: center;
+        }
+        .stat-value {
+          font-size: 28px;
+          font-weight: 700;
+          color: #10b981;
+        }
+        .stat-label {
+          font-size: 12px;
+          color: #666;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 20px;
+        }
+        th {
+          text-align: left;
+          padding: 12px 8px;
+          border-bottom: 2px solid #1a1a1a;
+          font-size: 12px;
+          text-transform: uppercase;
+          color: #666;
+        }
+        td {
+          padding: 12px 8px;
+          border-bottom: 1px solid #eee;
+          font-size: 13px;
+        }
+        .amount {
+          font-weight: 600;
+          color: #10b981;
+        }
+        .footer {
+          margin-top: 40px;
+          padding-top: 20px;
+          border-top: 1px solid #eee;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+        .footer-logo {
+          width: 20px;
+          height: 20px;
+          border-radius: 4px;
+          opacity: 0.6;
+        }
+        .footer-text {
+          color: #999;
+          font-size: 11px;
+        }
+        @media print {
+          body { padding: 20px; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        ${storeLogo 
+          ? `<img src="${storeLogo}" alt="${storeName}" class="logo">`
+          : `<img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="logo">`
+        }
+        <div>
+          <div class="title">${storeLogo ? storeName : 'YesAllOfUs'}</div>
+          <div class="subtitle">Sales Report - ${dateFilter === 'today' ? 'Today' : dateFilter === 'week' ? 'This Week' : dateFilter === 'month' ? 'This Month' : 'All Time'}</div>
+          ${!storeLogo ? `<div class="subtitle">${storeName}</div>` : ''}
+        </div>
+      </div>
+      
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-value">${filteredReceipts.length}</div>
+          <div class="stat-label">Transactions</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">£${totalRevenue.toFixed(2)}</div>
+          <div class="stat-label">Total Revenue</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">£${avgTransaction.toFixed(2)}</div>
+          <div class="stat-label">Average Sale</div>
+        </div>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Receipt #</th>
+            <th>Date</th>
+            <th>Items</th>
+            <th>Amount</th>
+            <th>Method</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filteredReceipts.map(r => `
+            <tr>
+              <td>${r.receipt_number}</td>
+              <td>${new Date(r.paid_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
+              <td>${r.items.map(i => `${i.name} x${i.quantity}`).join(', ')}</td>
+              <td class="amount">£${r.total.toFixed(2)}</td>
+              <td>${r.payment_method === 'qr_xaman' ? '📱 QR' : '💳 NFC'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      
+      <div class="footer">
+        <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="footer-logo">
+        <span class="footer-text">Generated by YesAllOfUs</span>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(printContent);
     printWindow.document.close();
     setTimeout(() => printWindow.print(), 500);
   }
@@ -456,19 +665,36 @@ const printReceipt = (receipt: Receipt) => {
           ))}
         </div>
 
-        {/* Sort */}
-        <div className="flex gap-2 mb-6">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-          >
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="highest">Highest Amount</option>
-            <option value="lowest">Lowest Amount</option>
-          </select>
-        </div>
+        {/* Sort & Export */}
+<div className="flex gap-2 mb-6 flex-wrap">
+  <select
+    value={sortBy}
+    onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+    className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+  >
+    <option value="newest">Newest First</option>
+    <option value="oldest">Oldest First</option>
+    <option value="highest">Highest Amount</option>
+    <option value="lowest">Lowest Amount</option>
+  </select>
+  
+  <div className="flex gap-2 ml-auto">
+    <button
+      onClick={exportCSV}
+      disabled={filteredReceipts.length === 0}
+      className="bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 px-4 py-2 rounded-xl text-sm transition flex items-center gap-2"
+    >
+      <span>📊</span> CSV
+    </button>
+    <button
+      onClick={exportPDF}
+      disabled={filteredReceipts.length === 0}
+      className="bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 px-4 py-2 rounded-xl text-sm transition flex items-center gap-2"
+    >
+      <span>📄</span> PDF
+    </button>
+  </div>
+</div>
 
         {/* Loading */}
         {loading && (
@@ -652,9 +878,77 @@ const printReceipt = (receipt: Receipt) => {
                     </span>
                   </div>
                 </div>
+                {/* Email Modal */}
+{showEmailModal && (
+  <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
+    <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm">
+      <h3 className="text-lg font-bold mb-4">Send Receipt</h3>
+      <input
+        type="email"
+        placeholder="Customer email"
+        value={emailAddress}
+        onChange={(e) => setEmailAddress(e.target.value)}
+        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 mb-4"
+        autoFocus
+      />
+      <div className="flex gap-3">
+        <button
+          onClick={() => {
+            setShowEmailModal(false);
+            setEmailAddress('');
+          }}
+          className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={async () => {
+            if (!emailAddress || !emailAddress.includes('@')) {
+              return;
+            }
+            setSendingEmail(true);
+            try {
+              const res = await fetch('https://api.dltpays.com/nfc/api/v1/receipt/email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email: emailAddress,
+                  store_name: storeName,
+                  store_id: storeId,
+                  amount: selectedReceipt?.total,
+                  items: selectedReceipt?.items,
+                  tx_hash: selectedReceipt?.payment_tx_hash
+                })
+              });
+              const data = await res.json();
+              if (data.success) {
+                setShowEmailModal(false);
+                setEmailAddress('');
+              }
+            } catch (err) {
+              console.error('Failed to send email');
+            }
+            setSendingEmail(false);
+          }}
+          disabled={sendingEmail}
+          className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 rounded-xl transition disabled:opacity-50"
+        >
+          {sendingEmail ? 'Sending...' : 'Send'}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
                 {/* Actions */}
 <div className="flex gap-3 mt-4">
+  <button
+    onClick={() => setShowEmailModal(true)}
+    className="flex-1 bg-zinc-800 hover:bg-zinc-700 rounded-xl p-3 transition flex items-center justify-center gap-2"
+  >
+    <span>📧</span>
+    <span>Email</span>
+  </button>
   <button
     onClick={() => printReceipt(selectedReceipt)}
     className="flex-1 bg-zinc-800 hover:bg-zinc-700 rounded-xl p-3 transition flex items-center justify-center gap-2"

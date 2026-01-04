@@ -1,101 +1,87 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ProductsManager from '@/components/ProductsManager';
 import { updateCustomerDisplay, clearCustomerDisplay } from '@/lib/customerDisplay';
-
+import StaffSelector from '@/components/StaffSelector';
 interface Product {
-  product_id: string;
-  name: string;
-  price: number;
-  sku: string;
-  category: string | null;
-  emoji?: string;
+product_id: string;
+name: string;
+price: number;
+sku: string;
+category: string | null;
+emoji?: string;
 }
-
 interface CartItem extends Product {
-  quantity: number;
+quantity: number;
 }
-
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
-
 // Category emoji mapping
 const categoryEmojis: Record<string, string> = {
-  'hot drinks': '☕',
-  'cold drinks': '🧊',
-  'food': '🍽️',
-  'snacks': '🍪',
-  'desserts': '🧁',
-  'breakfast': '🥐',
-  'lunch': '🥪',
-  'default': '📦'
+'hot drinks': '☕',
+'cold drinks': '🧊',
+'food': '🍽️',
+'snacks': '🍪',
+'desserts': '🧁',
+'breakfast': '🥐',
+'lunch': '🥪',
+'default': '📦'
 };
-
 // Product name emoji suggestions
 const productEmojis: Record<string, string> = {
-  'coffee': '☕', 'latte': '☕', 'cappuccino': '☕', 'espresso': '☕', 'americano': '☕',
-  'flat white': '☕', 'mocha': '☕', 'macchiato': '☕',
-  'tea': '🍵', 'chai': '🍵', 'matcha': '🍵',
-  'water': '💧', 'juice': '🧃', 'smoothie': '🥤', 'soda': '🥤', 'cola': '🥤',
-  'croissant': '🥐', 'pastry': '🥐', 'danish': '🥐',
-  'muffin': '🧁', 'cupcake': '🧁', 'cake': '🍰',
-  'cookie': '🍪', 'biscuit': '🍪',
-  'sandwich': '🥪', 'wrap': '🌯', 'bagel': '🥯',
-  'salad': '🥗', 'soup': '🍲',
-  'burger': '🍔', 'fries': '🍟', 'pizza': '🍕',
-  'toast': '🍞', 'bread': '🍞',
-  'egg': '🥚', 'bacon': '🥓', 'sausage': '🌭',
-  'ice cream': '🍦', 'chocolate': '🍫',
-  'beer': '🍺', 'wine': '🍷', 'cocktail': '🍸',
+'coffee': '☕', 'latte': '☕', 'cappuccino': '☕', 'espresso': '☕', 'americano': '☕',
+'flat white': '☕', 'mocha': '☕', 'macchiato': '☕',
+'tea': '🍵', 'chai': '🍵', 'matcha': '🍵',
+'water': '💧', 'juice': '🧃', 'smoothie': '🥤', 'soda': '🥤', 'cola': '🥤',
+'croissant': '🥐', 'pastry': '🥐', 'danish': '🥐',
+'muffin': '🧁', 'cupcake': '🧁', 'cake': '🍰',
+'cookie': '🍪', 'biscuit': '🍪',
+'sandwich': '🥪', 'wrap': '🌯', 'bagel': '🥯',
+'salad': '🥗', 'soup': '🍲',
+'burger': '🍔', 'fries': '🍟', 'pizza': '🍕',
+'toast': '🍞', 'bread': '🍞',
+'egg': '🥚', 'bacon': '🥓', 'sausage': '🌭',
+'ice cream': '🍦', 'chocolate': '🍫',
+'beer': '🍺', 'wine': '🍷', 'cocktail': '🍸',
 };
-
 function getProductEmoji(product: Product): string {
-  if (product.emoji) return product.emoji;
-  
-  const nameLower = product.name.toLowerCase();
-  for (const [key, emoji] of Object.entries(productEmojis)) {
-    if (nameLower.includes(key)) return emoji;
+if (product.emoji) return product.emoji;
+const nameLower = product.name.toLowerCase();
+for (const [key, emoji] of Object.entries(productEmojis)) {
+if (nameLower.includes(key)) return emoji;
   }
-  
-  if (product.category) {
-    const catLower = product.category.toLowerCase();
-    return categoryEmojis[catLower] || categoryEmojis['default'];
+if (product.category) {
+const catLower = product.category.toLowerCase();
+return categoryEmojis[catLower] || categoryEmojis['default'];
   }
-  
-  return categoryEmojis['default'];
+return categoryEmojis['default'];
 }
-
 export default function TakePayment() {
-  const router = useRouter();
-  
-  // Store data
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [storeId, setStoreId] = useState<string | null>(null);
-  const [storeName, setStoreName] = useState<string>('');
-  
-  // Products & Cart
-  const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(true);
-  
-  // UI State
-  const [showProductsManager, setShowProductsManager] = useState(false);
-  const [showManualEntry, setShowManualEntry] = useState(false);
-  const [manualAmount, setManualAmount] = useState('');
-  
-  // Payment State
-  const [status, setStatus] = useState<'idle' | 'qr' | 'waiting' | 'processing' | 'success' | 'error'>('idle');
-  const [error, setError] = useState<string | null>(null);
-  const [lastUID, setLastUID] = useState<string | null>(null);
-  const [txHash, setTxHash] = useState<string | null>(null);
-  const [qrPaymentUrl, setQrPaymentUrl] = useState<string | null>(null);
-  // Last order for repeat
+const router = useRouter();
+// Store data
+const [walletAddress, setWalletAddress] = useState<string | null>(null);
+const [storeId, setStoreId] = useState<string | null>(null);
+const [storeName, setStoreName] = useState<string>('');
+// Products & Cart
+const [products, setProducts] = useState<Product[]>([]);
+const [cart, setCart] = useState<CartItem[]>([]);
+const [loadingProducts, setLoadingProducts] = useState(true);
+// UI State
+const [showProductsManager, setShowProductsManager] = useState(false);
+const [showManualEntry, setShowManualEntry] = useState(false);
+const [manualAmount, setManualAmount] = useState('');
+// Payment State
+const [status, setStatus] = useState<'idle' | 'qr' | 'waiting' | 'processing' | 'success' | 'error'>('idle');
+const [error, setError] = useState<string | null>(null);
+const [lastUID, setLastUID] = useState<string | null>(null);
+const [txHash, setTxHash] = useState<string | null>(null);
+const [qrPaymentUrl, setQrPaymentUrl] = useState<string | null>(null);
+// Last order for repeat
 const [lastOrder, setLastOrder] = useState<CartItem[] | null>(null);
 // Xaman QR Payment
 const [xamanQR, setXamanQR] = useState<string | null>(null);
 const [xamanPaymentId, setXamanPaymentId] = useState<string | null>(null);
-  // Search & Filter
+// Search & Filter
 const [searchQuery, setSearchQuery] = useState('');
 const [activeCategory, setActiveCategory] = useState<string | null>(null);
 // Email modal
@@ -106,456 +92,534 @@ const [sendingEmail, setSendingEmail] = useState(false);
 const [storeLogo, setStoreLogo] = useState<string | null>(null);
 const [showLogoUpload, setShowLogoUpload] = useState(false);
 const [uploadingLogo, setUploadingLogo] = useState(false);
-  // Load store data
-useEffect(() => {
-  const stored = sessionStorage.getItem('vendorWalletAddress');
-  const storeData = sessionStorage.getItem('storeData');
-  
-  if (!stored) {
-    router.push('/dashboard');
-    return;
+// Staff Dropdown
+const [activeStaff, setActiveStaff] = useState<any | null>(null);
+// Tip
+const [tipsEnabled, setTipsEnabled] = useState<boolean>(false);
+const [tipAmount, setTipAmount] = useState<number>(0);
+const [showCustomTipModal, setShowCustomTipModal] = useState(false);
+const [customTipInput, setCustomTipInput] = useState('');
+// Convert GBP to RLUSD
+const convertGBPtoRLUSD = async (gbpAmount: number): Promise<number> => {
+try {
+const res = await fetch('https://tokencanvas.io/api/coingecko/simple/price?ids=ripple-usd&vs_currencies=gbp');
+const data = await res.json();
+const rlusdInGbp = data['ripple-usd']?.gbp;
+if (!rlusdInGbp) throw new Error('No rate found');
+const rlusdAmount = gbpAmount / rlusdInGbp;
+return Math.round(rlusdAmount * 100) / 100;
+  } catch (err) {
+console.error('Conversion error:', err);
+return Math.round(gbpAmount * 1.27 * 100) / 100;
   }
-  
-  setWalletAddress(stored);
-  
-  if (storeData) {
-    const store = JSON.parse(storeData);
-    setStoreId(store.store_id || null);
-    setStoreName(store.store_name || 'Your Store');
-    setStoreLogo(store.logo_url || null);
-    
-    // Fetch fresh store data to get latest logo
-    if (store.store_id) {
-      fetch(`${API_URL}/store/public/${store.store_id}`)
+};
+// Load store data
+useEffect(() => {
+const stored = sessionStorage.getItem('vendorWalletAddress');
+const storeData = sessionStorage.getItem('storeData');
+if (!stored) {
+router.push('/dashboard');
+return;
+  }
+setWalletAddress(stored);
+if (storeData) {
+const store = JSON.parse(storeData);
+setStoreId(store.store_id || null);
+setStoreName(store.store_name || 'Your Store');
+setStoreLogo(store.logo_url || null);
+// Fetch fresh store data to get latest logo
+if (store.store_id) {
+fetch(`${API_URL}/store/public/${store.store_id}`)
         .then(res => res.json())
         .then(data => {
-          if (data.success && data.store) {
-            setStoreLogo(data.store.logo_url || null);
-            // Update session storage with fresh data
-            const updatedStore = { ...store, logo_url: data.store.logo_url };
-            sessionStorage.setItem('storeData', JSON.stringify(updatedStore));
+if (data.success && data.store) {
+setStoreLogo(data.store.logo_url || null);
+// Update session storage with fresh data
+const updatedStore = { ...store, logo_url: data.store.logo_url };
+sessionStorage.setItem('storeData', JSON.stringify(updatedStore));
           }
         })
         .catch(err => console.error('Failed to fetch store:', err));
     }
   }
 }, [router]);
-
-  // Fetch products
-  useEffect(() => {
-    if (storeId && walletAddress) {
-      fetchProducts();
+// Fetch products
+useEffect(() => {
+if (storeId && walletAddress) {
+fetchProducts();
     }
   }, [storeId, walletAddress]);
-
-  const fetchProducts = async () => {
-    setLoadingProducts(true);
-    try {
-      const res = await fetch(
-        `${API_URL}/store/${storeId}/products?wallet_address=${walletAddress}`
+const fetchProducts = async () => {
+setLoadingProducts(true);
+try {
+const res = await fetch(
+`${API_URL}/store/${storeId}/products?wallet_address=${walletAddress}`
       );
-      const data = await res.json();
-      if (data.success) {
-        setProducts(data.products);
+const data = await res.json();
+if (data.success) {
+setProducts(data.products);
       }
     } catch (err) {
-      console.error('Failed to fetch products:', err);
+console.error('Failed to fetch products:', err);
     }
-    setLoadingProducts(false);
+setLoadingProducts(false);
   };
-
-  // Poll for Xaman payment status
+// Poll for Xaman payment status
 useEffect(() => {
-  if (status !== 'qr' || !xamanPaymentId) return;
-  
-  const pollInterval = setInterval(async () => {
-    try {
-      const res = await fetch(`https://api.dltpays.com/api/v1/xaman/payment/poll/${xamanPaymentId}`);
-      const data = await res.json();
-      
-      if (data.status === 'signed') {
-        setTxHash(data.tx_hash);
-        setLastOrder([...cart]);
-        setStatus('success');
-        if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'success');
-        if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-      } else if (data.status === 'expired' || data.status === 'cancelled') {
-        setError(`Payment ${data.status}`);
-        setStatus('idle');
-      }
+if (status !== 'qr' || !xamanPaymentId) return;
+const pollInterval = setInterval(async () => {
+try {
+const res = await fetch(`https://api.dltpays.com/api/v1/xaman/payment/poll/${xamanPaymentId}`);
+const data = await res.json();
+if (data.status === 'signed') {
+setTxHash(data.tx_hash);
+setLastOrder([...cart]);
+setStatus('success');
+if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'success', null, tipAmount);
+if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+} else if (data.status === 'expired' || data.status === 'cancelled') {
+setError(`Payment ${data.status}`);
+setStatus('idle');
+if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'idle', null, 0);
+}
     } catch (err) {
-      console.error('Poll error:', err);
+console.error('Poll error:', err);
     }
   }, 2000);
-  
-  return () => clearInterval(pollInterval);
+return () => clearInterval(pollInterval);
 }, [status, xamanPaymentId, cart]);
-
-  // Cart calculations
-  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  // Add to cart (increment if exists)
-  const addToCart = (product: Product) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.product_id === product.product_id);
-      if (existing) {
-        return prev.map(item =>
-          item.product_id === product.product_id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
-      return [...prev, { ...product, quantity: 1 }];
-    });
-    
-    // Haptic feedback
-    if (navigator.vibrate) navigator.vibrate(10);
-  };
-
-  // Remove from cart
-  const removeFromCart = (productId: string) => {
-    setCart(prev => prev.filter(item => item.product_id !== productId));
-  };
-
-  // Decrease quantity
-  const decreaseQuantity = (productId: string) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.product_id === productId);
-      if (existing && existing.quantity > 1) {
-        return prev.map(item =>
-          item.product_id === productId
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
-        );
-      }
-      return prev.filter(item => item.product_id !== productId);
-    });
-  };
-
-  // Clear cart
-  const clearCart = () => {
-    setCart([]);
-    setManualAmount('');
-    if (storeId) clearCustomerDisplay(storeId, storeName);
-  };
-
-  // Get payment amount
-  const getPaymentAmount = (): number => {
-    if (showManualEntry && manualAmount) {
-      return parseFloat(manualAmount) || 0;
-    }
-    return cartTotal;
-  };
-
-  // Handle number pad input
-  const handleNumberInput = (num: string) => {
-    if (num === 'clear') {
-      setManualAmount('');
-      return;
-    }
-    if (num === 'back') {
-      setManualAmount(prev => prev.slice(0, -1));
-      return;
-    }
-    if (num === '.' && manualAmount.includes('.')) return;
-    if (manualAmount.includes('.') && manualAmount.split('.')[1]?.length >= 2) return;
-    setManualAmount(prev => prev + num);
-  };
-
-  // Show QR Payment (Xaman)
-const showQRPayment = async () => {
-  const amount = getPaymentAmount();
-  if (amount <= 0) {
-    setError('Please add items or enter an amount');
-    return;
+// Cart calculations
+const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+const customAmount = parseFloat(manualAmount) || 0;
+// Sync cart to customer display
+useEffect(() => {
+if (storeId && status === 'idle' && cart.length > 0) {
+updateCustomerDisplay(storeId, storeName, cart, cartTotal + tipAmount, 'idle', null, tipAmount, tipsEnabled);
+  } else if (storeId && status === 'idle' && cart.length === 0) {
+clearCustomerDisplay(storeId, storeName);
   }
-  
-  setStatus('qr');
-  setError(null);
-  if (storeId) updateCustomerDisplay(storeId, storeName, cart, amount, 'ready');
-  
-  try {
-    const res = await fetch('https://api.dltpays.com/api/v1/xaman/payment', {  // Fixed endpoint
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: amount,
-        vendor_wallet: walletAddress,  // Fixed field name
-        store_id: storeId,
-        store_name: storeName
+}, [cart, cartTotal, storeId, storeName, status, tipAmount, tipsEnabled]);
+
+// Poll for tip changes and customer confirmation from display
+useEffect(() => {
+if (!storeId || status !== 'idle') return;
+if (cart.length === 0 && customAmount === 0) return;
+
+const pollDisplay = async () => {
+try {
+const res = await fetch(`${API_URL}/display/${storeId}`);
+if (!res.ok) return;
+const data = await res.json();
+
+// Sync tip from display
+if (data.tip !== undefined && data.tip !== tipAmount) {
+setTipAmount(data.tip);
+      }
+
+// Customer confirmed - trigger payment
+if (data.customer_confirmed) {
+// Reset flag to prevent double-trigger
+fetch(`${API_URL}/display/${storeId}/reset-confirm`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' }
+  }).catch(() => {});
+
+// FIX: Use data.total directly - it already contains subtotal + tip
+// The API calculates this correctly in the /tip endpoint
+const totalFromAPI = data.total;
+
+console.log('Customer confirmed payment:', { 
+  subtotal: data.subtotal, 
+  tip: data.tip, 
+  total: data.total,
+  totalFromAPI 
+});
+
+setTipAmount(data.tip || 0);
+showQRPayment(totalFromAPI);
+}
+    } catch (err) {}
+  };
+
+const interval = setInterval(pollDisplay, 1000);
+return () => clearInterval(interval);
+}, [storeId, status, tipAmount, cart.length, customAmount]);
+
+const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+// Add to cart (increment if exists)
+const addToCart = (product: Product) => {
+setCart(prev => {
+const existing = prev.find(item => item.product_id === product.product_id);
+if (existing) {
+return prev.map(item =>
+item.product_id === product.product_id
+? { ...item, quantity: item.quantity + 1 }
+: item
+        );
+      }
+return [...prev, { ...product, quantity: 1 }];
+    });
+// Haptic feedback
+if (navigator.vibrate) navigator.vibrate(10);
+  };
+// Remove from cart
+const removeFromCart = (productId: string) => {
+setCart(prev => prev.filter(item => item.product_id !== productId));
+  };
+// Decrease quantity
+const decreaseQuantity = (productId: string) => {
+setCart(prev => {
+const existing = prev.find(item => item.product_id === productId);
+if (existing && existing.quantity > 1) {
+return prev.map(item =>
+item.product_id === productId
+? { ...item, quantity: item.quantity - 1 }
+: item
+        );
+      }
+return prev.filter(item => item.product_id !== productId);
+    });
+  };
+// Clear cart
+const clearCart = () => {
+setCart([]);
+setManualAmount('');
+if (storeId) clearCustomerDisplay(storeId, storeName);
+  };
+// Get payment amount
+const getPaymentAmount = () => {
+if (cart.length > 0) {
+return cartTotal + tipAmount;
+  }
+return customAmount + tipAmount;
+};
+// Handle number pad input
+const handleNumberInput = (num: string) => {
+if (num === 'clear') {
+setManualAmount('');
+return;
+    }
+if (num === 'back') {
+setManualAmount(prev => prev.slice(0, -1));
+return;
+    }
+if (num === '.' && manualAmount.includes('.')) return;
+if (manualAmount.includes('.') && manualAmount.split('.')[1]?.length >= 2) return;
+setManualAmount(prev => prev + num);
+  };
+// Sync manual amount to customer display
+useEffect(() => {
+if (storeId && status === 'idle' && showManualEntry && customAmount > 0) {
+const manualCart = [{ name: 'Payment', quantity: 1, price: customAmount, emoji: '💷' }];
+updateCustomerDisplay(storeId, storeName, manualCart, customAmount + tipAmount, 'idle', null, tipAmount, tipsEnabled);
+  }
+}, [customAmount, storeId, storeName, status, showManualEntry, tipAmount, tipsEnabled]);
+
+// Show QR Payment (Xaman)
+const showQRPayment = async (overrideAmount?: number) => {
+const gbpAmount = overrideAmount ?? getPaymentAmount();
+console.log('showQRPayment called with:', { 
+  overrideAmount, 
+  gbpAmount, 
+  tipAmount, 
+  cartTotal, 
+  customAmount,
+  getPaymentAmount: getPaymentAmount()
+});
+
+if (gbpAmount <= 0) {
+setError('Please add items or enter an amount');
+return;
+  }
+
+setStatus('qr');
+setError(null);
+
+// Convert GBP to RLUSD
+const amount = await convertGBPtoRLUSD(gbpAmount);
+
+console.log('Creating Xaman payment:', { gbpAmount, rlusdAmount: amount });
+
+// Start NFC scan in background (Android only)
+if ('NDEFReader' in window) {
+startNFCScan(amount);
+  }
+
+// Don't update display yet - wait for QR code
+try {
+const res = await fetch('https://api.dltpays.com/api/v1/xaman/payment', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
+amount: amount,
+vendor_wallet: walletAddress,
+store_id: storeId,
+store_name: storeName
       })
     });
-    
-    const data = await res.json();
-    
-    if (data.success) {
-  setXamanQR(data.qr_png);
-  setXamanPaymentId(data.payment_id);
-  if (storeId) updateCustomerDisplay(storeId, storeName, cart, amount, 'qr', data.qr_png);
+const data = await res.json();
+if (data.success) {
+setXamanQR(data.qr_png);
+setXamanPaymentId(data.payment_id);
+const displayCart = cart.length > 0 
+  ? cart 
+  : [{ name: 'Payment', quantity: 1, price: customAmount || gbpAmount, emoji: '💷' }];
+if (storeId) updateCustomerDisplay(storeId, storeName, displayCart, gbpAmount, 'qr', data.qr_png, tipAmount);
 }else {
-      setError(data.error || 'Failed to create payment request');
-      setStatus('idle');
+setError(data.error || 'Failed to create payment request');
+setStatus('idle');
     }
   } catch (err: any) {
-    setError('Failed to create payment request');
-    setStatus('idle');
+setError('Failed to create payment request');
+setStatus('idle');
   }
 };
 
-  // Start NFC Payment
-  const startNFCPayment = () => {
-    const amount = getPaymentAmount();
-    if (amount <= 0) {
-      setError('Please add items or enter an amount');
-      return;
+// Start NFC Payment
+const startNFCPayment = () => {
+const amount = getPaymentAmount();
+if (amount <= 0) {
+setError('Please add items or enter an amount');
+return;
     }
-    
-    setStatus('waiting');
-    setError(null);
-    if (storeId) updateCustomerDisplay(storeId, storeName, cart, amount, 'ready');
-    
-    // Try Web NFC if available (Android Chrome)
-    if ('NDEFReader' in window) {
-      startNFCScan(amount);
+setStatus('waiting');
+setError(null);
+if (storeId) updateCustomerDisplay(storeId, storeName, cart, amount, 'ready');
+// Try Web NFC if available (Android Chrome)
+if ('NDEFReader' in window) {
+startNFCScan(amount);
     }
   };
-
-  // Web NFC scan (Android only)
-  const startNFCScan = async (paymentAmount: number) => {
-    try {
-      const ndef = new (window as any).NDEFReader();
-      await ndef.scan();
-      
-      ndef.addEventListener('reading', async ({ serialNumber }: { serialNumber: string }) => {
-        setLastUID(serialNumber);
-        await processPayment(serialNumber, paymentAmount);
+// Web NFC scan (Android only)
+const startNFCScan = async (paymentAmount: number) => {
+try {
+const ndef = new (window as any).NDEFReader();
+await ndef.scan();
+ndef.addEventListener('reading', async ({ serialNumber }: { serialNumber: string }) => {
+setLastUID(serialNumber);
+await processPayment(serialNumber, paymentAmount);
       });
-      
-      ndef.addEventListener('readingerror', () => {
-        setError('Could not read NFC tag');
-        setStatus('idle');
+ndef.addEventListener('readingerror', () => {
+setError('Could not read NFC tag');
+setStatus('idle');
       });
     } catch (err: any) {
-      console.log('Web NFC not available, using manual mode');
+console.log('Web NFC not available, using manual mode');
     }
   };
-
-  // Manual UID entry (for iOS/demo)
-  const handleManualUID = async () => {
-    const amount = getPaymentAmount();
-    const uid = prompt('Enter customer NFC card UID:', '04:5B:07:0A:FD:75:80');
-    
-    if (uid) {
-      setLastUID(uid);
-      await processPayment(uid, amount);
+// Manual UID entry (for iOS/demo)
+const handleManualUID = async () => {
+const amount = getPaymentAmount();
+const uid = prompt('Enter customer NFC card UID:', '04:5B:07:0A:FD:75:80');
+if (uid) {
+setLastUID(uid);
+await processPayment(uid, amount);
     }
   };
-
-  // Process the payment
-  const processPayment = async (uid: string, paymentAmount: number) => {
-    setStatus('processing');
-    if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'processing');
-    
-    try {
-      // Build items array from cart
-      const items = cart.length > 0 
-        ? cart.map(item => ({
-            product_id: item.product_id,
-            name: item.name,
-            quantity: item.quantity,
-            unit_price: item.price,
-            line_total: item.price * item.quantity
-          }))
-        : [{ name: 'Payment', quantity: 1, unit_price: paymentAmount, line_total: paymentAmount }];
-
-      const response = await fetch(`${API_URL}/nfc/payment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uid: uid,
-          amount: paymentAmount,
-          vendor_wallet: walletAddress,
-          store_name: storeName,
-          store_id: storeId,
-          items: items
-        })
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-  setTxHash(data.tx_hash);
-  setLastOrder([...cart]);
-  setStatus('success');
-  if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'success');
-  // Haptic + sound feedback
-  if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+// Process the payment
+const processPayment = async (uid: string, paymentAmount: number) => {
+setStatus('processing');
+if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'processing');
+try {
+// Build items array from cart
+const items = cart.length > 0 
+? [
+...cart.map(item => ({
+product_id: item.product_id,
+name: item.name,
+quantity: item.quantity,
+unit_price: item.price,
+line_total: item.price * item.quantity
+      })),
+...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, unit_price: tipAmount, line_total: tipAmount }] : [])
+    ]
+: [{ name: 'Payment', quantity: 1, unit_price: paymentAmount, line_total: paymentAmount }];
+const response = await fetch(`${API_URL}/nfc/payment`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    uid: uid,
+    amount: paymentAmount,
+    vendor_wallet: walletAddress,
+    store_name: storeName,
+    store_id: storeId,
+    items: items,
+    staff_id: activeStaff?.staff_id || null,
+    staff_name: activeStaff?.name || null
+  })
+});
+const data = await response.json();
+if (data.success) {
+setTxHash(data.tx_hash);
+setLastOrder([...cart]);
+setStatus('success');
+if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'success');
+// Haptic + sound feedback
+if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
 } else {
-        setError(data.error || 'Payment failed');
-        setStatus('error');
-        if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'error');
+setError(data.error || 'Payment failed');
+setStatus('error');
+if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'error');
       }
     } catch (err: any) {
-      setError(err.message || 'Payment failed');
-      setStatus('error');
-      if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'error');
+setError(err.message || 'Payment failed');
+setStatus('error');
+if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'error');
     }
   };
-
-  // Reset for next payment
-  const resetPayment = () => {
-  setStatus('idle');
-  setCart([]);
-  setManualAmount('');
-  setLastUID(null);
-  setTxHash(null);
-  setQrPaymentUrl(null);
-  setXamanQR(null);
-  setXamanPaymentId(null);
-  setError(null);
-  setShowManualEntry(false);
-  if (storeId) clearCustomerDisplay(storeId, storeName);
+// Reset for next payment
+const resetPayment = () => {
+setStatus('idle');
+setCart([]);
+setManualAmount('');
+setTipAmount(0);
+setLastUID(null);
+setTxHash(null);
+setQrPaymentUrl(null);
+setXamanQR(null);
+setXamanPaymentId(null);
+setError(null);
+setShowManualEntry(false);
+if (storeId) clearCustomerDisplay(storeId, storeName);
 };
 // Upload store logo
 const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  
-  // Check file size (5MB max)
-  if (file.size > 5 * 1024 * 1024) {
-    setError('Image must be less than 5MB');
-    return;
+const file = e.target.files?.[0];
+if (!file) return;
+// Check file size (5MB max)
+if (file.size > 5 * 1024 * 1024) {
+setError('Image must be less than 5MB');
+return;
   }
-  
-  // Check file type
-  if (!file.type.startsWith('image/')) {
-    setError('Please upload an image file');
-    return;
+// Check file type
+if (!file.type.startsWith('image/')) {
+setError('Please upload an image file');
+return;
   }
-  
-  setUploadingLogo(true);
-  setError(null);
-  
-  try {
-    // Convert to base64
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result as string;
-      
-      // Save to backend
-      const res = await fetch(`${API_URL}/store/${storeId}/logo`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          logo_url: base64,
-          wallet_address: walletAddress
+setUploadingLogo(true);
+setError(null);
+try {
+// Convert to base64
+const reader = new FileReader();
+reader.onload = async () => {
+const base64 = reader.result as string;
+// Save to backend
+const res = await fetch(`${API_URL}/store/${storeId}/logo`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
+logo_url: base64,
+wallet_address: walletAddress
         })
       });
-      
-      const data = await res.json();
-      
-      if (data.success) {
-        setStoreLogo(base64);
-        // Update session storage
-        const storeData = sessionStorage.getItem('storeData');
-        if (storeData) {
-          const store = JSON.parse(storeData);
-          store.logo_url = base64;
-          sessionStorage.setItem('storeData', JSON.stringify(store));
+const data = await res.json();
+if (data.success) {
+setStoreLogo(base64);
+// Update session storage
+const storeData = sessionStorage.getItem('storeData');
+if (storeData) {
+const store = JSON.parse(storeData);
+store.logo_url = base64;
+sessionStorage.setItem('storeData', JSON.stringify(store));
         }
-        setShowLogoUpload(false);
+setShowLogoUpload(false);
       } else {
-        setError('Failed to upload logo');
+setError('Failed to upload logo');
       }
-      setUploadingLogo(false);
+setUploadingLogo(false);
     };
-    reader.readAsDataURL(file);
+reader.readAsDataURL(file);
   } catch (err) {
-    setError('Failed to upload logo');
-    setUploadingLogo(false);
+setError('Failed to upload logo');
+setUploadingLogo(false);
   }
 };
-
 // Remove store logo
 const removeLogo = async () => {
-  setUploadingLogo(true);
-  try {
-    const res = await fetch(`${API_URL}/store/${storeId}/logo`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        logo_url: null,
-        wallet_address: walletAddress
+setUploadingLogo(true);
+try {
+const res = await fetch(`${API_URL}/store/${storeId}/logo`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
+logo_url: null,
+wallet_address: walletAddress
       })
     });
-    
-    if (res.ok) {
-      setStoreLogo(null);
-      const storeData = sessionStorage.getItem('storeData');
-      if (storeData) {
-        const store = JSON.parse(storeData);
-        store.logo_url = null;
-        sessionStorage.setItem('storeData', JSON.stringify(store));
+if (res.ok) {
+setStoreLogo(null);
+const storeData = sessionStorage.getItem('storeData');
+if (storeData) {
+const store = JSON.parse(storeData);
+store.logo_url = null;
+sessionStorage.setItem('storeData', JSON.stringify(store));
       }
-      setShowLogoUpload(false);
+setShowLogoUpload(false);
     }
   } catch (err) {
-    setError('Failed to remove logo');
+setError('Failed to remove logo');
   }
-  setUploadingLogo(false);
+setUploadingLogo(false);
 };
-
 // Send receipt email
 const sendReceiptEmail = async () => {
-  if (!emailAddress || !emailAddress.includes('@')) {
-    setError('Please enter a valid email');
-    return;
+if (!emailAddress || !emailAddress.includes('@')) {
+setError('Please enter a valid email');
+return;
   }
-  
-  setSendingEmail(true);
-  try {
-    const orderItems = cart.length > 0 ? cart.map(item => ({
-      name: item.name,
-      quantity: item.quantity,
-      unit_price: item.price
-    })) : lastOrder?.map(item => ({
-      name: item.name,
-      quantity: item.quantity,
-      unit_price: item.price
-    }));
-
-    const res = await fetch('https://api.dltpays.com/nfc/api/v1/receipt/email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: emailAddress,
-        store_name: storeName,
-        store_id: storeId,
-        amount: getPaymentAmount(),
-        items: orderItems,
-        tx_hash: txHash
+setSendingEmail(true);
+try {
+const orderItems = cart.length > 0 
+? [
+...cart.map(item => ({
+name: item.name,
+quantity: item.quantity,
+unit_price: item.price
+      })),
+...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, unit_price: tipAmount }] : [])
+    ]
+: lastOrder 
+? [
+...lastOrder.map(item => ({
+name: item.name,
+quantity: item.quantity,
+unit_price: item.price
+        })),
+...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, unit_price: tipAmount }] : [])
+      ]
+: [];
+const res = await fetch('https://api.dltpays.com/nfc/api/v1/receipt/email', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
+email: emailAddress,
+store_name: storeName,
+store_id: storeId,
+amount: getPaymentAmount(),
+items: orderItems,
+tx_hash: txHash
       })
     });
-    
-    const data = await res.json();
-    if (data.success) {
-      setShowEmailModal(false);
-      setEmailAddress('');
+const data = await res.json();
+if (data.success) {
+setShowEmailModal(false);
+setEmailAddress('');
     } else {
-      setError('Failed to send email');
+setError('Failed to send email');
     }
   } catch (err) {
-    setError('Failed to send email');
+setError('Failed to send email');
   }
-  setSendingEmail(false);
+setSendingEmail(false);
 };
-
 // Print receipt
 const printReceipt = () => {
-  const items = lastOrder || cart;
-  const amount = getPaymentAmount();
-  const receiptHtml = `
+const items = [
+...(lastOrder || cart),
+...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, price: tipAmount }] : [])
+];
+const amount = getPaymentAmount();
+const receiptHtml = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -678,27 +742,36 @@ const printReceipt = () => {
     </head>
     <body>
       <div class="header">
-        ${storeLogo 
-          ? `<img src="${storeLogo}" alt="${storeName}" class="store-logo">`
-          : ''
-        }
-        <div class="store-info">
-          <div class="store-name">${storeName}</div>
-          <div class="receipt-label">Receipt</div>
-        </div>
+${storeLogo 
+    ? `
+      <img src="${storeLogo}" alt="${storeName}" class="store-logo">
+      <div class="store-info">
+        <div class="store-name">${storeName}</div>
+        <div class="receipt-label">Receipt</div>
       </div>
-      
+    `
+    : `
+      <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="store-logo">
+      <div class="store-info">
+        <div class="store-name">YesAllOfUs</div>
+      </div>
+      <div style="text-align: right; margin-left: auto;">
+        <div class="store-name">${storeName}</div>
+        <div class="receipt-label">Receipt</div>
+      </div>
+    `
+}
+</div>
       <div class="date">${new Date().toLocaleDateString('en-GB', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+weekday: 'long', 
+year: 'numeric', 
+month: 'long', 
+day: 'numeric',
+hour: '2-digit',
+minute: '2-digit'
       })}</div>
-      
       <div class="items">
-        ${items.map(item => `
+${items.map(item => `
           <div class="item">
             <div>
               <div class="item-name">${item.name}</div>
@@ -708,19 +781,16 @@ const printReceipt = () => {
           </div>
         `).join('')}
       </div>
-      
       <div class="total-section">
         <span class="total-label">Total</span>
         <span class="total-amount">£${amount.toFixed(2)}</span>
       </div>
-      
-      ${txHash ? `
+${txHash ? `
         <div class="tx-section">
           <div class="tx-label">Transaction ID (XRPL)</div>
           <div class="tx-hash">${txHash}</div>
         </div>
       ` : ''}
-      
       <div class="footer">
         <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="footer-logo">
         <span class="footer-text">Powered by YesAllOfUs</span>
@@ -728,648 +798,759 @@ const printReceipt = () => {
     </body>
     </html>
   `;
-  
-  const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.write(receiptHtml);
-    printWindow.document.close();
-    setTimeout(() => printWindow.print(), 500);
+const printWindow = window.open('', '_blank');
+if (printWindow) {
+printWindow.document.write(receiptHtml);
+printWindow.document.close();
+setTimeout(() => printWindow.print(), 500);
   }
 };
-
-  // Group products by category
-  const groupedProducts = products.reduce((acc, product) => {
-    const category = product.category || 'Other';
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(product);
-    return acc;
+// Group products by category
+const groupedProducts = products.reduce((acc, product) => {
+const category = product.category || 'Other';
+if (!acc[category]) acc[category] = [];
+acc[category].push(product);
+return acc;
   }, {} as Record<string, Product[]>);
-
-  // Get all categories
+// Get all categories
 const categories = Object.keys(groupedProducts);
-
 // Filter products by search
 const filteredProducts = searchQuery
-  ? products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-  : activeCategory
-    ? groupedProducts[activeCategory] || []
-    : products;
-
-  // =========================================================================
-  // RENDER
-  // =========================================================================
-  return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans">
-      
-      {/* Header */}
+? products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+: activeCategory
+? groupedProducts[activeCategory] || []
+: products;
+// =========================================================================
+// RENDER
+// =========================================================================
+return (
+<div className="min-h-screen bg-[#0a0a0a] text-white font-sans overflow-x-hidden">
+{/* Header */}
 <header className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-zinc-800">
-  <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-    <button
-  onClick={() => router.push('/dashboard')}
-  className="text-zinc-400 hover:text-white transition flex items-center gap-1"
+<div className="max-w-lg mx-auto sm:max-w-none sm:mx-0 w-full px-4 py-3 flex items-center justify-between">
+{/* Left - Home button */}
+<button
+onClick={() => router.push('/dashboard')}
+className="text-zinc-400 hover:text-white transition p-2 active:scale-95 cursor-pointer"
+title="Dashboard"
 >
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-  </svg>
-  <span className="hidden sm:inline">Back</span>
+<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+</svg>
 </button>
-    
-    <div className="flex items-center gap-2">
-      <button
-  onClick={() => setShowLogoUpload(true)}
-  className={`relative w-8 h-8 rounded-lg overflow-hidden transition flex-shrink-0 ${
-    storeLogo ? 'hover:opacity-80' : 'border border-zinc-700 hover:border-emerald-500'
-  }`}
-  title="Store logo"
+
+{/* Center - Logo and Store Name */}
+<div className="flex items-center gap-2 md:absolute md:left-1/2 md:-translate-x-1/2">
+<button
+onClick={() => setShowLogoUpload(true)}
+className={`relative w-8 h-8 rounded-lg overflow-hidden transition flex-shrink-0 cursor-pointer ${
+storeLogo ? 'hover:opacity-80' : 'border border-zinc-700 hover:border-emerald-500'
+}`}
+title="Store logo"
 >
-        {storeLogo ? (
-          <img src={storeLogo} alt="Logo" className="w-full h-full object-cover" />
+{storeLogo ? (
+<img src={storeLogo} alt="Logo" className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-            <svg className="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </div>
-        )}
-      </button>
-      <h1 className="text-lg font-bold truncate max-w-[120px]">{storeName}</h1>
-    </div>
-    
-    <div className="flex items-center gap-1">
-  {/* Customer Display */}
-  <div className="relative group">
-    <button
-      onClick={() => window.open(`/display?store=${storeId}`, '_blank')}
-      className="text-zinc-400 hover:text-white transition p-2"
-    >
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
-    </button>
-    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
-      Customer Display
-    </span>
-  </div>
-
-  {/* Receipts */}
-  <div className="relative group">
-    <button
-      onClick={() => router.push('/receipts?from=take-payment')}
-      className="text-zinc-400 hover:text-white transition p-2"
-    >
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    </button>
-    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
-      Receipts
-    </span>
-  </div>
-
-  {/* Add Products */}
-  <div className="relative group">
-    <button
-      onClick={() => setShowProductsManager(true)}
-      className="text-zinc-400 hover:text-white transition p-2"
-    >
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-      </svg>
-    </button>
-    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
-      Add Products
-    </span>
-  </div>
+<div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+<svg className="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+</svg>
 </div>
-  </div>
+        )}
+</button>
+<h1 className="text-lg font-bold truncate max-w-[120px] hidden sm:block">{storeName}</h1>
+</div>
+
+{/* Right - Staff selector and icons */}
+<div className="flex items-center gap-1">
+{/* Staff Selector */}
+{storeId && walletAddress && (
+<StaffSelector
+storeId={storeId}
+walletAddress={walletAddress}
+onStaffChange={(staff) => setActiveStaff(staff)}
+/>
+)}
+
+{/* Analytics */}
+<div className="relative group">
+  <button
+    onClick={() => router.push('/analytics')}
+    className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
+  >
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+  </button>
+  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
+    Analytics
+  </span>
+</div>
+
+{/* Customer Display */}
+<div className="relative group">
+<button
+onClick={() => window.open(`/display?store=${storeId}`, '_blank')}
+className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
+>
+<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+</svg>
+</button>
+<span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
+      Customer Display
+</span>
+</div>
+{/* Receipts */}
+<div className="relative group">
+<button
+onClick={() => router.push('/receipts?from=take-payment')}
+className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
+>
+<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+</svg>
+</button>
+<span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
+      Receipts
+</span>
+</div>
+{/* Add Products */}
+<div className="relative group">
+<button
+onClick={() => setShowProductsManager(true)}
+className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
+>
+<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+</svg>
+</button>
+<span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
+      Add Products
+</span>
+</div>
+</div>
+</div>
 </header>
 {/* Logo Upload Modal */}
 {showLogoUpload && (
-  <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-    <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm">
-      <h3 className="text-lg font-bold mb-4">Store Logo</h3>
-      
-      {storeLogo && (
-        <div className="mb-4 flex justify-center">
-          <img src={storeLogo} alt="Current logo" className="w-24 h-24 rounded-xl object-cover" />
-        </div>
+<div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+<div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm">
+<h3 className="text-lg font-bold mb-4">Store Logo</h3>
+{storeLogo && (
+<div className="mb-4 flex justify-center">
+<img src={storeLogo} alt="Current logo" className="w-24 h-24 rounded-xl object-cover" />
+</div>
       )}
-      
-      <label className="block mb-4">
-        <div className="bg-zinc-800 border-2 border-dashed border-zinc-700 hover:border-emerald-500 rounded-xl p-6 text-center cursor-pointer transition">
-          {uploadingLogo ? (
-            <div className="flex flex-col items-center">
-              <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-              <p className="text-zinc-400 text-sm">Uploading...</p>
-            </div>
+<label className="block mb-4">
+<div className="bg-zinc-800 border-2 border-dashed border-zinc-700 hover:border-emerald-500 rounded-xl p-6 text-center cursor-pointer transition">
+{uploadingLogo ? (
+<div className="flex flex-col items-center">
+<div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+<p className="text-zinc-400 text-sm">Uploading...</p>
+</div>
           ) : (
-            <>
-              <svg className="w-8 h-8 text-zinc-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <p className="text-zinc-400 text-sm">Click to upload image</p>
-              <p className="text-zinc-600 text-xs mt-1">Max 5MB</p>
-            </>
+<>
+<svg className="w-8 h-8 text-zinc-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+</svg>
+<p className="text-zinc-400 text-sm">Click to upload image</p>
+<p className="text-zinc-600 text-xs mt-1">Max 5MB</p>
+</>
           )}
-        </div>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleLogoUpload}
-          className="hidden"
-          disabled={uploadingLogo}
-        />
-      </label>
-      
-      <div className="flex gap-3">
-        {storeLogo && (
-          <button
-            onClick={removeLogo}
-            disabled={uploadingLogo}
-            className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 py-3 rounded-xl transition disabled:opacity-50"
-          >
+</div>
+<input
+type="file"
+accept="image/*"
+onChange={handleLogoUpload}
+className="hidden"
+disabled={uploadingLogo}
+/>
+</label>
+<div className="flex gap-3">
+{storeLogo && (
+<button
+onClick={removeLogo}
+disabled={uploadingLogo}
+className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 py-3 rounded-xl transition disabled:opacity-50"
+>
             Remove
-          </button>
+</button>
         )}
-        <button
-          onClick={() => setShowLogoUpload(false)}
-          className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
-        >
-          {storeLogo ? 'Done' : 'Cancel'}
-        </button>
-      </div>
-    </div>
-  </div>
+<button
+onClick={() => setShowLogoUpload(false)}
+className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
+>
+{storeLogo ? 'Done' : 'Cancel'}
+</button>
+</div>
+</div>
+</div>
 )}
-      {/* Products Manager Modal */}
-      {showProductsManager && storeId && walletAddress && (
-        <div className="fixed inset-0 bg-black/90 z-50 overflow-y-auto">
-          <div className="min-h-screen">
-            <div className="sticky top-0 bg-[#0a0a0a] p-4 border-b border-zinc-800 flex items-center justify-between z-10">
-              <h2 className="text-xl font-bold">Manage Products</h2>
-              <button
-                onClick={() => {
-                  setShowProductsManager(false);
-                  fetchProducts();
+{/* Products Manager Modal */}
+{showProductsManager && storeId && walletAddress && (
+<div className="fixed inset-0 bg-black/90 z-50 overflow-y-auto">
+<div className="min-h-screen">
+<div className="sticky top-0 bg-[#0a0a0a] p-4 border-b border-zinc-800 flex items-center justify-between z-10">
+<h2 className="text-xl font-bold">Manage Products</h2>
+<button
+onClick={() => {
+setShowProductsManager(false);
+fetchProducts();
                 }}
-                className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
-              >
+className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
+>
                 Done
-              </button>
-            </div>
-            <div className="p-4">
-              <ProductsManager storeId={storeId} walletAddress={walletAddress} />
-            </div>
-          </div>
-        </div>
+</button>
+</div>
+<div className="p-4">
+<ProductsManager storeId={storeId} walletAddress={walletAddress} />
+</div>
+</div>
+</div>
       )}
-
-      <main className="max-w-lg mx-auto px-4 pb-8">
-
-        {/* ============================================================= */}
-        {/* IDLE STATE - Product Selection */}
-        {/* ============================================================= */}
-        {status === 'idle' && (
-          <>
-            {/* Amount Display */}
-            <div className="py-8 text-center">
-              <p className="text-zinc-500 text-sm mb-1">
-                {cartCount > 0 ? `${cartCount} item${cartCount > 1 ? 's' : ''}` : 'Total'}
-              </p>
-              <div className="text-5xl font-bold tracking-tight">
+<main className="max-w-lg mx-auto px-4 pb-8">
+{/* ============================================================= */}
+{/* IDLE STATE - Product Selection */}
+{/* ============================================================= */}
+{status === 'idle' && (
+<>
+{/* Amount Display */}
+<div className="py-8 text-center">
+<p className="text-zinc-500 text-sm mb-1">
+{cartCount > 0 ? `${cartCount} item${cartCount > 1 ? 's' : ''}` : 'Total'}
+</p>
+<div className="text-5xl font-bold tracking-tight">
                 £{showManualEntry ? (manualAmount || '0.00') : cartTotal.toFixed(2)}
-              </div>
-            </div>
-
-            {/* Error */}
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
+</div>
+</div>
+{/* Error */}
+{error && (
+<div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
+<p className="text-red-400 text-sm">{error}</p>
+</div>
             )}
-
-            {/* Products Grid or Manual Entry */}
-            {!showManualEntry ? (
-              <>
-                {/* Products */}
-                {loadingProducts ? (
-  <div className="text-center py-12">
-    <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-    <p className="text-zinc-500">Loading products...</p>
-  </div>
+{/* Products Grid or Manual Entry */}
+{!showManualEntry ? (
+<>
+{/* Products */}
+{loadingProducts ? (
+<div className="text-center py-12">
+<div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+<p className="text-zinc-500">Loading products...</p>
+</div>
 ) : products.length === 0 ? (
-  <div className="text-center py-12">
-    <div className="text-6xl mb-4">📦</div>
-    <p className="text-zinc-400 mb-2">No products yet</p>
-    <button
-      onClick={() => setShowProductsManager(true)}
-      className="text-emerald-400 hover:text-emerald-300 font-medium"
-    >
+<div className="text-center py-12">
+<div className="text-6xl mb-4">📦</div>
+<p className="text-zinc-400 mb-2">No products yet</p>
+<button
+onClick={() => setShowProductsManager(true)}
+className="text-emerald-400 hover:text-emerald-300 font-medium"
+>
       + Add your first product
-    </button>
-  </div>
+</button>
+</div>
 ) : (
-  <div className="mb-6">
-    {/* Search Bar */}
-    <div className="mb-4">
-      <input
-        type="text"
-        placeholder="Search products..."
-        value={searchQuery}
-        onChange={(e) => {
-          setSearchQuery(e.target.value);
-          setActiveCategory(null);
+<div className="mb-6">
+{/* Search Bar */}
+<div className="mb-4">
+<input
+type="text"
+placeholder="Search products..."
+value={searchQuery}
+onChange={(e) => {
+setSearchQuery(e.target.value);
+setActiveCategory(null);
         }}
-        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
-      />
-    </div>
-
-    {/* Repeat Last Order */}
+className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+/>
+</div>
+{/* Repeat Last Order */}
 {lastOrder && lastOrder.length > 0 && cart.length === 0 && (
-  <button
-    onClick={() => setCart(lastOrder.map(item => ({ ...item })))}
-    className="w-full mb-4 bg-zinc-900 border border-zinc-800 hover:border-emerald-500 rounded-xl p-3 flex items-center justify-between transition"
-  >
-    <div className="flex items-center gap-3">
-      <span className="text-xl">🔄</span>
-      <div className="text-left">
-        <p className="text-sm font-medium">Repeat last order</p>
-        <p className="text-zinc-500 text-xs">
-          {lastOrder.length} item{lastOrder.length > 1 ? 's' : ''} · £{lastOrder.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
-        </p>
-      </div>
-    </div>
-    <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-    </svg>
-  </button>
+<button
+onClick={() => setCart(lastOrder.map(item => ({ ...item })))}
+className="w-full mb-4 bg-zinc-900 border border-zinc-800 hover:border-emerald-500 rounded-xl p-3 flex items-center justify-between transition"
+>
+<div className="flex items-center gap-3">
+<span className="text-xl">🔄</span>
+<div className="text-left">
+<p className="text-sm font-medium">Repeat last order</p>
+<p className="text-zinc-500 text-xs">
+{lastOrder.length} item{lastOrder.length > 1 ? 's' : ''} · £{lastOrder.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
+</p>
+</div>
+</div>
+<svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+</svg>
+</button>
 )}
-
-    {/* Category Tabs */}
-    {!searchQuery && categories.length > 1 && (
-      <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
-        <button
-          onClick={() => setActiveCategory(null)}
-          className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition ${
-            activeCategory === null
+{/* Category Tabs */}
+{!searchQuery && categories.length > 1 && (
+<div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
+<button
+onClick={() => setActiveCategory(null)}
+className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition active:scale-95 cursor-pointer ${
+activeCategory === null
               ? 'bg-emerald-500 text-black'
               : 'bg-zinc-800 text-zinc-400 hover:text-white'
-          }`}
-        >
+}`}
+>
           All
-        </button>
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition ${
-              activeCategory === cat
+</button>
+{categories.map((cat) => (
+<button
+key={cat}
+onClick={() => setActiveCategory(cat)}
+className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition active:scale-95 cursor-pointer ${
+activeCategory === cat
                 ? 'bg-emerald-500 text-black'
                 : 'bg-zinc-800 text-zinc-400 hover:text-white'
-            }`}
-          >
-            {cat}
-          </button>
+}`}
+>
+{cat}
+</button>
         ))}
-      </div>
+</div>
     )}
-
-    {/* Products Grid */}
-    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-      {filteredProducts.map((product) => {
-        const inCart = cart.find(item => item.product_id === product.product_id);
-        return (
-          <button
-            key={product.product_id}
-            onClick={() => addToCart(product)}
-            className={`relative bg-zinc-900 hover:bg-zinc-800 border rounded-2xl p-3 text-center transition-all active:scale-95 ${
-              inCart ? 'border-emerald-500 bg-emerald-500/10' : 'border-zinc-800'
-            }`}
-          >
-            {inCart && (
-              <div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-xs font-bold text-black">
-                {inCart.quantity}
-              </div>
+{/* Products Grid */}
+<div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+{filteredProducts.map((product) => {
+const inCart = cart.find(item => item.product_id === product.product_id);
+return (
+<button
+key={product.product_id}
+onClick={() => addToCart(product)}
+className={`relative bg-zinc-900 hover:bg-zinc-800 border rounded-2xl p-3 text-center transition-all active:scale-95 cursor-pointer ${
+inCart ? 'border-emerald-500 bg-emerald-500/10' : 'border-zinc-800'
+}`}
+>
+{inCart && (
+<div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-xs font-bold text-black">
+{inCart.quantity}
+</div>
             )}
-            <div className="text-2xl mb-1">{getProductEmoji(product)}</div>
-            <p className="text-xs font-medium truncate mb-1">{product.name}</p>
-            <p className="text-emerald-400 text-sm font-semibold">£{product.price.toFixed(2)}</p>
-          </button>
+<div className="text-2xl mb-1">{getProductEmoji(product)}</div>
+<p className="text-xs font-medium truncate mb-1">{product.name}</p>
+<p className="text-emerald-400 text-sm font-semibold">£{product.price.toFixed(2)}</p>
+</button>
         );
       })}
-    </div>
-
-    {/* No results */}
-    {filteredProducts.length === 0 && searchQuery && (
-      <div className="text-center py-8">
-        <p className="text-zinc-500">No products match "{searchQuery}"</p>
-      </div>
+</div>
+{/* No results */}
+{filteredProducts.length === 0 && searchQuery && (
+<div className="text-center py-8">
+<p className="text-zinc-500">No products match "{searchQuery}"</p>
+</div>
     )}
-  </div>
+</div>
 )}
-
-                {/* Cart */}
-                {cart.length > 0 && (
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold">Cart</h3>
-                      <button
-                        onClick={clearCart}
-                        className="text-zinc-500 hover:text-red-400 text-sm transition"
-                      >
+{/* Cart */}
+{cart.length > 0 && (
+<div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-6">
+<div className="flex items-center justify-between mb-3">
+<h3 className="font-semibold">Cart</h3>
+<button
+onClick={clearCart}
+className="text-zinc-500 hover:text-red-400 text-sm transition"
+>
                         Clear
-                      </button>
-                    </div>
-                    <div className="space-y-2">
-                      {cart.map((item) => (
-                        <div key={item.product_id} className="flex items-center justify-between py-2 border-b border-zinc-800 last:border-0">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => decreaseQuantity(item.product_id)}
-                                className="w-6 h-6 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-sm transition"
-                              >
+</button>
+</div>
+<div className="space-y-2">
+{cart.map((item) => (
+<div key={item.product_id} className="flex items-center justify-between py-2 border-b border-zinc-800 last:border-0">
+<div className="flex items-center gap-3">
+<div className="flex items-center gap-1">
+<button
+onClick={() => decreaseQuantity(item.product_id)}
+className="w-6 h-6 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-sm transition"
+>
                                 −
-                              </button>
-                              <span className="w-6 text-center text-sm">{item.quantity}</span>
-                              <button
-                                onClick={() => addToCart(item)}
-                                className="w-6 h-6 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-sm transition"
-                              >
+</button>
+<span className="w-6 text-center text-sm">{item.quantity}</span>
+<button
+onClick={() => addToCart(item)}
+className="w-6 h-6 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-sm transition"
+>
                                 +
-                              </button>
-                            </div>
-                            <span className="text-zinc-300">{item.name}</span>
-                          </div>
-                          <span className="text-zinc-400">£{(item.price * item.quantity).toFixed(2)}</span>
-                        </div>
+</button>
+</div>
+<span className="text-zinc-300">{item.name}</span>
+</div>
+<span className="text-zinc-400">£{(item.price * item.quantity).toFixed(2)}</span>
+</div>
                       ))}
-                    </div>
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-700">
-                      <span className="font-semibold">Total</span>
-                      <span className="text-xl font-bold text-emerald-400">£{cartTotal.toFixed(2)}</span>
-                    </div>
-                  </div>
+</div>
+<div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-700">
+<span className="font-semibold">Total</span>
+<span className="text-xl font-bold text-emerald-400">£{cartTotal.toFixed(2)}</span>
+</div>
+</div>
                 )}
-              </>
+</>
             ) : (
-              /* Manual Amount Entry */
-              <div className="mb-6">
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'back'].map((num) => (
-                    <button
-                      key={num}
-                      onClick={() => handleNumberInput(num)}
-                      className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white text-2xl font-semibold py-5 rounded-2xl transition active:scale-95"
-                    >
-                      {num === 'back' ? '⌫' : num}
-                    </button>
+/* Manual Amount Entry */
+<div className="mb-6">
+<div className="grid grid-cols-3 gap-3 mb-4">
+{['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'back'].map((num) => (
+<button
+key={num}
+onClick={() => handleNumberInput(num)}
+className="bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 border border-zinc-800 text-white text-2xl font-semibold py-5 rounded-2xl transition active:scale-95 cursor-pointer"
+>
+{num === 'back' ? '⌫' : num}
+</button>
                   ))}
-                </div>
-                <button
-                  onClick={() => {
-                    setShowManualEntry(false);
-                    setManualAmount('');
+</div>
+<button
+onClick={() => {
+setShowManualEntry(false);
+setManualAmount('');
                   }}
-                  className="w-full text-zinc-500 hover:text-white text-sm py-2 transition"
-                >
+className="w-full text-zinc-500 hover:text-white text-sm py-2 transition"
+>
                   ← Back to products
-                </button>
-              </div>
+</button>
+</div>
             )}
-
-            {/* Payment Buttons */}
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={showQRPayment}
-                  disabled={getPaymentAmount() <= 0}
-                  className="bg-white hover:bg-zinc-100 disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-bold text-lg py-5 rounded-2xl transition flex items-center justify-center gap-2"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h2M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                  </svg>
-                  Show QR
-                </button>
-                <button
-                  onClick={startNFCPayment}
-                  disabled={getPaymentAmount() <= 0}
-                  className="bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-bold text-lg py-5 rounded-2xl transition flex items-center justify-center gap-2"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                  </svg>
-                  Tap Card
-                </button>
-              </div>
-              
-              {!showManualEntry && (
-                <button
-                  onClick={() => setShowManualEntry(true)}
-                  className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 font-medium py-3 rounded-xl transition"
-                >
-                  Enter amount manually
-                </button>
+{/* Tip Section */}
+<div className="mb-4">
+{/* Tips Toggle */}
+<div className="flex items-center justify-between mb-3">
+<p className="text-zinc-500 text-sm">Tips</p>
+<button
+type="button"
+onClick={() => {
+setTipsEnabled(!tipsEnabled);
+if (tipsEnabled) setTipAmount(0);
+  }}
+className={`relative w-11 h-6 rounded-full transition-colors active:scale-95 cursor-pointer ${
+tipsEnabled ? 'bg-emerald-500' : 'bg-zinc-700'
+}`}
+>
+<span
+className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+tipsEnabled ? 'translate-x-5' : 'translate-x-0'
+}`}
+/>
+</button>
+</div>
+{/* Tip Buttons - only show when enabled */}
+{tipsEnabled && (
+<>
+<div className="flex gap-2 flex-wrap">
+{[0, 10, 15, 20].map((percent) => {
+const base = cart.length > 0 ? cartTotal : customAmount;
+const tipValue = percent === 0 ? 0 : base * percent / 100;
+const label = percent === 0 ? 'No Tip' : `${percent}% · £${tipValue.toFixed(2)}`;
+return (
+<div
+key={percent}
+onClick={() => setTipAmount(tipValue)}
+className={`flex-1 py-2 rounded-xl text-sm font-medium cursor-pointer text-center ${
+tipAmount === tipValue
+                    ? 'bg-emerald-500 text-black'
+                    : 'bg-zinc-800 text-white active:bg-zinc-700'
+}`}
+>
+{label}
+</div>
+            );
+          })}
+<div
+onClick={() => setShowCustomTipModal(true)}
+className="flex-1 py-2 rounded-xl text-sm font-medium cursor-pointer text-center bg-zinc-800 text-white active:bg-zinc-700"
+>
+            Custom
+</div>
+</div>
+{tipAmount > 0 && (
+<p className="text-emerald-400 text-sm mt-2 text-center">
+            Tip: £{tipAmount.toFixed(2)} • Total: £{getPaymentAmount().toFixed(2)}
+</p>
+        )}
+</>
+   )}
+</div>
+{/* Payment Buttons */}
+<div className="space-y-3">
+<button
+onClick={() => showQRPayment()}
+disabled={getPaymentAmount() <= 0}
+className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-bold text-xl py-6 rounded-2xl transition flex items-center justify-center gap-3 cursor-pointer disabled:cursor-not-allowed"
+>
+<svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+</svg>
+  Pay £{getPaymentAmount().toFixed(2)}
+</button>
+{!showManualEntry && (
+<button
+onClick={() => setShowManualEntry(true)}
+className="w-full bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 active:scale-95 border border-zinc-800 text-zinc-400 font-medium py-3 rounded-xl transition cursor-pointer"
+>
+  Enter amount manually
+</button>
               )}
-            </div>
-          </>
+</div>
+</>
         )}
-
-        {/* ============================================================= */}
-        {/* QR CODE STATE */}
-        {/* ============================================================= */}
+{/* ============================================================= */}
+{/* QR CODE STATE - Show both QR and Tap options */}
+{/* ============================================================= */}
 {status === 'qr' && (
-  <div className="text-center py-8">
-    {xamanQR ? (
-      <>
-        <div className="bg-white rounded-3xl p-6 inline-block mb-6">
-          <img
-            src={xamanQR}
-            alt="Scan with Xaman"
-            className="w-64 h-64"
-          />
-        </div>
-        
-        <p className="text-3xl font-bold mb-2">£{getPaymentAmount().toFixed(2)}</p>
-        <p className="text-emerald-400 text-lg mb-2">Scan with Xaman</p>
-        <p className="text-zinc-500 mb-8">Open Xaman app and scan this QR code</p>
-      </>
-    ) : (
-      <div className="py-12">
-        <div className="w-12 h-12 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-zinc-400">Creating payment request...</p>
-      </div>
-    )}
-    
-    <button
-      onClick={() => {
-        setStatus('idle');
-        setXamanQR(null);
-        setXamanPaymentId(null);
-      }}
-      className="bg-zinc-800 hover:bg-zinc-700 text-white px-8 py-3 rounded-xl transition"
-    >
-      Cancel
-    </button>
+<div className="flex-1 flex flex-col items-center justify-center py-8">
+  {/* Total */}
+  <div className="text-center mb-10">
+    <p className="text-zinc-500 text-lg mb-2">Total to pay</p>
+    <p className="text-6xl sm:text-7xl font-bold text-emerald-400">£{getPaymentAmount().toFixed(2)}</p>
   </div>
-)}
 
-        {/* ============================================================= */}
-        {/* WAITING FOR NFC STATE */}
-        {/* ============================================================= */}
-        {status === 'waiting' && (
-          <div className="text-center py-12">
-            <div className="w-40 h-40 mx-auto mb-8 bg-emerald-500/20 rounded-full flex items-center justify-center relative">
-              <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping"></div>
-              <svg className="w-20 h-20 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
-            </div>
-            
-            <p className="text-3xl font-bold mb-2">£{getPaymentAmount().toFixed(2)}</p>
-            <p className="text-emerald-400 text-xl font-semibold mb-2">Ready for payment</p>
-            <p className="text-zinc-500 mb-8">Customer: tap your card on the phone</p>
-            
-            <div className="space-y-3">
-              <button
-                onClick={handleManualUID}
-                className="bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-xl transition"
-              >
-                Enter Card ID Manually
-              </button>
-              
-              <button
-                onClick={() => setStatus('idle')}
-                className="block mx-auto text-zinc-500 hover:text-white transition"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
+  {xamanQR ? (
+    <div className="flex flex-col sm:flex-row items-center justify-center gap-10 sm:gap-16 mb-10">
+      {/* NFC Tap Zone */}
+      <div className="flex flex-col items-center">
+        <div className="w-40 h-40 sm:w-48 sm:h-48 bg-emerald-500/20 rounded-full flex items-center justify-center relative mb-5">
+          <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
+          <div className="absolute inset-4 bg-emerald-500/10 rounded-full animate-pulse"></div>
+          <svg className="w-20 h-20 sm:w-24 sm:h-24 text-emerald-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+        </div>
+        <p className="text-2xl sm:text-3xl font-bold text-emerald-400 mb-2">Tap Card</p>
+        <p className="text-zinc-500 text-base sm:text-lg text-center">Hold NFC card<br/>to phone</p>
+      </div>
 
-        {/* ============================================================= */}
-        {/* PROCESSING STATE */}
-        {/* ============================================================= */}
-        {status === 'processing' && (
-          <div className="text-center py-12">
-            <div className="w-40 h-40 mx-auto mb-8 flex items-center justify-center">
-              <div className="w-20 h-20 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-            
-            <p className="text-3xl font-bold mb-2">£{getPaymentAmount().toFixed(2)}</p>
-            <p className="text-yellow-400 text-xl font-semibold">Processing...</p>
-            <p className="text-zinc-500 text-sm mt-2">Card: {lastUID}</p>
-          </div>
-        )}
+      {/* Divider */}
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-px bg-zinc-800 sm:hidden"></div>
+        <div className="hidden sm:block w-px h-32 bg-zinc-800"></div>
+        <span className="text-zinc-600 text-lg font-medium">or</span>
+        <div className="w-16 h-px bg-zinc-800 sm:hidden"></div>
+        <div className="hidden sm:block w-px h-32 bg-zinc-800"></div>
+      </div>
 
-        {/* ============================================================= */}
-        {/* SUCCESS STATE */}
-        {/* ============================================================= */}
-        {status === 'success' && (
-          <div className="text-center py-12">
-            <div className="w-40 h-40 mx-auto mb-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
-              <svg className="w-24 h-24 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            
-            <p className="text-4xl font-bold mb-2">£{getPaymentAmount().toFixed(2)}</p>
-            <p className="text-emerald-400 text-2xl font-semibold mb-4">Payment Complete!</p>
-            
-            {txHash && ( <a
-  
-    href={`https://livenet.xrpl.org/transactions/${txHash}`}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="text-zinc-500 hover:text-emerald-400 text-sm mb-8 font-mono block"
+      {/* QR Code */}
+      <div className="flex flex-col items-center">
+        <div className="bg-white rounded-3xl p-5 sm:p-6 mb-5 shadow-2xl shadow-sky-500/10 aspect-square flex items-center justify-center">
+  <img
+    src={xamanQR}
+    alt="Scan with Xaman"
+    className="w-40 h-40 sm:w-48 sm:h-48 object-contain"
+  />
+</div>
+<p className="text-2xl sm:text-3xl font-bold text-sky-400 mb-2 whitespace-nowrap">Scan QR</p>
+        <p className="text-zinc-500 text-base sm:text-lg text-center">Open Xaman<br/>and scan</p>
+      </div>
+    </div>
+  ) : (
+    <div className="py-16">
+      <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+      <p className="text-zinc-400 text-xl">Creating payment request...</p>
+    </div>
+  )}
+
+  <button
+    onClick={() => {
+      setStatus('idle');
+      setXamanQR(null);
+      setXamanPaymentId(null);
+      if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'idle', null, 0);
+    }}
+    className="bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-12 py-4 rounded-2xl transition active:scale-95 cursor-pointer text-lg"
   >
-    TX: {txHash.slice(0, 8)}...{txHash.slice(-8)} ↗
-  </a>
-)}
-
-            <div className="flex justify-center gap-3 mb-8">
-  <button 
-    onClick={() => setShowEmailModal(true)}
-    className="bg-zinc-800 hover:bg-zinc-700 px-5 py-3 rounded-xl text-sm transition flex items-center gap-2"
-  >
-    <span>📧</span> Email
-  </button>
-  <button 
-    onClick={printReceipt}
-    className="bg-zinc-800 hover:bg-zinc-700 px-5 py-3 rounded-xl text-sm transition flex items-center gap-2"
-  >
-    <span>🖨️</span> Print
+    Cancel
   </button>
 </div>
-            
-            <button
-              onClick={resetPayment}
-              className="w-full max-w-xs mx-auto bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-lg py-4 rounded-2xl transition"
-            >
+)}
+{/* ============================================================= */}
+{/* WAITING FOR NFC STATE */}
+{/* ============================================================= */}
+{status === 'waiting' && (
+<div className="text-center py-12">
+<div className="w-40 h-40 mx-auto mb-8 bg-emerald-500/20 rounded-full flex items-center justify-center relative">
+<div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping"></div>
+<svg className="w-20 h-20 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+</svg>
+</div>
+<p className="text-3xl font-bold mb-2">£{getPaymentAmount().toFixed(2)}</p>
+<p className="text-emerald-400 text-xl font-semibold mb-2">Ready for payment</p>
+<p className="text-zinc-500 mb-8">Customer: tap your card on the phone</p>
+<div className="space-y-3">
+<button
+onClick={handleManualUID}
+className="bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-xl transition"
+>
+                Enter Card ID Manually
+</button>
+<button
+onClick={() => setStatus('idle')}
+className="block mx-auto text-zinc-500 hover:text-white transition"
+>
+                Cancel
+</button>
+</div>
+</div>
+        )}
+{/* ============================================================= */}
+{/* PROCESSING STATE */}
+{/* ============================================================= */}
+{status === 'processing' && (
+<div className="text-center py-12">
+<div className="w-40 h-40 mx-auto mb-8 flex items-center justify-center">
+<div className="w-20 h-20 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+</div>
+<p className="text-3xl font-bold mb-2">£{getPaymentAmount().toFixed(2)}</p>
+<p className="text-yellow-400 text-xl font-semibold">Processing...</p>
+<p className="text-zinc-500 text-sm mt-2">Card: {lastUID}</p>
+</div>
+        )}
+{/* ============================================================= */}
+{/* SUCCESS STATE */}
+{/* ============================================================= */}
+{status === 'success' && (
+<div className="text-center py-12">
+<div className="w-40 h-40 mx-auto mb-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
+<svg className="w-24 h-24 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+</svg>
+</div>
+<p className="text-4xl font-bold mb-2">£{getPaymentAmount().toFixed(2)}</p>
+<p className="text-emerald-400 text-2xl font-semibold mb-4">Payment Complete!</p>
+{txHash && ( <a
+href={`https://livenet.xrpl.org/transactions/${txHash}`}
+target="_blank"
+rel="noopener noreferrer"
+className="text-zinc-500 hover:text-emerald-400 text-sm mb-8 font-mono block"
+>
+    TX: {txHash.slice(0, 8)}...{txHash.slice(-8)} ↗
+</a>
+)}
+<div className="flex justify-center gap-3 mb-8">
+<button 
+onClick={() => setShowEmailModal(true)}
+className="bg-zinc-800 hover:bg-zinc-700 px-5 py-3 rounded-xl text-sm transition flex items-center gap-2"
+>
+<span>📧</span> Email
+</button>
+<button 
+onClick={printReceipt}
+className="bg-zinc-800 hover:bg-zinc-700 px-5 py-3 rounded-xl text-sm transition flex items-center gap-2"
+>
+<span>🖨️</span> Print
+</button>
+</div>
+<button
+onClick={resetPayment}
+className="w-full max-w-xs mx-auto bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-lg py-4 rounded-2xl transition"
+>
               New Payment
-            </button>
-          </div>
+</button>
+</div>
         )}
-
-        {/* ============================================================= */}
-        {/* ERROR STATE */}
-        {/* ============================================================= */}
-        {status === 'error' && (
-          <div className="text-center py-12">
-            <div className="w-40 h-40 mx-auto mb-8 bg-red-500/20 rounded-full flex items-center justify-center">
-              <svg className="w-24 h-24 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </div>
-            
-            <p className="text-3xl font-bold mb-2">£{getPaymentAmount().toFixed(2)}</p>
-            <p className="text-red-400 text-2xl font-semibold mb-2">Payment Failed</p>
-            <p className="text-zinc-500 mb-8">{error}</p>
-            
-            <button
-              onClick={resetPayment}
-              className="w-full max-w-xs mx-auto bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-lg py-4 rounded-2xl transition"
-            >
+{/* ============================================================= */}
+{/* ERROR STATE */}
+{/* ============================================================= */}
+{status === 'error' && (
+<div className="text-center py-12">
+<div className="w-40 h-40 mx-auto mb-8 bg-red-500/20 rounded-full flex items-center justify-center">
+<svg className="w-24 h-24 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+</svg>
+</div>
+<p className="text-3xl font-bold mb-2">£{getPaymentAmount().toFixed(2)}</p>
+<p className="text-red-400 text-2xl font-semibold mb-2">Payment Failed</p>
+<p className="text-zinc-500 mb-8">{error}</p>
+<button
+onClick={resetPayment}
+className="w-full max-w-xs mx-auto bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-lg py-4 rounded-2xl transition"
+>
               Try Again
-            </button>
-          </div>
+</button>
+</div>
         )}
+{/* Custom Tip Modal */}
+{showCustomTipModal && (
+<div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+<div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm">
+<h3 className="text-lg font-bold mb-4">Custom Tip</h3>
+<div className="relative mb-4">
+<span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 text-lg">£</span>
+<input
+type="number"
+inputMode="decimal"
+step="0.01"
+min="0"
+placeholder="0.00"
+value={customTipInput}
+onChange={(e) => setCustomTipInput(e.target.value)}
+className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-8 pr-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+autoFocus
+/>
+</div>
+<div className="flex gap-3">
+<button
+onClick={() => {
+setShowCustomTipModal(false);
+setCustomTipInput('');
+          }}
+className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
+>
+          Cancel
+</button>
+<button
+onClick={() => {
+const tip = parseFloat(customTipInput) || 0;
+console.log('Setting tip to:', tip);
+setTipAmount(tip);
+setShowCustomTipModal(false);
+setCustomTipInput('');
+}}
+className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 rounded-xl transition"
+>
+          Add Tip
+</button>
+</div>
+</div>
+</div>
+)}
 {/* Email Modal */}
 {showEmailModal && (
-  <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-    <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm">
-      <h3 className="text-lg font-bold mb-4">Send Receipt</h3>
-      <input
-        type="email"
-        placeholder="Customer email"
-        value={emailAddress}
-        onChange={(e) => setEmailAddress(e.target.value)}
-        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 mb-4"
-        autoFocus
-      />
-      <div className="flex gap-3">
-        <button
-          onClick={() => {
-            setShowEmailModal(false);
-            setEmailAddress('');
+<div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+<div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm">
+<h3 className="text-lg font-bold mb-4">Send Receipt</h3>
+<input
+type="email"
+placeholder="Customer email"
+value={emailAddress}
+onChange={(e) => setEmailAddress(e.target.value)}
+className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 mb-4"
+autoFocus
+/>
+<div className="flex gap-3">
+<button
+onClick={() => {
+setShowEmailModal(false);
+setEmailAddress('');
           }}
-          className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
-        >
+className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
+>
           Cancel
-        </button>
-        <button
-          onClick={sendReceiptEmail}
-          disabled={sendingEmail}
-          className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 rounded-xl transition disabled:opacity-50"
-        >
-          {sendingEmail ? 'Sending...' : 'Send'}
-        </button>
-      </div>
-    </div>
-  </div>
+</button>
+<button
+onClick={sendReceiptEmail}
+disabled={sendingEmail}
+className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 rounded-xl transition disabled:opacity-50"
+>
+{sendingEmail ? 'Sending...' : 'Send'}
+</button>
+</div>
+</div>
+</div>
 )}
-      </main>
-    </div>
+</main>
+</div>
   );
 }

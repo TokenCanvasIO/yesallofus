@@ -27,3 +27,10 @@ body {
 img[src*="dltpayslogo"] {
   border-radius: 0.5rem;
 }
+button:active {
+  transform: scale(0.97);
+}
+
+div[class*="cursor-pointer"]:active {
+  transform: scale(0.97);
+}
