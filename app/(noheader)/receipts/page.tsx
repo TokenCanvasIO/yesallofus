@@ -35,6 +35,9 @@ function ReceiptsPage() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [storeId, setStoreId] = useState<string | null>(null);
   const [storeName, setStoreName] = useState<string>('');
+
+  // Logo
+  const [storeLogo, setStoreLogo] = useState<string | null>(null);
   
   // Data
   const [receipts, setReceipts] = useState<Receipt[]>([]);
@@ -54,23 +57,36 @@ function ReceiptsPage() {
   const receiptsPerPage = 20;
 
   // Load store data
-  useEffect(() => {
-    const stored = sessionStorage.getItem('vendorWalletAddress');
-    const storeData = sessionStorage.getItem('storeData');
+useEffect(() => {
+  const stored = sessionStorage.getItem('vendorWalletAddress');
+  const storeData = sessionStorage.getItem('storeData');
+  
+  if (!stored) {
+    router.push('/dashboard');
+    return;
+  }
+  
+  setWalletAddress(stored);
+  
+  if (storeData) {
+    const store = JSON.parse(storeData);
+    setStoreId(store.store_id || null);
+    setStoreName(store.store_name || 'Your Store');
+    setStoreLogo(store.logo_url || null);
     
-    if (!stored) {
-      router.push('/dashboard');
-      return;
+    // Fetch fresh store data to get latest logo
+    if (store.store_id) {
+      fetch(`${API_URL}/store/public/${store.store_id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.store) {
+            setStoreLogo(data.store.logo_url || null);
+          }
+        })
+        .catch(err => console.error('Failed to fetch store:', err));
     }
-    
-    setWalletAddress(stored);
-    
-    if (storeData) {
-      const store = JSON.parse(storeData);
-      setStoreId(store.store_id || null);
-      setStoreName(store.store_name || 'Your Store');
-    }
-  }, [router]);
+  }
+}, [router]);
 
   // Fetch receipts
   useEffect(() => {
@@ -181,6 +197,188 @@ function ReceiptsPage() {
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
   };
+
+  // Print receipt
+const printReceipt = (receipt: Receipt) => {
+  const receiptHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Receipt - ${storeName}</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          max-width: 400px; 
+          margin: 0 auto; 
+          padding: 30px 20px;
+          color: #1a1a1a;
+        }
+        .header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 20px;
+          padding-bottom: 20px;
+          border-bottom: 2px solid #e5e5e5;
+        }
+        .store-logo {
+          width: 50px;
+          height: 50px;
+          border-radius: 10px;
+          object-fit: cover;
+        }
+        .store-info {
+          flex: 1;
+        }
+        .store-name {
+          font-size: 20px;
+          font-weight: 700;
+        }
+        .receipt-number {
+          font-size: 12px;
+          color: #666;
+        }
+        .date {
+          font-size: 12px;
+          color: #666;
+          margin-bottom: 20px;
+        }
+        .items {
+          margin: 20px 0;
+        }
+        .item {
+          display: flex;
+          justify-content: space-between;
+          padding: 10px 0;
+          border-bottom: 1px solid #eee;
+        }
+        .item-name {
+          font-weight: 500;
+        }
+        .item-qty {
+          color: #666;
+          font-size: 14px;
+        }
+        .item-price {
+          font-weight: 600;
+        }
+        .total-section {
+          margin-top: 20px;
+          padding-top: 20px;
+          border-top: 2px solid #1a1a1a;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .total-label {
+          font-size: 16px;
+          font-weight: 600;
+        }
+        .total-amount {
+          font-size: 24px;
+          font-weight: 700;
+          color: #10b981;
+        }
+        .tx-section {
+          margin-top: 20px;
+          padding: 12px;
+          background: #f5f5f5;
+          border-radius: 8px;
+        }
+        .tx-label {
+          font-size: 10px;
+          color: #666;
+          margin-bottom: 4px;
+        }
+        .tx-hash {
+          font-size: 9px;
+          font-family: monospace;
+          word-break: break-all;
+          color: #333;
+        }
+        .footer {
+          margin-top: 30px;
+          padding-top: 20px;
+          border-top: 1px solid #eee;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+        .footer-logo {
+          width: 20px;
+          height: 20px;
+          border-radius: 4px;
+          opacity: 0.6;
+        }
+        .footer-text {
+          color: #999;
+          font-size: 11px;
+        }
+        @media print {
+          body { padding: 0; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        ${storeLogo 
+          ? `<img src="${storeLogo}" alt="${storeName}" class="store-logo">`
+          : ''
+        }
+        <div class="store-info">
+          <div class="store-name">${storeName}</div>
+          <div class="receipt-number">${receipt.receipt_number}</div>
+        </div>
+      </div>
+      
+      <div class="date">${new Date(receipt.paid_at).toLocaleDateString('en-GB', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}</div>
+      
+      <div class="items">
+        ${receipt.items.map(item => `
+          <div class="item">
+            <div>
+              <div class="item-name">${item.name}</div>
+              <div class="item-qty">Qty: ${item.quantity} × £${item.unit_price.toFixed(2)}</div>
+            </div>
+            <div class="item-price">£${item.line_total.toFixed(2)}</div>
+          </div>
+        `).join('')}
+      </div>
+      
+      <div class="total-section">
+        <span class="total-label">Total</span>
+        <span class="total-amount">£${receipt.total.toFixed(2)}</span>
+      </div>
+      
+      <div class="tx-section">
+        <div class="tx-label">Transaction ID (XRPL)</div>
+        <div class="tx-hash">${receipt.payment_tx_hash}</div>
+      </div>
+      
+      <div class="footer">
+        <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="footer-logo">
+        <span class="footer-text">Powered by YesAllOfUs</span>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(receiptHtml);
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 500);
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans">
@@ -455,7 +653,18 @@ function ReceiptsPage() {
                   </div>
                 </div>
 
-                {/* TX Link */}
+                {/* Actions */}
+<div className="flex gap-3 mt-4">
+  <button
+    onClick={() => printReceipt(selectedReceipt)}
+    className="flex-1 bg-zinc-800 hover:bg-zinc-700 rounded-xl p-3 transition flex items-center justify-center gap-2"
+  >
+    <span>🖨️</span>
+    <span>Print</span>
+  </button>
+</div>
+
+{/* TX Link */}
                 <a
                   href={`https://livenet.xrpl.org/transactions/${selectedReceipt.payment_tx_hash}`}
                   target="_blank"

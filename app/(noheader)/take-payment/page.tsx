@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ProductsManager from '@/components/ProductsManager';
+import { updateCustomerDisplay, clearCustomerDisplay } from '@/lib/customerDisplay';
 
 interface Product {
   product_id: string;
@@ -101,24 +102,44 @@ const [activeCategory, setActiveCategory] = useState<string | null>(null);
 const [showEmailModal, setShowEmailModal] = useState(false);
 const [emailAddress, setEmailAddress] = useState('');
 const [sendingEmail, setSendingEmail] = useState(false);
+// Logo
+const [storeLogo, setStoreLogo] = useState<string | null>(null);
+const [showLogoUpload, setShowLogoUpload] = useState(false);
+const [uploadingLogo, setUploadingLogo] = useState(false);
   // Load store data
-  useEffect(() => {
-    const stored = sessionStorage.getItem('vendorWalletAddress');
-    const storeData = sessionStorage.getItem('storeData');
+useEffect(() => {
+  const stored = sessionStorage.getItem('vendorWalletAddress');
+  const storeData = sessionStorage.getItem('storeData');
+  
+  if (!stored) {
+    router.push('/dashboard');
+    return;
+  }
+  
+  setWalletAddress(stored);
+  
+  if (storeData) {
+    const store = JSON.parse(storeData);
+    setStoreId(store.store_id || null);
+    setStoreName(store.store_name || 'Your Store');
+    setStoreLogo(store.logo_url || null);
     
-    if (!stored) {
-      router.push('/dashboard');
-      return;
+    // Fetch fresh store data to get latest logo
+    if (store.store_id) {
+      fetch(`${API_URL}/store/public/${store.store_id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.store) {
+            setStoreLogo(data.store.logo_url || null);
+            // Update session storage with fresh data
+            const updatedStore = { ...store, logo_url: data.store.logo_url };
+            sessionStorage.setItem('storeData', JSON.stringify(updatedStore));
+          }
+        })
+        .catch(err => console.error('Failed to fetch store:', err));
     }
-    
-    setWalletAddress(stored);
-    
-    if (storeData) {
-      const store = JSON.parse(storeData);
-      setStoreId(store.store_id || null);
-      setStoreName(store.store_name || 'Your Store');
-    }
-  }, [router]);
+  }
+}, [router]);
 
   // Fetch products
   useEffect(() => {
@@ -156,6 +177,7 @@ useEffect(() => {
         setTxHash(data.tx_hash);
         setLastOrder([...cart]);
         setStatus('success');
+        if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'success');
         if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
       } else if (data.status === 'expired' || data.status === 'cancelled') {
         setError(`Payment ${data.status}`);
@@ -215,6 +237,7 @@ useEffect(() => {
   const clearCart = () => {
     setCart([]);
     setManualAmount('');
+    if (storeId) clearCustomerDisplay(storeId, storeName);
   };
 
   // Get payment amount
@@ -250,14 +273,15 @@ const showQRPayment = async () => {
   
   setStatus('qr');
   setError(null);
+  if (storeId) updateCustomerDisplay(storeId, storeName, cart, amount, 'ready');
   
   try {
-    const res = await fetch('https://api.dltpays.com/api/v1/xaman/payment', {
+    const res = await fetch('https://api.dltpays.com/api/v1/xaman/payment', {  // Fixed endpoint
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        vendor_wallet: walletAddress,
         amount: amount,
+        vendor_wallet: walletAddress,  // Fixed field name
         store_id: storeId,
         store_name: storeName
       })
@@ -288,6 +312,7 @@ const showQRPayment = async () => {
     
     setStatus('waiting');
     setError(null);
+    if (storeId) updateCustomerDisplay(storeId, storeName, cart, amount, 'ready');
     
     // Try Web NFC if available (Android Chrome)
     if ('NDEFReader' in window) {
@@ -329,6 +354,7 @@ const showQRPayment = async () => {
   // Process the payment
   const processPayment = async (uid: string, paymentAmount: number) => {
     setStatus('processing');
+    if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'processing');
     
     try {
       // Build items array from cart
@@ -361,15 +387,18 @@ const showQRPayment = async () => {
   setTxHash(data.tx_hash);
   setLastOrder([...cart]);
   setStatus('success');
+  if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'success');
   // Haptic + sound feedback
   if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
 } else {
         setError(data.error || 'Payment failed');
         setStatus('error');
+        if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'error');
       }
     } catch (err: any) {
       setError(err.message || 'Payment failed');
       setStatus('error');
+      if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'error');
     }
   };
 
@@ -385,7 +414,97 @@ const showQRPayment = async () => {
   setXamanPaymentId(null);
   setError(null);
   setShowManualEntry(false);
+  if (storeId) clearCustomerDisplay(storeId, storeName);
 };
+// Upload store logo
+const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  
+  // Check file size (5MB max)
+  if (file.size > 5 * 1024 * 1024) {
+    setError('Image must be less than 5MB');
+    return;
+  }
+  
+  // Check file type
+  if (!file.type.startsWith('image/')) {
+    setError('Please upload an image file');
+    return;
+  }
+  
+  setUploadingLogo(true);
+  setError(null);
+  
+  try {
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      
+      // Save to backend
+      const res = await fetch(`${API_URL}/store/${storeId}/logo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          logo_url: base64,
+          wallet_address: walletAddress
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setStoreLogo(base64);
+        // Update session storage
+        const storeData = sessionStorage.getItem('storeData');
+        if (storeData) {
+          const store = JSON.parse(storeData);
+          store.logo_url = base64;
+          sessionStorage.setItem('storeData', JSON.stringify(store));
+        }
+        setShowLogoUpload(false);
+      } else {
+        setError('Failed to upload logo');
+      }
+      setUploadingLogo(false);
+    };
+    reader.readAsDataURL(file);
+  } catch (err) {
+    setError('Failed to upload logo');
+    setUploadingLogo(false);
+  }
+};
+
+// Remove store logo
+const removeLogo = async () => {
+  setUploadingLogo(true);
+  try {
+    const res = await fetch(`${API_URL}/store/${storeId}/logo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        logo_url: null,
+        wallet_address: walletAddress
+      })
+    });
+    
+    if (res.ok) {
+      setStoreLogo(null);
+      const storeData = sessionStorage.getItem('storeData');
+      if (storeData) {
+        const store = JSON.parse(storeData);
+        store.logo_url = null;
+        sessionStorage.setItem('storeData', JSON.stringify(store));
+      }
+      setShowLogoUpload(false);
+    }
+  } catch (err) {
+    setError('Failed to remove logo');
+  }
+  setUploadingLogo(false);
+};
+
 // Send receipt email
 const sendReceiptEmail = async () => {
   if (!emailAddress || !emailAddress.includes('@')) {
@@ -395,7 +514,7 @@ const sendReceiptEmail = async () => {
   
   setSendingEmail(true);
   try {
-    const items = cart.length > 0 ? cart.map(item => ({
+    const orderItems = cart.length > 0 ? cart.map(item => ({
       name: item.name,
       quantity: item.quantity,
       unit_price: item.price
@@ -405,14 +524,15 @@ const sendReceiptEmail = async () => {
       unit_price: item.price
     }));
 
-    const res = await fetch('https://api.dltpays.com/api/v1/receipt/email', {
+    const res = await fetch('https://api.dltpays.com/nfc/api/v1/receipt/email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: emailAddress,
         store_name: storeName,
+        store_id: storeId,
         amount: getPaymentAmount(),
-        items: items,
+        items: orderItems,
         tx_hash: txHash
       })
     });
@@ -450,36 +570,28 @@ const printReceipt = () => {
         }
         .header {
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          margin-bottom: 30px;
+          gap: 12px;
+          margin-bottom: 20px;
           padding-bottom: 20px;
           border-bottom: 2px solid #e5e5e5;
         }
-        .logo-section {
-          display: flex;
-          align-items: center;
-          gap: 10px;
+        .store-logo {
+          width: 50px;
+          height: 50px;
+          border-radius: 10px;
+          object-fit: cover;
         }
-        .logo {
-          width: 40px;
-          height: 40px;
-          border-radius: 8px;
+        .store-info {
+          flex: 1;
         }
-        .brand {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
         .store-name {
-          font-size: 24px;
+          font-size: 20px;
           font-weight: 700;
-          text-align: right;
         }
         .receipt-label {
           font-size: 12px;
           color: #666;
-          text-align: right;
         }
         .date {
           font-size: 12px;
@@ -492,7 +604,7 @@ const printReceipt = () => {
         .item {
           display: flex;
           justify-content: space-between;
-          padding: 12px 0;
+          padding: 10px 0;
           border-bottom: 1px solid #eee;
         }
         .item-name {
@@ -514,39 +626,49 @@ const printReceipt = () => {
           align-items: center;
         }
         .total-label {
-          font-size: 18px;
+          font-size: 16px;
           font-weight: 600;
         }
         .total-amount {
-          font-size: 28px;
+          font-size: 24px;
           font-weight: 700;
           color: #10b981;
         }
         .tx-section {
-          margin-top: 30px;
-          padding: 15px;
+          margin-top: 20px;
+          padding: 12px;
           background: #f5f5f5;
           border-radius: 8px;
         }
         .tx-label {
-          font-size: 11px;
+          font-size: 10px;
           color: #666;
-          margin-bottom: 5px;
+          margin-bottom: 4px;
         }
         .tx-hash {
-          font-size: 10px;
+          font-size: 9px;
           font-family: monospace;
           word-break: break-all;
           color: #333;
         }
         .footer {
           margin-top: 30px;
-          text-align: center;
-          color: #999;
-          font-size: 12px;
+          padding-top: 20px;
+          border-top: 1px solid #eee;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
         }
-        .footer p {
-          margin: 5px 0;
+        .footer-logo {
+          width: 20px;
+          height: 20px;
+          border-radius: 4px;
+          opacity: 0.6;
+        }
+        .footer-text {
+          color: #999;
+          font-size: 11px;
         }
         @media print {
           body { padding: 0; }
@@ -555,11 +677,11 @@ const printReceipt = () => {
     </head>
     <body>
       <div class="header">
-        <div class="logo-section">
-          <img src="https://yesallofus.com/dltpayslogo1.png" alt="Logo" class="logo">
-          <span class="brand">YesAllOfUs</span>
-        </div>
-        <div>
+        ${storeLogo 
+          ? `<img src="${storeLogo}" alt="${storeName}" class="store-logo">`
+          : ''
+        }
+        <div class="store-info">
           <div class="store-name">${storeName}</div>
           <div class="receipt-label">Receipt</div>
         </div>
@@ -599,26 +721,19 @@ const printReceipt = () => {
       ` : ''}
       
       <div class="footer">
-        <p>Thank you for your payment!</p>
-        <p>Powered by YesAllOfUs · Payments on XRPL</p>
+        <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="footer-logo">
+        <span class="footer-text">Powered by YesAllOfUs</span>
       </div>
     </body>
     </html>
   `;
+  
   const printWindow = window.open('', '_blank');
-if (printWindow) {
-  printWindow.document.write(receiptHtml);
-  printWindow.document.close();
-  // Wait for logo to load before printing
-  const logo = printWindow.document.querySelector('.logo') as HTMLImageElement;
-  if (logo) {
-    logo.onload = () => printWindow.print();
-    logo.onerror = () => printWindow.print();
-    setTimeout(() => printWindow.print(), 1000); // Fallback
-  } else {
-    printWindow.print();
+  if (printWindow) {
+    printWindow.document.write(receiptHtml);
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 500);
   }
-}
 };
 
   // Group products by category
@@ -646,41 +761,119 @@ const filteredProducts = searchQuery
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans">
       
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-zinc-800">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="text-zinc-400 hover:text-white transition flex items-center gap-1"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back
-          </button>
-          
-          <h1 className="text-lg font-bold truncate max-w-[180px]">{storeName}</h1>
-  <button
-  onClick={() => router.push('/receipts?from=take-payment')}
-  className="text-zinc-400 hover:text-white transition p-2"
-  title="Receipts"
+<header className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-zinc-800">
+  <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+    <button
+      onClick={() => router.push('/dashboard')}
+      className="text-zinc-400 hover:text-white transition flex items-center gap-1"
+    >
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+      </svg>
+      Back
+    </button>
+    
+    <div className="flex items-center gap-2">
+      <button
+  onClick={() => setShowLogoUpload(true)}
+  className={`relative w-8 h-8 rounded-lg overflow-hidden transition flex-shrink-0 ${
+    storeLogo ? 'hover:opacity-80' : 'border border-zinc-700 hover:border-emerald-500'
+  }`}
+  title="Store logo"
 >
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-  </svg>
-</button>
-          <button
-  onClick={() => router.push('/receipts?from=take-payment')}
-  className="text-zinc-400 hover:text-white transition p-2"
-  title="Receipts"
->
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        {storeLogo ? (
+          <img src={storeLogo} alt="Logo" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+            <svg className="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-          </button>
+          </div>
+        )}
+      </button>
+      <h1 className="text-lg font-bold truncate max-w-[120px]">{storeName}</h1>
+    </div>
+    
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => router.push('/receipts?from=take-payment')}
+        className="text-zinc-400 hover:text-white transition p-2"
+        title="Receipts"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </button>
+      <button
+        onClick={() => setShowProductsManager(true)}
+        className="text-zinc-400 hover:text-white transition p-2"
+        title="Add Products"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+{/* Logo Upload Modal */}
+{showLogoUpload && (
+  <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+    <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm">
+      <h3 className="text-lg font-bold mb-4">Store Logo</h3>
+      
+      {storeLogo && (
+        <div className="mb-4 flex justify-center">
+          <img src={storeLogo} alt="Current logo" className="w-24 h-24 rounded-xl object-cover" />
         </div>
-      </header>
-
+      )}
+      
+      <label className="block mb-4">
+        <div className="bg-zinc-800 border-2 border-dashed border-zinc-700 hover:border-emerald-500 rounded-xl p-6 text-center cursor-pointer transition">
+          {uploadingLogo ? (
+            <div className="flex flex-col items-center">
+              <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+              <p className="text-zinc-400 text-sm">Uploading...</p>
+            </div>
+          ) : (
+            <>
+              <svg className="w-8 h-8 text-zinc-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <p className="text-zinc-400 text-sm">Click to upload image</p>
+              <p className="text-zinc-600 text-xs mt-1">Max 5MB</p>
+            </>
+          )}
+        </div>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleLogoUpload}
+          className="hidden"
+          disabled={uploadingLogo}
+        />
+      </label>
+      
+      <div className="flex gap-3">
+        {storeLogo && (
+          <button
+            onClick={removeLogo}
+            disabled={uploadingLogo}
+            className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 py-3 rounded-xl transition disabled:opacity-50"
+          >
+            Remove
+          </button>
+        )}
+        <button
+          onClick={() => setShowLogoUpload(false)}
+          className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
+        >
+          {storeLogo ? 'Done' : 'Cancel'}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       {/* Products Manager Modal */}
       {showProductsManager && storeId && walletAddress && (
         <div className="fixed inset-0 bg-black/90 z-50 overflow-y-auto">
