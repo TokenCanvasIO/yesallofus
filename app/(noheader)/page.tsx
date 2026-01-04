@@ -62,8 +62,50 @@ export default function WelcomePage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col">
+      {/* Custom animations */}
+      <style jsx global>{`
+        @keyframes breathe {
+  0%, 100% { transform: scale(1.2); opacity: 0.3; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+}
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-breathe {
+          animation: breathe 4s ease-in-out infinite;
+        }
+          @keyframes shine {
+  0%, 90%, 100% { opacity: 0; }
+  95% { opacity: 1; }
+}
+.logo-container {
+  position: relative;
+  overflow: hidden;
+}
+.logo-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shine 12s ease-in-out infinite;
+}
+        .animate-fade-in-up {
+          animation: fadeInUp 0.5s ease-out forwards;
+          opacity: 0;
+        }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+      `}
+      </style>
+
       {/* Subtle gradient background */}
-      <div className="fixed inset-0 bg-gradient-to-b from-emerald-950/20 via-transparent to-transparent pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-b from-emerald-950/50 via-emerald-950/10 to-transparent pointer-events-none" />
       
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-12 relative z-10">
         <div className="w-full max-w-md">
@@ -71,15 +113,17 @@ export default function WelcomePage() {
           {/* Logo */}
           <div className="flex flex-col items-center justify-center mb-10">
             <div className="relative mb-4">
-              <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full" />
-              <img 
-                src="https://yesallofus.com/dltpayslogo1.png" 
-                alt="YesAllOfUs" 
-                className="w-20 h-20 rounded-2xl relative z-10"
-              />
+              <div className="absolute inset-0 bg-emerald-500/40 blur-2xl rounded-full animate-breathe scale-150" />
+              <div className="logo-container rounded-2xl">
+  <img 
+    src="https://yesallofus.com/dltpayslogo1.png" 
+    alt="YesAllOfUs" 
+    className="w-20 h-20 rounded-2xl relative z-10"
+  />
+</div>
             </div>
             <h1 className="text-3xl font-bold tracking-tight">YesAllOfUs</h1>
-            <p className="text-zinc-500 text-sm mt-1">Instant affiliate payments</p>
+            <p className="text-zinc-500 text-sm mt-1">Tap. Pay. Earn.</p>
           </div>
 
           {/* User Type Selection */}
@@ -91,10 +135,10 @@ export default function WelcomePage() {
               <button
                 onClick={() => router.push('/dashboard')}
                 disabled={isLoading !== null}
-                className={`group p-6 rounded-2xl border transition-all duration-300 ${
+                className={`group p-6 rounded-2xl border transition-all duration-300 animate-fade-in-up delay-100 ${
                   isLoading === 'partner'
                     ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-zinc-800 hover:border-emerald-500/50 hover:bg-zinc-900/50'
+                    : 'border-transparent bg-zinc-800/30 hover:border-emerald-500/50 hover:bg-zinc-800/50 hover:shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)]'
                 } disabled:opacity-50`}
               >
                 {isLoading === 'partner' ? <LoadingSpinner /> : (
@@ -114,10 +158,10 @@ export default function WelcomePage() {
               <button
                 onClick={() => handleSelection('member')}
                 disabled={isLoading !== null}
-                className={`group p-6 rounded-2xl border transition-all duration-300 ${
+                className={`group p-6 rounded-2xl border transition-all duration-300 animate-fade-in-up delay-200 ${
                   isLoading === 'member'
                     ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-zinc-800 hover:border-emerald-500/50 hover:bg-zinc-900/50'
+                    : 'border-transparent bg-zinc-800/30 hover:border-sky-500/50 hover:bg-zinc-800/50 hover:shadow-[0_0_30px_-5px_rgba(14,165,233,0.3)]'
                 } disabled:opacity-50`}
               >
                 {isLoading === 'member' ? <LoadingSpinner /> : (
@@ -128,7 +172,7 @@ export default function WelcomePage() {
                       </svg>
                     </div>
                     <p className="font-semibold text-sm text-white">Member</p>
-                    <p className="text-zinc-500 text-xs mt-1">Pay & earn rewards</p>
+                    <p className="text-zinc-500 text-xs mt-1">Tap & earn</p>
                   </>
                 )}
               </button>
@@ -137,10 +181,10 @@ export default function WelcomePage() {
               <button
                 onClick={() => handleSelection('affiliate')}
                 disabled={isLoading !== null}
-                className={`group p-6 rounded-2xl border transition-all duration-300 ${
+                className={`group p-6 rounded-2xl border transition-all duration-300 animate-fade-in-up delay-300 ${
                   isLoading === 'affiliate'
                     ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-zinc-800 hover:border-emerald-500/50 hover:bg-zinc-900/50'
+                    : 'border-transparent bg-zinc-800/30 hover:border-amber-500/50 hover:bg-zinc-800/50 hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.3)]'
                 } disabled:opacity-50`}
               >
                 {isLoading === 'affiliate' ? <LoadingSpinner /> : (
@@ -151,7 +195,7 @@ export default function WelcomePage() {
                       </svg>
                     </div>
                     <p className="font-semibold text-sm text-white">Affiliate</p>
-                    <p className="text-zinc-500 text-xs mt-1">Earn commissions</p>
+                    <p className="text-zinc-500 text-xs mt-1">Share & earn</p>
                   </>
                 )}
               </button>
@@ -160,7 +204,7 @@ export default function WelcomePage() {
               <button
                 onClick={() => router.push('/home')}
                 disabled={isLoading !== null}
-                className="group p-6 rounded-2xl border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/30 transition-all duration-300 disabled:opacity-50"
+                className="group p-6 rounded-2xl border border-transparent bg-zinc-800/30 hover:border-zinc-600 hover:bg-zinc-800/50 hover:shadow-[0_0_30px_-5px_rgba(161,161,170,0.2)] transition-all duration-300 animate-fade-in-up delay-400 disabled:opacity-50"
               >
                 <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-zinc-800/50 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <svg className="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -174,7 +218,7 @@ export default function WelcomePage() {
           </div>
 
           {/* Terms */}
-          <div className="mb-6 bg-zinc-900/30 border border-zinc-800/50 rounded-xl p-4 backdrop-blur-sm">
+          <div className="mb-6 bg-zinc-900/30 border border-zinc-800/50 rounded-xl p-4 backdrop-blur-sm animate-fade-in-up delay-400">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -211,7 +255,7 @@ export default function WelcomePage() {
       </main>
 
       <footer className="p-6 text-center relative z-10">
-        <p className="text-zinc-700 text-xs">© 2026 YesAllOfUs. All rights reserved.</p>
+        <p className="text-zinc-700 text-xs">© 2025 YesAllOfUs. All rights reserved.</p>
       </footer>
     </div>
   );
