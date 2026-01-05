@@ -34,3 +34,15 @@ button:active {
 div[class*="cursor-pointer"]:active {
   transform: scale(0.97);
 }
+@layer base {
+  button,
+  [type="button"],
+  [type="submit"],
+  [type="reset"],
+  label,
+  a,
+  select,
+  [role="button"] {
+    @apply cursor-pointer;
+  }
+}

@@ -11,9 +11,10 @@ interface Payout {
 
 interface PayoutsTableProps {
   payouts: Payout[];
+  showBalances?: boolean;
 }
 
-export default function PayoutsTable({ payouts }: PayoutsTableProps) {
+export default function PayoutsTable({ payouts, showBalances = false }: PayoutsTableProps) {
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('en-GB', {
       day: 'numeric',
@@ -22,6 +23,10 @@ export default function PayoutsTable({ payouts }: PayoutsTableProps) {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const formatAmount = (amount: number) => {
+    return showBalances ? `$${amount.toFixed(2)}` : '****';
   };
 
   if (payouts.length === 0) {
@@ -52,7 +57,7 @@ export default function PayoutsTable({ payouts }: PayoutsTableProps) {
                 </td>
                 <td className="px-4 py-3 text-sm whitespace-nowrap">{payout.store_name}</td>
                 <td className="px-4 py-3 text-sm text-right text-emerald-400 font-medium whitespace-nowrap">
-                  ${payout.amount.toFixed(2)}
+                  {formatAmount(payout.amount)}
                 </td>
                 <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
                   {payout.tx_hash ? (

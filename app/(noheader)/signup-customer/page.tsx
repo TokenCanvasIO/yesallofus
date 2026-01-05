@@ -18,6 +18,7 @@ function SignupCustomerPage() {
 
   // Form state
   const [cardUid, setCardUid] = useState<string | null>(null);
+  const [cardName, setCardName] = useState('');
   const [scanning, setScanning] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -118,6 +119,7 @@ function SignupCustomerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           card_uid: cardUid,
+          card_name: cardName.trim() || null,
           store_id: storeId,
           name: name.trim() || null,
           email: email.trim().toLowerCase(),
@@ -175,6 +177,11 @@ function SignupCustomerPage() {
             <p className="text-zinc-300 text-sm mb-4">
               <strong className="text-white">{store.store_name}</strong> has signed you up!
             </p>
+            {cardName && (
+              <p className="text-zinc-400 text-sm mb-2">
+                Card: <span className="text-white">{cardName}</span>
+              </p>
+            )}
             <p className="text-zinc-400 text-sm">
               You'll receive a welcome email with a link to set up your member dashboard where you can earn rewards on every purchase.
             </p>
@@ -183,6 +190,7 @@ function SignupCustomerPage() {
             onClick={() => {
               setSuccess(false);
               setCardUid(null);
+              setCardName('');
               setName('');
               setEmail('');
               setPhone('');
@@ -199,33 +207,33 @@ function SignupCustomerPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Header */}
-<header className="border-b border-zinc-800 p-4">
-  <div className="max-w-md mx-auto flex items-center justify-between">
-    <div className="flex items-center gap-4">
-      <a 
-        href="/dashboard" 
-        className="text-zinc-400 hover:text-white transition flex items-center gap-1"
-      >
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-        <span className="text-sm">Dashboard</span>
-      </a>
-    </div>
-    <div className="flex items-center gap-3">
-      <span className="text-zinc-500 text-sm">{store.store_name}</span>
-      {store.logo_url ? (
-        <img 
-          src={store.logo_url} 
-          alt={store.store_name} 
-          className="w-8 h-8 rounded-lg object-cover"
-        />
-      ) : (
-        <Logo size={32} />
-      )}
-    </div>
-  </div>
-</header>
+      <header className="border-b border-zinc-800 p-4">
+        <div className="max-w-md mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <a 
+              href="/dashboard" 
+              className="text-zinc-400 hover:text-white transition flex items-center gap-1"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              <span className="text-sm">Dashboard</span>
+            </a>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-zinc-500 text-sm">{store.store_name}</span>
+            {store.logo_url ? (
+              <img 
+                src={store.logo_url} 
+                alt={store.store_name} 
+                className="w-8 h-8 rounded-lg object-cover"
+              />
+            ) : (
+              <Logo size={32} />
+            )}
+          </div>
+        </div>
+      </header>
 
       <main className="max-w-md mx-auto px-6 py-8">
         <h1 className="text-2xl font-bold mb-2">New Member Sign Up</h1>
@@ -250,22 +258,40 @@ function SignupCustomerPage() {
           </div>
 
           {cardUid ? (
-            <div className="flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-              <div className="flex items-center gap-3">
-                <span className="text-emerald-400 text-xl">💳</span>
-                <div>
-                  <p className="text-emerald-400 font-medium">Card Detected</p>
-                  <p className="text-zinc-500 text-sm font-mono">
-                    {cardUid.slice(0, 4)}...{cardUid.slice(-4)}
-                  </p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <span className="text-emerald-400 text-xl">💳</span>
+                  <div>
+                    <p className="text-emerald-400 font-medium">Card Detected</p>
+                    <p className="text-zinc-500 text-sm font-mono">
+                      {cardUid.slice(0, 4)}...{cardUid.slice(-4)}
+                    </p>
+                  </div>
                 </div>
+                <button
+                  onClick={() => {
+                    setCardUid(null);
+                    setCardName('');
+                  }}
+                  className="text-zinc-400 hover:text-white text-sm transition"
+                >
+                  Change
+                </button>
               </div>
-              <button
-                onClick={() => setCardUid(null)}
-                className="text-zinc-400 hover:text-white text-sm transition"
-              >
-                Change
-              </button>
+              
+              {/* Card Name Input */}
+              <div>
+                <label className="text-zinc-400 text-sm block mb-2">Card Name <span className="text-zinc-600">(optional)</span></label>
+                <input
+                  type="text"
+                  value={cardName}
+                  onChange={(e) => setCardName(e.target.value)}
+                  placeholder="e.g., Puffin Bus Card, Gym Card"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500"
+                />
+                <p className="text-zinc-600 text-xs mt-1">Help the customer identify this card later</p>
+              </div>
             </div>
           ) : scanning ? (
             <div className="text-center py-8">
@@ -300,7 +326,7 @@ function SignupCustomerPage() {
         <form onSubmit={handleSubmit}>
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-sm font-bold">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${cardUid ? 'bg-zinc-700 text-white' : 'bg-zinc-800 text-zinc-500'}`}>
                 2
               </div>
               <h2 className="font-semibold">Customer Details</h2>

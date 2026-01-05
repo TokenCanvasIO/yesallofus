@@ -195,7 +195,7 @@ export default function WelcomePage() {
                       </svg>
                     </div>
                     <p className="font-semibold text-sm text-white">Affiliate</p>
-                    <p className="text-zinc-500 text-xs mt-1">Share & earn</p>
+                    <p className="text-zinc-500 text-xs mt-1">Discover, share & earn</p>
                   </>
                 )}
               </button>

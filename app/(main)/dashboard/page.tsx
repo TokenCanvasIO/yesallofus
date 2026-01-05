@@ -1352,7 +1352,7 @@ return (
 </aside>
 
       {/* Main Content */}
-<main className="lg:ml-64 min-h-screen pt-20 lg:pt-16">
+<main className="lg:ml-64 min-h-screen pt-16">
         <div className="max-w-3xl mx-auto px-6 py-8">
 
         {error && (

@@ -7,9 +7,27 @@ interface DashboardHeaderProps {
   walletAddress?: string;
   storeId?: string;
   onSignOut?: () => void;
+  showBalances?: boolean;
+  onToggleBalances?: () => void;
 }
 
-export default function DashboardHeader({ walletAddress, storeId, onSignOut }: DashboardHeaderProps) {
+// Eye icon component
+const EyeIcon = ({ open }: { open: boolean }) => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    {open ? (
+      <>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+      </>
+    ) : (
+      <>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+      </>
+    )}
+  </svg>
+);
+
+export default function DashboardHeader({ walletAddress, storeId, onSignOut, showBalances = false, onToggleBalances }: DashboardHeaderProps) {
   const router = useRouter();
   const shortWallet = walletAddress 
     ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
@@ -17,12 +35,12 @@ export default function DashboardHeader({ walletAddress, storeId, onSignOut }: D
   const isConnected = !!walletAddress;
 
   return (
-    <header className="hidden sm:block sticky top-0 z-50 bg-[#0d0d0d]">
+    <header className="sticky top-0 z-50 bg-[#0d0d0d]">
       <div className="px-6 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 hover:opacity-80">
-          <Logo size={32} />
-          <span className="font-bold text-white text-xl">YesAllofUs</span>
-        </Link>
+  <Logo size={32} />
+  <span className="font-bold text-white text-xl hidden md:block">YesAllofUs</span>
+</Link>
 
         <div className="flex items-center gap-2">
           {isConnected && storeId && (
@@ -88,45 +106,60 @@ export default function DashboardHeader({ walletAddress, storeId, onSignOut }: D
               </div>
 
               {/* Staff */}
-<div className="relative group">
-  <button
-    onClick={() => router.push('/staff')}
-    className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
-  >
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-    </svg>
-  </button>
-  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
-    Staff
-  </span>
-</div>
+              <div className="relative group">
+                <button
+                  onClick={() => router.push('/staff')}
+                  className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </button>
+                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
+                  Staff
+                </span>
+              </div>
 
               <div className="w-px h-6 bg-zinc-700 mx-1"></div>
             </>
           )}
 
-          {isConnected ? (
-            <>
-              <div className="flex items-center gap-2 bg-zinc-800 px-3 py-1.5 rounded-lg">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                <span className="text-zinc-300 text-xs font-mono">{shortWallet}</span>
-              </div>
-              {onSignOut && (
-                <button
-                  onClick={onSignOut}
-                  className="text-zinc-500 hover:text-white text-sm px-3 py-1.5"
-                >
-                  Sign out
-                </button>
-              )}
-            </>
-          ) : (
-            <div className="flex items-center gap-2 bg-zinc-800 px-3 py-1.5 rounded-lg">
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              <span className="text-zinc-400 text-xs">Not connected</span>
+          {/* Eye icon - show/hide balances */}
+          {isConnected && onToggleBalances && (
+            <div className="relative group">
+              <button
+                onClick={onToggleBalances}
+                className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
+              >
+                <EyeIcon open={showBalances} />
+              </button>
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
+                {showBalances ? 'Hide balances' : 'Show balances'}
+              </span>
             </div>
           )}
+
+          {isConnected ? (
+  <>
+    <div className="hidden md:flex items-center gap-2 bg-zinc-800 px-3 py-1.5 rounded-lg">
+      <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+      <span className="text-zinc-300 text-xs font-mono">{shortWallet}</span>
+    </div>
+    {onSignOut && (
+      <button
+        onClick={onSignOut}
+        className="text-zinc-500 hover:text-white text-sm px-3 py-1.5 hidden md:block"
+      >
+        Sign out
+      </button>
+    )}
+  </>
+) : (
+  <div className="hidden md:flex items-center gap-2 bg-zinc-800 px-3 py-1.5 rounded-lg">
+    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+    <span className="text-zinc-400 text-xs">Not connected</span>
+  </div>
+)}
         </div>
       </div>
     </header>
