@@ -207,8 +207,8 @@ export default function StoreActivity({ storeId, walletAddress, showAmounts = fa
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex gap-1 bg-zinc-900 p-1 rounded-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+  <div className="flex gap-1 bg-zinc-900 p-1 rounded-lg flex-shrink-0">
           <button
             onClick={() => { setTab('affiliates'); setPage(0); }}
             className={`px-4 py-2 rounded-md text-sm font-medium transition ${
@@ -232,12 +232,12 @@ export default function StoreActivity({ storeId, walletAddress, showAmounts = fa
         </div>
 
         {tab === 'affiliates' ? (
-          <div className="relative">
-            <select
-              value={sortOption}
-              onChange={(e) => { setSortOption(e.target.value as any); setPage(0); }}
-              className="appearance-none bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 pr-8 text-sm text-zinc-300 cursor-pointer hover:border-zinc-700 transition focus:outline-none focus:border-emerald-500"
-            >
+  <div className="relative self-end sm:self-auto">
+    <select
+      value={sortOption}
+      onChange={(e) => { setSortOption(e.target.value as any); setPage(0); }}
+      className="appearance-none bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 pr-7 sm:pr-8 text-xs sm:text-sm text-zinc-300 cursor-pointer hover:border-zinc-700 transition focus:outline-none focus:border-emerald-500"
+    >
               <option value="rank">🏆 Top Earners</option>
               <option value="lowest">📉 Lowest First</option>
               <option value="newest">🆕 Newest First</option>

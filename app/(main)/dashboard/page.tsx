@@ -1352,7 +1352,7 @@ return (
 </aside>
 
       {/* Main Content */}
-<main className="lg:ml-64 min-h-screen pt-16">
+<main className="lg:ml-64 min-h-screen pt-14 lg:pt-8">
         <div className="max-w-3xl mx-auto px-6 py-8">
 
         {error && (
@@ -1450,7 +1450,7 @@ return (
             {/* ============================================================= */}
 {/* PAYOUT METHOD STATUS */}
 {/* ============================================================= */}
-<div id="payout-method" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+<div id="payout-method" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
   <h2 className="text-lg font-bold mb-4">Payout Method</h2>
 
   {/* Auto-sign enabled (works same for Web3Auth and Crossmark) */}

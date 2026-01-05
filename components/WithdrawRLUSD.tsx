@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import CollapsibleCard from './CollapsibleCard';
 
 const RLUSD_HEX = '524C555344000000000000000000000000000000';
 const RLUSD_ISSUER = 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De';
@@ -122,16 +123,18 @@ export default function WithdrawRLUSD({
   };
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold">💸 Withdraw RLUSD</h2>
-        <div className="flex items-center gap-2">
-          <div className="text-right">
-            <p className="text-zinc-500 text-xs">Available</p>
-            <p className="text-emerald-400 font-bold">
-              {showAmounts ? `$${rlusdBalance.toFixed(2)} RLUSD` : '••••••'}
-            </p>
-          </div>
+  <CollapsibleCard 
+    title="Withdraw RLUSD" 
+    icon="💸" 
+    defaultOpen={false}
+  >
+    <div className="flex items-center justify-end gap-2 mb-4">
+      <div className="text-right">
+        <p className="text-zinc-500 text-xs">Available</p>
+        <p className="text-emerald-400 font-bold">
+          {showAmounts ? `$${rlusdBalance.toFixed(2)} RLUSD` : '••••••'}
+        </p>
+      </div>
           {/* Refresh button */}
           <button
             onClick={handleRefresh}
@@ -167,7 +170,6 @@ export default function WithdrawRLUSD({
             )}
           </button>
         </div>
-      </div>
 
       <div className="space-y-4">
         {/* Destination Address */}
@@ -241,9 +243,9 @@ export default function WithdrawRLUSD({
             </span>
           ) : (
             'Withdraw RLUSD'
-          )}
-        </button>
-      </div>
+        )}
+      </button>
     </div>
-  );
+  </CollapsibleCard>
+);
 }
