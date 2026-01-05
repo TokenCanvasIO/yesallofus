@@ -146,7 +146,7 @@ export default function AffiliateDashboard() {
   const [walletStatus, setWalletStatus] = useState<WalletStatus | null>(null);
   const [publicStores, setPublicStores] = useState<PublicStore[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [loginMethod, setLoginMethod] = useState<string | null>(null);
   const [socialProvider, setSocialProvider] = useState<string | null>(null);
   
@@ -456,7 +456,7 @@ export default function AffiliateDashboard() {
   // Xaman connection
   const connectXaman = async () => {
     setConnectingXaman(true);
-    setError(null);
+    setError('');
     
     try {
       const res = await fetch(`${API_URL}/xaman/login`, {

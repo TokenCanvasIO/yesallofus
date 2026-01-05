@@ -2024,9 +2024,21 @@ return (
 {/* SIGN UP CUSTOMER BUTTON */}
 <div className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl p-6">
   <button
-    onClick={() => router.push(`/signup-customer?store=${store.store_id}`)}
-    className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white font-semibold text-lg py-4 rounded-xl transition flex items-center justify-center gap-3"
-  >
+  onClick={async () => {
+    // Set display to signup mode
+    try {
+      await fetch(`${API_URL}/display/${store.store_id}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'signup' })
+      });
+    } catch (err) {
+      console.error('Failed to set display status:', err);
+    }
+    router.push(`/signup-customer?store=${store.store_id}`);
+  }}
+  className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white font-semibold text-lg py-4 rounded-xl transition flex items-center justify-center gap-3"
+>
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
     </svg>

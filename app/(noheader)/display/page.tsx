@@ -17,7 +17,7 @@ interface DisplayData {
   cart: CartItem[];
   subtotal: number;
   total: number;
-  status: 'idle' | 'ready' | 'processing' | 'success' | 'error' | 'qr';
+  status: 'idle' | 'ready' | 'processing' | 'success' | 'error' | 'qr' | 'signup';
   qr_code?: string | null;
   tip?: number;
   tips_enabled?: boolean;
@@ -46,6 +46,17 @@ const [customTipInput, setCustomTipInput] = useState<string>('');
 const [isProcessing, setIsProcessing] = useState(false);
 const [showCustomTipModal, setShowCustomTipModal] = useState(false);
 
+// Signup form state
+const [signupCardUid, setSignupCardUid] = useState<string | null>(null);
+const [signupCardName, setSignupCardName] = useState('');
+const [signupName, setSignupName] = useState('');
+const [signupEmail, setSignupEmail] = useState('');
+const [signupPhone, setSignupPhone] = useState('');
+const [signupScanning, setSignupScanning] = useState(false);
+const [signupSubmitting, setSignupSubmitting] = useState(false);
+const [signupError, setSignupError] = useState<string | null>(null);
+const [signupSuccess, setSignupSuccess] = useState(false);
+
 // Sync selectedTip with data from API
 useEffect(() => {
   if (data?.tip !== undefined) {
@@ -62,6 +73,108 @@ const addTip = (tipAmount: number) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ tip: tipAmount })
   }).catch(err => console.error('Failed to add tip:', err));
+};
+
+// NFC Scan for signup
+const startSignupNFCScan = async () => {
+  setSignupError(null);
+
+  if (!('NDEFReader' in window)) {
+    setSignupError('NFC is not supported on this device. Please use Chrome on Android.');
+    return;
+  }
+
+  setSignupScanning(true);
+
+  try {
+    const ndef = new (window as any).NDEFReader();
+    await ndef.scan();
+
+    ndef.addEventListener('reading', async (event: any) => {
+      const serialNumber = event.serialNumber;
+      
+      if (!serialNumber) {
+        setSignupError('Could not read card. Please try again.');
+        setSignupScanning(false);
+        return;
+      }
+
+      const uid = serialNumber.replace(/:/g, '').toUpperCase();
+      setSignupCardUid(uid);
+      setSignupScanning(false);
+    });
+
+    ndef.addEventListener('readingerror', () => {
+      setSignupError('Error reading card. Please try again.');
+      setSignupScanning(false);
+    });
+
+  } catch (err: any) {
+    if (err.name === 'NotAllowedError') {
+      setSignupError('NFC permission denied. Please allow NFC access.');
+    } else if (err.name === 'NotSupportedError') {
+      setSignupError('NFC is not supported on this device.');
+    } else {
+      setSignupError('Failed to start NFC scan. Make sure NFC is enabled.');
+    }
+    setSignupScanning(false);
+  }
+};
+
+// Submit signup
+const handleSignupSubmit = async () => {
+  if (!signupCardUid) {
+    setSignupError('Please tap an NFC card first');
+    return;
+  }
+
+  if (!signupEmail) {
+    setSignupError('Email is required');
+    return;
+  }
+
+  setSignupSubmitting(true);
+  setSignupError(null);
+
+  try {
+    const res = await fetch(`${API_URL}/nfc/register-customer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        card_uid: signupCardUid,
+        card_name: signupCardName.trim() || null,
+        store_id: storeId,
+        name: signupName.trim() || null,
+        email: signupEmail.trim().toLowerCase(),
+        phone: signupPhone.trim() || null
+      })
+    });
+
+    const result = await res.json();
+
+    if (result.success) {
+      setSignupSuccess(true);
+    } else {
+      setSignupError(result.error || 'Registration failed');
+    }
+  } catch (err) {
+    setSignupError('Failed to register. Please try again.');
+  }
+
+  setSignupSubmitting(false);
+};
+
+// Reset signup form
+const resetSignupForm = () => {
+  setSignupCardUid(null);
+  setSignupCardName('');
+  setSignupName('');
+  setSignupEmail('');
+  setSignupPhone('');
+  setSignupError(null);
+  setSignupSuccess(false);
+  setSignupScanning(false);
+  setSignupSubmitting(false);
 };
 
 useEffect(() => {
@@ -509,6 +622,103 @@ if (val.status === 'qr') {
           Add Tip
         </button>
       </div>
+    </div>
+  </div>
+)}
+
+{/* Signup Customer State */}
+{status === 'signup' && (
+  <div className="flex-1 flex flex-col items-center justify-center p-4">
+    <div className="max-w-2xl w-full">
+      
+      {/* Welcome Header */}
+      <div className="text-center mb-10">
+        <div className="inline-flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-emerald-500/20 to-sky-500/20 rounded-full mb-6">
+          <span className="text-5xl sm:text-7xl">👋</span>
+        </div>
+        <h1 className="text-4xl sm:text-6xl font-bold mb-3 bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
+          Welcome to {store_name}
+        </h1>
+        <p className="text-zinc-400 text-xl sm:text-2xl">
+          Join our rewards program and earn on every purchase
+        </p>
+      </div>
+
+      {/* Benefits */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-10">
+        <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-5 sm:p-6 text-center">
+          <div className="text-3xl sm:text-4xl mb-3">💰</div>
+          <p className="text-white font-semibold text-lg mb-1">Earn Rewards</p>
+          <p className="text-zinc-500 text-sm">Get cashback on every purchase</p>
+        </div>
+        <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-5 sm:p-6 text-center">
+          <div className="text-3xl sm:text-4xl mb-3">⚡</div>
+          <p className="text-white font-semibold text-lg mb-1">Instant Payments</p>
+          <p className="text-zinc-500 text-sm">Just tap your card to pay</p>
+        </div>
+        <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-5 sm:p-6 text-center">
+          <div className="text-3xl sm:text-4xl mb-3">🎁</div>
+          <p className="text-white font-semibold text-lg mb-1">Refer Friends</p>
+          <p className="text-zinc-500 text-sm">Earn more when friends join</p>
+        </div>
+      </div>
+
+      {/* Card Tap Animation */}
+      <div className="bg-zinc-900/80 border border-zinc-800 rounded-3xl p-8 sm:p-10">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
+          
+          {/* NFC Animation */}
+          <div className="relative">
+            <div className="w-32 h-32 sm:w-40 sm:h-40 bg-emerald-500/10 rounded-full flex items-center justify-center">
+              <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
+              <div className="absolute inset-4 bg-emerald-500/10 rounded-full animate-ping" style={{ animationDuration: '2s', animationDelay: '0.3s' }}></div>
+              <div className="absolute inset-8 bg-emerald-500/10 rounded-full animate-pulse"></div>
+              <svg className="w-16 h-16 sm:w-20 sm:h-20 text-emerald-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Instructions */}
+          <div className="text-center sm:text-left">
+            <p className="text-2xl sm:text-3xl font-bold text-emerald-400 mb-2">
+              Tap Your Card
+            </p>
+            <p className="text-zinc-400 text-lg sm:text-xl mb-4">
+              Hold your NFC card near the terminal
+            </p>
+            <div className="flex items-center justify-center sm:justify-start gap-2 text-zinc-500">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm sm:text-base">Staff will complete your registration</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Trust badges */}
+      <div className="flex items-center justify-center gap-6 mt-8 text-zinc-600">
+        <div className="flex items-center gap-2">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <span className="text-sm">Secure</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span className="text-sm">Instant</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span className="text-sm">Protected</span>
+        </div>
+      </div>
+
     </div>
   </div>
 )}
