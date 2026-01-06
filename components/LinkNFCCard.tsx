@@ -295,8 +295,8 @@ export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCard
                 </div>
               ) : (
                 /* Display Mode */
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div className="flex items-center gap-3">
                     <span className="text-emerald-400 text-lg">✓</span>
                     <div>
                       <div className="flex items-center gap-2">
@@ -313,26 +313,21 @@ export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCard
                           </svg>
                         </button>
                       </div>
-                      <div className="flex items-center gap-2 text-zinc-500 text-sm">
-                        <span className="font-mono">
-                          {card.card_uid.slice(0, 4)}...{card.card_uid.slice(-4)}
-                        </span>
-                        {card.linked_at && (
-                          <>
-                            <span>·</span>
-                            <span>Added {formatDate(card.linked_at)}</span>
-                          </>
-                        )}
-                      </div>
+                      <p className="text-zinc-500 text-sm font-mono">
+  {card.card_uid.slice(0, 4)}...{card.card_uid.slice(-4)}
+  {card.linked_at && (
+    <span className="font-sans ml-2">· Added {formatDate(card.linked_at)}</span>
+  )}
+</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => unlinkCard(card.card_uid, card.card_name)}
-                    className="text-zinc-500 hover:text-red-400 text-sm transition"
-                  >
-                    Remove
-                  </button>
-                </div>
+<button
+  onClick={() => unlinkCard(card.card_uid, card.card_name)}
+  className="text-zinc-500 hover:text-red-400 text-sm transition self-end sm:self-auto"
+>
+  Remove
+</button>
+</div>
               )}
             </div>
           ))}

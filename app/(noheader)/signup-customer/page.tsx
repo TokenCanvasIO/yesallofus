@@ -130,8 +130,21 @@ function SignupCustomerPage() {
       const data = await res.json();
 
       if (data.success) {
-        setSuccess(true);
-      } else {
+  setSuccess(true);
+  
+  // Reset display to idle after 5 seconds
+  setTimeout(async () => {
+    try {
+      await fetch(`${NFC_API_URL}/display/${storeId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'idle' })
+      });
+    } catch (err) {
+      console.error('Failed to reset display:', err);
+    }
+  }, 5000);
+} else {
         setError(data.error || 'Registration failed');
       }
     } catch (err) {
@@ -168,7 +181,19 @@ function SignupCustomerPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-6">
         <div className="max-w-md w-full text-center">
-          <div className="text-6xl mb-6">🎉</div>
+          <div className="mb-6">
+  {store.logo_url ? (
+    <img 
+      src={store.logo_url} 
+      alt={store.store_name} 
+      className="w-20 h-20 rounded-2xl object-cover mx-auto"
+    />
+  ) : (
+    <div className="flex justify-center">
+      <Logo size={80} />
+    </div>
+  )}
+</div>
           <h1 className="text-2xl font-bold mb-2">Welcome to YesAllOfUs!</h1>
           <p className="text-zinc-400 mb-6">
             Your card is now linked. Check your email for next steps.
@@ -199,6 +224,11 @@ function SignupCustomerPage() {
           >
             Register another customer
           </button>
+          {/* Powered by */}
+<div className="mt-8 pt-6 border-t border-zinc-800 flex items-center justify-center gap-2">
+  <Logo size={20} />
+  <span className="text-zinc-500 text-sm">Powered by YesAllOfUs</span>
+</div>
         </div>
       </div>
     );

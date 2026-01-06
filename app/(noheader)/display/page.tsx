@@ -629,90 +629,71 @@ if (val.status === 'qr') {
 {/* Signup Customer State */}
 {status === 'signup' && (
   <div className="flex-1 flex flex-col items-center justify-center p-4">
-    <div className="max-w-2xl w-full">
+    <div className="max-w-xl w-full text-center">
       
-      {/* Welcome Header */}
-      <div className="text-center mb-10">
-        <div className="inline-flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-emerald-500/20 to-sky-500/20 rounded-full mb-6">
-          <span className="text-5xl sm:text-7xl">👋</span>
-        </div>
-        <h1 className="text-4xl sm:text-6xl font-bold mb-3 bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
-          Welcome to {store_name}
-        </h1>
-        <p className="text-zinc-400 text-xl sm:text-2xl">
-          Join our rewards program and earn on every purchase
-        </p>
-      </div>
-
-      {/* Benefits */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-10">
-        <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-5 sm:p-6 text-center">
-          <div className="text-3xl sm:text-4xl mb-3">💰</div>
-          <p className="text-white font-semibold text-lg mb-1">Earn Rewards</p>
-          <p className="text-zinc-500 text-sm">Get cashback on every purchase</p>
-        </div>
-        <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-5 sm:p-6 text-center">
-          <div className="text-3xl sm:text-4xl mb-3">⚡</div>
-          <p className="text-white font-semibold text-lg mb-1">Instant Payments</p>
-          <p className="text-zinc-500 text-sm">Just tap your card to pay</p>
-        </div>
-        <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-5 sm:p-6 text-center">
-          <div className="text-3xl sm:text-4xl mb-3">🎁</div>
-          <p className="text-white font-semibold text-lg mb-1">Refer Friends</p>
-          <p className="text-zinc-500 text-sm">Earn more when friends join</p>
+      {/* Sparkle Icon */}
+      <div className="inline-flex items-center justify-center w-28 h-28 sm:w-36 sm:h-36 mb-8 relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-sky-500/20 rounded-full blur-xl"></div>
+        <div className="relative bg-gradient-to-br from-emerald-500/10 to-sky-500/10 rounded-full p-6 sm:p-8 border border-emerald-500/20">
+          <svg className="w-14 h-14 sm:w-18 sm:h-18 text-emerald-400" fill="none" viewBox="0 0 24 24">
+            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3v1m0 16v1m-9-9h1m16 0h1m-2.636-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8l1.5 3.5L17 13l-3.5 1.5L12 18l-1.5-3.5L7 13l3.5-1.5L12 8z" />
+          </svg>
         </div>
       </div>
 
-      {/* Card Tap Animation */}
-      <div className="bg-zinc-900/80 border border-zinc-800 rounded-3xl p-8 sm:p-10">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
+      {/* Welcome Text */}
+      <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-white">
+        Welcome to {store_name}
+      </h1>
+      <p className="text-zinc-400 text-lg sm:text-xl mb-12 max-w-md mx-auto">
+        Join our rewards program and start earning on every purchase
+      </p>
+
+      {/* Card Tap Section */}
+      <div className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-8 sm:p-10 backdrop-blur">
+        <div className="flex flex-col items-center gap-6">
           
           {/* NFC Animation */}
-          <div className="relative">
-            <div className="w-32 h-32 sm:w-40 sm:h-40 bg-emerald-500/10 rounded-full flex items-center justify-center">
-              <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
-              <div className="absolute inset-4 bg-emerald-500/10 rounded-full animate-ping" style={{ animationDuration: '2s', animationDelay: '0.3s' }}></div>
-              <div className="absolute inset-8 bg-emerald-500/10 rounded-full animate-pulse"></div>
-              <svg className="w-16 h-16 sm:w-20 sm:h-20 text-emerald-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28">
+            <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
+            <div className="absolute inset-3 bg-emerald-500/15 rounded-full animate-ping" style={{ animationDuration: '2s', animationDelay: '0.4s' }}></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/30">
+                <svg className="w-10 h-10 sm:w-12 sm:h-12 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
             </div>
           </div>
 
           {/* Instructions */}
-          <div className="text-center sm:text-left">
-            <p className="text-2xl sm:text-3xl font-bold text-emerald-400 mb-2">
+          <div>
+            <p className="text-2xl sm:text-3xl font-semibold text-white mb-2">
               Tap Your Card
             </p>
-            <p className="text-zinc-400 text-lg sm:text-xl mb-4">
-              Hold your NFC card near the terminal
+            <p className="text-zinc-500 text-base sm:text-lg">
+              Staff will complete your registration
             </p>
-            <div className="flex items-center justify-center sm:justify-start gap-2 text-zinc-500">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-sm sm:text-base">Staff will complete your registration</span>
-            </div>
           </div>
         </div>
       </div>
 
       {/* Trust badges */}
-      <div className="flex items-center justify-center gap-6 mt-8 text-zinc-600">
+      <div className="flex items-center justify-center gap-8 mt-10 text-zinc-600">
         <div className="flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
           <span className="text-sm">Secure</span>
         </div>
         <div className="flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
           <span className="text-sm">Instant</span>
         </div>
         <div className="flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
           </svg>
           <span className="text-sm">Protected</span>
