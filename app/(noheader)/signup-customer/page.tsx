@@ -194,7 +194,7 @@ function SignupCustomerPage() {
     </div>
   )}
 </div>
-          <h1 className="text-2xl font-bold mb-2">Welcome to YesAllOfUs!</h1>
+          <h1 className="text-2xl font-bold mb-2">Welcome to {store.store_name}!</h1>
           <p className="text-zinc-400 mb-6">
             Your card is now linked. Check your email for next steps.
           </p>

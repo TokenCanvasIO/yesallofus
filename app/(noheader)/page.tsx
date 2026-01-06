@@ -245,7 +245,7 @@ export default function WelcomePage() {
               </span>
             </label>
             <p className="text-zinc-600 text-xs mt-3 pl-7 leading-relaxed">
-              A secure, non-custodial wallet will be created using your social account. Only you control your funds.
+              A secure, non-custodial wallet will be created using your social account.
             </p>
           </div>
 

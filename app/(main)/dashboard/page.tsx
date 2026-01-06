@@ -12,6 +12,8 @@ import Logo from '@/components/Logo';
 import { useRouter } from 'next/navigation';
 const API_URL = 'https://api.dltpays.com/api/v1';
 import LoginScreen from '@/components/LoginScreen';
+import PendingCustomers from '@/components/PendingCustomers';
+import EarnInterest from '@/components/EarnInterest';
 
 export default function StoreDashboard() {
   const [step, setStep] = useState<'login' | 'xaman' | 'dashboard'>('login');
@@ -90,9 +92,19 @@ const [showDisconnectModal, setShowDisconnectModal] = useState(false);
 
   // Sidebar scroll function
   const scrollToSection = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    setSidebarOpen(false);
-  };
+  const element = document.getElementById(id);
+  if (element) {
+    const headerOffset = 80; // Height of header + some padding
+    const elementPosition = element.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+    
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth'
+    });
+  }
+  setSidebarOpen(false);
+};
 
   // Check URL for claim token on load
   useEffect(() => {
@@ -991,17 +1003,142 @@ setStep('dashboard');
   // DASHBOARD - Navigation items for sidebar
   // =========================================================================
   const navItems = [
-    { id: 'payout-method', label: 'Payout Method', icon: '💳' },
-    { id: 'wallet-funding', label: 'Wallet', icon: '💰', show: walletType === 'web3auth' },
-    { id: 'auto-sign', label: 'Auto-Sign', icon: '⚡', show: !store?.auto_signing_enabled },
-    { id: 'commission-rates', label: 'Commission Rates', icon: '📊' },
-    { id: 'affiliate-link', label: 'Affiliate Link', icon: '🔗' },
-    { id: 'api-credentials', label: 'API Credentials', icon: '🔑' },
-    { id: 'return-wordpress', label: 'Return to Site', icon: '↩️', show: !!store?.platform_return_url },
-    { id: 'quick-links', label: 'Quick Links', icon: '📚' },
-    { id: 'activity', label: 'Activity', icon: '📈' },
-    { id: 'danger-zone', label: 'Danger Zone', icon: '⚠️' },
-  ].filter(item => item.show !== false);
+  { 
+    id: 'payout-method', 
+    label: 'Payout Method', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+      </svg>
+    )
+  },
+  { 
+    id: 'pending-customers', 
+    label: 'Pending Customers', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+      </svg>
+    )
+  },
+  { 
+  id: 'earn-interest', 
+  label: (
+    <span className="flex items-center gap-2">
+      Earn Interest
+      <span className="bg-indigo-500/20 text-indigo-400 text-[10px] px-1.5 py-0.5 rounded-full">Soon</span>
+    </span>
+  ),
+  icon: (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+    </svg>
+  )
+},
+{ 
+  id: 'signup-customer', 
+  label: 'Sign Up Customer', 
+  icon: (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+    </svg>
+  )
+},
+  { 
+    id: 'wallet-funding', 
+    label: 'Top Up Wallet', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m6-6H6" />
+      </svg>
+    ),
+    show: walletType === 'web3auth' && !walletNeedsFunding && !walletNeedsTrustline
+  },
+  { 
+    id: 'withdraw', 
+    label: 'Withdraw', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+      </svg>
+    ),
+    show: walletType === 'web3auth' && !walletNeedsFunding && !walletNeedsTrustline
+  },
+  { 
+    id: 'auto-sign', 
+    label: 'Auto-Sign', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+      </svg>
+    ),
+    show: !store?.auto_signing_enabled
+  },
+  { 
+    id: 'commission-rates', 
+    label: 'Commission Rates', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+      </svg>
+    )
+  },
+  { 
+    id: 'affiliate-link', 
+    label: 'Affiliate Link', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+      </svg>
+    )
+  },
+  { 
+    id: 'api-credentials', 
+    label: 'API Credentials', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+      </svg>
+    )
+  },
+  { 
+    id: 'return-wordpress', 
+    label: 'Return to Site', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+      </svg>
+    ),
+    show: !!store?.platform_return_url
+  },
+  { 
+    id: 'quick-links', 
+    label: 'Quick Links', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+      </svg>
+    )
+  },
+  { 
+    id: 'activity', 
+    label: 'Activity', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+      </svg>
+    )
+  },
+  { 
+    id: 'danger-zone', 
+    label: 'Danger Zone', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+      </svg>
+    )
+  },
+].filter(item => item.show !== false);
  // =========================================================================
 // DASHBOARD
 // =========================================================================
@@ -1047,16 +1184,16 @@ return (
 
   <nav className="p-4 space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
     {store &&
-      navItems.map((item) => (
-        <button
-          key={item.id}
-          onClick={() => scrollToSection(item.id)}
-          className="w-full flex items-center gap-3 px-3 py-2 text-left text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition"
-        >
-          <span>{item.icon}</span>
-          <span className="text-sm">{item.label}</span>
-        </button>
-      ))}
+  navItems.map((item) => (
+    <button
+      key={item.id}
+      onClick={() => scrollToSection(item.id)}
+      className="w-full flex items-center gap-3 px-3 py-2 text-left text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition"
+    >
+      <span className="text-zinc-500">{item.icon}</span>
+      <span className="text-sm">{item.label}</span>
+    </button>
+  ))}
   </nav>
 
   <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-zinc-800">
@@ -1671,23 +1808,25 @@ return (
       onToggleAmounts={() => setShowAmounts(!showAmounts)} 
       onRefresh={refreshWalletStatus} 
     />
-    <WithdrawRLUSD
-  walletAddress={walletAddress}
-  rlusdBalance={walletRlusdBalance}
-  showAmounts={showAmounts}
-  onToggleAmounts={() => setShowAmounts(!showAmounts)}
-  onRefresh={refreshWalletStatus}
-  onSuccess={() => {
-    fetch(`${API_URL}/wallet/status/${walletAddress}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setWalletXrpBalance(data.xrp_balance || 0);
-          setWalletRlusdBalance(data.rlusd_balance || 0);
-        }
-      });
-  }}
-/>
+    <div id="withdraw">
+      <WithdrawRLUSD
+        walletAddress={walletAddress}
+        rlusdBalance={walletRlusdBalance}
+        showAmounts={showAmounts}
+        onToggleAmounts={() => setShowAmounts(!showAmounts)}
+        onRefresh={refreshWalletStatus}
+        onSuccess={() => {
+          fetch(`${API_URL}/wallet/status/${walletAddress}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                setWalletXrpBalance(data.xrp_balance || 0);
+                setWalletRlusdBalance(data.rlusd_balance || 0);
+              }
+            });
+        }}
+      />
+    </div>
   </div>
 )}
 
@@ -1817,8 +1956,18 @@ return (
   <p className="text-zinc-500 text-sm text-center mt-3">Accept contactless payments from customers</p>
 </div>
 
+{/* PENDING CUSTOMERS */}
+<div id="pending-customers">
+  <PendingCustomers storeId={store.store_id} walletAddress={walletAddress} />
+</div>
+
+{/* EARN INTEREST */}
+<div id="earn-interest">
+  <EarnInterest />
+</div>
+
 {/* SIGN UP CUSTOMER BUTTON */}
-<div className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl p-6">
+<div id="signup-customer" className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl p-6">
   <button
   onClick={async () => {
     // Set display to signup mode

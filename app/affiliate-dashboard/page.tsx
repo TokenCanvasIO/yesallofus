@@ -7,6 +7,8 @@ import QRCodeModal from '@/components/QRCodeModal';
 import LinkNFCCard from '@/components/LinkNFCCard';
 import TapToPaySettings from '@/components/TapToPaySettings';
 import LoginScreen from '@/components/LoginScreen';
+import MyPendingStatus from '@/components/MyPendingStatus';
+import EarnInterest from '@/components/EarnInterest';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
 
@@ -618,6 +620,7 @@ const NavIcon = ({ name }: { name: string }) => {
   const navItems = [
     { id: 'earnings', label: 'Total Earnings', icon: 'earnings' },
     { id: 'wallet-status', label: 'Wallet Status', icon: 'wallet', show: !!walletStatus },
+    { id: 'earn-interest', label: (<span className="flex items-center gap-2">Earn Interest<span className="bg-indigo-500/20 text-indigo-400 text-[10px] px-1.5 py-0.5 rounded-full">Soon</span></span>), icon: 'earnings' },
     { id: 'payment-cards', label: 'Payment Cards', icon: 'card' },
     { id: 'tap-to-pay', label: 'Tap-to-Pay', icon: 'tap' },
     { id: 'browser-wallet', label: 'Browser Wallet', icon: 'crossmark' },
@@ -737,8 +740,8 @@ const NavIcon = ({ name }: { name: string }) => {
         </aside>
 
         {/* Main Content */}
-        <main className="lg:ml-64 min-h-screen pt-20 lg:pt-16">
-          <div className="max-w-3xl mx-auto px-6 py-8">
+        <main className="lg:ml-64 min-h-screen pt-6">
+          <div className="max-w-3xl mx-auto px-6 pb-8 pt-0">
             
             {/* Header */}
             <div className="mb-6">
@@ -772,6 +775,12 @@ const NavIcon = ({ name }: { name: string }) => {
                 <p className="text-red-400">{error}</p>
               </div>
             )}
+
+            {/* PENDING SIGNUP STATUS */}
+<MyPendingStatus 
+  walletAddress={walletAddress} 
+  email={new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('email') || undefined}
+/>
 
             {/* 1. TOTAL EARNED */}
 <div id="earnings">
@@ -868,6 +877,11 @@ const NavIcon = ({ name }: { name: string }) => {
                     </div>
                   </div>
 
+                  {/* EARN INTEREST */}
+<div id="earn-interest">
+  <EarnInterest />
+</div>
+
                   {/* Web3Auth Actions */}
                   {loginMethod === 'web3auth' && (
                     <div className="mt-4 pt-4 border-t border-zinc-800">
@@ -931,8 +945,8 @@ const NavIcon = ({ name }: { name: string }) => {
               )}
             </div>
 
-            {/* 5. SOCIAL WALLET (Web3Auth) */}
-<div id="social-wallet">
+            {/* 5. TAP-TO-PAY WALLET (Web3Auth) */}
+<div id="tap-to-pay">
   <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
     <div className="flex items-center gap-4 mb-4">
       <div className="flex -space-x-2">
@@ -956,6 +970,18 @@ const NavIcon = ({ name }: { name: string }) => {
       <div>
         <h2 className="text-xl font-bold">Tap-to-Pay Wallet</h2>
         <p className="text-zinc-400 text-sm">Enable instant NFC payments</p>
+      </div>
+    </div>
+
+    {/* £25 Limit Notice */}
+    <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-3 mb-4">
+      <div className="flex items-center gap-2 text-zinc-300 text-sm">
+        <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>
+          Auto-pay limit: <strong className="text-white">£25</strong> per transaction (no KYC required)
+        </span>
       </div>
     </div>
 
