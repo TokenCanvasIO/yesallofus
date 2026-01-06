@@ -259,7 +259,7 @@ const checkAutoSignStatus = async (wallet: string, method: string) => {
   if (method !== 'web3auth') return;
   
   try {
-    const res = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${wallet}`);
+    const res = await fetch(`https://api.dltpays.com/nfc/api/v1/customer/autosign-status/${wallet}`);
     const data = await res.json();
     if (data.success) {
       setAutoSignEnabled(data.auto_sign_enabled);
@@ -288,7 +288,7 @@ const setupAutoSignWeb3Auth = async () => {
     }
 
     // Get platform signer address from API
-    const settingsRes = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/setup-autosign`, {
+    const settingsRes = await fetch(`https://api.dltpays.com/nfc/api/v1/customer/setup-autosign`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ wallet_address: walletAddress })
@@ -338,7 +338,7 @@ const setupAutoSignWeb3Auth = async () => {
     console.log('SignerListSet result:', result);
 
     // Verify the setup
-    const verifyRes = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${walletAddress}`);
+    const verifyRes = await fetch(`https://api.dltpays.com/nfc/api/v1/customer/autosign-status/${walletAddress}`);
     const verifyData = await verifyRes.json();
 
     if (verifyData.auto_sign_enabled) {
