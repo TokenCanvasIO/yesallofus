@@ -179,6 +179,11 @@ export default function AffiliateDashboard() {
   const [withdrawAddress, setWithdrawAddress] = useState('');
   const [withdrawCurrency, setWithdrawCurrency] = useState<'XRP' | 'RLUSD'>('RLUSD');
   const [withdrawing, setWithdrawing] = useState(false);
+
+  // Add auto sign
+const [autoSignEnabled, setAutoSignEnabled] = useState(false);
+const [settingUpAutoSign, setSettingUpAutoSign] = useState(false);
+const [showAutoSignPrompt, setShowAutoSignPrompt] = useState(false);
   
   // Ref to prevent double registration
   const registeringRef = useRef(false);
@@ -196,7 +201,7 @@ useEffect(() => {
   }
 }, []);
 
-// Update completeCustomerSignup to check sessionStorage
+    // Update completeCustomerSignup to check sessionStorage
 const completeCustomerSignup = async (wallet: string) => {
   // First check URL params
   const urlParams = new URLSearchParams(window.location.search);
@@ -247,6 +252,107 @@ const completeCustomerSignup = async (wallet: string) => {
   } catch (err) {
     console.error('Failed to complete customer signup:', err);
   }
+};
+
+// Check auto-sign status after login
+const checkAutoSignStatus = async (wallet: string, method: string) => {
+  if (method !== 'web3auth') return;
+  
+  try {
+    const res = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${wallet}`);
+    const data = await res.json();
+    if (data.success) {
+      setAutoSignEnabled(data.auto_sign_enabled);
+      if (!data.auto_sign_enabled) {
+        setShowAutoSignPrompt(true);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to check auto-sign status:', err);
+  }
+};
+
+// Setup auto-sign for Web3Auth users
+const setupAutoSignWeb3Auth = async () => {
+  if (!walletAddress) return;
+
+  setSettingUpAutoSign(true);
+  setError(null);
+
+  try {
+    const { getWeb3Auth } = await import('@/lib/web3auth');
+    const web3auth = await getWeb3Auth();
+    
+    if (!web3auth || !web3auth.provider) {
+      throw new Error('Web3Auth session not available. Please sign in again.');
+    }
+
+    // Get platform signer address from API
+    const settingsRes = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/setup-autosign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet_address: walletAddress })
+    });
+    const settingsData = await settingsRes.json();
+    
+    if (settingsData.error) {
+      throw new Error(settingsData.error);
+    }
+
+    // If signer already exists, we're done
+    if (settingsData.signer_exists || settingsData.auto_sign_enabled) {
+      setAutoSignEnabled(true);
+      setShowAutoSignPrompt(false);
+      setSettingUpAutoSign(false);
+      return;
+    }
+
+    const platformSignerAddress = settingsData.platform_signer_address;
+    if (!platformSignerAddress) {
+      throw new Error('Platform signer not configured');
+    }
+
+    // Build SignerListSet transaction
+    const signerListSetTx = {
+      TransactionType: 'SignerListSet',
+      Account: walletAddress,
+      SignerQuorum: 1,
+      SignerEntries: [
+        {
+          SignerEntry: {
+            Account: platformSignerAddress,
+            SignerWeight: 1
+          }
+        }
+      ]
+    };
+
+    // Sign and submit via Web3Auth
+    const result = await web3auth.provider.request({
+      method: 'xrpl_submitTransaction',
+      params: {
+        transaction: signerListSetTx
+      }
+    });
+
+    console.log('SignerListSet result:', result);
+
+    // Verify the setup
+    const verifyRes = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${walletAddress}`);
+    const verifyData = await verifyRes.json();
+
+    if (verifyData.auto_sign_enabled) {
+      setAutoSignEnabled(true);
+      setShowAutoSignPrompt(false);
+    } else {
+      throw new Error('Auto-sign setup failed. Please try again.');
+    }
+
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to enable auto-sign';
+    setError(message);
+  }
+  setSettingUpAutoSign(false);
 };
 
   // Check for existing session on mount
@@ -379,8 +485,15 @@ const completeCustomerSignup = async (wallet: string) => {
     setSocialProvider(extras.socialProvider);
     sessionStorage.setItem('socialProvider', extras.socialProvider);
   }
+  
+  // Complete customer signup if from email link
+  completeCustomerSignup(wallet);
+  
   fetchDashboard(wallet);
   fetchWalletStatus(wallet);
+  
+  // Check auto-sign status for Web3Auth users
+checkAutoSignStatus(wallet, method);
 };
 
   // Sign out - exits dashboard completely
@@ -810,7 +923,37 @@ const NavIcon = ({ name }: { name: string }) => {
   walletAddress={walletAddress} 
   email={new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('email') || undefined}
 />
-
+{/* AUTO-SIGN SETUP PROMPT - Show if Web3Auth but not auto-sign enabled */}
+{loginMethod === 'web3auth' && showAutoSignPrompt && !autoSignEnabled && (
+  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6 mb-6">
+    <div className="flex items-center gap-3 mb-4">
+      <div className="text-2xl">⚡</div>
+      <div>
+        <h3 className="text-lg font-bold text-amber-400">Enable Tap-to-Pay</h3>
+        <p className="text-zinc-400 text-sm">One more step to enable instant NFC payments</p>
+      </div>
+    </div>
+    
+    <p className="text-zinc-300 text-sm mb-4">
+      Sign once to enable automatic payments when you tap your NFC card. Without this, payments will fail.
+    </p>
+    
+    <button
+      onClick={setupAutoSignWeb3Auth}
+      disabled={settingUpAutoSign}
+      className="w-full bg-amber-500 hover:bg-amber-400 text-black font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+    >
+      {settingUpAutoSign ? (
+        <>
+          <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
+          Setting up...
+        </>
+      ) : (
+        '🔐 Enable Tap-to-Pay Now'
+      )}
+    </button>
+  </div>
+)}
             {/* 1. TOTAL EARNED */}
 <div id="earnings">
   {dashboardData && dashboardData.stores.length > 0 ? (
