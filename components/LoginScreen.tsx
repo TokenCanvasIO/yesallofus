@@ -44,43 +44,59 @@ export default function LoginScreen({
   const methodKey = storagePrefix === 'vendor' ? 'vendorLoginMethod' : 'loginMethod';
 
   // Complete customer signup from email link (affiliate only)
-  const completeCustomerSignup = async (wallet: string) => {
-    if (storagePrefix !== 'affiliate') return;
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const email = urlParams.get('email');
-    const storeId = urlParams.get('store');
-    const join = urlParams.get('join');
-    
-    if (email && join === '1') {
-      try {
-        const res = await fetch('https://api.dltpays.com/nfc/api/v1/nfc/complete-customer-signup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: email,
-            wallet_address: wallet,
-            store_id: storeId || null
-          })
-        });
-        
-        const data = await res.json();
-        
-        if (data.success && data.card_linked) {
-          console.log('✅ NFC card linked to wallet:', data.card_uid);
-        }
-        
-        // Clean up URL params
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.delete('email');
-        newUrl.searchParams.delete('join');
-        window.history.replaceState({}, '', newUrl.toString());
-        
-      } catch (err) {
-        console.error('Failed to complete customer signup:', err);
-      }
+const completeCustomerSignup = async (wallet: string) => {
+  if (storagePrefix !== 'affiliate') return;
+  
+  // First check URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  let email = urlParams.get('email');
+  let storeId = urlParams.get('store');
+  let join = urlParams.get('join');
+  
+  // If not in URL, check sessionStorage (saved before login)
+  if (!email || join !== '1') {
+    const pending = sessionStorage.getItem('pendingSignup');
+    if (pending) {
+      const parsed = JSON.parse(pending);
+      email = parsed.email;
+      storeId = parsed.storeId;
+      join = '1';
     }
-  };
+  }
+  
+  if (!email || join !== '1') return;
+  
+  try {
+    const res = await fetch('https://api.dltpays.com/nfc/api/v1/nfc/complete-customer-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email,
+        wallet_address: wallet,
+        store_id: storeId || null
+      })
+    });
+    
+    const data = await res.json();
+    
+    if (data.success && data.card_linked) {
+      console.log('✅ NFC card linked to wallet:', data.card_uid);
+    }
+    
+    // Clean up
+    sessionStorage.removeItem('pendingSignup');
+    
+    // Clean up URL params
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.delete('email');
+    newUrl.searchParams.delete('store');
+    newUrl.searchParams.delete('join');
+    window.history.replaceState({}, '', newUrl.toString());
+    
+  } catch (err) {
+    console.error('Failed to complete customer signup:', err);
+  }
+};
 
   // Handle store auto-join from URL params (affiliate only)
   const handleStoreAutoJoin = async (wallet: string) => {

@@ -482,58 +482,75 @@ setError(null);
 setShowManualEntry(false);
 if (storeId) clearCustomerDisplay(storeId, storeName);
 };
+
 // Upload store logo
 const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-const file = e.target.files?.[0];
-if (!file) return;
-// Check file size (5MB max)
-if (file.size > 5 * 1024 * 1024) {
-setError('Image must be less than 5MB');
-return;
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    setError('Image must be less than 5MB');
+    return;
   }
-// Check file type
-if (!file.type.startsWith('image/')) {
-setError('Please upload an image file');
-return;
+
+  if (!file.type.startsWith('image/')) {
+    setError('Please upload an image file');
+    return;
   }
-setUploadingLogo(true);
-setError(null);
-try {
-// Convert to base64
-const reader = new FileReader();
-reader.onload = async () => {
-const base64 = reader.result as string;
-// Save to backend
-const res = await fetch(`${API_URL}/store/${storeId}/logo`, {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({
-logo_url: base64,
-wallet_address: walletAddress
-        })
-      });
-const data = await res.json();
-if (data.success) {
-setStoreLogo(base64);
-// Update session storage
-const storeData = sessionStorage.getItem('storeData');
-if (storeData) {
-const store = JSON.parse(storeData);
-store.logo_url = base64;
-sessionStorage.setItem('storeData', JSON.stringify(store));
-        }
-setShowLogoUpload(false);
-      } else {
-setError('Failed to upload logo');
+
+  setUploadingLogo(true);
+  setError(null);
+
+  try {
+    // Upload directly to Cloudinary with unsigned preset
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'store_logos'); // Your unsigned preset name
+
+    const uploadRes = await fetch('https://tokencanvas.io/api/cloudinary/upload', {
+  method: 'POST',
+  body: formData
+});
+
+    const uploadData = await uploadRes.json();
+    
+    if (!uploadData.secure_url) {
+      throw new Error(uploadData.error?.message || 'Upload failed');
+    }
+
+    const logoUrl = uploadData.secure_url;
+
+    // Save URL to your backend
+    const res = await fetch(`${API_URL}/store/${storeId}/logo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        logo_url: logoUrl,
+        wallet_address: walletAddress
+      })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      setStoreLogo(logoUrl);
+      // Update session storage
+      const storeData = sessionStorage.getItem('storeData');
+      if (storeData) {
+        const store = JSON.parse(storeData);
+        store.logo_url = logoUrl;
+        sessionStorage.setItem('storeData', JSON.stringify(store));
       }
-setUploadingLogo(false);
-    };
-reader.readAsDataURL(file);
-  } catch (err) {
-setError('Failed to upload logo');
-setUploadingLogo(false);
+      setShowLogoUpload(false);
+    } else {
+      setError('Failed to save logo');
+    }
+  } catch (err: any) {
+    console.error('Upload error:', err);
+    setError(err.message || 'Failed to upload logo');
   }
+  setUploadingLogo(false);
 };
+
 // Remove store logo
 const removeLogo = async () => {
 setUploadingLogo(true);
