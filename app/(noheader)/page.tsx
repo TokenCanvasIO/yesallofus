@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import InstallAppButton from '@/components/InstallAppButton';
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -104,8 +105,16 @@ export default function WelcomePage() {
       `}
       </style>
 
-      {/* Subtle gradient background */}
-      <div className="fixed inset-0 bg-gradient-to-b from-emerald-950/50 via-emerald-950/10 to-transparent pointer-events-none" />
+     {/* Subtle gradient background with noise to prevent banding */}
+<div className="fixed inset-0 pointer-events-none">
+  <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/50 via-emerald-950/10 to-transparent" />
+  <svg className="absolute inset-0 w-full h-full opacity-[0.05] mix-blend-soft-light">
+    <filter id="noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch" />
+    </filter>
+    <rect width="100%" height="100%" filter="url(#noise)" />
+  </svg>
+</div>
       
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-12 relative z-10">
         <div className="w-full max-w-md">
@@ -127,10 +136,12 @@ export default function WelcomePage() {
           </div>
 
           {/* User Type Selection */}
-          <div className="mb-8">
-            <p className="text-zinc-500 text-xs uppercase tracking-widest mb-4 text-center">Select your role</p>
-            
-            <div className="grid grid-cols-2 gap-3">
+<div className="mb-8">
+  
+  {/* Install App Button */}
+<InstallAppButton />
+  
+  <div className="grid grid-cols-2 gap-3">
               {/* Partner */}
               <button
                 onClick={() => router.push('/dashboard')}
@@ -252,6 +263,7 @@ export default function WelcomePage() {
             </p>
           </div>
         </div>
+        
       </main>
 
       <footer className="p-6 text-center relative z-10">

@@ -82,15 +82,16 @@ export default function RootLayout({
   {/* Google Analytics */}
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-13PHKRLJ2R"></script>
   <script
-    dangerouslySetInnerHTML={{
-      __html: `
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-13PHKRLJ2R');
-      `,
-    }}
-  />
+  dangerouslySetInnerHTML={{
+    __html: `
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js');
+        });
+      }
+    `,
+  }}
+/>
 </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
 {children}
