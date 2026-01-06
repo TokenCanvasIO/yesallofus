@@ -255,7 +255,7 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans">
+    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans overflow-x-hidden">
       
       {/* Header */}
       <header className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-zinc-800">
@@ -303,7 +303,7 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
       <main className="max-w-4xl mx-auto px-4 pb-8">
         
         {/* Period Selector */}
-        <div className="flex gap-2 py-6 overflow-x-auto">
+        <div className="flex gap-2 py-6 overflow-x-auto max-w-full">
           {(['today', 'week', 'month', 'all'] as const).map((p) => (
             <button
               key={p}
@@ -380,9 +380,9 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
     {period === 'today' ? (
   /* Hourly view for today */
   <>
-    <div className="flex items-end gap-0.5 h-40 overflow-x-auto">
+    <div className="flex items-end gap-0.5 h-40 overflow-x-auto max-w-full">
       {periodHourlyData.filter((_, i) => i >= 6 && i <= 22).map((hour, i) => (
-        <div key={i} className="flex-1 min-w-[20px] flex flex-col items-center gap-1">
+        <div key={i} className="flex-1 min-w-0 flex flex-col items-center gap-1">
           <div className="w-full bg-zinc-800 rounded-t relative" style={{ height: '110px' }}>
             <div 
               className="absolute bottom-0 left-0 right-0 bg-emerald-500 rounded-t transition-all duration-500"
@@ -401,9 +401,9 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
 ): (
       /* Daily/Weekly/Monthly view */
       <>
-        <div className="flex items-end gap-2 h-40">
-          {salesByDay.map((day, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-2">
+        <div className="flex items-end gap-2 h-40 max-w-full">
+  {salesByDay.map((day, i) => (
+    <div key={i} className="flex-1 min-w-0 flex flex-col items-center gap-2">
               <div className="w-full bg-zinc-800 rounded-t-lg relative" style={{ height: '120px' }}>
                 <div 
                   className="absolute bottom-0 left-0 right-0 bg-emerald-500 rounded-t-lg transition-all duration-500"
@@ -427,9 +427,9 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
   {/* Busiest Times - always shows hourly heatmap for selected period */}
   <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
     <h3 className="font-semibold mb-4">Busiest Hours</h3>
-    <div className="flex items-end gap-0.5 h-40 overflow-x-auto">
+    <div className="flex items-end gap-0.5 h-40 overflow-x-auto max-w-full">
       {periodHourlyData.filter((_, i) => i >= 6 && i <= 22).map((hour, i) => (
-        <div key={i} className="flex-1 min-w-[20px] flex flex-col items-center gap-1">
+        <div key={i} className="flex-1 min-w-0 flex flex-col items-center gap-1">
           <div className="w-full bg-zinc-800 rounded-t relative" style={{ height: '110px' }}>
             <div 
               className="absolute bottom-0 left-0 right-0 bg-sky-500 rounded-t transition-all duration-500"
