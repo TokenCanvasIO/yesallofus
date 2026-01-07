@@ -145,10 +145,10 @@ export default function LiveConversionWidget({
           }
         `}</style>
         <img 
-          src="https://static.coingecko.com/s/coingecko-branding-guide-8447de673439420efa0ab1e0e03a1f8b0137c3f142f84f5c41b7fb3cc37eb605.png" 
-          alt="CoinGecko" 
-          className="gecko-icon"
-        />
+  src="https://www.coingecko.com/favicon-96x96.png" 
+  alt="CoinGecko" 
+  className="h-5 w-auto"
+/>
         <span className="rate-display">
           £1 = {conversionData ? conversionData.rate.gbp_to_rlusd.toFixed(4) : '...'} RLUSD
         </span>

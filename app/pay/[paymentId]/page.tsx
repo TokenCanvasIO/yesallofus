@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import InstantPay from '@/components/InstantPay';
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
@@ -34,7 +35,7 @@ export default function PayPage() {
   const paymentId = params.paymentId as string;
 
   const [payment, setPayment] = useState<PaymentData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -462,27 +463,25 @@ if (allPaid || payment?.status === 'paid') {
 
       <div className="relative z-10 max-w-md mx-auto p-6">
         {/* Store header */}
-        <div className="flex items-center gap-4 mb-6">
-          {payment?.store_logo ? (
-            <img 
-              src={payment.store_logo} 
-              alt={payment.store_name} 
-              className="w-14 h-14 rounded-xl object-cover"
-            />
-          ) : (
-            <div className="w-14 h-14 bg-zinc-800 rounded-xl flex items-center justify-center">
-              <span className="text-2xl">🏪</span>
-            </div>
-          )}
-          <div>
-            <h1 className="text-xl font-bold">{payment?.store_name}</h1>
-            {totalSplits && (
-              <p className="text-emerald-400 text-sm font-medium">
-                Payment {currentIndex} of {totalSplits}
-              </p>
-            )}
-          </div>
-        </div>
+<div className="text-center mb-6">
+  {payment?.store_logo ? (
+    <img 
+      src={payment.store_logo} 
+      alt={payment.store_name} 
+      className="w-16 h-16 rounded-xl object-cover mx-auto mb-3"
+    />
+  ) : (
+    <div className="w-16 h-16 bg-zinc-800 rounded-xl flex items-center justify-center mx-auto mb-3">
+      <span className="text-2xl">🏪</span>
+    </div>
+  )}
+  <h1 className="text-xl font-bold">{payment?.store_name}</h1>
+  {totalSplits && (
+    <p className="text-emerald-400 text-sm font-medium">
+      Payment {currentIndex} of {totalSplits}
+    </p>
+  )}
+</div>
 
         {/* Amount */}
         <div className="text-center mb-4">
@@ -552,9 +551,32 @@ if (allPaid || payment?.status === 'paid') {
         )}
 
         {/* Payment Options */}
-        {!xamanQR ? (
-          <>
-            {/* NFC Tap Zone */}
+{!xamanQR ? (
+  <>
+    {/* Instant Pay with Web3Auth/Biometrics */}
+    <div className="mb-4">
+      <InstantPay
+  amount={currentAmount}
+  rlusdAmount={rlusdAmount || currentAmount * 1.35}
+  vendorWallet={payment?.vendor_wallet || ''}
+  storeName={payment?.store_name || ''}
+  storeId={payment?.store_id || ''}
+  paymentId={getCurrentPaymentId()}
+  onSuccess={(txHash) => {
+    setTxHash(txHash);
+    if (splits && currentSplitIndex < splits.length - 1) {
+      setCurrentSplitIndex(prev => prev + 1);
+    } else {
+      setAllPaid(true);
+    }
+  }}
+  onError={(error) => setError(error)}
+/>
+    </div>
+
+    <div className="text-center text-zinc-500 my-4">or</div>
+
+    {/* NFC Tap Zone */}
             {nfcSupported && (
               <button
                 onClick={startNFCScan}
