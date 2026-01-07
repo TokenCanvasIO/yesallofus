@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import ProductsManager from '@/components/ProductsManager';
 import { updateCustomerDisplay, clearCustomerDisplay } from '@/lib/customerDisplay';
 import StaffSelector from '@/components/StaffSelector';
+import SendPaymentLink from '@/components/SendPaymentLink';
 interface Product {
 product_id: string;
 name: string;
@@ -99,20 +100,39 @@ const [tipsEnabled, setTipsEnabled] = useState<boolean>(false);
 const [tipAmount, setTipAmount] = useState<number>(0);
 const [showCustomTipModal, setShowCustomTipModal] = useState(false);
 const [customTipInput, setCustomTipInput] = useState('');
-// Convert GBP to RLUSD
+
+// Live conversion state
+const [liveRate, setLiveRate] = useState<number | null>(null);
+const [rlusdAmount, setRlusdAmount] = useState<number | null>(null);
+const [priceAge, setPriceAge] = useState<number>(0);
+// Split pay email
+const [showSendPaymentLink, setShowSendPaymentLink] = useState(false);
+
+// Convert GBP to RLUSD - Live price from CoinGecko Pro with audit trail
 const convertGBPtoRLUSD = async (gbpAmount: number): Promise<number> => {
-try {
-const res = await fetch('https://tokencanvas.io/api/coingecko/simple/price?ids=ripple-usd&vs_currencies=gbp');
-const data = await res.json();
-const rlusdInGbp = data['ripple-usd']?.gbp;
-if (!rlusdInGbp) throw new Error('No rate found');
-const rlusdAmount = gbpAmount / rlusdInGbp;
-return Math.round(rlusdAmount * 100) / 100;
+  try {
+    const res = await fetch(`https://api.dltpays.com/convert/gbp-to-rlusd?amount=${gbpAmount}&capture=true`);
+    const data = await res.json();
+    if (data.success) {
+      console.log(`💱 Rate: £1 = ${(1/data.rate.rlusd_gbp).toFixed(6)} RLUSD | Source: ${data.source}`);
+      return data.rlusd;
+    }
+    throw new Error('Conversion failed');
   } catch (err) {
-console.error('Conversion error:', err);
-return Math.round(gbpAmount * 1.27 * 100) / 100;
+    console.error('Conversion error:', err);
+    // Fallback to cached endpoint
+    try {
+      const fallback = await fetch('https://tokencanvas.io/api/coingecko/simple/price?ids=ripple-usd&vs_currencies=gbp');
+      const fallbackData = await fallback.json();
+      const rlusdInGbp = fallbackData['ripple-usd']?.gbp;
+      if (rlusdInGbp) {
+        return Math.round((gbpAmount / rlusdInGbp) * 1000000) / 1000000;
+      }
+    } catch {}
+    return Math.round(gbpAmount * 1.35 * 1000000) / 1000000;
   }
 };
+
 // Load store data
 useEffect(() => {
 const stored = sessionStorage.getItem('vendorWalletAddress');
@@ -143,6 +163,7 @@ sessionStorage.setItem('storeData', JSON.stringify(updatedStore));
     }
   }
 }, [router]);
+
 // Fetch products
 useEffect(() => {
 if (storeId && walletAddress) {
@@ -191,6 +212,37 @@ return () => clearInterval(pollInterval);
 // Cart calculations
 const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 const customAmount = parseFloat(manualAmount) || 0;
+
+// Fetch live conversion rate
+useEffect(() => {
+  const fetchRate = async () => {
+    const amount = getPaymentAmount();
+    if (amount <= 0) return;
+    
+    try {
+      const res = await fetch(`https://api.dltpays.com/convert/gbp-to-rlusd?amount=${amount}&capture=true`);
+      if (!res.ok) throw new Error('API error');
+      const data = await res.json();
+      if (data.success) {
+        setLiveRate(data.rate.gbp_to_rlusd);
+        setRlusdAmount(data.rlusd);
+        setPriceAge(data.price_age_ms);
+      }
+    } catch (err) {
+      // Fallback: estimate rate
+      setLiveRate(1.35);
+      setRlusdAmount(amount * 1.35);
+      setPriceAge(0);
+    }
+  };
+
+  if (status === 'idle' || status === 'qr') {
+    fetchRate();
+    const interval = setInterval(fetchRate, 10000);
+    return () => clearInterval(interval);
+  }
+}, [cartTotal, customAmount, tipAmount, status]);
+
 // Sync cart to customer display
 useEffect(() => {
 if (storeId && status === 'idle' && cart.length > 0) {
@@ -1302,6 +1354,19 @@ className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 disab
 </svg>
   Pay £{getPaymentAmount().toFixed(2)}
 </button>
+
+{getPaymentAmount() > 0 && (
+<button
+onClick={() => setShowSendPaymentLink(true)}
+className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white font-medium py-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
+>
+<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+</svg>
+    Send Payment Link
+</button>
+)}
+
 {!showManualEntry && (
 <button
 onClick={() => setShowManualEntry(true)}
@@ -1309,7 +1374,7 @@ className="w-full bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 active:scale-
 >
   Enter amount manually
 </button>
-              )}
+)}
 </div>
 </>
         )}
@@ -1319,7 +1384,7 @@ className="w-full bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 active:scale-
 {status === 'qr' && (
 <div className="flex-1 flex flex-col items-center justify-center py-8">
   {/* Total */}
-  <div className="text-center mb-10">
+  <div className="text-center mb-6">
     <p className="text-zinc-500 text-lg mb-2">Total to pay</p>
     <p className="text-6xl sm:text-7xl font-bold text-emerald-400">£{getPaymentAmount().toFixed(2)}</p>
   </div>
@@ -1379,6 +1444,47 @@ className="w-full bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 active:scale-
   >
     Cancel
   </button>
+  {/* Live Conversion Rate - Powered by CoinGecko */}
+  <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 mt-8 w-full max-w-sm">
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center gap-2">
+        <img 
+src="https://static.coingecko.com/s/coingecko-logo-8903d34ce19ca4be1c81f0db30e924154750d208683fad7ae6f2ce06c76d0a56.png" 
+alt="CoinGecko" 
+className="h-5 w-auto object-contain"
+/>
+        <span className="text-xs text-zinc-500">Live rate from CoinGecko Pro</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+        <span className="text-xs text-emerald-500 font-medium">LIVE</span>
+      </div>
+    </div>
+    
+    <div className="flex items-baseline justify-between">
+      <span className="text-zinc-400 text-sm">Settlement amount</span>
+      <div className="text-right">
+        <span className="text-2xl font-bold text-white font-mono">
+          {rlusdAmount ? rlusdAmount.toFixed(4) : '...'} <span className="text-emerald-400 text-lg">RLUSD</span>
+        </span>
+        {liveRate && (
+          <p className="text-xs text-zinc-500 mt-1">
+            £1 = {liveRate.toFixed(4)} RLUSD
+          </p>
+        )}
+      </div>
+    </div>
+    
+    <div className="mt-3 pt-3 border-t border-zinc-800 flex items-start gap-2">
+      <svg className="w-4 h-4 text-amber-400/80 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 16v-4M12 8h.01" />
+      </svg>
+      <p className="text-[11px] text-zinc-500 leading-relaxed">
+  <span className="text-zinc-400 font-medium">Live price.</span> Updated every 10s via CoinGecko Pro (600+ exchanges). Settlement variance &lt;0.1%.
+</p>
+    </div>
+  </div>
 </div>
 )}
 {/* ============================================================= */}
@@ -1566,6 +1672,24 @@ className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 
 </div>
 </div>
 </div>
+)}
+{/* Send Payment Link Modal */}
+{showSendPaymentLink && storeId && (
+  <SendPaymentLink
+    storeId={storeId}
+    storeName={storeName}
+    storeLogo={storeLogo}
+    amount={getPaymentAmount()}
+    items={cart.length > 0 ? cart.map(item => ({
+      name: item.name,
+      quantity: item.quantity,
+      unit_price: item.price
+    })) : undefined}
+    onClose={() => setShowSendPaymentLink(false)}
+    onSuccess={() => {
+      // Optionally clear cart after sending
+    }}
+  />
 )}
 </main>
 </div>

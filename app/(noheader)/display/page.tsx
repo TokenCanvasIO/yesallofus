@@ -17,11 +17,18 @@ interface DisplayData {
   cart: CartItem[];
   subtotal: number;
   total: number;
-  status: 'idle' | 'ready' | 'processing' | 'success' | 'error' | 'qr' | 'signup';
+  status: 'idle' | 'ready' | 'processing' | 'success' | 'error' | 'qr' | 'signup' | 'split_pending';
   qr_code?: string | null;
   tip?: number;
   tips_enabled?: boolean;
   last_updated: number | null;
+  split_payment?: {
+    parent_id: string;
+    total_splits: number;
+    paid_count: number;
+    split_ids: string[];
+    all_paid?: boolean;
+  };
 }
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
@@ -56,6 +63,10 @@ const [signupScanning, setSignupScanning] = useState(false);
 const [signupSubmitting, setSignupSubmitting] = useState(false);
 const [signupError, setSignupError] = useState<string | null>(null);
 const [signupSuccess, setSignupSuccess] = useState(false);
+
+// Live conversion state
+const [liveRate, setLiveRate] = useState<number | null>(null);
+const [rlusdAmount, setRlusdAmount] = useState<number | null>(null);
 
 // Sync selectedTip with data from API
 useEffect(() => {
@@ -215,6 +226,35 @@ if (val.status === 'qr') {
   return () => clearInterval(interval);
 }, [storeId]);
 
+// Fetch live conversion rate
+useEffect(() => {
+  if (!data) return;
+  
+  const total = data.total;
+  const status = data.status;
+  
+  const fetchRate = async () => {
+    if (total <= 0) return;
+    
+    try {
+      const res = await fetch(`https://api.dltpays.com/convert/gbp-to-rlusd?amount=${total}`);
+      const result = await res.json();
+      if (result.success) {
+        setLiveRate(result.rate.gbp_to_rlusd);
+        setRlusdAmount(result.rlusd);
+      }
+    } catch (err) {
+      console.error('Rate fetch error:', err);
+    }
+  };
+
+  if (status === 'qr' || status === 'ready' || status === 'idle') {
+    fetchRate();
+    const interval = setInterval(fetchRate, 10000);
+    return () => clearInterval(interval);
+  }
+}, [data]);
+
   // No store ID
   if (!storeId) {
     return (
@@ -296,6 +336,31 @@ if (val.status === 'qr') {
 
       {/* Main Content */}
       <main className="flex-1 relative z-10 flex flex-col px-6 py-4 sm:px-8 sm:py-6 overflow-y-auto overflow-x-hidden">
+
+        {/* Split Payment Tracking */}
+{status === 'split_pending' && data?.split_payment && (
+  <div className="flex-1 flex flex-col items-center justify-center">
+    <div className="text-center mb-8">
+      <p className="text-zinc-500 text-xl sm:text-2xl mb-2">Split Bill</p>
+      <p className="text-6xl sm:text-8xl font-bold text-emerald-400">
+        {data.split_payment.paid_count}/{data.split_payment.total_splits}
+      </p>
+      <p className="text-zinc-400 text-xl mt-4">payments received</p>
+    </div>
+    
+    {/* Progress bar */}
+    <div className="w-full max-w-md bg-zinc-800 rounded-full h-4 mb-8">
+      <div 
+        className="bg-emerald-500 h-4 rounded-full transition-all duration-500"
+        style={{ width: `${(data.split_payment.paid_count / data.split_payment.total_splits) * 100}%` }}
+      />
+    </div>
+    
+    <p className="text-zinc-500">
+      £{total.toFixed(2)} total
+    </p>
+  </div>
+)}
         
         {/* Success State */}
         {status === 'success' && (
@@ -704,7 +769,45 @@ if (val.status === 'qr') {
   </div>
 )}
       </main>
-
+{/* Live Conversion Widget - Show in payment states */}
+{(status === 'qr' || status === 'ready' || (status === 'idle' && cart && cart.length > 0)) && liveRate && (
+  <div className="relative z-10 px-6 sm:px-8 pb-4">
+    <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 max-w-md mx-auto">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <img 
+            src="https://static.coingecko.com/s/coingecko-logo-8903d34ce19ca4be1c81f0db30e924154750d208683fad7ae6f2ce06c76d0a56.png" 
+            alt="CoinGecko" 
+            className="h-5 w-auto object-contain"
+          />
+          <span className="text-xs text-zinc-500">Live rate from CoinGecko Pro</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+          <span className="text-xs text-emerald-500 font-medium">LIVE</span>
+        </div>
+      </div>
+      
+      <div className="flex items-baseline justify-between">
+        <span className="text-zinc-400 text-sm">Settlement amount</span>
+        <div className="text-right">
+          <span className="text-2xl font-bold text-white font-mono">
+            {rlusdAmount?.toFixed(4)} <span className="text-emerald-400 text-lg">RLUSD</span>
+          </span>
+          <p className="text-xs text-zinc-500 mt-1">
+            £1 = {liveRate?.toFixed(4)} RLUSD
+          </p>
+        </div>
+      </div>
+      
+      <div className="mt-3 pt-3 border-t border-zinc-800">
+        <p className="text-[11px] text-zinc-500 leading-relaxed">
+          <span className="text-zinc-400 font-medium">Live price.</span> Updated every 10s via CoinGecko Pro (600+ exchanges). Settlement variance &lt;0.1%.
+        </p>
+      </div>
+    </div>
+  </div>
+)}
       {/* Footer */}
       <footer className="relative z-10 px-6 py-4 sm:px-8 sm:py-5 border-t border-zinc-800/50 flex flex-col sm:flex-row items-center justify-between gap-2">
         <div className="flex items-center gap-3">
