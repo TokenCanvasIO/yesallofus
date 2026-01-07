@@ -574,8 +574,6 @@ if (allPaid || payment?.status === 'paid') {
 />
     </div>
 
-    <div className="text-center text-zinc-500 my-4">or</div>
-
     {/* NFC Tap Zone */}
             {nfcSupported && (
               <button
