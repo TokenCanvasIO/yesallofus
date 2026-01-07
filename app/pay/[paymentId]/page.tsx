@@ -101,6 +101,13 @@ export default function PayPage() {
   }
 };
 
+// Check NFC support on mount
+useEffect(() => {
+  if ('NDEFReader' in window) {
+    setNfcSupported(true);
+  }
+}, []);
+
   // Fetch payment data
   useEffect(() => {
     if (!paymentId) return;

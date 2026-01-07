@@ -110,11 +110,11 @@ export default function InstantPay({
       }
 
       // Enable auto-sign via SignerListSet or server registration
-      const res = await fetch(`${API_URL}/customer/enable-autosign`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet: walletAddress })
-      });
+      const res = await fetch('https://api.dltpays.com/api/v1/customer/setup-autosign', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ wallet_address: walletAddress })
+});
       
       const data = await res.json();
       
