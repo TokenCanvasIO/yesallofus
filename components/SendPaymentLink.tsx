@@ -58,8 +58,19 @@ export default function SendPaymentLink({
       const data = await res.json();
       
       if (data.success) {
-        setPaymentUrl(data.payment_url);
-      } else {
+  setPaymentUrl(data.payment_url);
+  
+  // Update customer display
+  const { updateCustomerDisplay } = await import('@/lib/customerDisplay');
+  const cart = items?.map(item => ({
+    name: item.name,
+    quantity: item.quantity,
+    price: item.unit_price || item.price,
+    emoji: '💷'
+  })) || [{ name: 'Payment', quantity: 1, price: amount, emoji: '💷' }];
+  
+  await updateCustomerDisplay(storeId, storeName, cart, amount, 'qr', null, 0);
+} else {
         setError(data.error || 'Failed to create payment link');
       }
     } catch (err) {
