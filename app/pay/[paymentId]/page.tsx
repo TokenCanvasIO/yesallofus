@@ -60,6 +60,8 @@ export default function PayPage() {
   const [liveRate, setLiveRate] = useState<number | null>(null);
   const [rlusdAmount, setRlusdAmount] = useState<number | null>(null);
   const [priceAge, setPriceAge] = useState<number>(0);
+// Split success message
+  const [showToast, setShowToast] = useState(false);
 
   // Fetch live conversion rate
   useEffect(() => {
@@ -490,6 +492,16 @@ if (allPaid || payment?.status === 'paid') {
   )}
 </div>
 
+{/* Success Toast */}
+{showToast && (
+  <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-black px-6 py-3 rounded-full font-semibold flex items-center gap-2 shadow-lg animate-pulse">
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+    </svg>
+    Payment successful!
+  </div>
+)}
+
         {/* Amount */}
         <div className="text-center mb-4">
           <p className="text-zinc-400 mb-2">Amount to pay</p>
@@ -570,13 +582,16 @@ if (allPaid || payment?.status === 'paid') {
   storeId={payment?.store_id || ''}
   paymentId={getCurrentPaymentId()}
   onSuccess={(txHash) => {
-    setTxHash(txHash);
-    if (splits && currentSplitIndex < splits.length - 1) {
-      setCurrentSplitIndex(prev => prev + 1);
-    } else {
-      setAllPaid(true);
-    }
-  }}
+  setTxHash(txHash);
+  setShowToast(true);
+  setTimeout(() => setShowToast(false), 3000); // Hide after 3 seconds
+  
+  if (splits && currentSplitIndex < splits.length - 1) {
+    setCurrentSplitIndex(prev => prev + 1);
+  } else {
+    setAllPaid(true);
+  }
+}}
   onError={(error) => setError(error)}
 />
     </div>
