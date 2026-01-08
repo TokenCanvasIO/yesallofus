@@ -93,7 +93,7 @@ export default function TopUpRLUSD({
   <CollapsibleCard 
     title="Top Up RLUSD" 
     icon="💰" 
-    defaultOpen={rlusdBalance < 10}
+    defaultOpen={false}
     badge={rlusdBalance < 10 ? 'Low Balance' : undefined}
     badgeColor="yellow"
   >
