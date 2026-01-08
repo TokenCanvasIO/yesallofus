@@ -149,12 +149,12 @@ export default function InstantPay({
         TransactionType: 'Payment',
         Account: walletAddress,
         Destination: vendorWallet,
-        Amount: {
-          currency: 'RLUSD',
-          issuer: 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
-          value: rlusdAmount.toString()
-        },
-        Memos: [{
+       Amount: {
+  currency: '524C555344000000000000000000000000000000',
+  issuer: 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
+  value: rlusdAmount.toString()
+},
+Memos: [{
           Memo: {
             MemoType: Buffer.from('payment', 'utf8').toString('hex').toUpperCase(),
             MemoData: Buffer.from(`Payment to ${storeName}`, 'utf8').toString('hex').toUpperCase()
