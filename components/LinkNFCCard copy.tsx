@@ -23,6 +23,7 @@ export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCard
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
 
+  const API_URL = 'https://api.dltpays.com/api/v1';
   const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
   // Load all linked cards
@@ -116,9 +117,6 @@ export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCard
         setSuccess('Card linked successfully!');
         await fetchCards();
         onCardLinked?.();
-        // Auto-open edit mode for naming
-        setEditingCard(cardUid.toLowerCase().replace(/:/g, ''));
-        setEditName('');
       } else {
         setError(data.error || 'Failed to link card');
       }
@@ -175,7 +173,6 @@ export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCard
       if (data.success) {
         setEditingCard(null);
         setEditName('');
-        setSuccess('Card name saved!');
         await fetchCards();
       } else {
         setError(data.error || 'Failed to update card name');
@@ -202,7 +199,7 @@ export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCard
 
   if (loading) {
     return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6 mt-6">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
         <div className="flex items-center gap-3">
           <div className="w-5 h-5 border-2 border-zinc-500 border-t-white rounded-full animate-spin"></div>
           <span className="text-zinc-400">Loading cards...</span>
@@ -213,17 +210,16 @@ export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCard
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <svg className="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-          </svg>
-          <div>
-            <h2 className="text-lg font-bold">Payment Cards</h2>
-            <p className="text-zinc-500 text-sm">{cards.length} card{cards.length !== 1 ? 's' : ''} linked</p>
-          </div>
-        </div>
+  <div className="flex items-center justify-between mb-4">
+    <div className="flex items-center gap-3">
+      <svg className="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+      </svg>
+      <div>
+        <h2 className="text-lg font-bold">Payment Cards</h2>
+        <p className="text-zinc-500 text-sm">{cards.length} card{cards.length !== 1 ? 's' : ''} linked</p>
+      </div>
+    </div>
         {cards.length > 0 && cards.length < 5 && !scanning && (
           <button
             onClick={startNFCScan}
@@ -270,39 +266,37 @@ export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCard
               className="bg-zinc-800/50 border border-zinc-700/50 rounded-lg p-4"
             >
               {editingCard === card.card_uid ? (
-                /* Editing Mode - FIXED FOR MOBILE */
-                <div className="space-y-3">
+                /* Editing Mode */
+                <div className="flex items-center gap-3">
                   <input
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    placeholder="e.g., My Black Card"
-                    className="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-3 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-emerald-500"
+                    placeholder="e.g., Puffin Bus Card"
+                    className="flex-1 bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-emerald-500"
                     autoFocus
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') saveCardName(card.card_uid);
                       if (e.key === 'Escape') cancelEditing();
                     }}
                   />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => saveCardName(card.card_uid)}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={cancelEditing}
-                      className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition"
-                    >
-                      Cancel
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => saveCardName(card.card_uid)}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm py-2 px-3 rounded-lg transition"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={cancelEditing}
+                    className="text-zinc-400 hover:text-white text-sm py-2 px-3 transition"
+                  >
+                    Cancel
+                  </button>
                 </div>
               ) : (
                 /* Display Mode */
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="flex items-center gap-3">
+  <div className="flex items-center gap-3">
                     <span className="text-emerald-400 text-lg">✓</span>
                     <div>
                       <div className="flex items-center gap-2">
@@ -320,20 +314,20 @@ export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCard
                         </button>
                       </div>
                       <p className="text-zinc-500 text-sm font-mono">
-                        {card.card_uid.slice(0, 4)}...{card.card_uid.slice(-4)}
-                        {card.linked_at && (
-                          <span className="font-sans ml-2">· Added {formatDate(card.linked_at)}</span>
-                        )}
-                      </p>
+  {card.card_uid.slice(0, 4)}...{card.card_uid.slice(-4)}
+  {card.linked_at && (
+    <span className="font-sans ml-2">· Added {formatDate(card.linked_at)}</span>
+  )}
+</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => unlinkCard(card.card_uid, card.card_name)}
-                    className="text-zinc-500 hover:text-red-400 text-sm transition self-end sm:self-auto"
-                  >
-                    Remove
-                  </button>
-                </div>
+<button
+  onClick={() => unlinkCard(card.card_uid, card.card_name)}
+  className="text-zinc-500 hover:text-red-400 text-sm transition self-end sm:self-auto"
+>
+  Remove
+</button>
+</div>
               )}
             </div>
           ))}
@@ -369,17 +363,17 @@ export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCard
             Link an NFC card to pay at vendors by tapping your card. You can add up to 5 cards.
           </p>
           <button
-            onClick={startNFCScan}
-            className="w-full bg-white hover:bg-zinc-100 text-black font-semibold py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-lg"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
-            Add NFC Card
-          </button>
-          <p className="text-zinc-500 text-sm text-center mt-3">
-            Requires Chrome on Android with NFC enabled
-          </p>
+  onClick={startNFCScan}
+  className="w-full bg-white hover:bg-zinc-100 text-black font-semibold py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-lg"
+>
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+  </svg>
+  Add NFC Card
+</button>
+<p className="text-zinc-500 text-sm text-center mt-3">
+  Requires Chrome on Android with NFC enabled
+</p>
         </div>
       )}
 

@@ -1106,37 +1106,6 @@ const NavIcon = ({ name }: { name: string }) => {
   <EarnInterest />
 </div>
 
-                  {/* Web3Auth Actions */}
-                  {loginMethod === 'web3auth' && (
-                    <div className="mt-4 pt-4 border-t border-zinc-800">
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="flex-1 bg-zinc-800/50 rounded-lg p-3">
-                          <p className="text-zinc-500 text-xs mb-1">Your Wallet</p>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-sm">{abbreviateWallet(walletAddress)}</span>
-                            <button onClick={handleCopyAddress} className={`p-1.5 rounded transition-colors ${copiedAddress ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'}`}>
-                              {copiedAddress ? (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                              ) : (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => setShowReceiveModal(true)} className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
-                            Receive
-                          </button>
-                          <button onClick={() => setShowWithdrawModal(true)} disabled={!walletStatus?.funded} className="flex-1 sm:flex-none bg-sky-600 hover:bg-sky-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
-                            Withdraw
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
             {/* 3. NFC PAYMENT CARDS */}
             <div id="payment-cards">
               {walletAddress ? (
