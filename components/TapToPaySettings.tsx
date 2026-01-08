@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface TapToPaySettingsProps {
   walletAddress: string;
@@ -9,7 +9,6 @@ interface TapToPaySettingsProps {
   onAutoSignEnabled?: () => void;
 }
 
-const API_URL = 'https://api.dltpays.com/api/v1';
 const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
 export default function TapToPaySettings({ 
@@ -21,31 +20,39 @@ export default function TapToPaySettings({
   const [loading, setLoading] = useState(true);
   const [autoSignEnabled, setAutoSignEnabled] = useState(false);
   const [settingUp, setSettingUp] = useState(false);
+  const [revoking, setRevoking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [walletNotFunded, setWalletNotFunded] = useState(false);
+  const [signerAddress, setSignerAddress] = useState<string | null>(null);
   
   // Customer limit is fixed at £25 until KYC
   const MAX_TRANSACTION = 25;
 
-  // Check if auto-sign is enabled for this customer
-  useEffect(() => {
-    checkAutoSignStatus();
-  }, [walletAddress]);
-
-  const checkAutoSignStatus = async () => {
+  // Check if auto-sign is enabled for this customer (from XRPL - source of truth)
+  const checkAutoSignStatus = useCallback(async () => {
+    if (!walletAddress) return;
+    
     setLoading(true);
     try {
       const res = await fetch(`${NFC_API_URL}/customer/autosign-status/${walletAddress}`);
       const data = await res.json();
       if (data.success) {
-        setAutoSignEnabled(data.auto_sign_enabled || false);
+        // API now checks XRPL as source of truth
+        setAutoSignEnabled(data.auto_signing_enabled || data.auto_sign_enabled || false);
+        setWalletNotFunded(data.wallet_not_funded || false);
+        setSignerAddress(data.signer_address || null);
       }
     } catch (err) {
       console.error('Failed to check auto-sign status:', err);
     }
     setLoading(false);
-  };
+  }, [walletAddress]);
+
+  useEffect(() => {
+    checkAutoSignStatus();
+  }, [checkAutoSignStatus]);
 
   // Enable auto-sign for Web3Auth
   const enableAutoSignWeb3Auth = async () => {
@@ -77,13 +84,14 @@ export default function TapToPaySettings({
 
       // Handle unfunded wallet
       if (settingsData.needs_funding) {
+        setWalletNotFunded(true);
         throw new Error('Your wallet needs to be funded first. Please add at least 2 XRP.');
       }
 
       // If signer already exists, just verify
       if (settingsData.signer_exists) {
         setAutoSignEnabled(true);
-        setSuccess('Tap-to-Pay is already enabled!');
+        setSuccess('Tap-and-Pay is already enabled!');
         setSettingUp(false);
         return;
       }
@@ -118,21 +126,17 @@ export default function TapToPaySettings({
 
       console.log('SignerListSet result:', result);
 
-      // Verify the setup
-      const verifyRes = await fetch(`${NFC_API_URL}/customer/verify-autosign/${walletAddress}`);
-      const verifyData = await verifyRes.json();
-
-      if (!verifyData.auto_sign_enabled) {
-        throw new Error('Signer setup failed. Please try again.');
-      }
+      // Wait for ledger and verify
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      await checkAutoSignStatus();
 
       setAutoSignEnabled(true);
-      setSuccess('Tap-to-Pay enabled! You can now pay by tapping your NFC card.');
+      setSuccess('Tap-and-Pay enabled! You can now pay by tapping your NFC card.');
       setTermsAccepted(false);
       onAutoSignEnabled?.();
 
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to enable Tap-to-Pay';
+      const message = err instanceof Error ? err.message : 'Failed to enable Tap-and-Pay';
       setError(message);
     }
     setSettingUp(false);
@@ -152,70 +156,168 @@ export default function TapToPaySettings({
         throw new Error('Crossmark wallet not detected. Please install the browser extension.');
       }
 
-      // Sign in to verify wallet
-      const signIn = await sdk.methods.signInAndWait();
-      if (!signIn.response?.data?.address) {
-        throw new Error('Connection cancelled');
-      }
-      const address = signIn.response.data.address;
-
-      if (address !== walletAddress) {
-        throw new Error('Please connect with the same wallet address');
-      }
-
-      // Enable auto-sign on server
-      const res = await fetch(`${NFC_API_URL}/customer/enable-autosign`, {
+      // Get platform signer address from API
+      const settingsRes = await fetch(`${NFC_API_URL}/customer/setup-autosign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          wallet_address: walletAddress,
-          max_transaction: MAX_TRANSACTION
-        })
+        body: JSON.stringify({ wallet_address: walletAddress })
       });
+      const settingsData = await settingsRes.json();
 
-      const data = await res.json();
-      if (data.error) {
-        throw new Error(data.error);
+      if (settingsData.error) {
+        throw new Error(settingsData.error);
       }
 
+      if (settingsData.needs_funding) {
+        setWalletNotFunded(true);
+        throw new Error('Your wallet needs to be funded first. Please add at least 2 XRP.');
+      }
+
+      if (settingsData.signer_exists) {
+        setAutoSignEnabled(true);
+        setSuccess('Tap-and-Pay is already enabled!');
+        setSettingUp(false);
+        return;
+      }
+
+      const platformSignerAddress = settingsData.platform_signer_address;
+      if (!platformSignerAddress) {
+        throw new Error('Platform signer not configured');
+      }
+
+      // Build and sign SignerListSet with Crossmark
+      const signerListSetTx = {
+        TransactionType: 'SignerListSet',
+        Account: walletAddress,
+        SignerQuorum: 1,
+        SignerEntries: [
+          {
+            SignerEntry: {
+              Account: platformSignerAddress,
+              SignerWeight: 1
+            }
+          }
+        ]
+      };
+
+      const result = await sdk.methods.signAndSubmitAndWait(signerListSetTx);
+      console.log('Crossmark SignerListSet result:', result);
+
+      // Wait and verify
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      await checkAutoSignStatus();
+
       setAutoSignEnabled(true);
-      setSuccess('Tap-to-Pay enabled! You can now pay by tapping your NFC card.');
+      setSuccess('Tap-and-Pay enabled! You can now pay by tapping your NFC card.');
       setTermsAccepted(false);
       onAutoSignEnabled?.();
 
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to enable Tap-to-Pay';
+      const message = err instanceof Error ? err.message : 'Failed to enable Tap-and-Pay';
       setError(message);
     }
     setSettingUp(false);
   };
 
-  // Revoke auto-sign
+  // ============================================================
+  // FIXED: Revoke auto-sign - now removes signer from XRPL
+  // ============================================================
   const revokeAutoSign = async () => {
-    if (!confirm('Disable Tap-to-Pay? You will need to set it up again to use NFC payments.')) return;
+    if (!confirm('Disable Tap-and-Pay?\n\nThis will remove the auto-sign permission from the XRP Ledger. You will need to set it up again to use NFC payments.')) {
+      return;
+    }
 
-    setSettingUp(true);
+    setRevoking(true);
     setError(null);
+    setSuccess(null);
 
     try {
-      const res = await fetch(`${NFC_API_URL}/customer/revoke-autosign`, {
+      // Step 1: Check with API if revoke is needed
+      const revokeRes = await fetch(`${NFC_API_URL}/customer/revoke-autosign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wallet_address: walletAddress })
       });
+      const revokeData = await revokeRes.json();
 
-      const data = await res.json();
-      if (data.success) {
-        setAutoSignEnabled(false);
-        setSuccess('Tap-to-Pay disabled.');
-      } else {
-        throw new Error(data.error || 'Failed to disable');
+      if (!revokeData.success) {
+        throw new Error(revokeData.error || 'Revoke request failed');
       }
+
+      // Already revoked on XRPL
+      if (revokeData.already_revoked) {
+        setAutoSignEnabled(false);
+        setSuccess('Tap-and-Pay has been disabled.');
+        setRevoking(false);
+        return;
+      }
+
+      // Step 2: Need to sign transaction to remove signer from XRPL
+      if (revokeData.needs_signature) {
+        // Build the revoke transaction (SignerListSet with SignerQuorum: 0)
+        const revokeTx = {
+          TransactionType: 'SignerListSet',
+          Account: walletAddress,
+          SignerQuorum: 0,
+          SignerEntries: []
+        };
+
+        let txHash: string | null = null;
+
+        // Sign based on login method
+        if (loginMethod === 'web3auth') {
+          const { getWeb3Auth } = await import('@/lib/web3auth');
+          const web3auth = await getWeb3Auth();
+
+          if (!web3auth || !web3auth.provider) {
+            throw new Error('Web3Auth session expired. Please sign in again.');
+          }
+
+          const result = await web3auth.provider.request({
+            method: 'xrpl_submitTransaction',
+            params: { transaction: revokeTx }
+          });
+
+          console.log('Web3Auth revoke result:', result);
+          txHash = (result as any)?.result?.hash || (result as any)?.hash || null;
+
+        } else if (loginMethod === 'crossmark') {
+          const sdk = (window as any).xrpl?.crossmark;
+          if (!sdk) {
+            throw new Error('Crossmark wallet not detected.');
+          }
+
+          const result = await sdk.methods.signAndSubmitAndWait(revokeTx);
+          console.log('Crossmark revoke result:', result);
+          txHash = result?.response?.data?.resp?.result?.hash || null;
+
+        } else {
+          throw new Error('Please use Web3Auth or Crossmark to disable Tap-and-Pay');
+        }
+
+        // Step 3: Confirm revoke with backend
+        await fetch(`${NFC_API_URL}/customer/confirm-revoke`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            wallet_address: walletAddress,
+            tx_hash: txHash
+          })
+        });
+
+        // Wait for ledger and refresh status
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        await checkAutoSignStatus();
+
+        setSuccess('Tap-and-Pay disabled successfully.');
+      }
+
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to disable Tap-to-Pay';
+      const message = err instanceof Error ? err.message : 'Failed to disable Tap-and-Pay';
       setError(message);
+      console.error('Revoke error:', err);
     }
-    setSettingUp(false);
+    setRevoking(false);
   };
 
   // Determine if user can enable auto-sign
@@ -227,7 +329,7 @@ export default function TapToPaySettings({
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
         <div className="flex items-center gap-3">
           <div className="w-5 h-5 border-2 border-zinc-500 border-t-white rounded-full animate-spin"></div>
-          <span className="text-zinc-400">Loading Tap-to-Pay status...</span>
+          <span className="text-zinc-400">Loading Tap-and-Pay status...</span>
         </div>
       </div>
     );
@@ -235,12 +337,20 @@ export default function TapToPaySettings({
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="text-2xl">⚡</div>
-        <div>
-          <h3 className="text-lg font-bold">Tap-to-Pay</h3>
-          <p className="text-zinc-500 text-sm">Pay instantly by tapping your NFC card</p>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className={`text-2xl ${autoSignEnabled ? '' : 'grayscale opacity-50'}`}>⚡</div>
+          <div>
+            <h3 className="text-lg font-bold">Tap-and-Pay</h3>
+            <p className="text-zinc-500 text-sm">Pay instantly by tapping your NFC card</p>
+          </div>
         </div>
+        {/* Status Badge */}
+        {autoSignEnabled && (
+          <div className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            ✓ ENABLED
+          </div>
+        )}
       </div>
 
       {/* Error */}
@@ -269,6 +379,21 @@ export default function TapToPaySettings({
         </div>
       )}
 
+      {/* Wallet not funded warning */}
+      {walletNotFunded && !autoSignEnabled && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-4">
+          <div className="flex items-start gap-3">
+            <span className="text-amber-400">⚠️</span>
+            <div>
+              <p className="text-amber-400 font-medium text-sm">Wallet Not Activated</p>
+              <p className="text-amber-400/70 text-xs mt-1">
+                Your wallet needs at least 2 XRP to enable Tap-and-Pay.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Auto-sign enabled */}
       {autoSignEnabled ? (
         <div className="space-y-4">
@@ -276,21 +401,49 @@ export default function TapToPaySettings({
             <div className="flex items-center gap-3">
               <span className="text-emerald-400 text-xl">✓</span>
               <div>
-                <p className="text-emerald-400 font-medium">Tap-to-Pay Enabled</p>
+                <p className="text-emerald-400 font-medium">Tap-and-Pay Active</p>
                 <p className="text-zinc-500 text-sm">Max £{MAX_TRANSACTION} per transaction</p>
               </div>
             </div>
-            <button
-              onClick={revokeAutoSign}
-              disabled={settingUp}
-              className="text-zinc-400 hover:text-red-400 text-sm transition"
-            >
-              {settingUp ? 'Disabling...' : 'Disable'}
-            </button>
           </div>
+
+          {/* Signer info */}
+          {signerAddress && (
+            <div className="bg-zinc-800/50 rounded-lg p-3">
+              <p className="text-zinc-500 text-xs mb-1">Platform Signer (on XRPL)</p>
+              <p className="text-zinc-400 text-xs font-mono truncate">{signerAddress}</p>
+            </div>
+          )}
 
           <p className="text-zinc-500 text-sm">
             Tap your NFC card at any YesAllOfUs vendor to pay instantly.
+          </p>
+
+          {/* REVOKE BUTTON */}
+          <button
+            onClick={revokeAutoSign}
+            disabled={revoking}
+            className="w-full py-3 px-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 
+                       text-red-400 rounded-lg font-semibold transition-all disabled:opacity-50 
+                       disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {revoking ? (
+              <>
+                <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                Signing transaction...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+                Disable Tap-and-Pay
+              </>
+            )}
+          </button>
+
+          <p className="text-zinc-600 text-xs text-center">
+            This will remove the signer from your wallet on the XRP Ledger
           </p>
 
           <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
@@ -303,12 +456,12 @@ export default function TapToPaySettings({
         /* Xaman user - show info message */
         <div className="space-y-4">
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
-            <p className="text-amber-400 font-medium mb-2">ℹ️ Tap-to-Pay not available with Xaman</p>
+            <p className="text-amber-400 font-medium mb-2">ℹ️ Tap-and-Pay not available with Xaman</p>
             <p className="text-zinc-400 text-sm mb-3">
               To enable instant NFC payments, please sign in with:
             </p>
             <ul className="text-zinc-400 text-sm space-y-1">
-              <li>• <strong className="text-white">Web3Auth</strong> (Google, Apple, etc.) - Recommended</li>
+              <li>• <strong className="text-white">Social Login</strong> (Google, Apple, etc.) - Recommended</li>
               <li>• <strong className="text-white">Crossmark</strong> browser extension</li>
             </ul>
           </div>
@@ -331,11 +484,11 @@ export default function TapToPaySettings({
           <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
             <p className="text-orange-400 text-sm font-bold mb-2">⚠️ Security Notice</p>
             <p className="text-orange-300/90 text-sm mb-2">
-              Enabling Tap-to-Pay allows YesAllOfUs to automatically sign RLUSD transactions up to £{MAX_TRANSACTION} without manual approval.
+              Enabling Tap-and-Pay adds YesAllOfUs as a signer on your wallet, allowing automatic RLUSD transactions up to £{MAX_TRANSACTION}.
             </p>
             <ul className="text-orange-300/80 text-xs space-y-1">
               <li>• Keep only small amounts in this wallet for daily spending</li>
-              <li>• You can disable Tap-to-Pay at any time</li>
+              <li>• You can disable Tap-and-Pay at any time</li>
               <li>• Report lost/stolen cards immediately in your dashboard</li>
             </ul>
           </div>
@@ -358,9 +511,9 @@ export default function TapToPaySettings({
           {loginMethod === 'web3auth' ? (
             <button
               onClick={enableAutoSignWeb3Auth}
-              disabled={!termsAccepted || settingUp}
+              disabled={!termsAccepted || settingUp || walletNotFunded}
               className={`w-full py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
-                termsAccepted && !settingUp
+                termsAccepted && !settingUp && !walletNotFunded
                   ? 'bg-emerald-500 hover:bg-emerald-400 text-black'
                   : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
               }`}
@@ -368,18 +521,18 @@ export default function TapToPaySettings({
               {settingUp ? (
                 <>
                   <span className="w-4 h-4 border-2 border-zinc-400 border-t-black rounded-full animate-spin"></span>
-                  Setting up...
+                  Signing transaction...
                 </>
               ) : (
-                <>⚡ Connect to Tap-to-Pay</>
+                <>⚡ Enable Tap-and-Pay</>
               )}
             </button>
           ) : (
             <button
               onClick={enableAutoSignCrossmark}
-              disabled={!termsAccepted || settingUp}
+              disabled={!termsAccepted || settingUp || walletNotFunded}
               className={`w-full py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
-                termsAccepted && !settingUp
+                termsAccepted && !settingUp && !walletNotFunded
                   ? 'bg-emerald-500 hover:bg-emerald-400 text-black'
                   : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
               }`}
@@ -387,13 +540,21 @@ export default function TapToPaySettings({
               {settingUp ? (
                 <>
                   <span className="w-4 h-4 border-2 border-zinc-400 border-t-black rounded-full animate-spin"></span>
-                  Setting up...
+                  Signing transaction...
                 </>
               ) : (
-                <>🔐 Connect to Tap-to-Pay</>
+                <>🔐 Enable Tap-and-Pay</>
               )}
             </button>
           )}
+
+          {/* Refresh button */}
+          <button
+            onClick={checkAutoSignStatus}
+            className="w-full py-2 text-zinc-500 hover:text-zinc-300 text-sm transition"
+          >
+            ↻ Refresh status
+          </button>
         </div>
       )}
     </div>

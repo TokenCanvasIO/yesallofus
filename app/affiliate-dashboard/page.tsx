@@ -997,60 +997,112 @@ const NavIcon = ({ name }: { name: string }) => {
   )}
 </div>
 
-            {/* 2. WALLET STATUS */}
-            <div id="wallet-status">
-              {walletStatus && (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold text-zinc-400">Wallet Status</h3>
-                      {loginMethod === 'web3auth' && socialProvider && (
-                        <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded capitalize flex items-center gap-1.5">
-                          <SocialIcon provider={socialProvider} size="sm" />
-                          {socialProvider}
-                        </span>
-                      )}
-                    </div>
-                    <button onClick={() => setShowBalances(!showBalances)} className="text-zinc-400 hover:text-white transition-colors p-1">
-                      <EyeIcon open={showBalances} />
-                    </button>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-zinc-500 text-xs mb-1">XRP Balance</p>
-                      <p className={`text-lg font-bold ${walletStatus.funded ? 'text-white' : 'text-orange-400'}`}>
-                        {walletStatus.funded ? formatXRP(walletStatus.xrp_balance) : 'Not Funded'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-zinc-500 text-xs mb-1">RLUSD Trustline</p>
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${walletStatus.rlusd_trustline ? 'bg-emerald-500' : 'bg-orange-500'}`}></span>
-                        <span className={walletStatus.rlusd_trustline ? 'text-emerald-400 text-sm' : 'text-orange-400 text-sm'}>
-                          {walletStatus.rlusd_trustline ? 'Set' : 'Not Set'}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-zinc-500 text-xs mb-1">RLUSD Balance</p>
-                      <p className="text-lg font-bold text-white">{formatBalance(walletStatus.rlusd_balance)}</p>
-                    </div>
-                    <div>
-                      <p className="text-zinc-500 text-xs mb-1">Pending</p>
-                      {walletStatus.pending_commissions ? (
-                        <div>
-                          <p className="text-lg font-bold text-amber-400">{formatBalance(walletStatus.pending_commissions.total)}</p>
-                          <p className="text-zinc-500 text-xs">{showBalances ? `$${walletStatus.pending_commissions.until_payout.toFixed(2)} until payout` : ''}</p>
-                        </div>
-                      ) : (
-                        <p className="text-zinc-500 text-sm">None</p>
-                      )}
-                    </div>
-                  </div>
+            {/* ============================================================ */}
+{/* FIX: WALLET STATUS SECTION WITH PROPER SPACING               */}
+{/* Replace the wallet-status section in AffiliateDashboard.tsx  */}
+{/* ============================================================ */}
 
-                  {/* EARN INTEREST */}
-<div id="earn-interest">
+{/* 2. WALLET STATUS */}
+<div id="wallet-status">
+  {walletStatus && (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-zinc-400">Wallet Status</h3>
+          {loginMethod === 'web3auth' && socialProvider && (
+            <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded capitalize flex items-center gap-1.5">
+              <SocialIcon provider={socialProvider} size="sm" />
+              {socialProvider}
+            </span>
+          )}
+        </div>
+        <button onClick={() => setShowBalances(!showBalances)} className="text-zinc-400 hover:text-white transition-colors p-1">
+          <EyeIcon open={showBalances} />
+        </button>
+      </div>
+      
+      {/* Balance Grid - ADD mb-4 for spacing below */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+        <div>
+          <p className="text-zinc-500 text-xs mb-1">XRP Balance</p>
+          <p className={`text-lg font-bold ${walletStatus.funded ? 'text-white' : 'text-orange-400'}`}>
+            {walletStatus.funded ? formatXRP(walletStatus.xrp_balance) : 'Not Funded'}
+          </p>
+        </div>
+        <div>
+          <p className="text-zinc-500 text-xs mb-1">RLUSD Trustline</p>
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${walletStatus.rlusd_trustline ? 'bg-emerald-500' : 'bg-orange-500'}`}></span>
+            <span className={walletStatus.rlusd_trustline ? 'text-emerald-400 text-sm' : 'text-orange-400 text-sm'}>
+              {walletStatus.rlusd_trustline ? 'Set' : 'Not Set'}
+            </span>
+          </div>
+        </div>
+        <div>
+          <p className="text-zinc-500 text-xs mb-1">RLUSD Balance</p>
+          <p className="text-lg font-bold text-white">{formatBalance(walletStatus.rlusd_balance)}</p>
+        </div>
+        <div>
+          <p className="text-zinc-500 text-xs mb-1">Pending</p>
+          {walletStatus.pending_commissions ? (
+            <div>
+              <p className="text-lg font-bold text-amber-400">{formatBalance(walletStatus.pending_commissions.total)}</p>
+              <p className="text-zinc-500 text-xs">{showBalances ? `$${walletStatus.pending_commissions.until_payout.toFixed(2)} until payout` : ''}</p>
+            </div>
+          ) : (
+            <p className="text-zinc-500 text-sm">None</p>
+          )}
+        </div>
+      </div>
+
+      {/* Web3Auth Actions */}
+      {loginMethod === 'web3auth' && (
+        <div className="pt-4 border-t border-zinc-800">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 bg-zinc-800/50 rounded-lg p-3">
+              <p className="text-zinc-500 text-xs mb-1">Your Wallet</p>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-sm">{abbreviateWallet(walletAddress)}</span>
+                <button onClick={handleCopyAddress} className={`p-1.5 rounded transition-colors ${copiedAddress ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'}`}>
+                  {copiedAddress ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  )}
+                </button>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setShowReceiveModal(true)} className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
+                Receive
+              </button>
+              <button onClick={() => setShowWithdrawModal(true)} disabled={!walletStatus?.funded} className="flex-1 sm:flex-none bg-sky-600 hover:bg-sky-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
+                Withdraw
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Warnings */}
+      {!walletStatus.funded && (
+        <div className="mt-4 bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+          <p className="text-orange-400 text-sm">💡 Your wallet is not funded yet. Commissions will accumulate until you reach {walletStatus.pending_commissions?.threshold || 1.2} XRP, then we&apos;ll activate your wallet automatically.</p>
+        </div>
+      )}
+      {walletStatus.funded && !walletStatus.rlusd_trustline && (
+        <div className="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+          <p className="text-amber-400 text-sm">⚠️ Set up your RLUSD trustline to receive instant commission payments. <a href="https://xrpl.services/?issuer=rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De&currency=RLUSD&limit=10000000" target="_blank" rel="noopener noreferrer" className="underline ml-1 hover:text-amber-300">Set trustline →</a></p>
+        </div>
+      )}
+    </div>
+  )}
+</div>
+
+{/* EARN INTEREST - NOW OUTSIDE THE WALLET STATUS CARD WITH PROPER SPACING */}
+<div id="earn-interest" className="mb-6">
   <EarnInterest />
 </div>
 
@@ -1084,21 +1136,6 @@ const NavIcon = ({ name }: { name: string }) => {
                       </div>
                     </div>
                   )}
-
-                  {/* Warnings */}
-                  {!walletStatus.funded && (
-                    <div className="mt-4 bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
-                      <p className="text-orange-400 text-sm">💡 Your wallet is not funded yet. Commissions will accumulate until you reach {walletStatus.pending_commissions?.threshold || 1.2} XRP, then we&apos;ll activate your wallet automatically.</p>
-                    </div>
-                  )}
-                  {walletStatus.funded && !walletStatus.rlusd_trustline && (
-                    <div className="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
-                      <p className="text-amber-400 text-sm">⚠️ Set up your RLUSD trustline to receive instant commission payments. <a href="https://xrpl.services/?issuer=rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De&currency=RLUSD&limit=10000000" target="_blank" rel="noopener noreferrer" className="underline ml-1 hover:text-amber-300">Set trustline →</a></p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
 
             {/* 3. NFC PAYMENT CARDS */}
             <div id="payment-cards">
