@@ -802,30 +802,80 @@ setStep('dashboard');
   // REVOKE AUTO-SIGN
   // =========================================================================
   const revokeAutoSign = async () => {
-    if (!confirm('Disable auto-signing? You will need to manually approve each payout.')) return;
+  if (!confirm('Disable auto-signing? You will need to manually approve each payout.')) return;
 
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/store/revoke-autosign`, {
+  setLoading(true);
+  setError(null);
+  
+  try {
+    // Step 1: Get revoke status from API
+    const res = await fetch(`${API_URL}/store/revoke-autosign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        store_id: store.store_id,
+        wallet_address: walletAddress
+      })
+    });
+
+    const data = await res.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to revoke');
+    }
+
+    // Already revoked
+    if (data.already_revoked) {
+      setStore({ ...store, payout_mode: 'manual', auto_signing_enabled: false });
+      setLoading(false);
+      return;
+    }
+
+    // Step 2: Sign transaction to remove signer from XRPL
+    if (data.needs_signature) {
+      const revokeTx = {
+        TransactionType: 'SignerListSet',
+        Account: walletAddress,
+        SignerQuorum: 0,
+        SignerEntries: []
+      };
+
+      const { getWeb3Auth } = await import('@/lib/web3auth');
+      const web3auth = await getWeb3Auth();
+
+      if (!web3auth || !web3auth.provider) {
+        throw new Error('Web3Auth session expired. Please sign in again.');
+      }
+
+      const result = await web3auth.provider.request({
+        method: 'xrpl_submitTransaction',
+        params: { transaction: revokeTx }
+      });
+
+      console.log('Revoke SignerListSet result:', result);
+
+      // Step 3: Confirm with backend
+      await fetch(`${API_URL}/store/confirm-revoke`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           store_id: store.store_id,
-          wallet_address: walletAddress
+          wallet_address: walletAddress,
+          tx_hash: (result as any)?.result?.hash || (result as any)?.hash || null
         })
       });
 
-      const data = await res.json();
-      if (data.success) {
-        setStore({ ...store, payout_mode: 'manual', auto_signing_enabled: false });
-      } else {
-        setError(data.error || 'Failed to revoke');
-      }
-    } catch (err) {
-      setError('Failed to revoke auto-sign');
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
-    setLoading(false);
-  };
+
+    setStore({ ...store, payout_mode: 'manual', auto_signing_enabled: false });
+    
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to revoke auto-sign';
+    setError(message);
+  }
+  setLoading(false);
+};
 
   // =========================================================================
   // PERMANENTLY DELETE STORE

@@ -302,7 +302,7 @@ const completeCustomerSignup = async (wallet: string) => {
 
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
-      <main className="max-w-xl mx-auto px-6 py-16 min-h-[calc(100vh-200px)] flex items-center justify-center">
+      <main className="max-w-xl mx-auto px-6 pt-0 pb-6 min-h-[calc(100vh-200px)] flex items-start justify-center">
         <div className="w-full">
           <h1 className="text-3xl font-bold mb-2 text-center">{title}</h1>
           <p className="text-zinc-400 mb-8 text-center">{subtitle}</p>
