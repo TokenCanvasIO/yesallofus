@@ -259,7 +259,7 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
       
       {/* Header */}
       <header className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-zinc-800">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-4xl lg:max-w-none mx-auto px-4 lg:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-1">
   <button
     onClick={() => router.push('/take-payment')}
@@ -300,7 +300,7 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 pb-8">
+      <main className="max-w-4xl lg:max-w-none mx-auto px-4 lg:px-6 pb-8">
         
         {/* Period Selector */}
         <div className="flex gap-2 py-6 overflow-x-auto max-w-full">
