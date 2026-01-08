@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 
 interface SendPaymentLinkProps {
@@ -25,12 +25,17 @@ export default function SendPaymentLink({
   onSuccess 
 }: SendPaymentLinkProps) {
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [paymentId, setPaymentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   
   // QR code display
   const [showQR, setShowQR] = useState(false);
+  
+  // Waiting state
+  const [waitingForPayment, setWaitingForPayment] = useState(false);
+  const [paymentComplete, setPaymentComplete] = useState(false);
   
   // Email form
   const [showEmailForm, setShowEmailForm] = useState(false);
@@ -59,6 +64,7 @@ export default function SendPaymentLink({
       
       if (data.success) {
   setPaymentUrl(data.payment_url);
+  setPaymentId(data.payment_id);
   
   // Update customer display
   const { updateCustomerDisplay } = await import('@/lib/customerDisplay');
@@ -139,6 +145,28 @@ export default function SendPaymentLink({
     }
   };
 
+  // Poll for payment status when waiting
+  useEffect(() => {
+    if (!waitingForPayment || !paymentId) return;
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_URL}/payment-link/${paymentId}`);
+        const data = await res.json();
+        
+        if (data.status === 'paid' || data.status === 'complete') {
+          setPaymentComplete(true);
+          setWaitingForPayment(false);
+          if (onSuccess) onSuccess();
+        }
+      } catch (err) {
+        console.error('Poll error:', err);
+      }
+    }, 2000);
+    
+    return () => clearInterval(pollInterval);
+  }, [waitingForPayment, paymentId, onSuccess]);
+
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
       <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -181,7 +209,7 @@ export default function SendPaymentLink({
         )}
 
         {/* Payment Link Created */}
-        {paymentUrl && !emailSent && (
+        {paymentUrl && !emailSent && !waitingForPayment && !paymentComplete && (
           <>
             {/* QR Code Display */}
             {showQR && paymentUrl && (
@@ -252,6 +280,17 @@ export default function SendPaymentLink({
               </p>
             </div>
 
+            {/* Wait for Payment Button */}
+            <button
+              onClick={() => setWaitingForPayment(true)}
+              className="w-full bg-sky-600 hover:bg-sky-500 text-white py-4 rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer mt-4"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Wait for Payment
+            </button>
+
             {/* Divider */}
             <div className="flex items-center gap-3 my-4">
               <div className="flex-1 h-px bg-zinc-800"></div>
@@ -305,6 +344,69 @@ export default function SendPaymentLink({
               </div>
             )}
           </>
+        )}
+
+        {/* Waiting for Payment State */}
+        {waitingForPayment && !paymentComplete && (
+          <div className="flex flex-col items-center justify-center py-8">
+            {/* YAOFU Badge */}
+            <div className="mb-8">
+              <svg viewBox="0 0 140 52" className="w-36 h-14">
+                <text x="70" y="14" textAnchor="middle" fill="#71717a" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="500" fontSize="10" letterSpacing="1">
+                  PARTNER
+                </text>
+                <text x="70" y="32" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="16" letterSpacing="3">
+                  <tspan fill="#10b981">Y</tspan>
+                  <tspan fill="#22c55e">A</tspan>
+                  <tspan fill="#3b82f6">O</tspan>
+                  <tspan fill="#6366f1">F</tspan>
+                  <tspan fill="#8b5cf6">U</tspan>
+                </text>
+                <text x="70" y="47" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="600" fontSize="10" letterSpacing="1.5">
+                  DISPLAY
+                </text>
+              </svg>
+            </div>
+            
+            {/* Amount */}
+            <p className="text-5xl font-bold text-emerald-400 mb-4">£{amount.toFixed(2)}</p>
+            
+            {/* Waiting Animation */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+              <p className="text-zinc-400 text-lg">Waiting for payment...</p>
+            </div>
+            
+            {/* Store Name */}
+            <p className="text-zinc-500 text-sm mb-8">{storeName}</p>
+            
+            {/* Cancel Button */}
+            <button
+              onClick={() => setWaitingForPayment(false)}
+              className="text-zinc-500 hover:text-white transition text-sm"
+            >
+              ← Back to link
+            </button>
+          </div>
+        )}
+
+        {/* Payment Complete State */}
+        {paymentComplete && (
+          <div className="flex flex-col items-center justify-center py-8">
+            <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mb-6">
+              <svg className="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="text-3xl font-bold text-emerald-400 mb-2">Payment Complete!</p>
+            <p className="text-zinc-400 mb-6">£{amount.toFixed(2)}</p>
+            <button
+              onClick={onClose}
+              className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 px-8 rounded-xl transition"
+            >
+              Done
+            </button>
+          </div>
         )}
 
         {/* Email Sent Success */}

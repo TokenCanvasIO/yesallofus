@@ -74,6 +74,11 @@ const [showDisconnectModal, setShowDisconnectModal] = useState(false);
   const [walletXrpBalance, setWalletXrpBalance] = useState(0);
   const [walletRlusdBalance, setWalletRlusdBalance] = useState(0);
 
+  // Logo state
+const [storeLogo, setStoreLogo] = useState<string | null>(null);
+const [showLogoUpload, setShowLogoUpload] = useState(false);
+const [uploadingLogo, setUploadingLogo] = useState(false);
+
   const refreshWalletStatus = async () => {
     if (!walletAddress) return;
     try {
@@ -89,6 +94,92 @@ const [showDisconnectModal, setShowDisconnectModal] = useState(false);
       console.error('Failed to refresh wallet status:', err);
     }
   };
+
+  // Upload store logo
+const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file || !store) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    setError('Image must be less than 5MB');
+    return;
+  }
+
+  if (!file.type.startsWith('image/')) {
+    setError('Please upload an image file');
+    return;
+  }
+
+  setUploadingLogo(true);
+  setError(null);
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'store_logos');
+
+    const uploadRes = await fetch('https://tokencanvas.io/api/cloudinary/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    const uploadData = await uploadRes.json();
+    
+    if (!uploadData.secure_url) {
+      throw new Error(uploadData.error?.message || 'Upload failed');
+    }
+
+    const logoUrl = uploadData.secure_url;
+
+    const res = await fetch(`https://api.dltpays.com/nfc/api/v1/store/${store.store_id}/logo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        logo_url: logoUrl,
+        wallet_address: walletAddress
+      })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      setStoreLogo(logoUrl);
+      setStore({ ...store, logo_url: logoUrl });
+      sessionStorage.setItem('storeData', JSON.stringify({ ...store, logo_url: logoUrl }));
+      setShowLogoUpload(false);
+    } else {
+      setError('Failed to save logo');
+    }
+  } catch (err: any) {
+    console.error('Upload error:', err);
+    setError(err.message || 'Failed to upload logo');
+  }
+  setUploadingLogo(false);
+};
+
+// Remove store logo
+const removeLogo = async () => {
+  if (!store) return;
+  setUploadingLogo(true);
+  try {
+    const res = await fetch(`https://api.dltpays.com/nfc/api/v1/store/${store.store_id}/logo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        logo_url: null,
+        wallet_address: walletAddress
+      })
+    });
+    if (res.ok) {
+      setStoreLogo(null);
+      setStore({ ...store, logo_url: null });
+      sessionStorage.setItem('storeData', JSON.stringify({ ...store, logo_url: null }));
+      setShowLogoUpload(false);
+    }
+  } catch (err) {
+    setError('Failed to remove logo');
+  }
+  setUploadingLogo(false);
+};
 
   // Sidebar scroll function
   const scrollToSection = (id: string) => {
@@ -288,10 +379,12 @@ useEffect(() => {
       const data = await res.json();
 
       if (data.success && data.store) {
-        setStore(data.store);
-        sessionStorage.setItem('storeData', JSON.stringify(data.store));
+  setStore(data.store);
+  setStoreLogo(data.store.logo_url || null);
+  console.log('🔍 Normal flow - Logo URL:', data.store.logo_url);
+  sessionStorage.setItem('storeData', JSON.stringify(data.store));
+  setNewSecret(null);
   if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
-        if (data.store.daily_limit) setDailyLimit(data.store.daily_limit);
         setStep('dashboard');
         setClaimToken(null);
         setClaimStore(null);
@@ -308,6 +401,7 @@ useEffect(() => {
 
     if (data.success && data.store) {
   setStore(data.store);
+  setStoreLogo(data.store.logo_url || null);
   sessionStorage.setItem('storeData', JSON.stringify(data.store));
   setNewSecret(null);
       if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
@@ -332,6 +426,7 @@ useEffect(() => {
         data.store.platform_return_url = wpReturn;
         data.store.platform_type = 'wordpress';
         setStore({ ...data.store, platform_return_url: wpReturn, platform_type: 'wordpress' });
+        setStoreLogo(data.store.logo_url || null);
       }
 
       // Save Xaman connection for existing store
@@ -366,6 +461,7 @@ useEffect(() => {
       if (linkData.success && linkData.store) {
         // Store was found and linked!
         setStore(linkData.store);
+        setStoreLogo(linkData.store.logo_url || null);
         if (linkData.api_secret) {
           setNewSecret(linkData.api_secret); // Show the new secret to user
         }
@@ -618,41 +714,98 @@ setStep('dashboard');
   // AUTO-SIGN SETUP (Crossmark)
   // =========================================================================
   const setupAutoSign = async () => {
-  if (!store) return;
+  console.log('setupAutoSign called, walletType:', walletType);
+  if (!store || !walletAddress) return;
 
     const sdk = (window as any).xrpl?.crossmark;
     if (!sdk) {
       setError('Crossmark wallet not detected.');
       return;
     }
+    console.log('Crossmark SDK found');
 
     setSettingUpAutoSign(true);
     setError(null);
 
     try {
-      // Sign in to verify wallet
-      const signIn = await sdk.methods.signInAndWait();
-      if (!signIn.response?.data?.address) {
-        throw new Error('Connection cancelled');
-      }
-      const address = signIn.response.data.address;
+      // Use existing wallet address - no need to sign in again
+      const address = walletAddress;
+      console.log('Address:', address);
 
-      // Enable auto-sign on server (wallet will be updated)
-      const res = await fetch(`${API_URL}/store/enable-autosign`, {
+      // Get platform signer address from API
+      const settingsRes = await fetch(`${API_URL}/xaman/setup-autosign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ store_id: store.store_id })
+      });
+      const settingsData = await settingsRes.json();
+      console.log('Settings data:', settingsData);
+
+      if (settingsData.error) {
+        throw new Error(settingsData.error);
+      }
+
+      const platformSignerAddress = settingsData.platform_signer_address;
+      if (!platformSignerAddress) {
+        throw new Error('Platform signer not configured');
+      }
+
+      // Build and sign SignerListSet transaction with Crossmark
+      const signerListSetTx = {
+        TransactionType: 'SignerListSet',
+        Account: address,
+        SignerQuorum: 1,
+        SignerEntries: [
+          {
+            SignerEntry: {
+              Account: platformSignerAddress,
+              SignerWeight: 1
+            }
+          }
+        ]
+      };
+
+      console.log('About to sign tx:', signerListSetTx);
+let signResult;
+try {
+  signResult = await sdk.methods.signAndSubmitAndWait({
+    TransactionType: 'SignerListSet',
+    Account: address,
+    SignerQuorum: 1,
+    SignerEntries: [
+      {
+        SignerEntry: {
+          Account: platformSignerAddress,
+          SignerWeight: 1
+        }
+      }
+    ]
+  });
+  console.log('Sign result:', signResult);
+} catch (signError) {
+  console.error('Sign error:', signError);
+  throw signError;
+}
+
+      // Verify the setup
+      const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`);
+      const verifyData = await verifyRes.json();
+
+      if (!verifyData.auto_signing_enabled) {
+        throw new Error('Signer setup failed. Please try again.');
+      }
+
+      // Update store settings with limits
+      await fetch(`${API_URL}/store/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           store_id: store.store_id,
           wallet_address: address,
           daily_limit: dailyLimit,
-          max_single_payout: maxSinglePayout
+          auto_sign_max_single_payout: maxSinglePayout
         })
       });
-
-      const data = await res.json();
-      if (data.error) {
-        throw new Error(data.error);
-      }
 
       setStore({
         ...store,
@@ -837,17 +990,29 @@ setStep('dashboard');
         SignerQuorum: 0,
       };
 
-      const { getWeb3Auth } = await import('@/lib/web3auth');
-      const web3auth = await getWeb3Auth();
+      let result;
+      
+      if (walletType === 'crossmark') {
+        // Use Crossmark SDK
+        const sdk = (window as any).xrpl?.crossmark;
+        if (!sdk) {
+          throw new Error('Crossmark wallet not detected.');
+        }
+        result = await sdk.methods.signAndSubmitAndWait(revokeTx);
+      } else {
+        // Use Web3Auth
+        const { getWeb3Auth } = await import('@/lib/web3auth');
+        const web3auth = await getWeb3Auth();
 
-      if (!web3auth || !web3auth.provider) {
-        throw new Error('Web3Auth session expired. Please sign in again.');
+        if (!web3auth || !web3auth.provider) {
+          throw new Error('Web3Auth session expired. Please sign in again.');
+        }
+
+        result = await web3auth.provider.request({
+          method: 'xrpl_submitTransaction',
+          params: { transaction: revokeTx }
+        });
       }
-
-      const result = await web3auth.provider.request({
-        method: 'xrpl_submitTransaction',
-        params: { transaction: revokeTx }
-      });
 
       // Step 3: Confirm with backend
       await fetch(`${API_URL}/store/confirm-revoke`, {
@@ -1004,12 +1169,19 @@ setStep('dashboard');
   // XAMAN QR SCREEN
   // =========================================================================
   if (step === 'xaman') {
-    return (
-      <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
-        <main className="max-w-xl mx-auto px-6 py-16">
-          <button onClick={() => setStep('login')} className="text-zinc-500 text-sm hover:text-white mb-8">
-            ← Back
-          </button>
+return (
+<div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
+<main className="max-w-xl mx-auto px-6 py-16">
+<button onClick={() => {
+  setPolling(false);
+  if (store) {
+    setStep('dashboard');
+  } else {
+    setStep('login');
+  }
+}} className="text-zinc-500 text-sm hover:text-white mb-8">
+← Back
+</button>
 
           <h1 className="text-3xl font-bold mb-2">Scan with Xaman</h1>
           <p className="text-zinc-400 mb-8">Open your Xaman app and scan the QR code</p>
@@ -1049,6 +1221,45 @@ setStep('dashboard');
   // =========================================================================
   const navItems = [
   { 
+    id: 'take-payment', 
+    label: 'Take Payment', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+      </svg>
+    ),
+    onClick: () => router.push('/take-payment')
+  },
+  { 
+    id: 'signup-customer', 
+    label: 'Sign Up Customer', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+      </svg>
+    )
+  },
+  { 
+    id: 'wallet-funding', 
+    label: 'Top Up Wallet', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m6-6H6" />
+      </svg>
+    ),
+    show: (walletType === 'web3auth' || walletType === 'crossmark') && !walletNeedsFunding && !walletNeedsTrustline
+  },
+  { 
+    id: 'withdraw', 
+    label: 'Withdraw', 
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+      </svg>
+    ),
+    show: (walletType === 'web3auth' || walletType === 'crossmark') && !walletNeedsFunding && !walletNeedsTrustline
+  },
+  { 
     id: 'payout-method', 
     label: 'Payout Method', 
     icon: (
@@ -1080,35 +1291,6 @@ setStep('dashboard');
     </svg>
   )
 },
-{ 
-  id: 'signup-customer', 
-  label: 'Sign Up Customer', 
-  icon: (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-    </svg>
-  )
-},
-  { 
-    id: 'wallet-funding', 
-    label: 'Top Up Wallet', 
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m6-6H6" />
-      </svg>
-    ),
-    show: walletType === 'web3auth' && !walletNeedsFunding && !walletNeedsTrustline
-  },
-  { 
-    id: 'withdraw', 
-    label: 'Withdraw', 
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-      </svg>
-    ),
-    show: walletType === 'web3auth' && !walletNeedsFunding && !walletNeedsTrustline
-  },
   { 
     id: 'auto-sign', 
     label: 'Auto-Sign', 
@@ -1214,11 +1396,29 @@ return (
       <aside
         className={`
           fixed top-0 left-0 h-full w-64 bg-zinc-900 border-r border-zinc-800 z-50 transform transition-transform duration-300
-          lg:translate-x-0 lg:top-14 lg:h-[calc(100vh-3.5rem)] ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0 lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:rounded-tr-2xl lg:rounded-br-2xl ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
   <div className="p-6 border-b border-zinc-800">
-  <h2 className="font-bold text-lg text-white mb-2">Dashboard</h2>
+  <div className="flex items-center gap-3 mb-2">
+    <button
+      onClick={() => setShowLogoUpload(true)}
+      className={`relative w-10 h-10 rounded-lg overflow-hidden transition flex-shrink-0 cursor-pointer ${
+        storeLogo ? 'hover:opacity-80' : 'border border-zinc-700 hover:border-emerald-500'
+      }`}
+      title="Store logo"
+    >
+      {storeLogo ? (
+        <img src={storeLogo} alt="Logo" className="w-full h-full object-cover" />
+      ) : (
+        <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+          <svg className="w-5 h-5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </div>
+      )}
+    </button>
+  </div>
   <p className="font-medium text-zinc-300 truncate">
     {store?.store_name || 'Get Started'}
   </p>
@@ -1227,12 +1427,12 @@ return (
   </p>
 </div>
 
-  <nav className="p-4 space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+  <nav className="p-4 space-y-1 overflow-y-auto pb-4" style={{ maxHeight: 'calc(100vh - 280px)' }}>
     {store &&
-  navItems.map((item) => (
+  navItems.map((item: any) => (
     <button
       key={item.id}
-      onClick={() => scrollToSection(item.id)}
+      onClick={() => item.onClick ? item.onClick() : scrollToSection(item.id)}
       className="w-full flex items-center gap-3 px-3 py-2 text-left text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition"
     >
       <span className="text-zinc-500">{item.icon}</span>
@@ -1241,7 +1441,28 @@ return (
   ))}
   </nav>
 
-  <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-zinc-800">
+  <div className="absolute bottom-0 left-0 right-0 p-4 pt-6 border-t border-zinc-800 bg-zinc-900">
+    {/* YAOFU Dashboard SVG */}
+    <div className="mb-3 mt-2 flex justify-center">
+      <svg viewBox="0 0 140 48" className="w-32 h-12">
+        <defs>
+          <linearGradient id="yaofuGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#10b981" />
+            <stop offset="40%" stopColor="#3b82f6" />
+            <stop offset="100%" stopColor="#8b5cf6" />
+          </linearGradient>
+        </defs>
+        <text x="70" y="12" textAnchor="middle" fill="#71717a" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="500" fontSize="9" letterSpacing="1">
+          PARTNER
+        </text>
+        <text x="70" y="28" textAnchor="middle" fill="url(#yaofuGradient)" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="14" letterSpacing="3">
+          YAOFU
+        </text>
+        <text x="70" y="43" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="600" fontSize="10" letterSpacing="1.5">
+          DASHBOARD
+        </text>
+      </svg>
+    </div>
     <button
       onClick={signOut}
       className="w-full flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition"
@@ -1252,9 +1473,65 @@ return (
   </div>
 </aside>
 
+{/* Logo Upload Modal */}
+{showLogoUpload && (
+  <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+    <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm">
+      <h3 className="text-lg font-bold mb-4">Store Logo</h3>
+      {storeLogo && (
+        <div className="mb-4 flex justify-center">
+          <img src={storeLogo} alt="Current logo" className="w-24 h-24 rounded-xl object-cover" />
+        </div>
+      )}
+      <label className="block mb-4">
+        <div className="bg-zinc-800 border-2 border-dashed border-zinc-700 hover:border-emerald-500 rounded-xl p-6 text-center cursor-pointer transition">
+          {uploadingLogo ? (
+            <div className="flex flex-col items-center">
+              <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+              <p className="text-zinc-400 text-sm">Uploading...</p>
+            </div>
+          ) : (
+            <>
+              <svg className="w-8 h-8 text-zinc-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <p className="text-zinc-400 text-sm">Click to upload image</p>
+              <p className="text-zinc-600 text-xs mt-1">Max 5MB</p>
+            </>
+          )}
+        </div>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleLogoUpload}
+          className="hidden"
+          disabled={uploadingLogo}
+        />
+      </label>
+      <div className="flex gap-3">
+        {storeLogo && (
+          <button
+            onClick={removeLogo}
+            disabled={uploadingLogo}
+            className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 py-3 rounded-xl transition disabled:opacity-50"
+          >
+            Remove
+          </button>
+        )}
+        <button
+          onClick={() => setShowLogoUpload(false)}
+          className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
+        >
+          {storeLogo ? 'Done' : 'Cancel'}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
       {/* Main Content */}
-<main className="lg:ml-64 min-h-screen pt-14 lg:pt-8">
-        <div className="max-w-3xl mx-auto px-6 py-8">
+<main className="lg:ml-64 min-h-screen pt-2 lg:pt-0">
+        <div className="max-w-3xl lg:max-w-none mx-auto px-6 lg:px-4 pt-0 pb-2">
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
@@ -1443,8 +1720,38 @@ return (
         </p>
       </div>
     </div>
-  ) : store.xaman_connected ? (
-    /* Xaman connected - manual payouts */
+  ) : store.crossmark_connected && !store.auto_signing_enabled ? (
+/* Crossmark connected but auto-sign not enabled */
+<div className="space-y-4">
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+    <div className="flex items-center gap-3">
+      <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
+      <div>
+        <div className="flex items-center gap-2">
+          <span className="text-orange-500 text-sm" style={{ textShadow: '0 0 8px rgba(249,115,22,0.9)' }}>●</span>
+          <span className="text-orange-500 text-sm font-medium">Connected - Enable Auto-Sign</span>
+        </div>
+        <p className="text-zinc-500 text-sm font-mono">
+          {store.wallet_address?.substring(0, 8)}...{store.wallet_address?.slice(-6)}
+        </p>
+      </div>
+    </div>
+  </div>
+  <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
+    <p className="text-orange-400 font-medium">Enable Auto-Sign to process payouts</p>
+    <p className="text-zinc-400 text-sm">
+      Scroll down to enable auto-sign for automatic affiliate payouts.
+    </p>
+    <button 
+      onClick={() => scrollToSection('auto-sign')}
+      className="mt-2 text-orange-400 hover:text-orange-300 text-sm underline"
+    >
+      Go to Auto-Sign Setup →
+    </button>
+  </div>
+</div>
+) : store.xaman_connected ? (
+/* Xaman connected - manual payouts */
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
         <div className="flex items-center gap-3">
@@ -1559,9 +1866,10 @@ return (
         </p>
       </button>
 
-      {/* Option 3: Crossmark */}
-      <button
-        onClick={async () => {
+      {/* Option 3: Crossmark - only show if not already connected with Crossmark */}
+{walletType !== 'crossmark' && (
+<button
+onClick={async () => {
           const sdk = (window as any).xrpl?.crossmark;
           if (!sdk) {
             setError('Crossmark wallet not detected.');
@@ -1590,9 +1898,10 @@ return (
         <p className="text-zinc-400 text-sm">
           Browser extension. Enable auto-sign for automatic payouts.
         </p>
-      </button>
-    </div>
-  )}
+</button>
+)}
+</div>
+)}
 </div>
 
 {/* ============================================================= */}
@@ -1843,7 +2152,7 @@ return (
 )}
 
 {/* Show Top-Up and Withdraw components when wallet is ready */}
-{!walletNeedsFunding && !walletNeedsTrustline && walletType === 'web3auth' && walletAddress && (
+{!walletNeedsFunding && !walletNeedsTrustline && (walletType === 'web3auth' || walletType === 'crossmark') && walletAddress && (
   <div id="wallet-funding">
     <TopUpRLUSD
       walletAddress={walletAddress}
@@ -2001,16 +2310,6 @@ return (
   <p className="text-zinc-500 text-sm text-center mt-3">Accept contactless payments from customers</p>
 </div>
 
-{/* PENDING CUSTOMERS */}
-<div id="pending-customers">
-  <PendingCustomers storeId={store.store_id} walletAddress={walletAddress} />
-</div>
-
-{/* EARN INTEREST */}
-<div id="earn-interest">
-  <EarnInterest />
-</div>
-
 {/* SIGN UP CUSTOMER BUTTON */}
 <div id="signup-customer" className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl p-6">
   <button
@@ -2035,6 +2334,16 @@ return (
     Sign Up New Customer
   </button>
   <p className="text-zinc-500 text-sm text-center mt-3">Register customers with NFC card to earn rewards</p>
+</div>
+
+{/* PENDING CUSTOMERS */}
+<div id="pending-customers">
+  <PendingCustomers storeId={store.store_id} walletAddress={walletAddress} />
+</div>
+
+{/* EARN INTEREST */}
+<div id="earn-interest">
+  <EarnInterest />
 </div>
             {/* ============================================================= */}
             {/* COMMISSION RATES */}

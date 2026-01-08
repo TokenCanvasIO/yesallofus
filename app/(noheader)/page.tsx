@@ -131,7 +131,21 @@ export default function WelcomePage() {
   />
 </div>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">YesAllOfUs</h1>
+            <h1 className="text-4xl font-bold tracking-tight">YesAllOfUs</h1>
+            <div className="mt-2 mb-1">
+              <svg viewBox="0 0 160 28" className="w-36 h-7 mx-auto">
+                <defs>
+                  <linearGradient id="yaofuWelcomeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#10b981" />
+                    <stop offset="40%" stopColor="#3b82f6" />
+                    <stop offset="100%" stopColor="#8b5cf6" />
+                  </linearGradient>
+                </defs>
+                <text x="80" y="20" textAnchor="middle" fill="url(#yaofuWelcomeGradient)" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="18" letterSpacing="6">
+                  YAOFU
+                </text>
+              </svg>
+            </div>
             <p className="text-zinc-500 text-sm mt-1">Tap. Pay. Earn.</p>
           </div>
 

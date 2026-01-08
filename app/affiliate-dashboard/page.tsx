@@ -762,12 +762,11 @@ const NavIcon = ({ name }: { name: string }) => {
   const navItems = [
     { id: 'earnings', label: 'Total Earnings', icon: 'earnings' },
     { id: 'wallet-status', label: 'Wallet Status', icon: 'wallet', show: !!walletStatus },
-    { id: 'earn-interest', label: (<span className="flex items-center gap-2">Earn Interest<span className="bg-indigo-500/20 text-indigo-400 text-[10px] px-1.5 py-0.5 rounded-full">Soon</span></span>), icon: 'earnings' },
     { id: 'payment-cards', label: 'Payment Cards', icon: 'card' },
     { id: 'tap-to-pay', label: 'Tap-to-Pay', icon: 'tap' },
     { id: 'browser-wallet', label: 'Browser Wallet', icon: 'crossmark' },
     { id: 'xaman-wallet', label: 'Manual Wallet', icon: 'xaman' },
-    { id: 'vendors', label: 'Your Vendors', icon: 'store', show: dashboardData && dashboardData.stores.length > 0 },
+    { id: 'earn-interest', label: (<span className="flex items-center gap-2">Earn Interest<span className="bg-indigo-500/20 text-indigo-400 text-[10px] px-1.5 py-0.5 rounded-full">Soon</span></span>), icon: 'earnings' },
     { id: 'discover', label: 'Discover Vendors', icon: 'search' },
     { id: 'payouts', label: 'Recent Payouts', icon: 'history', show: dashboardData && dashboardData.stores.length > 0 },
   ].filter(item => item.show !== false);
@@ -824,10 +823,8 @@ const NavIcon = ({ name }: { name: string }) => {
         )}
 
         {/* Sidebar */}
-        <aside className={`fixed top-0 left-0 h-full w-64 bg-zinc-900 border-r border-zinc-800 z-50 transform transition-transform duration-300 lg:translate-x-0 lg:top-14 lg:h-[calc(100vh-3.5rem)] ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <aside className={`fixed top-0 left-0 h-full w-64 bg-zinc-900 border-r border-zinc-800 z-50 transform transition-transform duration-300 lg:translate-x-0 lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:rounded-tr-2xl lg:rounded-br-2xl ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="p-6 border-b border-zinc-800">
-            <h2 className="font-bold text-lg text-white mb-3">Member Dashboard</h2>
-            
             {/* Wallet Connection Display */}
             <div className="bg-zinc-800/50 rounded-lg p-3">
               {loginMethod === 'web3auth' && (
@@ -860,7 +857,7 @@ const NavIcon = ({ name }: { name: string }) => {
             </div>
           </div>
 
-          <nav className="p-4 space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+          <nav className="p-4 space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
             {navItems.map((item) => (
               <button
                 key={item.id}
@@ -873,7 +870,28 @@ const NavIcon = ({ name }: { name: string }) => {
             ))}
           </nav>
 
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-zinc-800">
+          <div className="absolute bottom-0 left-0 right-0 p-4 pt-6 border-t border-zinc-800 bg-zinc-900">
+            {/* YAOFU Dashboard SVG */}
+            <div className="mb-3 flex justify-center">
+              <svg viewBox="0 0 140 48" className="w-32 h-12">
+                <defs>
+                  <linearGradient id="yaofuGradientAffiliate" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#10b981" />
+                    <stop offset="40%" stopColor="#3b82f6" />
+                    <stop offset="100%" stopColor="#8b5cf6" />
+                  </linearGradient>
+                </defs>
+                <text x="70" y="12" textAnchor="middle" fill="#71717a" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="500" fontSize="9" letterSpacing="1">
+                  MEMBER
+                </text>
+                <text x="70" y="28" textAnchor="middle" fill="url(#yaofuGradientAffiliate)" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="14" letterSpacing="3">
+                  YAOFU
+                </text>
+                <text x="70" y="43" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="600" fontSize="10" letterSpacing="1.5">
+                  DASHBOARD
+                </text>
+              </svg>
+            </div>
             <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition">
               <NavIcon name="logout" />
               <span className="text-sm">Sign out</span>
@@ -882,35 +900,8 @@ const NavIcon = ({ name }: { name: string }) => {
         </aside>
 
         {/* Main Content */}
-        <main className="lg:ml-64 min-h-screen pt-6">
-          <div className="max-w-3xl mx-auto px-6 pb-8 pt-0">
-            
-            {/* Header */}
-            <div className="mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                <div>
-                  <h1 className="text-3xl font-bold mb-1">Members & Affiliate Dashboard</h1>
-                  <p className="text-zinc-400">Track your earnings across all vendors</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  {walletAddress ? (
-                    <>
-                      <div className="bg-zinc-800 px-3 py-1.5 rounded-lg text-sm">
-                        <span className="text-zinc-400">Wallet: </span>
-                        <span className="text-white font-mono">{abbreviateWallet(walletAddress)}</span>
-                      </div>
-                      <button onClick={handleDisconnectWallet} className="text-zinc-400 hover:text-red-400 text-sm transition-colors hidden sm:block">
-                        Disconnect
-                      </button>
-                    </>
-                  ) : (
-                    <div className="bg-zinc-800 px-3 py-1.5 rounded-lg text-sm">
-                      <span className="text-zinc-400">No wallet connected</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+        <main className="lg:ml-64 min-h-screen pt-3 lg:pt-0">
+  <div className="max-w-3xl lg:max-w-none mx-auto px-6 lg:px-4 pb-8 pt-0">
 
             {error && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
@@ -1099,11 +1090,6 @@ const NavIcon = ({ name }: { name: string }) => {
       )}
     </div>
   )}
-</div>
-
-{/* EARN INTEREST - NOW OUTSIDE THE WALLET STATUS CARD WITH PROPER SPACING */}
-<div id="earn-interest" className="mb-6">
-  <EarnInterest />
 </div>
 
             {/* 3. NFC PAYMENT CARDS */}
@@ -1415,6 +1401,11 @@ const NavIcon = ({ name }: { name: string }) => {
                 )}
               </div>
             </div>
+
+            {/* EARN INTEREST - NOW OUTSIDE THE WALLET STATUS CARD WITH PROPER SPACING */}
+<div id="earn-interest" className="mb-6">
+  <EarnInterest />
+</div>
 
             {/* 7. YOUR VENDORS */}
             <div id="vendors">
