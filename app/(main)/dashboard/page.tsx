@@ -837,7 +837,6 @@ setStep('dashboard');
         TransactionType: 'SignerListSet',
         Account: walletAddress,
         SignerQuorum: 0,
-        SignerEntries: []
       };
 
       const { getWeb3Auth } = await import('@/lib/web3auth');

@@ -223,6 +223,7 @@ export default function TapToPaySettings({
   // FIXED: Revoke auto-sign - now removes signer from XRPL
   // ============================================================
   const revokeAutoSign = async () => {
+    console.log('loginMethod:', loginMethod);
     if (!confirm('Disable Tap-and-Pay?\n\nThis will remove the auto-sign permission from the XRP Ledger. You will need to set it up again to use NFC payments.')) {
       return;
     }
@@ -259,7 +260,6 @@ export default function TapToPaySettings({
           TransactionType: 'SignerListSet',
           Account: walletAddress,
           SignerQuorum: 0,
-          SignerEntries: []
         };
 
         let txHash: string | null = null;
