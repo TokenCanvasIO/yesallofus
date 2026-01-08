@@ -40,7 +40,6 @@ export default function InstantPay({
         if (stored && method === 'web3auth') {
           setWalletAddress(stored);
           
-          // Check if auto-sign is enabled
           const res = await fetch(`${API_URL}/customer/autosign-status/${stored}`);
           const data = await res.json();
           
@@ -57,6 +56,85 @@ export default function InstantPay({
     
     checkSession();
   }, []);
+
+  // Helper to convert string to hex (browser-safe)
+  const toHex = (str: string) => {
+    return Array.from(str)
+      .map(c => c.charCodeAt(0).toString(16).padStart(2, '0'))
+      .join('')
+      .toUpperCase();
+  };
+
+  // Process payment with wallet address
+  const processPaymentWithWallet = async (wallet: string) => {
+    setPaying(true);
+    
+    try {
+      const { getWeb3Auth } = await import('@/lib/web3auth');
+      const web3auth = await getWeb3Auth();
+      
+      if (!web3auth || !web3auth.provider) {
+        throw new Error('Session expired. Please sign in again.');
+      }
+
+      const tx = {
+        TransactionType: 'Payment',
+        Account: wallet,
+        Destination: vendorWallet,
+        Amount: {
+          currency: '524C555344000000000000000000000000000000',
+          issuer: 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
+          value: rlusdAmount.toString()
+        },
+        Memos: [{
+          Memo: {
+            MemoType: toHex('payment'),
+            MemoData: toHex(`Payment to ${storeName}`)
+          }
+        }]
+      };
+
+      console.log('Submitting tx:', JSON.stringify(tx, null, 2));
+
+      const result = await web3auth.provider.request({
+        method: 'xrpl_submitTransaction',
+        params: { transaction: tx }
+      }) as any;
+
+      console.log('Transaction result:', JSON.stringify(result, null, 2));
+
+      const txHash = result?.hash || 
+                     result?.tx_hash || 
+                     result?.result?.hash ||
+                     result?.result?.tx_json?.hash ||
+                     result?.tx_blob?.hash ||
+                     result?.response?.hash ||
+                     result?.txHash;
+      
+      if (!txHash) {
+        console.error('Full result object:', JSON.stringify(result, null, 2));
+        throw new Error('Transaction failed - no hash returned');
+      }
+      
+      await fetch(`${API_URL}/payment-link/${paymentId}/pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          payer_wallet: wallet,
+          tx_hash: txHash
+        })
+      }).catch(() => {});
+      
+      onSuccess(txHash);
+      if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+      
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      onError(error.message || 'Payment failed');
+    } finally {
+      setPaying(false);
+    }
+  };
 
   // Step 1: Login with Web3Auth
   const login = async () => {
@@ -79,12 +157,15 @@ export default function InstantPay({
       
       setWalletAddress(address);
       
-      // Check if already set up
       const res = await fetch(`${API_URL}/customer/autosign-status/${address}`);
       const data = await res.json();
       
       if (data.auto_sign_enabled) {
         setStep('ready');
+        // Auto-trigger payment after short delay
+        setTimeout(() => {
+          processPaymentWithWallet(address);
+        }, 500);
       } else {
         setStep('setup');
       }
@@ -109,12 +190,11 @@ export default function InstantPay({
         throw new Error('Please sign in again');
       }
 
-      // Enable auto-sign via SignerListSet or server registration
       const res = await fetch('https://api.dltpays.com/nfc/api/v1/customer/setup-autosign', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ wallet_address: walletAddress })
-});
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet_address: walletAddress })
+      });
       
       const data = await res.json();
       
@@ -131,82 +211,11 @@ export default function InstantPay({
     }
   };
 
-  // Step 3: Process payment
-const processPayment = async () => {
-  if (!walletAddress) return;
-  
-  setPaying(true);
-  
-  try {
-    const { getWeb3Auth } = await import('@/lib/web3auth');
-    const web3auth = await getWeb3Auth();
-    
-    if (!web3auth || !web3auth.provider) {
-      throw new Error('Session expired. Please sign in again.');
-    }
-
-    // Helper to convert string to hex (browser-safe)
-    const toHex = (str: string) => {
-      return Array.from(str)
-        .map(c => c.charCodeAt(0).toString(16).padStart(2, '0'))
-        .join('')
-        .toUpperCase();
-    };
-
-    const tx = {
-      TransactionType: 'Payment',
-      Account: walletAddress,
-      Destination: vendorWallet,
-      Amount: {
-        currency: '524C555344000000000000000000000000000000',
-        issuer: 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
-        value: rlusdAmount.toString()
-      },
-      Memos: [{
-        Memo: {
-          MemoType: toHex('payment'),
-          MemoData: toHex(`Payment to ${storeName}`)
-        }
-      }]
-    };
-
-    console.log('Submitting tx:', JSON.stringify(tx, null, 2));
-
-    const result = await web3auth.provider.request({
-      method: 'xrpl_submitTransaction',
-      params: { transaction: tx }
-    }) as any;
-
-    console.log('Transaction result:', result);
-
-    const txHash = result?.hash || result?.tx_hash || result?.result?.hash;
-    
-    if (!txHash) {
-      console.error('No tx hash in result:', result);
-      throw new Error('Transaction failed - no hash returned');
-    }
-    
-    // Mark payment complete
-    await fetch(`${API_URL}/payment-link/${paymentId}/pay`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        payer_wallet: walletAddress,
-        tx_hash: txHash
-      })
-    }).catch(() => {});
-    
-    onSuccess(txHash);
-    
-    if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-    
-  } catch (error: any) {
-    console.error('Payment error:', error);
-    onError(error.message || 'Payment failed');
-  } finally {
-    setPaying(false);
-  }
-};
+  // Step 3: Process payment (uses state wallet)
+  const processPayment = async () => {
+    if (!walletAddress) return;
+    await processPaymentWithWallet(walletAddress);
+  };
 
   // STEP 1: Not logged in
   if (step === 'login') {
