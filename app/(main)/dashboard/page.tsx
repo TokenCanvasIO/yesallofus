@@ -760,8 +760,6 @@ setStep('dashboard');
         }
       });
 
-      console.log('SignerListSet result:', result);
-
       // Verify the setup
       const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`);
       const verifyData = await verifyRes.json();
@@ -850,8 +848,6 @@ setStep('dashboard');
         method: 'xrpl_submitTransaction',
         params: { transaction: revokeTx }
       });
-
-      console.log('Revoke SignerListSet result:', result);
 
       // Step 3: Confirm with backend
       await fetch(`${API_URL}/store/confirm-revoke`, {

@@ -223,7 +223,6 @@ export default function TapToPaySettings({
   // FIXED: Revoke auto-sign - now removes signer from XRPL
   // ============================================================
   const revokeAutoSign = async () => {
-    console.log('loginMethod:', loginMethod);
     if (!confirm('Disable Tap-and-Pay?\n\nThis will remove the auto-sign permission from the XRP Ledger. You will need to set it up again to use NFC payments.')) {
       return;
     }
@@ -278,7 +277,6 @@ export default function TapToPaySettings({
             params: { transaction: revokeTx }
           });
 
-          console.log('Web3Auth revoke result:', result);
           txHash = (result as any)?.result?.hash || (result as any)?.hash || null;
 
         } else if (loginMethod === 'crossmark') {
@@ -288,7 +286,6 @@ export default function TapToPaySettings({
           }
 
           const result = await sdk.methods.signAndSubmitAndWait(revokeTx);
-          console.log('Crossmark revoke result:', result);
           txHash = result?.response?.data?.resp?.result?.hash || null;
 
         } else {
