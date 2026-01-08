@@ -132,68 +132,81 @@ export default function InstantPay({
   };
 
   // Step 3: Process payment
-  const processPayment = async () => {
-    if (!walletAddress) return;
+const processPayment = async () => {
+  if (!walletAddress) return;
+  
+  setPaying(true);
+  
+  try {
+    const { getWeb3Auth } = await import('@/lib/web3auth');
+    const web3auth = await getWeb3Auth();
     
-    setPaying(true);
-    
-    try {
-      const { getWeb3Auth } = await import('@/lib/web3auth');
-      const web3auth = await getWeb3Auth();
-      
-      if (!web3auth || !web3auth.provider) {
-        throw new Error('Session expired. Please sign in again.');
-      }
-
-      const tx = {
-        TransactionType: 'Payment',
-        Account: walletAddress,
-        Destination: vendorWallet,
-       Amount: {
-  currency: '524C555344000000000000000000000000000000',
-  issuer: 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
-  value: rlusdAmount.toString()
-},
-Memos: [{
-          Memo: {
-            MemoType: Buffer.from('payment', 'utf8').toString('hex').toUpperCase(),
-            MemoData: Buffer.from(`Payment to ${storeName}`, 'utf8').toString('hex').toUpperCase()
-          }
-        }]
-      };
-
-      const result = await web3auth.provider.request({
-        method: 'xrpl_submitTransaction',
-        params: { transaction: tx }
-      }) as any;
-
-      const txHash = result?.hash || result?.tx_hash || result?.result?.hash;
-      
-      if (!txHash) {
-        throw new Error('Transaction failed');
-      }
-      
-      // Mark payment complete
-      await fetch(`${API_URL}/payment-link/${paymentId}/pay`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          payer_wallet: walletAddress,
-          tx_hash: txHash
-        })
-      }).catch(() => {});
-      
-      onSuccess(txHash);
-      
-      if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-      
-    } catch (error: any) {
-      console.error('Payment error:', error);
-      onError(error.message || 'Payment failed');
-    } finally {
-      setPaying(false);
+    if (!web3auth || !web3auth.provider) {
+      throw new Error('Session expired. Please sign in again.');
     }
-  };
+
+    // Helper to convert string to hex (browser-safe)
+    const toHex = (str: string) => {
+      return Array.from(str)
+        .map(c => c.charCodeAt(0).toString(16).padStart(2, '0'))
+        .join('')
+        .toUpperCase();
+    };
+
+    const tx = {
+      TransactionType: 'Payment',
+      Account: walletAddress,
+      Destination: vendorWallet,
+      Amount: {
+        currency: '524C555344000000000000000000000000000000',
+        issuer: 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
+        value: rlusdAmount.toString()
+      },
+      Memos: [{
+        Memo: {
+          MemoType: toHex('payment'),
+          MemoData: toHex(`Payment to ${storeName}`)
+        }
+      }]
+    };
+
+    console.log('Submitting tx:', JSON.stringify(tx, null, 2));
+
+    const result = await web3auth.provider.request({
+      method: 'xrpl_submitTransaction',
+      params: { transaction: tx }
+    }) as any;
+
+    console.log('Transaction result:', result);
+
+    const txHash = result?.hash || result?.tx_hash || result?.result?.hash;
+    
+    if (!txHash) {
+      console.error('No tx hash in result:', result);
+      throw new Error('Transaction failed - no hash returned');
+    }
+    
+    // Mark payment complete
+    await fetch(`${API_URL}/payment-link/${paymentId}/pay`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        payer_wallet: walletAddress,
+        tx_hash: txHash
+      })
+    }).catch(() => {});
+    
+    onSuccess(txHash);
+    
+    if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+    
+  } catch (error: any) {
+    console.error('Payment error:', error);
+    onError(error.message || 'Payment failed');
+  } finally {
+    setPaying(false);
+  }
+};
 
   // STEP 1: Not logged in
   if (step === 'login') {
