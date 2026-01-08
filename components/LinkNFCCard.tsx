@@ -202,7 +202,7 @@ export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCard
 
   if (loading) {
     return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6 mt-6">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
         <div className="flex items-center gap-3">
           <div className="w-5 h-5 border-2 border-zinc-500 border-t-white rounded-full animate-spin"></div>
           <span className="text-zinc-400">Loading cards...</span>
@@ -212,9 +212,9 @@ export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCard
   }
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6 mt-6">
+{/* Header */}
+<div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <svg className="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -226,12 +226,12 @@ export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCard
         </div>
         {cards.length > 0 && cards.length < 5 && !scanning && (
           <button
-            onClick={startNFCScan}
-            className="bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition flex items-center gap-2"
-          >
-            <span>+</span>
-            Add Card
-          </button>
+  onClick={startNFCScan}
+  className="bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium py-1.5 px-3 rounded-lg transition flex items-center gap-1"
+>
+  <span>+</span>
+  Add
+</button>
         )}
       </div>
 
