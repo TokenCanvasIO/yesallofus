@@ -1636,7 +1636,7 @@ return (
   {/* Auto-sign enabled (works same for Web3Auth and Crossmark) */}
   {store.auto_signing_enabled ? (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-zinc-800/50 rounded-lg">
         <div className="flex items-center gap-3">
           {walletType === 'web3auth' ? (
             <SocialIcon provider={socialProvider} />
