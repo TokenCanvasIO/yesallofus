@@ -9,6 +9,8 @@ import TapToPaySettings from '@/components/TapToPaySettings';
 import LoginScreen from '@/components/LoginScreen';
 import MyPendingStatus from '@/components/MyPendingStatus';
 import EarnInterest from '@/components/EarnInterest';
+import TopUpRLUSD from '@/components/TopUpRLUSD';
+import WithdrawRLUSD from '@/components/WithdrawRLUSD';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
 
@@ -173,7 +175,9 @@ export default function AffiliateDashboard() {
   const [showQRModal, setShowQRModal] = useState(false);
   const [qrUrl, setQrUrl] = useState('');
   const [qrStoreName, setQrStoreName] = useState('');
-  
+
+   // Wallet refresh
+  const [refreshingWallet, setRefreshingWallet] = useState(false);
   // Withdraw
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawAddress, setWithdrawAddress] = useState('');
@@ -397,7 +401,8 @@ const setupAutoSignWeb3Auth = async () => {
   }, [walletAddress]);
 
   // API calls
-  const fetchWalletStatus = async (wallet: string) => {
+  const fetchWalletStatus = async (wallet: string, showLoading = false) => {
+    if (showLoading) setRefreshingWallet(true);
     try {
       const res = await fetch(`${API_URL}/wallet/status/${wallet}`);
       const data = await res.json();
@@ -405,6 +410,7 @@ const setupAutoSignWeb3Auth = async () => {
     } catch (err) {
       console.error('Failed to fetch wallet status:', err);
     }
+    if (showLoading) setRefreshingWallet(false);
   };
 
   const fetchPublicStores = async () => {
@@ -762,6 +768,8 @@ const NavIcon = ({ name }: { name: string }) => {
   const navItems = [
     { id: 'earnings', label: 'Total Earnings', icon: 'earnings' },
     { id: 'wallet-status', label: 'Wallet Status', icon: 'wallet', show: !!walletStatus },
+    { id: 'top-up', label: 'Top Up Wallet', icon: 'wallet', show: loginMethod === 'web3auth' && !!walletStatus },
+    { id: 'withdraw', label: 'Withdraw', icon: 'wallet', show: loginMethod === 'web3auth' && !!walletStatus },
     { id: 'payment-cards', label: 'Payment Cards', icon: 'card' },
     { id: 'tap-to-pay', label: 'Tap-to-Pay', icon: 'tap' },
     { id: 'browser-wallet', label: 'Browser Wallet', icon: 'crossmark' },
@@ -1007,9 +1015,21 @@ const NavIcon = ({ name }: { name: string }) => {
             </span>
           )}
         </div>
-        <button onClick={() => setShowBalances(!showBalances)} className="text-zinc-400 hover:text-white transition-colors p-1">
-          <EyeIcon open={showBalances} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => fetchWalletStatus(walletAddress, true)}
+            className="text-zinc-400 hover:text-white transition-colors p-1"
+            title="Refresh"
+            disabled={refreshingWallet}
+          >
+            <svg className={`w-5 h-5 ${refreshingWallet ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+          <button onClick={() => setShowBalances(!showBalances)} className="text-zinc-400 hover:text-white transition-colors p-1">
+            <EyeIcon open={showBalances} />
+          </button>
+        </div>
       </div>
       
       {/* Balance Grid - ADD mb-4 for spacing below */}
@@ -1091,6 +1111,33 @@ const NavIcon = ({ name }: { name: string }) => {
     </div>
   )}
 </div>
+
+{/* TOP UP WALLET */}
+            {loginMethod === 'web3auth' && walletStatus && (
+              <div id="top-up" className="mb-6">
+                <TopUpRLUSD
+                  walletAddress={walletAddress}
+                  xrpBalance={walletStatus.xrp_balance}
+                  rlusdBalance={walletStatus.rlusd_balance}
+                  showAmounts={showBalances}
+                  onToggleAmounts={() => setShowBalances(!showBalances)}
+                  onRefresh={() => fetchWalletStatus(walletAddress)}
+                />
+              </div>
+            )}
+
+            {/* WITHDRAW */}
+            {loginMethod === 'web3auth' && walletStatus && (
+              <div id="withdraw" className="mb-6">
+                <WithdrawRLUSD
+                  walletAddress={walletAddress}
+                  rlusdBalance={walletStatus.rlusd_balance}
+                  showAmounts={showBalances}
+                  onToggleAmounts={() => setShowBalances(!showBalances)}
+                  onRefresh={() => fetchWalletStatus(walletAddress)}
+                />
+              </div>
+            )}
 
             {/* 3. NFC PAYMENT CARDS */}
             <div id="payment-cards">

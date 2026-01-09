@@ -154,7 +154,7 @@ export default function SendPaymentLink({
         const res = await fetch(`${API_URL}/payment-link/${paymentId}`);
         const data = await res.json();
         
-        if (data.status === 'paid' || data.status === 'complete') {
+        if (data.payment?.status === 'paid' || data.payment?.status === 'complete') {
           setPaymentComplete(true);
           setWaitingForPayment(false);
           if (onSuccess) onSuccess();
