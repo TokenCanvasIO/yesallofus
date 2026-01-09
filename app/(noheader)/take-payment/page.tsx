@@ -360,7 +360,7 @@ setTipAmount(data.tip);
       }
 
 // Customer confirmed - trigger payment
-if (data.customer_confirmed) {
+if (data.customer_confirmed && status === 'idle') {
 // Reset flag to prevent double-trigger
 fetch(`${API_URL}/display/${storeId}/reset-confirm`, {
 method: 'POST',
@@ -371,11 +371,11 @@ headers: { 'Content-Type': 'application/json' }
 // The API calculates this correctly in the /tip endpoint
 const totalFromAPI = data.total;
 
-console.log('Customer confirmed payment:', { 
-  subtotal: data.subtotal, 
-  tip: data.tip, 
+console.log('Customer confirmed payment:', {
+  subtotal: data.subtotal,
+  tip: data.tip,
   total: data.total,
-  totalFromAPI 
+  totalFromAPI
 });
 
 setTipAmount(data.tip || 0);
