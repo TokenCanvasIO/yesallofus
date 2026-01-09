@@ -115,8 +115,8 @@ export default function InstantPay({
       // Check for insufficient funds or other failures
       if (engineResult && engineResult !== 'tesSUCCESS') {
         console.error('Transaction failed with:', engineResult);
-        if (engineResult === 'tecUNFUNDED_PAYMENT' || engineResult === 'tecPATH_DRY') {
-          throw new Error('tecUNFUNDED_PAYMENT');
+        if (engineResult === 'tecUNFUNDED_PAYMENT' || engineResult === 'tecPATH_DRY' || engineResult === 'tecPATH_PARTIAL') {
+          throw new Error('INSUFFICIENT_FUNDS');
         }
         throw new Error(`Transaction failed: ${engineResult}`);
       }
@@ -154,6 +154,8 @@ export default function InstantPay({
       // Check for insufficient funds errors
       if (
         errorMsg.includes('tecUNFUNDED_PAYMENT') ||
+        errorMsg.includes('tecPATH_PARTIAL') ||
+        errorMsg.includes('tecPATH_DRY') ||
         errorMsg.includes('insufficient') ||
         errorMsg.includes('Insufficient') ||
         errorMsg.includes('unfunded') ||
@@ -210,6 +212,8 @@ export default function InstantPay({
       // Check for insufficient funds errors
       if (
         errorMsg.includes('tecUNFUNDED_PAYMENT') ||
+        errorMsg.includes('tecPATH_PARTIAL') ||
+        errorMsg.includes('tecPATH_DRY') ||
         errorMsg.includes('insufficient') ||
         errorMsg.includes('Insufficient') ||
         errorMsg.includes('unfunded') ||
