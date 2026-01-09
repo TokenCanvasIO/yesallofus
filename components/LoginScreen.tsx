@@ -586,7 +586,25 @@ const completeCustomerSignup = async (wallet: string) => {
             </div>
           )}
         </div>
-      </main>
-    </div>
+</main>
+
+{/* YAOFUS Instant Badge - Footer */}
+<footer className="py-6 flex flex-col items-center gap-1">
+  <span className="text-zinc-500 text-[10px] font-medium tracking-wider">SECURE</span>
+  <span className="text-base font-extrabold tracking-widest">
+    <span className="text-emerald-500">Y</span>
+    <span className="text-green-500">A</span>
+    <span className="text-blue-500">O</span>
+    <span className="text-indigo-500">F</span>
+    <span className="text-violet-500">U</span>
+    <span className="text-purple-500">S</span>
+  </span>
+  <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">LOGIN</span>
+  <div className="flex items-center gap-2 mt-2 text-zinc-600 text-sm">
+    <img src="https://yesallofus.com/dltpayslogo1.png" alt="" className="w-5 h-5 rounded opacity-60" />
+    <span>Powered by YesAllOfUs</span>
+  </div>
+</footer>
+</div>
   );
 }

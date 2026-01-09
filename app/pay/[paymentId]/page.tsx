@@ -180,7 +180,7 @@ const printReceipt = () => {
           <span style="color: #8b5cf6;">U</span>
           <span style="color: #a855f7;">S</span>
         </span>
-        <span style="color: #52525b; font-size: 10px; font-weight: 600; letter-spacing: 1.5px;">PIONEERS</span>
+        <span style="color: #52525b; font-size: 10px; font-weight: 600; letter-spacing: 1.5px;">INSTANT</span>
         <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
           <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="footer-logo">
           <span class="footer-text">Powered by YesAllOfUs</span>
@@ -572,7 +572,7 @@ if (allPaid || payment?.status === 'paid') {
             <span className="text-violet-500">U</span>
             <span className="text-purple-500">S</span>
           </span>
-          <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">PIONEERS</span>
+          <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">INSTANT</span>
           <div className="flex items-center gap-2 mt-2">
             <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" className="w-5 h-5 rounded opacity-60" />
             <span className="text-zinc-600 text-xs">Powered by YesAllOfUs</span>
@@ -961,7 +961,7 @@ if (allPaid || payment?.status === 'paid') {
             <span className="text-violet-500">U</span>
             <span className="text-purple-500">S</span>
           </span>
-          <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">PIONEERS</span>
+          <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">INSTANT</span>
           <div className="flex items-center gap-2 mt-2 text-zinc-600 text-sm">
             <img src="https://yesallofus.com/dltpayslogo1.png" alt="" className="w-5 h-5 rounded opacity-60" />
             <span>Powered by YesAllOfUs</span>

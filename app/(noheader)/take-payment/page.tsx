@@ -868,7 +868,7 @@ ${txHash ? `
       <div class="footer" style="flex-direction: column; gap: 4px;">
         <span style="color: #71717a; font-size: 9px; font-weight: 500; letter-spacing: 1px;">RECEIPT</span>
         <span style="font-size: 16px; font-weight: 800; letter-spacing: 2px;"><span style="color: #10b981;">Y</span><span style="color: #22c55e;">A</span><span style="color: #3b82f6;">O</span><span style="color: #6366f1;">F</span><span style="color: #8b5cf6;">U</span><span style="color: #a855f7;">S</span></span>
-        <span style="color: #52525b; font-size: 10px; font-weight: 600; letter-spacing: 1.5px;">PIONEERS</span>
+        <span style="color: #52525b; font-size: 10px; font-weight: 600; letter-spacing: 1.5px;">INSTANT</span>
         <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
           <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="footer-logo">
           <span class="footer-text">Powered by YesAllOfUs</span>
@@ -903,7 +903,7 @@ const filteredProducts = searchQuery
 // RENDER
 // =========================================================================
 return (
-<div className="min-h-screen bg-[#0a0a0a] text-white font-sans overflow-x-hidden">
+<div className="min-h-screen bg-[#0a0a0a] text-white font-sans overflow-x-hidden flex flex-col">
 {/* Header */}
 <header className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-zinc-800">
 <div className="max-w-lg mx-auto sm:max-w-none sm:mx-0 w-full px-4 py-3 flex items-center justify-between">
@@ -1097,7 +1097,7 @@ className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
 {/* Products Manager Modal */}
 {showProductsManager && storeId && walletAddress && (
 <div className="fixed inset-0 bg-black/90 z-50 overflow-y-auto">
-<div className="min-h-screen">
+<div className="min-h-screen flex flex-col">
 <div className="sticky top-0 bg-[#0a0a0a] p-4 border-b border-zinc-800 flex items-center justify-between z-10">
 <h2 className="text-xl font-bold">Manage Products</h2>
 <button
@@ -1110,13 +1110,30 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
                 Done
 </button>
 </div>
-<div className="p-4">
+<div className="p-4 flex-1">
 <ProductsManager storeId={storeId} walletAddress={walletAddress} />
 </div>
+{/* YAOFUS Pioneers Badge - Footer */}
+<footer className="py-6 flex flex-col items-center gap-1">
+  <span className="text-zinc-500 text-[10px] font-medium tracking-wider">CATALOG</span>
+  <span className="text-base font-extrabold tracking-widest">
+    <span className="text-emerald-500">Y</span>
+    <span className="text-green-500">A</span>
+    <span className="text-blue-500">O</span>
+    <span className="text-indigo-500">F</span>
+    <span className="text-violet-500">U</span>
+    <span className="text-purple-500">S</span>
+  </span>
+  <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">PRODUCTS</span>
+  <div className="flex items-center gap-2 mt-2 text-zinc-600 text-sm">
+    <img src="https://yesallofus.com/dltpayslogo1.png" alt="" className="w-5 h-5 rounded opacity-60" />
+    <span>Powered by YesAllOfUs</span>
+  </div>
+</footer>
 </div>
 </div>
       )}
-<main className="max-w-lg mx-auto px-4 pb-8">
+<main className="max-w-lg mx-auto px-4 pb-8 flex-1">
 {/* ============================================================= */}
 {/* IDLE STATE - Product Selection */}
 {/* ============================================================= */}
@@ -1765,6 +1782,24 @@ className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 
   </div>
 )}
 </main>
+
+{/* YAOFUS Pioneers Badge - Footer */}
+<footer className="py-6 flex flex-col items-center gap-1">
+  <span className="text-zinc-500 text-[10px] font-medium tracking-wider">INSTANT</span>
+  <span className="text-base font-extrabold tracking-widest">
+    <span className="text-emerald-500">Y</span>
+    <span className="text-green-500">A</span>
+    <span className="text-blue-500">O</span>
+    <span className="text-indigo-500">F</span>
+    <span className="text-violet-500">U</span>
+    <span className="text-purple-500">S</span>
+  </span>
+  <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">PAYMENTS</span>
+  <div className="flex items-center gap-2 mt-2 text-zinc-600 text-sm">
+    <img src="https://yesallofus.com/dltpayslogo1.png" alt="" className="w-5 h-5 rounded opacity-60" />
+    <span>Powered by YesAllOfUs</span>
+  </div>
+</footer>
 </div>
   );
 }

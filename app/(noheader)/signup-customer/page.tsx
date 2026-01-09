@@ -241,7 +241,7 @@ function SignupCustomerPage() {
                 YAOFUS
               </text>
               <text x="70" y="43" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="600" fontSize="10" letterSpacing="1.5">
-                PIONEERS
+                INSTANT
               </text>
             </svg>
           </div>
@@ -441,9 +441,27 @@ function SignupCustomerPage() {
 
         <p className="text-zinc-600 text-xs text-center mt-6">
           Customer will receive a welcome email with instructions to complete their account setup.
-        </p>
-      </main>
-    </div>
+</p>
+
+{/* YAOFUS Instant Badge */}
+<div className="mt-8 flex flex-col items-center gap-1">
+  <span className="text-zinc-500 text-[10px] font-medium tracking-wider">INSTANT</span>
+  <span className="text-base font-extrabold tracking-widest">
+    <span className="text-emerald-500">Y</span>
+    <span className="text-green-500">A</span>
+    <span className="text-blue-500">O</span>
+    <span className="text-indigo-500">F</span>
+    <span className="text-violet-500">U</span>
+    <span className="text-purple-500">S</span>
+  </span>
+  <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">SIGNUP</span>
+  <div className="flex items-center gap-2 mt-2 text-zinc-600 text-sm">
+    <img src="https://yesallofus.com/dltpayslogo1.png" alt="" className="w-5 h-5 rounded opacity-60" />
+    <span>Powered by YesAllOfUs</span>
+  </div>
+</div>
+</main>
+</div>
   );
 }
 

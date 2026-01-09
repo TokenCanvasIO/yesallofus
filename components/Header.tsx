@@ -182,13 +182,19 @@ export default function Header() {
             >
               Docs
             </Link>
-            <Link 
-              href="/#pricing" 
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-zinc-400 hover:text-white text-sm transition py-3 border-b border-zinc-800/50"
-            >
-              Pricing
-            </Link>
+            <button 
+onClick={() => {
+  setMobileMenuOpen(false);
+  if (pathname === '/' || pathname === '/home') {
+    document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+  } else {
+    window.location.href = '/#pricing';
+  }
+}}
+className="text-zinc-400 hover:text-white text-sm transition py-3 border-b border-zinc-800/50 text-left w-full"
+>
+  Pricing
+</button>
             <Link 
               href="/discover-vendors" 
               onClick={() => setMobileMenuOpen(false)}

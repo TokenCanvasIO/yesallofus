@@ -64,7 +64,7 @@ export default function Footer() {
                   YAOFUS
                 </text>
                 <text x="70" y="50" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="600" fontSize="10" letterSpacing="2">
-                  PIONEERS
+                  INSTANT
                 </text>
               </svg>
             </div>
