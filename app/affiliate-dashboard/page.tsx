@@ -266,8 +266,8 @@ const checkAutoSignStatus = async (wallet: string, method: string) => {
     const res = await fetch(`https://api.dltpays.com/nfc/api/v1/customer/autosign-status/${wallet}`);
     const data = await res.json();
     if (data.success) {
-      setAutoSignEnabled(data.auto_sign_enabled);
-      if (!data.auto_sign_enabled) {
+      setAutoSignEnabled(data.auto_signing_enabled);
+      if (!data.auto_signing_enabled) {
         setShowAutoSignPrompt(true);
       }
     }
