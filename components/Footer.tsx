@@ -42,10 +42,31 @@ export default function Footer() {
   </svg>
 </a>
               <a href="mailto:mark@yesallofus.com" className="text-zinc-500 hover:text-white transition-colors">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </a>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </a>
+            </div>
+            {/* YAOFU Badge */}
+            <div className="mt-6">
+              <svg viewBox="0 0 140 58" className="w-28 h-14">
+                <defs>
+                  <linearGradient id="yaofuGradientFooter" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#10b981" />
+                    <stop offset="40%" stopColor="#3b82f6" />
+                    <stop offset="100%" stopColor="#8b5cf6" />
+                  </linearGradient>
+                </defs>
+                <text x="70" y="12" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="500" fontSize="9" letterSpacing="1">
+                  BE INSPIRED
+                </text>
+                <text x="70" y="32" textAnchor="middle" fill="url(#yaofuGradientFooter)" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="18" letterSpacing="4">
+                  YAOFU
+                </text>
+                <text x="70" y="50" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="600" fontSize="10" letterSpacing="2">
+                  PIONEERS
+                </text>
+              </svg>
             </div>
           </div>
 
