@@ -383,6 +383,11 @@ const setupAutoSignWeb3Auth = async () => {
         fetchDashboard(stored),
         fetchWalletStatus(stored)
       ]);
+      
+      // Check auto-sign status for Web3Auth users on page load
+      if (storedMethod === 'web3auth') {
+        checkAutoSignStatus(stored, storedMethod);
+      }
     } else {
       setLoading(false);
     }
