@@ -150,6 +150,7 @@ const [walletAddress, setWalletAddress] = useState<string | null>(null);
 const [storeId, setStoreId] = useState<string | null>(null);
 const [storeName, setStoreName] = useState<string>('');
 const nfcScanActiveRef = useRef(false);
+const paymentInProgressRef = useRef(false);
 // Products & Cart
 const [products, setProducts] = useState<Product[]>([]);
 const [cart, setCart] = useState<CartItem[]>([]);
@@ -287,6 +288,7 @@ if (data.status === 'signed') {
 setTxHash(data.tx_hash);
 setLastOrder([...cart]);
 setStatus('success');
+paymentInProgressRef.current = false;
 if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'success', null, tipAmount);
 if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
 } else if (data.status === 'expired' || data.status === 'cancelled') {
@@ -574,11 +576,12 @@ await processPayment(uid, amount);
   };
 // Process the payment
 const processPayment = async (uid: string, paymentAmount: number) => {
-// Prevent duplicate payments
-if (status === 'processing') {
-  console.log('Payment already processing, skipping');
+// Prevent duplicate payments (ref is instant, status can have race conditions)
+if (paymentInProgressRef.current) {
+  console.log('Payment already in progress, skipping');
   return;
 }
+paymentInProgressRef.current = true;
 setStatus('processing');
 if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'processing');
 try {
@@ -619,14 +622,21 @@ if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'suc
 // Haptic + sound feedback
 if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
 } else {
-setError(data.error || 'Payment failed');
-setStatus('error');
-if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'error');
+  // Only show error if not already successful (handles race conditions)
+  if (status !== 'success') {
+    setError(data.error || 'Payment failed');
+    setStatus('error');
+    paymentInProgressRef.current = false;
+    if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'error');
+  }
       }
     } catch (err: any) {
-setError(err.message || 'Payment failed');
-setStatus('error');
-if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'error');
+  // Only show error if not already successful (handles race conditions)
+  if (status !== 'success') {
+    setError(err.message || 'Payment failed');
+    setStatus('error');
+    if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'error');
+  }
     }
   };
 // Reset for next payment
@@ -642,6 +652,7 @@ setXamanQR(null);
 setXamanPaymentId(null);
 setError(null);
 nfcScanActiveRef.current = false;
+paymentInProgressRef.current = false;
 setShowManualEntry(false);
 if (storeId) clearCustomerDisplay(storeId, storeName);
 };
