@@ -4,10 +4,11 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface ReceiptItem {
-  name: string;
-  quantity: number;
-  unit_price: number;
-  line_total: number;
+name: string;
+quantity: number;
+unit_price?: number;
+price?: number;
+line_total?: number;
 }
 
 interface Receipt {
@@ -381,9 +382,9 @@ const printReceipt = (receipt: Receipt) => {
           <div class="item">
             <div>
               <div class="item-name">${item.name}</div>
-              <div class="item-qty">Qty: ${item.quantity} × £${item.unit_price.toFixed(2)}</div>
+              <div class="item-qty">Qty: ${item.quantity || 1} × £${(item.unit_price || item.price || 0).toFixed(2)}</div>
             </div>
-            <div class="item-price">£${item.line_total.toFixed(2)}</div>
+            <div class="item-price">£${(item.line_total || (item.unit_price || item.price || 0) * (item.quantity || 1)).toFixed(2)}</div>
           </div>
         `).join('')}
       </div>
@@ -872,10 +873,10 @@ const exportPDF = () => {
                         <div>
                           <p className="font-medium">{item.name}</p>
                           <p className="text-zinc-500 text-sm">
-                            {item.quantity} × £{item.unit_price.toFixed(2)}
+                            {item.quantity || 1} × £{(item.unit_price || item.price || 0).toFixed(2)}
                           </p>
                         </div>
-                        <p className="font-medium">£{item.line_total.toFixed(2)}</p>
+                        <p className="font-medium">£{(item.line_total || (item.unit_price || item.price || 0) * (item.quantity || 1)).toFixed(2)}</p>
                       </div>
                     ))}
                   </div>
