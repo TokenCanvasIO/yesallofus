@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import InstantPay from '@/components/InstantPay';
+import { QRCodeSVG } from 'qrcode.react';
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
@@ -67,6 +68,14 @@ export default function PayPage() {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailAddress, setEmailAddress] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
+
+  // Split share state
+  const [copiedSplitId, setCopiedSplitId] = useState<string | null>(null);
+  const [showSplitQR, setShowSplitQR] = useState<string | null>(null);
+  const [showSplitEmailModal, setShowSplitEmailModal] = useState(false);
+  const [splitEmailTarget, setSplitEmailTarget] = useState<SplitData | null>(null);
+  const [splitEmailAddress, setSplitEmailAddress] = useState('');
+  const [sendingSplitEmail, setSendingSplitEmail] = useState(false);
 
   // Print receipt
 const printReceipt = () => {
@@ -805,24 +814,79 @@ if (allPaid || payment?.status === 'paid') {
 
             {/* Share links for other splits */}
             {splits && splits.length > 1 && (
-  <div className="border-t border-zinc-800 pt-6">
-    <p className="text-zinc-400 text-sm mb-3">Share with friends:</p>
-    <div className="space-y-2">
-      {splits.filter((_, idx) => idx > currentSplitIndex).map((split) => (
+              <div className="border-t border-zinc-800 pt-6">
+                <p className="text-zinc-400 text-sm mb-3">Share with friends:</p>
+                <div className="space-y-3">
+                  {splits.filter((_, idx) => idx > currentSplitIndex).map((split) => (
                     <div 
                       key={split.payment_id}
-                      className="bg-zinc-900 rounded-xl p-3 border border-zinc-800 flex items-center justify-between"
+                      className="bg-zinc-900 rounded-xl p-4 border border-zinc-800"
                     >
-                      <div>
-                        <span className="text-zinc-400 text-sm">Person {split.split_index}</span>
-                        <p className="font-semibold">£{split.amount.toFixed(2)}</p>
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <span className="text-zinc-400 text-sm">Person {split.split_index}</span>
+                          <p className="text-xl font-bold text-emerald-400">£{split.amount.toFixed(2)}</p>
+                        </div>
+                        <button
+                          onClick={() => setShowSplitQR(split.payment_id)}
+                          className="bg-zinc-800 hover:bg-zinc-700 p-2 rounded-lg transition"
+                          title="Show QR"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h2M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                          </svg>
+                        </button>
                       </div>
-                      <button
-                        onClick={() => shareLink(`https://yesallofus.com/pay/${split.payment_id}`, split.split_index, split.amount)}
-                        className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg text-sm font-medium transition"
-                      >
-                        Share
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={async () => {
+                            await navigator.clipboard.writeText(`https://yesallofus.com/pay/${split.payment_id}`);
+                            setCopiedSplitId(split.payment_id);
+                            setTimeout(() => setCopiedSplitId(null), 2000);
+                          }}
+                          className={`flex-1 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 ${
+                            copiedSplitId === split.payment_id 
+                              ? 'bg-emerald-500 text-black' 
+                              : 'bg-zinc-800 hover:bg-zinc-700'
+                          }`}
+                        >
+                          {copiedSplitId === split.payment_id ? (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              Copied!
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
+                              Copy
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSplitEmailTarget(split);
+                            setShowSplitEmailModal(true);
+                          }}
+                          className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          Email
+                        </button>
+                        <button
+                          onClick={() => shareLink(`https://yesallofus.com/pay/${split.payment_id}`, split.split_index, split.amount)}
+                          className="bg-zinc-800 hover:bg-zinc-700 py-2 px-3 rounded-lg text-sm font-medium transition"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -978,6 +1042,92 @@ if (allPaid || payment?.status === 'paid') {
                 className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 rounded-xl transition disabled:opacity-50"
               >
                 {sendingEmail ? 'Sending...' : 'Send'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Split QR Modal */}
+      {showSplitQR && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm text-center">
+            <h3 className="text-lg font-bold mb-4">Scan to Pay</h3>
+            <div className="bg-white rounded-2xl p-4 mb-4 inline-block">
+              <QRCodeSVG 
+                value={`https://yesallofus.com/pay/${showSplitQR}`}
+                size={200}
+                level="M"
+              />
+            </div>
+            <p className="text-zinc-400 text-sm mb-4">
+              {splits?.find(s => s.payment_id === showSplitQR)?.amount && 
+                `£${splits.find(s => s.payment_id === showSplitQR)!.amount.toFixed(2)}`
+              }
+            </p>
+            <button
+              onClick={() => setShowSplitQR(null)}
+              className="bg-zinc-800 hover:bg-zinc-700 px-6 py-3 rounded-xl font-medium transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Split Email Modal */}
+      {showSplitEmailModal && splitEmailTarget && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm">
+            <h3 className="text-lg font-bold mb-2">Send Payment Link</h3>
+            <p className="text-zinc-400 text-sm mb-4">
+              Person {splitEmailTarget.split_index} · £{splitEmailTarget.amount.toFixed(2)}
+            </p>
+            <input
+              type="email"
+              placeholder="friend@email.com"
+              value={splitEmailAddress}
+              onChange={(e) => setSplitEmailAddress(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 mb-4"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowSplitEmailModal(false);
+                  setSplitEmailAddress('');
+                  setSplitEmailTarget(null);
+                }}
+                className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!splitEmailAddress || !splitEmailAddress.includes('@')) return;
+                  setSendingSplitEmail(true);
+                  try {
+                    await fetch(`${API_URL}/payment-link/send-email`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        email: splitEmailAddress,
+                        payment_url: `https://yesallofus.com/pay/${splitEmailTarget.payment_id}`,
+                        store_name: payment?.store_name,
+                        amount: splitEmailTarget.amount
+                      })
+                    });
+                    setShowSplitEmailModal(false);
+                    setSplitEmailAddress('');
+                    setSplitEmailTarget(null);
+                  } catch (err) {
+                    console.error('Failed to send email');
+                  }
+                  setSendingSplitEmail(false);
+                }}
+                disabled={sendingSplitEmail}
+                className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 rounded-xl transition disabled:opacity-50"
+              >
+                {sendingSplitEmail ? 'Sending...' : 'Send'}
               </button>
             </div>
           </div>

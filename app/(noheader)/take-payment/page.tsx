@@ -110,6 +110,8 @@ const [priceAge, setPriceAge] = useState<number>(0);
 const [showSendPaymentLink, setShowSendPaymentLink] = useState(false);
 // Update share pay modal ui
 const [showPendingPayments, setShowPendingPayments] = useState(false);
+// Header staff UI
+const [showStaffModal, setShowStaffModal] = useState(false);
 
 // Convert GBP to RLUSD - Live price from CoinGecko Pro with audit trail
 const convertGBPtoRLUSD = async (gbpAmount: number): Promise<number> => {
@@ -917,36 +919,49 @@ title="Dashboard"
 </button>
 
 {/* Center - Logo and Store Name */}
-<div className="flex items-center gap-2 md:absolute md:left-1/2 md:-translate-x-1/2">
-<button
-onClick={() => setShowLogoUpload(true)}
-className={`relative w-8 h-8 rounded-lg overflow-hidden transition flex-shrink-0 cursor-pointer ${
-storeLogo ? 'hover:opacity-80' : 'border border-zinc-700 hover:border-emerald-500'
-}`}
-title="Store logo"
->
-{storeLogo ? (
-<img src={storeLogo} alt="Logo" className="w-full h-full object-cover" />
-        ) : (
-<div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-<svg className="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-</svg>
-</div>
-        )}
-</button>
-<h1 className="text-lg font-bold truncate max-w-[120px] hidden sm:block">{storeName}</h1>
+<div className="flex items-center gap-2 landscape:ml-0 md:absolute md:left-1/2 md:-translate-x-1/2">
+  <button
+    onClick={() => setShowLogoUpload(true)}
+    className={`relative w-8 h-8 rounded-lg overflow-hidden transition flex-shrink-0 cursor-pointer ${
+      storeLogo ? 'hover:opacity-80' : 'border border-zinc-700 hover:border-emerald-500'
+    }`}
+    title="Store logo"
+  >
+    {storeLogo ? (
+      <img src={storeLogo} alt="Logo" className="w-full h-full object-cover" />
+    ) : (
+      <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+        <svg className="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+      </div>
+    )}
+  </button>
+  <h1 className="text-lg font-bold truncate max-w-[120px] hidden landscape:block sm:block">{storeName}</h1>
 </div>
 
 {/* Right - Staff selector and icons */}
 <div className="flex items-center gap-1">
-{/* Staff Selector */}
+{/* Staff Selector - Icon only on mobile, full on desktop */}
 {storeId && walletAddress && (
-<StaffSelector
-storeId={storeId}
-walletAddress={walletAddress}
-onStaffChange={(staff) => setActiveStaff(staff)}
-/>
+  <div className="hidden sm:block">
+    <StaffSelector
+      storeId={storeId}
+      walletAddress={walletAddress}
+      onStaffChange={(staff) => setActiveStaff(staff)}
+    />
+  </div>
+)}
+{storeId && walletAddress && (
+  <button
+    onClick={() => setShowStaffModal(true)}
+    className="sm:hidden text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
+    title={activeStaff?.name || 'Staff'}
+  >
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  </button>
 )}
 
 {/* Analytics */}
@@ -1723,6 +1738,31 @@ className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 
       console.log('Payment completed:', paymentId);
     }}
   />
+)}
+{/* Mobile Staff Modal */}
+{showStaffModal && (
+  <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:hidden p-4">
+    <div className="bg-zinc-900 rounded-2xl w-full max-h-[70vh] overflow-hidden">
+      <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+        <h3 className="font-bold">Select Staff</h3>
+        <button onClick={() => setShowStaffModal(false)} className="text-zinc-500 hover:text-white p-1">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div className="p-4">
+        <StaffSelector
+          storeId={storeId!}
+          walletAddress={walletAddress!}
+          onStaffChange={(staff) => {
+            setActiveStaff(staff);
+            setShowStaffModal(false);
+          }}
+        />
+      </div>
+    </div>
+  </div>
 )}
 </main>
 </div>
