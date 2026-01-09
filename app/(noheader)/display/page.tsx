@@ -958,20 +958,34 @@ useEffect(() => {
   </div>
 )}
       {/* Footer */}
-      <footer className="relative z-10 px-6 py-4 sm:px-8 sm:py-5 border-t border-zinc-800/50 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
-            <img 
-  src={data.logo_url || "https://yesallofus.com/dltpayslogo1.png"} 
-  alt="Logo" 
-  className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-cover"
-/>
-          <span className="text-zinc-600 text-sm sm:text-base">Powered by YesAllOfUs</span>
+      <footer className="relative z-10 px-6 py-4 sm:px-8 sm:py-5 border-t border-zinc-800/50">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+              <img 
+    src={data.logo_url || "https://yesallofus.com/dltpayslogo1.png"} 
+    alt="Logo" 
+    className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-cover"
+  />
+            <span className="text-zinc-600 text-sm sm:text-base">Powered by YesAllOfUs</span>
+          </div>
+          <div className="flex items-center gap-2 text-zinc-600">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span className="text-sm sm:text-base">Secure payments on XRPL</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-zinc-600">
-          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-          <span className="text-sm sm:text-base">Secure payments on XRPL</span>
+        {/* Discreet back to POS link */}
+        <div className="mt-4 flex justify-center">
+          <a 
+            href="/take-payment" 
+            className="flex items-center gap-1.5 text-zinc-700 hover:text-zinc-500 transition text-xs"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span>Back to POS</span>
+          </a>
         </div>
       </footer>
     </div>

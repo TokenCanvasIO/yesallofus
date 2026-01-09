@@ -58,6 +58,91 @@ return categoryEmojis[catLower] || categoryEmojis['default'];
   }
 return categoryEmojis['default'];
 }
+// Mobile Staff List Component (inline for mobile modal)
+function MobileStaffList({ 
+  storeId, 
+  walletAddress, 
+  activeStaff, 
+  onSelect 
+}: { 
+  storeId: string; 
+  walletAddress: string; 
+  activeStaff: any; 
+  onSelect: (staff: any) => void;
+}) {
+  const [staffList, setStaffList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStaff = async () => {
+      try {
+        const res = await fetch(
+          `https://api.dltpays.com/nfc/api/v1/store/${storeId}/staff?wallet_address=${walletAddress}`
+        );
+        const data = await res.json();
+        if (data.success) {
+          setStaffList(data.staff || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch staff');
+      }
+      setLoading(false);
+    };
+    fetchStaff();
+  }, [storeId, walletAddress]);
+
+  if (loading) {
+    return (
+      <div className="p-8 text-center">
+        <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+      </div>
+    );
+  }
+
+  if (staffList.length === 0) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-zinc-500 mb-2">No staff members yet</p>
+        <a href="/staff" className="text-emerald-400 text-sm">+ Add staff</a>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {staffList.map((staff) => (
+        <button
+          key={staff.staff_id}
+          onClick={() => onSelect(staff)}
+          className={`w-full flex items-center gap-3 px-4 py-4 border-b border-zinc-800 transition ${
+            activeStaff?.staff_id === staff.staff_id ? 'bg-zinc-800' : ''
+          }`}
+        >
+          {staff.photo_url ? (
+            <img src={staff.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-lg text-emerald-400">
+              {staff.name.charAt(0)}
+            </div>
+          )}
+          <div className="flex-1 text-left">
+            <p className="text-white">{staff.name}</p>
+            <p className="text-zinc-500 text-sm">{staff.role}</p>
+          </div>
+          {activeStaff?.staff_id === staff.staff_id ? (
+            <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : staff.is_clocked_in ? (
+            <span className="text-emerald-400 text-xs">● On shift</span>
+          ) : (
+            <span className="text-zinc-600 text-xs">Off</span>
+          )}
+        </button>
+      ))}
+    </>
+  );
+}
 export default function TakePayment() {
 const router = useRouter();
 // Store data
@@ -1133,7 +1218,7 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
 </div>
 </div>
       )}
-<main className="max-w-lg mx-auto px-4 pb-8 flex-1">
+<main className="w-full sm:max-w-lg mx-auto px-2 sm:px-4 pb-8 flex-1">
 {/* ============================================================= */}
 {/* IDLE STATE - Product Selection */}
 {/* ============================================================= */}
@@ -1768,12 +1853,44 @@ className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 
           </svg>
         </button>
       </div>
-      <div className="p-4">
-        <StaffSelector
-          storeId={storeId!}
-          walletAddress={walletAddress!}
-          onStaffChange={(staff) => {
+      <div className="overflow-y-auto max-h-[50vh]">
+        {/* No one option */}
+        <button
+          onClick={() => {
+            setActiveStaff(null);
+            sessionStorage.removeItem('activeStaff');
+            setShowStaffModal(false);
+          }}
+          className={`w-full flex items-center gap-3 px-4 py-4 border-b border-zinc-800 transition ${
+            !activeStaff ? 'bg-zinc-800' : ''
+          }`}
+        >
+          <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center">
+            <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-white">No one</p>
+            <p className="text-zinc-500 text-sm">Skip staff selection</p>
+          </div>
+          {!activeStaff && (
+            <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </button>
+
+        {/* Staff list - fetch inline */}
+        <MobileStaffList 
+          storeId={storeId!} 
+          walletAddress={walletAddress!} 
+          activeStaff={activeStaff}
+          onSelect={(staff) => {
             setActiveStaff(staff);
+            if (staff) {
+              sessionStorage.setItem('activeStaff', JSON.stringify(staff));
+            }
             setShowStaffModal(false);
           }}
         />

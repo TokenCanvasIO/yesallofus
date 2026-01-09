@@ -530,7 +530,7 @@ return (
           <span className="text-violet-500">U</span>
           <span className="text-purple-500">S</span>
         </span>
-        <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">INSTANT</span>
+        <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">SHIFTS</span>
         <div className="flex items-center gap-2 mt-2 text-zinc-600 text-sm">
           <img src="https://yesallofus.com/dltpayslogo1.png" alt="" className="w-5 h-5 rounded opacity-60" />
           <span>Powered by YesAllOfUs</span>
