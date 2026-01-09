@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import ProductsManager from '@/components/ProductsManager';
 import { updateCustomerDisplay, clearCustomerDisplay } from '@/lib/customerDisplay';
@@ -149,6 +149,7 @@ const router = useRouter();
 const [walletAddress, setWalletAddress] = useState<string | null>(null);
 const [storeId, setStoreId] = useState<string | null>(null);
 const [storeName, setStoreName] = useState<string>('');
+const nfcScanActiveRef = useRef(false);
 // Products & Cart
 const [products, setProducts] = useState<Product[]>([]);
 const [cart, setCart] = useState<CartItem[]>([]);
@@ -534,6 +535,11 @@ startNFCScan(amount);
   };
 // Web NFC scan (Android only)
 const startNFCScan = async (paymentAmount: number) => {
+if (nfcScanActiveRef.current) {
+  console.log('NFC scan already active, skipping');
+  return;
+}
+nfcScanActiveRef.current = true;
 try {
 const ndef = new (window as any).NDEFReader();
 await ndef.scan();
@@ -568,6 +574,11 @@ await processPayment(uid, amount);
   };
 // Process the payment
 const processPayment = async (uid: string, paymentAmount: number) => {
+// Prevent duplicate payments
+if (status === 'processing') {
+  console.log('Payment already processing, skipping');
+  return;
+}
 setStatus('processing');
 if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'processing');
 try {
