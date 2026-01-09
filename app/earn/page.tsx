@@ -197,7 +197,7 @@ export default function EarnPage() {
         
         {/* Header */}
         <header className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-zinc-800">
-          <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="max-w-5xl lg:max-w-none mx-auto px-4 lg:px-6 py-3 flex items-center justify-between">
             <div className="flex items-center gap-1">
               <button
                 onClick={() => router.back()}
@@ -242,7 +242,7 @@ export default function EarnPage() {
           </div>
         </header>
 
-        <main className="max-w-5xl mx-auto px-4 pb-12">
+        <main className="max-w-5xl lg:max-w-none mx-auto px-4 lg:px-6 pb-12">
           
           {/* Coming Soon Banner */}
           <div className="bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-2xl p-6 mt-6 mb-8">

@@ -78,7 +78,7 @@ export default function EarnAnalyticsPage() {
         
         {/* Header */}
         <header className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-zinc-800">
-          <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="max-w-5xl lg:max-w-none mx-auto px-4 lg:px-6 py-3 flex items-center justify-between">
             <div className="flex items-center gap-1">
               <button
                 onClick={() => router.push('/earn')}
@@ -122,7 +122,7 @@ export default function EarnAnalyticsPage() {
           </div>
         </header>
 
-        <main className="max-w-5xl mx-auto px-4 pb-12">
+        <main className="max-w-5xl lg:max-w-none mx-auto px-4 lg:px-6 pb-12">
           
           {/* Disclaimer Banner */}
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 mt-6 mb-6 flex items-center justify-between flex-wrap gap-3">
