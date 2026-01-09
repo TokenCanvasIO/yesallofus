@@ -68,6 +68,94 @@ export default function PayPage() {
   const [emailAddress, setEmailAddress] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
 
+  // Print receipt
+const printReceipt = () => {
+  const receiptHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Receipt - ${payment?.store_name || 'YesAllOfUs'}</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          max-width: 400px; 
+          margin: 0 auto; 
+          padding: 30px 20px;
+          color: #1a1a1a;
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 20px;
+          padding-bottom: 20px;
+          border-bottom: 2px solid #e5e5e5;
+        }
+        .store-logo { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; margin: 0 auto 12px; display: block; }
+        .store-name { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+        .receipt-label { font-size: 12px; color: #666; }
+        .date { font-size: 12px; color: #666; margin-bottom: 20px; text-align: center; }
+        .total-section { margin-top: 20px; padding-top: 20px; border-top: 2px solid #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
+        .total-label { font-size: 16px; font-weight: 600; }
+        .total-amount { font-size: 24px; font-weight: 700; color: #10b981; }
+        .tx-section { margin-top: 20px; padding: 12px; background: #f5f5f5; border-radius: 8px; }
+        .tx-label { font-size: 10px; color: #666; margin-bottom: 4px; }
+        .tx-hash { font-size: 9px; font-family: monospace; word-break: break-all; color: #333; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .footer-logo { width: 20px; height: 20px; border-radius: 4px; opacity: 0.6; }
+        .footer-text { color: #999; font-size: 11px; }
+        @media print { body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        ${payment?.store_logo 
+          ? `<img src="${payment.store_logo}" alt="${payment.store_name}" class="store-logo">`
+          : `<img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="store-logo">`
+        }
+        <div class="store-name">${payment?.store_logo ? payment?.store_name : 'YesAllOfUs'}</div>
+        ${!payment?.store_logo ? `<div class="receipt-label">${payment?.store_name}</div>` : ''}
+        <div class="receipt-label">Receipt</div>
+      </div>
+      <div class="date">${new Date().toLocaleDateString('en-GB', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      })}</div>
+      <div class="total-section">
+        <span class="total-label">Total Paid</span>
+        <span class="total-amount">£${(payment?.amount || 0).toFixed(2)}</span>
+      </div>
+      ${txHash ? `
+        <div class="tx-section">
+          <div class="tx-label">Transaction ID (XRPL)</div>
+          <div class="tx-hash">${txHash}</div>
+        </div>
+      ` : ''}
+      <div class="footer">
+        <span style="color: #71717a; font-size: 9px; font-weight: 500; letter-spacing: 1px;">RECEIPT</span>
+        <span style="font-size: 16px; font-weight: 800; letter-spacing: 2px;">
+          <span style="color: #10b981;">Y</span>
+          <span style="color: #22c55e;">A</span>
+          <span style="color: #3b82f6;">O</span>
+          <span style="color: #6366f1;">F</span>
+          <span style="color: #8b5cf6;">U</span>
+          <span style="color: #a855f7;">S</span>
+        </span>
+        <span style="color: #52525b; font-size: 10px; font-weight: 600; letter-spacing: 1.5px;">PIONEERS</span>
+        <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
+          <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="footer-logo">
+          <span class="footer-text">Powered by YesAllOfUs</span>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(receiptHtml);
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 500);
+  }
+};
+
   // Fetch live conversion rate
   useEffect(() => {
     const fetchRate = async () => {
@@ -426,32 +514,28 @@ if (allPaid || payment?.status === 'paid') {
             <span>📧</span> Email Receipt
           </button>
           <button 
-            onClick={() => window.print()}
+            onClick={printReceipt}
             className="bg-zinc-800 hover:bg-zinc-700 px-5 py-3 rounded-xl text-sm transition flex items-center gap-2"
           >
             <span>🖨️</span> Print
           </button>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-zinc-800 flex justify-center">
-          <svg viewBox="0 0 140 48" className="w-32 h-12">
-            <defs>
-              <linearGradient id="yaofuGradientPay" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#10b981" />
-                <stop offset="40%" stopColor="#3b82f6" />
-                <stop offset="100%" stopColor="#8b5cf6" />
-              </linearGradient>
-            </defs>
-            <text x="70" y="12" textAnchor="middle" fill="#71717a" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="500" fontSize="9" letterSpacing="1">
-              PAYMENT COMPLETE
-            </text>
-            <text x="70" y="28" textAnchor="middle" fill="url(#yaofuGradientPay)" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="14" letterSpacing="3">
-              YAOFUS
-            </text>
-            <text x="70" y="43" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="600" fontSize="10" letterSpacing="1.5">
-              PIONEERS
-            </text>
-          </svg>
+        <div className="mt-8 pt-6 border-t border-zinc-800 flex flex-col items-center gap-1">
+          <span className="text-zinc-500 text-[10px] font-medium tracking-wider">RECEIPT</span>
+          <span className="text-base font-extrabold tracking-widest">
+            <span className="text-emerald-500">Y</span>
+            <span className="text-green-500">A</span>
+            <span className="text-blue-500">O</span>
+            <span className="text-indigo-500">F</span>
+            <span className="text-violet-500">U</span>
+            <span className="text-purple-500">S</span>
+          </span>
+          <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">PIONEERS</span>
+          <div className="flex items-center gap-2 mt-2">
+            <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" className="w-5 h-5 rounded opacity-60" />
+            <span className="text-zinc-600 text-xs">Powered by YesAllOfUs</span>
+          </div>
         </div>
       </div>
     </div>
