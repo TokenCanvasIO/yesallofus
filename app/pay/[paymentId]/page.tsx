@@ -555,8 +555,26 @@ if (allPaid || payment?.status === 'paid') {
 
         {/* Error message */}
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl p-4 mb-6 text-center">
-            {error}
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 text-center">
+            {error === 'INSUFFICIENT_FUNDS' ? (
+              <>
+                <p className="text-red-400 font-medium mb-2">Insufficient funds in your wallet</p>
+                <p className="text-zinc-400 text-sm mb-3">Please top up your RLUSD balance to complete this payment.</p>
+                
+                 <a  href="/affiliate-dashboard"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-4 py-2 rounded-lg transition"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Top Up Wallet
+                </a>
+              </>
+            ) : (
+              <p className="text-red-400">{error}</p>
+            )}
           </div>
         )}
 

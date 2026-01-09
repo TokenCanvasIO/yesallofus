@@ -103,6 +103,24 @@ export default function InstantPay({
 
       console.log('Transaction result:', JSON.stringify(result, null, 2));
 
+      // Check for transaction failure BEFORE treating as success
+      const engineResult = result?.result?.engine_result || 
+                          result?.engine_result || 
+                          result?.meta?.TransactionResult ||
+                          result?.result?.meta?.TransactionResult ||
+                          result?.result?.result?.engine_result;
+      
+      console.log('Engine result:', engineResult);
+      
+      // Check for insufficient funds or other failures
+      if (engineResult && engineResult !== 'tesSUCCESS') {
+        console.error('Transaction failed with:', engineResult);
+        if (engineResult === 'tecUNFUNDED_PAYMENT' || engineResult === 'tecPATH_DRY') {
+          throw new Error('tecUNFUNDED_PAYMENT');
+        }
+        throw new Error(`Transaction failed: ${engineResult}`);
+      }
+
       const txHash = result?.hash || 
                      result?.tx_hash || 
                      result?.result?.hash ||
@@ -130,7 +148,22 @@ export default function InstantPay({
       
     } catch (error: any) {
       console.error('Payment error:', error);
-      onError(error.message || 'Payment failed');
+      
+      const errorMsg = error.message || error.toString() || 'Payment failed';
+      
+      // Check for insufficient funds errors
+      if (
+        errorMsg.includes('tecUNFUNDED_PAYMENT') ||
+        errorMsg.includes('insufficient') ||
+        errorMsg.includes('Insufficient') ||
+        errorMsg.includes('unfunded') ||
+        errorMsg.includes('balance') ||
+        errorMsg.includes('not enough')
+      ) {
+        onError('INSUFFICIENT_FUNDS');
+      } else {
+        onError(errorMsg);
+      }
     } finally {
       setPaying(false);
     }
@@ -170,9 +203,22 @@ export default function InstantPay({
         setStep('setup');
       }
     } catch (error: any) {
-      console.error('Login error:', error);
-      if (error.message !== 'User closed the modal') {
-        onError('Login failed');
+      console.error('Payment error:', error);
+      
+      const errorMsg = error.message || error.toString() || 'Payment failed';
+      
+      // Check for insufficient funds errors
+      if (
+        errorMsg.includes('tecUNFUNDED_PAYMENT') ||
+        errorMsg.includes('insufficient') ||
+        errorMsg.includes('Insufficient') ||
+        errorMsg.includes('unfunded') ||
+        errorMsg.includes('balance') ||
+        errorMsg.includes('not enough')
+      ) {
+        onError('INSUFFICIENT_FUNDS');
+      } else {
+        onError(errorMsg);
       }
     } finally {
       setLoading(false);

@@ -860,9 +860,14 @@ ${txHash ? `
           <div class="tx-hash">${txHash}</div>
         </div>
       ` : ''}
-      <div class="footer">
-        <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="footer-logo">
-        <span class="footer-text">Powered by YesAllOfUs</span>
+      <div class="footer" style="flex-direction: column; gap: 4px;">
+        <span style="color: #71717a; font-size: 9px; font-weight: 500; letter-spacing: 1px;">RECEIPT</span>
+        <span style="font-size: 16px; font-weight: 800; letter-spacing: 2px;"><span style="color: #10b981;">Y</span><span style="color: #22c55e;">A</span><span style="color: #3b82f6;">O</span><span style="color: #6366f1;">F</span><span style="color: #8b5cf6;">U</span><span style="color: #a855f7;">S</span></span>
+        <span style="color: #52525b; font-size: 10px; font-weight: 600; letter-spacing: 1.5px;">PIONEERS</span>
+        <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
+          <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="footer-logo">
+          <span class="footer-text">Powered by YesAllOfUs</span>
+        </div>
       </div>
     </body>
     </html>
