@@ -21,9 +21,11 @@ const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 export default function PendingPayments({ storeId, onClose, onPaymentComplete }: PendingPaymentsProps) {
   const [payments, setPayments] = useState<PendingPayment[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   // Fetch pending payments
   const fetchPendingPayments = async () => {
+    setRefreshing(true);
     try {
       const res = await fetch(`${API_URL}/store/${storeId}/pending-payments`);
       const data = await res.json();
@@ -34,6 +36,7 @@ export default function PendingPayments({ storeId, onClose, onPaymentComplete }:
       console.error('Failed to fetch pending payments:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -66,6 +69,12 @@ export default function PendingPayments({ storeId, onClose, onPaymentComplete }:
     if (diff <= 0) return 'Expired';
     
     const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (days > 30) return 'Active';
+    if (days > 0) return `${days}d left`;
+    if (hours > 0) return `${hours}h left`;
     if (minutes < 1) return 'Less than 1 min';
     return `${minutes} min left`;
   };
@@ -122,9 +131,17 @@ export default function PendingPayments({ storeId, onClose, onPaymentComplete }:
                             Created {formatTime(payment.created_at)} · {getTimeRemaining(payment.expires_at)}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCancellingId(payment.payment_id);
+                            }}
+                            className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded hover:bg-red-500/10 transition"
+                          >
+                            Cancel
+                          </button>
                           <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-                          <span className="text-amber-500 text-sm font-medium">Pending</span>
                         </div>
                       </div>
                     ))}
@@ -167,17 +184,53 @@ export default function PendingPayments({ storeId, onClose, onPaymentComplete }:
 
         {/* Footer */}
         <div className="p-4 border-t border-zinc-800">
+          <p className="text-zinc-500 text-xs text-center mb-3">
+            Payment links expire after 365 days. Use Cancel to remove unwanted links.
+          </p>
           <button
             onClick={fetchPendingPayments}
-            className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2"
+            disabled={refreshing}
+            className="w-full bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            Refresh
+            {refreshing ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
       </div>
+      {/* Cancel Confirmation Modal */}
+      {cancellingId && (
+        <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
+          <div className="bg-zinc-800 rounded-2xl p-6 w-full max-w-xs text-center">
+            <p className="text-white font-medium mb-4">Cancel this payment link?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setCancellingId(null)}
+                className="flex-1 bg-zinc-700 hover:bg-zinc-600 py-3 rounded-xl font-medium transition"
+              >
+                Keep
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await fetch(`${API_URL}/payment-link/${cancellingId}/cancel`, {
+                      method: 'POST'
+                    });
+                    fetchPendingPayments();
+                  } catch (err) {
+                    console.error('Failed to cancel:', err);
+                  }
+                  setCancellingId(null);
+                }}
+                className="flex-1 bg-red-500 hover:bg-red-400 text-white py-3 rounded-xl font-medium transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
