@@ -606,7 +606,8 @@ const response = await fetch(`${API_URL}/nfc/payment`, {
     store_id: storeId,
     items: items,
     staff_id: activeStaff?.staff_id || null,
-    staff_name: activeStaff?.name || null
+    staff_name: activeStaff?.name || null,
+    payment_id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
   })
 });
 const data = await response.json();
