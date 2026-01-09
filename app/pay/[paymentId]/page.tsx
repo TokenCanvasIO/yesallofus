@@ -538,11 +538,67 @@ if (allPaid || payment?.status === 'paid') {
           </div>
         </div>
       </div>
+      
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm">
+            <h3 className="text-lg font-bold mb-4">Send Receipt</h3>
+            <input
+              type="email"
+              placeholder="Your email"
+              value={emailAddress}
+              onChange={(e) => setEmailAddress(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 mb-4"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowEmailModal(false);
+                  setEmailAddress('');
+                }}
+                className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!emailAddress || !emailAddress.includes('@')) return;
+                  setSendingEmail(true);
+                  try {
+                    await fetch('https://api.dltpays.com/nfc/api/v1/receipt/email', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        email: emailAddress,
+                        store_name: payment?.store_name,
+                        store_id: payment?.store_id,
+                        amount: payment?.amount,
+                        tx_hash: txHash
+                      })
+                    });
+                    setShowEmailModal(false);
+                    setEmailAddress('');
+                  } catch (err) {
+                    console.error('Failed to send email');
+                  }
+                  setSendingEmail(false);
+                }}
+                disabled={sendingEmail}
+                className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 rounded-xl transition disabled:opacity-50"
+              >
+                {sendingEmail ? 'Sending...' : 'Send'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-  // Main payment view (with splits support)
+  // Main payment view
   const currentAmount = getCurrentAmount();
   const currentIndex = splits ? currentSplitIndex + 1 : (payment?.split_index || null);
   const totalSplits = splits?.length || payment?.total_splits || null;
@@ -927,6 +983,7 @@ if (allPaid || payment?.status === 'paid') {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
