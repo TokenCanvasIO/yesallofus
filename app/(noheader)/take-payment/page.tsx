@@ -5,6 +5,7 @@ import ProductsManager from '@/components/ProductsManager';
 import { updateCustomerDisplay, clearCustomerDisplay } from '@/lib/customerDisplay';
 import StaffSelector from '@/components/StaffSelector';
 import SendPaymentLink from '@/components/SendPaymentLink';
+import PendingPayments from '@/components/PendingPayments';
 interface Product {
 product_id: string;
 name: string;
@@ -107,6 +108,8 @@ const [rlusdAmount, setRlusdAmount] = useState<number | null>(null);
 const [priceAge, setPriceAge] = useState<number>(0);
 // Split pay email
 const [showSendPaymentLink, setShowSendPaymentLink] = useState(false);
+// Update share pay modal ui
+const [showPendingPayments, setShowPendingPayments] = useState(false);
 
 // Convert GBP to RLUSD - Live price from CoinGecko Pro with audit trail
 const convertGBPtoRLUSD = async (gbpAmount: number): Promise<number> => {
@@ -961,6 +964,21 @@ onStaffChange={(staff) => setActiveStaff(staff)}
   </span>
 </div>
 
+{/* Pending Payments */}
+<div className="relative group">
+  <button
+    onClick={() => setShowPendingPayments(true)}
+    className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
+  >
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  </button>
+  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
+    Pending Payments
+  </span>
+</div>
+
 {/* Customer Display */}
 <div className="relative group">
 <button
@@ -1693,6 +1711,16 @@ className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 
     onClose={() => setShowSendPaymentLink(false)}
     onSuccess={() => {
       // Optionally clear cart after sending
+    }}
+  />
+)}
+{/* Pending Payments Modal */}
+{showPendingPayments && storeId && (
+  <PendingPayments
+    storeId={storeId}
+    onClose={() => setShowPendingPayments(false)}
+    onPaymentComplete={(paymentId) => {
+      console.log('Payment completed:', paymentId);
     }}
   />
 )}

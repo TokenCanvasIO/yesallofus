@@ -145,18 +145,32 @@ export default function SendPaymentLink({
     }
   };
 
-  // Poll for payment status when waiting
+// Poll for payment status - ALWAYS poll once we have a payment ID
   useEffect(() => {
-    if (!waitingForPayment || !paymentId) return;
+    if (!paymentId) return;
     
     const pollInterval = setInterval(async () => {
       try {
         const res = await fetch(`${API_URL}/payment-link/${paymentId}`);
         const data = await res.json();
         
-        if (data.payment?.status === 'paid' || data.payment?.status === 'complete') {
+        console.log('Payment status:', data.payment?.status);
+        
+        if (data.payment?.status === 'paid' || data.payment?.status === 'complete' || data.payment?.status === 'completed') {
           setPaymentComplete(true);
           setWaitingForPayment(false);
+          
+          // Update customer display to success
+          try {
+            const { updateCustomerDisplay } = await import('@/lib/customerDisplay');
+            await updateCustomerDisplay(storeId, storeName, [], amount, 'success', null, 0);
+          } catch (displayErr) {
+            console.error('Display update error:', displayErr);
+          }
+          
+          // Haptic feedback
+          if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+          
           if (onSuccess) onSuccess();
         }
       } catch (err) {
@@ -165,8 +179,8 @@ export default function SendPaymentLink({
     }, 2000);
     
     return () => clearInterval(pollInterval);
-  }, [waitingForPayment, paymentId, onSuccess]);
-
+  }, [paymentId, storeId, storeName, amount, onSuccess]);
+  
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
       <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
