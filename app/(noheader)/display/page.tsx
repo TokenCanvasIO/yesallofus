@@ -17,7 +17,7 @@ interface DisplayData {
   cart: CartItem[];
   subtotal: number;
   total: number;
-  status: 'idle' | 'ready' | 'processing' | 'success' | 'error' | 'qr' | 'signup' | 'split_pending';
+  status: 'idle' | 'ready' | 'processing' | 'success' | 'error' | 'qr' | 'signup' | 'split_pending' | 'link_pending';
   qr_code?: string | null;
   tip?: number;
   tips_enabled?: boolean;
@@ -523,6 +523,43 @@ useEffect(() => {
       </div>
     )}
   </>
+)}
+
+{/* Payment Link Pending - Waiting for remote payment */}
+{status === 'link_pending' && (
+  <div className="flex-1 flex flex-col items-center justify-center">
+    {/* YAOFUS Badge */}
+    <div className="mb-8">
+      <svg viewBox="0 0 140 52" className="w-48 h-20">
+        <text x="70" y="14" textAnchor="middle" fill="#71717a" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="500" fontSize="10" letterSpacing="1">
+          PARTNER
+        </text>
+        <text x="70" y="32" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="16" letterSpacing="3">
+          <tspan fill="#10b981">Y</tspan>
+          <tspan fill="#22c55e">A</tspan>
+          <tspan fill="#3b82f6">O</tspan>
+          <tspan fill="#6366f1">F</tspan>
+          <tspan fill="#8b5cf6">U</tspan>
+          <tspan fill="#a855f7">S</tspan>
+        </text>
+        <text x="70" y="47" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="600" fontSize="10" letterSpacing="1.5">
+          DISPLAY
+        </text>
+      </svg>
+    </div>
+
+    {/* Amount */}
+    <p className="text-7xl sm:text-[10rem] font-bold text-emerald-400 mb-4">£{total.toFixed(2)}</p>
+    
+    {/* Waiting indicator */}
+    <div className="flex items-center gap-3 mb-4">
+      <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+      <p className="text-zinc-400 text-2xl sm:text-3xl">Waiting for payment...</p>
+    </div>
+    
+    {/* Store name */}
+    <p className="text-zinc-600 text-lg">{data?.store_name}</p>
+  </div>
 )}
 
 {/* Ready State - Payment Instructions */}

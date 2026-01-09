@@ -142,7 +142,7 @@ export default function WelcomePage() {
                   </linearGradient>
                 </defs>
                 <text x="80" y="20" textAnchor="middle" fill="url(#yaofuWelcomeGradient)" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="18" letterSpacing="6">
-                  YAOFU
+                  YAOFUS
                 </text>
               </svg>
             </div>

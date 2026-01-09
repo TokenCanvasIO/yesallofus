@@ -885,7 +885,7 @@ const NavIcon = ({ name }: { name: string }) => {
                   MEMBER
                 </text>
                 <text x="70" y="28" textAnchor="middle" fill="url(#yaofuGradientAffiliate)" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="14" letterSpacing="3">
-                  YAOFU
+                  YAOFUS
                 </text>
                 <text x="70" y="43" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="600" fontSize="10" letterSpacing="1.5">
                   DASHBOARD

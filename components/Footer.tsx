@@ -61,7 +61,7 @@ export default function Footer() {
                   BE INSPIRED
                 </text>
                 <text x="70" y="32" textAnchor="middle" fill="url(#yaofuGradientFooter)" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="18" letterSpacing="4">
-                  YAOFU
+                  YAOFUS
                 </text>
                 <text x="70" y="50" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="600" fontSize="10" letterSpacing="2">
                   PIONEERS

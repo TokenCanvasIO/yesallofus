@@ -75,7 +75,7 @@ export default function SendPaymentLink({
     emoji: '💷'
   })) || [{ name: 'Payment', quantity: 1, price: amount, emoji: '💷' }];
   
-  await updateCustomerDisplay(storeId, storeName, cart, amount, 'qr', null, 0);
+  await updateCustomerDisplay(storeId, storeName, cart, amount, 'link_pending', null, 0);
 } else {
         setError(data.error || 'Failed to create payment link');
       }
@@ -356,12 +356,13 @@ export default function SendPaymentLink({
                   PARTNER
                 </text>
                 <text x="70" y="32" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="16" letterSpacing="3">
-                  <tspan fill="#10b981">Y</tspan>
-                  <tspan fill="#22c55e">A</tspan>
-                  <tspan fill="#3b82f6">O</tspan>
-                  <tspan fill="#6366f1">F</tspan>
-                  <tspan fill="#8b5cf6">U</tspan>
-                </text>
+  <tspan fill="#10b981">Y</tspan>
+  <tspan fill="#22c55e">A</tspan>
+  <tspan fill="#3b82f6">O</tspan>
+  <tspan fill="#6366f1">F</tspan>
+  <tspan fill="#8b5cf6">U</tspan>
+  <tspan fill="#a855f7">S</tspan>
+</text>
                 <text x="70" y="47" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="600" fontSize="10" letterSpacing="1.5">
                   DISPLAY
                 </text>
