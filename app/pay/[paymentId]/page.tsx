@@ -599,10 +599,10 @@ if (allPaid || payment?.status === 'paid') {
         <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 mb-6">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <img 
-                src="https://static.coingecko.com/s/coingecko-logo-8903d34ce19ca4be1c81f0db30e924154750d208683fad7ae6f2ce06c76d0a56.png" 
-                alt="CoinGecko" 
-                className="w-5 h-5"
+              <img
+                src="https://static.coingecko.com/s/coingecko-logo-8903d34ce19ca4be1c81f0db30e924154750d208683fad7ae6f2ce06c76d0a56.png"
+                alt="CoinGecko"
+                className="h-5 w-auto object-contain"
               />
               <span className="text-xs text-zinc-500">Live rate from CoinGecko Pro</span>
             </div>
@@ -799,11 +799,22 @@ if (allPaid || payment?.status === 'paid') {
         )}
 
         {/* Footer */}
-        <div className="mt-10 pt-6 border-t border-zinc-800 flex items-center justify-center gap-2 text-zinc-600 text-sm">
-          <img src="https://yesallofus.com/dltpayslogo1.png" alt="" className="w-5 h-5 rounded" />
-          <span>Powered by YesAllOfUs</span>
+        <div className="mt-10 pt-6 border-t border-zinc-800 flex flex-col items-center gap-1">
+          <span className="text-zinc-500 text-[10px] font-medium tracking-wider">COMPLETE PAYMENT</span>
+          <span className="text-base font-extrabold tracking-widest">
+            <span className="text-emerald-500">Y</span>
+            <span className="text-green-500">A</span>
+            <span className="text-blue-500">O</span>
+            <span className="text-indigo-500">F</span>
+            <span className="text-violet-500">U</span>
+            <span className="text-purple-500">S</span>
+          </span>
+          <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">PIONEERS</span>
+          <div className="flex items-center gap-2 mt-2 text-zinc-600 text-sm">
+            <img src="https://yesallofus.com/dltpayslogo1.png" alt="" className="w-5 h-5 rounded opacity-60" />
+            <span>Powered by YesAllOfUs</span>
+          </div>
         </div>
-      </div>
 
       {/* Split Bill Modal */}
       {showSplitModal && (
