@@ -537,9 +537,17 @@ const startNFCScan = async (paymentAmount: number) => {
 try {
 const ndef = new (window as any).NDEFReader();
 await ndef.scan();
+let lastReadTime = 0;
 ndef.addEventListener('reading', async ({ serialNumber }: { serialNumber: string }) => {
-setLastUID(serialNumber);
-await processPayment(serialNumber, paymentAmount);
+  // Debounce: ignore reads within 5 seconds of last read
+  const now = Date.now();
+  if (now - lastReadTime < 5000) {
+    console.log('NFC read debounced');
+    return;
+  }
+  lastReadTime = now;
+  setLastUID(serialNumber);
+  await processPayment(serialNumber, paymentAmount);
       });
 ndef.addEventListener('readingerror', () => {
 setError('Could not read NFC tag');
@@ -1843,8 +1851,8 @@ className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 
 )}
 {/* Mobile Staff Modal */}
 {showStaffModal && (
-  <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:hidden p-4">
-    <div className="bg-zinc-900 rounded-2xl w-full max-h-[70vh] overflow-hidden">
+<div className="fixed inset-0 bg-black/80 z-50 flex items-start sm:hidden p-4 pt-20">
+    <div className="bg-zinc-900 rounded-2xl w-full max-h-[60vh] overflow-hidden">
       <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
         <h3 className="font-bold">Select Staff</h3>
         <button onClick={() => setShowStaffModal(false)} className="text-zinc-500 hover:text-white p-1">
@@ -1853,7 +1861,7 @@ className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 
           </svg>
         </button>
       </div>
-      <div className="overflow-y-auto max-h-[50vh]">
+      <div className="overflow-y-auto max-h-[40vh]">
         {/* No one option */}
         <button
           onClick={() => {
@@ -1895,8 +1903,21 @@ className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 
           }}
         />
       </div>
-    </div>
-  </div>
+{/* Manage Staff Link */}
+<button 
+onClick={() => {
+  setShowStaffModal(false);
+  // Small delay to ensure modal closes before navigation
+  setTimeout(() => {
+    router.push('/staff');
+  }, 100);
+}}
+className="block w-full text-center text-sm text-zinc-400 hover:text-white py-4 border-t border-zinc-800 cursor-pointer"
+>
+  Manage Staff →
+</button>
+</div>
+</div>
 )}
 </main>
 
