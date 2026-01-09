@@ -224,11 +224,27 @@ function SignupCustomerPage() {
           >
             Register another customer
           </button>
-          {/* Powered by */}
-<div className="mt-8 pt-6 border-t border-zinc-800 flex items-center justify-center gap-2">
-  <Logo size={20} />
-  <span className="text-zinc-500 text-sm">Powered by YesAllOfUs</span>
-</div>
+          {/* YAOFU Pioneers Badge */}
+          <div className="mt-8 pt-6 border-t border-zinc-800 flex justify-center">
+            <svg viewBox="0 0 140 48" className="w-32 h-12">
+              <defs>
+                <linearGradient id="yaofuGradientSignup" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#10b981" />
+                  <stop offset="40%" stopColor="#3b82f6" />
+                  <stop offset="100%" stopColor="#8b5cf6" />
+                </linearGradient>
+              </defs>
+              <text x="70" y="12" textAnchor="middle" fill="#71717a" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="500" fontSize="9" letterSpacing="1">
+                WELCOME
+              </text>
+              <text x="70" y="28" textAnchor="middle" fill="url(#yaofuGradientSignup)" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="14" letterSpacing="3">
+                YAOFUS
+              </text>
+              <text x="70" y="43" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="600" fontSize="10" letterSpacing="1.5">
+                PIONEERS
+              </text>
+            </svg>
+          </div>
         </div>
       </div>
     );

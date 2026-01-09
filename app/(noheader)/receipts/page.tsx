@@ -147,7 +147,7 @@ useEffect(() => {
       filtered = filtered.filter(r => 
         r.receipt_number.toLowerCase().includes(query) ||
         r.payment_tx_hash.toLowerCase().includes(query) ||
-        r.total.toString().includes(query) ||
+        (r.total || 0).toString().includes(query) ||
         r.items.some(item => item.name.toLowerCase().includes(query))
       );
     }
@@ -203,6 +203,22 @@ useEffect(() => {
     return `${days}d ago`;
   };
 
+  // Get payment method display
+  const getPaymentMethodDisplay = (method?: string) => {
+    if (!method) return '💳 NFC';
+    switch (method) {
+      case 'xaman_qr':
+      case 'qr_xaman':
+        return '📱 Xaman';
+      case 'web3auth':
+        return '🔐 Web3Auth';
+      case 'nfc_card':
+        return '💳 NFC';
+      default:
+        return '💳 ' + method;
+    }
+  };
+
   // Print receipt
 const printReceipt = (receipt: Receipt) => {
   const receiptHtml = `
@@ -220,12 +236,27 @@ const printReceipt = (receipt: Receipt) => {
           color: #1a1a1a;
         }
         .header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
+          text-align: center;
           margin-bottom: 20px;
           padding-bottom: 20px;
           border-bottom: 2px solid #e5e5e5;
+        }
+        .store-logo {
+          width: 60px;
+          height: 60px;
+          border-radius: 12px;
+          object-fit: cover;
+          margin: 0 auto 12px;
+          display: block;
+        }
+        .store-name {
+          font-size: 22px;
+          font-weight: 700;
+          margin-bottom: 4px;
+        }
+        .receipt-number {
+          font-size: 12px;
+          color: #666;
         }
         .store-logo {
           width: 50px;
@@ -328,26 +359,13 @@ const printReceipt = (receipt: Receipt) => {
     </head>
     <body>
       <div class="header">
-  ${storeLogo 
-    ? `
-      <img src="${storeLogo}" alt="${storeName}" class="store-logo">
-      <div class="store-info">
+        ${storeLogo 
+          ? `<img src="${storeLogo}" alt="${storeName}" class="store-logo">`
+          : `<img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="store-logo">`
+        }
         <div class="store-name">${storeName}</div>
         <div class="receipt-number">${receipt.receipt_number}</div>
       </div>
-    `
-    : `
-      <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="store-logo">
-      <div class="store-info">
-        <div class="store-name">YesAllOfUs</div>
-      </div>
-      <div style="text-align: right; margin-left: auto;">
-        <div class="store-name">${storeName}</div>
-        <div class="receipt-number">${receipt.receipt_number}</div>
-      </div>
-    `
-  }
-</div>
       
       <div class="date">${new Date(receipt.paid_at).toLocaleDateString('en-GB', { 
         weekday: 'long', 
@@ -372,7 +390,7 @@ const printReceipt = (receipt: Receipt) => {
       
       <div class="total-section">
         <span class="total-label">Total</span>
-        <span class="total-amount">£${receipt.total.toFixed(2)}</span>
+        <span class="total-amount">£${(receipt.total || 0).toFixed(2)}</span>
       </div>
       
       <div class="tx-section">
@@ -380,9 +398,19 @@ const printReceipt = (receipt: Receipt) => {
         <div class="tx-hash">${receipt.payment_tx_hash}</div>
       </div>
       
-      <div class="footer">
-        <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="footer-logo">
-        <span class="footer-text">Powered by YesAllOfUs</span>
+      <div class="footer" style="flex-direction: column; gap: 4px;">
+        <span style="color: #71717a; font-size: 9px; font-weight: 500; letter-spacing: 1px;">RECEIPT</span>
+        <span style="font-size: 16px; font-weight: 800; letter-spacing: 2px;"><span style="color: #10b981;">Y</span><span style="color: #22c55e;">A</span><span style="color: #3b82f6;">O</span><span style="color: #6366f1;">F</span><span style="color: #8b5cf6;">U</span><span style="color: #a855f7;">S</span></span>
+        <span style="color: #52525b; font-size: 10px; font-weight: 600; letter-spacing: 1.5px;">PIONEERS</span>
+        <div class="footer" style="flex-direction: column; gap: 4px;">
+        <span style="color: #71717a; font-size: 9px; font-weight: 500; letter-spacing: 1px;">REPORT</span>
+        <span style="font-size: 16px; font-weight: 800; letter-spacing: 2px;"><span style="color: #10b981;">Y</span><span style="color: #22c55e;">A</span><span style="color: #3b82f6;">O</span><span style="color: #6366f1;">F</span><span style="color: #8b5cf6;">U</span><span style="color: #a855f7;">S</span></span>
+        <span style="color: #52525b; font-size: 10px; font-weight: 600; letter-spacing: 1.5px;">PIONEERS</span>
+        <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
+          <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="footer-logo">
+          <span class="footer-text">Generated by YesAllOfUs</span>
+        </div>
+      </div>
       </div>
     </body>
     </html>
@@ -403,7 +431,7 @@ const exportCSV = () => {
     new Date(r.paid_at).toLocaleString('en-GB'),
     r.items.map(i => `${i.name} x${i.quantity}`).join('; '),
     `£${r.total.toFixed(2)}`,
-    r.payment_method === 'qr_xaman' ? 'QR' : 'NFC',
+    r.payment_method || 'NFC',
     r.payment_tx_hash
   ]);
   
@@ -567,7 +595,7 @@ const exportPDF = () => {
               <td>${new Date(r.paid_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
               <td>${r.items.map(i => `${i.name} x${i.quantity}`).join(', ')}</td>
               <td class="amount">£${r.total.toFixed(2)}</td>
-              <td>${r.payment_method === 'qr_xaman' ? '📱 QR' : '💳 NFC'}</td>
+              <td>${r.payment_method === 'xaman_qr' ? '📱 Xaman' : r.payment_method === 'web3auth' ? '🔐 Web3Auth' : '💳 NFC'}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -743,11 +771,11 @@ const exportPDF = () => {
                         : `${receipt.items.length} items`}
                     </p>
                     <p className="text-zinc-500 text-sm">
-                      {receipt.payment_method === 'qr_xaman' ? '📱 QR' : '💳 NFC'} · {formatDate(receipt.paid_at)}
+                      {getPaymentMethodDisplay(receipt.payment_method)} · {formatDate(receipt.paid_at)}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-bold text-emerald-400">£{receipt.total.toFixed(2)}</p>
+                    <p className="text-xl font-bold text-emerald-400">£{(receipt.total || 0).toFixed(2)}</p>
                   </div>
                 </div>
               </button>
@@ -865,7 +893,7 @@ const exportPDF = () => {
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-zinc-500">Payment Method</span>
-                    <span>{selectedReceipt.payment_method === 'qr_xaman' ? '📱 QR (Xaman)' : '💳 NFC Card'}</span>
+                    <span>{getPaymentMethodDisplay(selectedReceipt.payment_method)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-zinc-500">Status</span>
@@ -974,6 +1002,27 @@ const exportPDF = () => {
             </div>
           </div>
         )}
+        {/* YAOFU Pioneers Badge */}
+        <div className="mt-8 flex justify-center">
+          <svg viewBox="0 0 140 48" className="w-32 h-12">
+            <defs>
+              <linearGradient id="yaofuGradientReceipts" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#10b981" />
+                <stop offset="40%" stopColor="#3b82f6" />
+                <stop offset="100%" stopColor="#8b5cf6" />
+              </linearGradient>
+            </defs>
+            <text x="70" y="12" textAnchor="middle" fill="#71717a" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="500" fontSize="9" letterSpacing="1">
+              RECEIPT
+            </text>
+            <text x="70" y="28" textAnchor="middle" fill="url(#yaofuGradientReceipts)" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="14" letterSpacing="3">
+              YAOFUS
+            </text>
+            <text x="70" y="43" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="600" fontSize="10" letterSpacing="1.5">
+              PIONEERS
+            </text>
+          </svg>
+        </div>
 
 </main>
     </div>

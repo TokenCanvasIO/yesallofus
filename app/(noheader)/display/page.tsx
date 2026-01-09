@@ -53,6 +53,12 @@ const [customTipInput, setCustomTipInput] = useState<string>('');
 const [isProcessing, setIsProcessing] = useState(false);
 const [showCustomTipModal, setShowCustomTipModal] = useState(false);
 
+// NFC Payment state
+const [nfcSupported, setNfcSupported] = useState(false);
+const [nfcScanning, setNfcScanning] = useState(false);
+const [nfcError, setNfcError] = useState<string | null>(null);
+const [paymentProcessing, setPaymentProcessing] = useState(false);
+
 // Signup form state
 const [signupCardUid, setSignupCardUid] = useState<string | null>(null);
 const [signupCardName, setSignupCardName] = useState('');
@@ -84,6 +90,72 @@ const addTip = (tipAmount: number) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ tip: tipAmount })
   }).catch(err => console.error('Failed to add tip:', err));
+};
+
+// NFC Payment scan
+const startNFCPayment = async () => {
+  if (!('NDEFReader' in window)) {
+    setNfcError('NFC not supported on this device');
+    return;
+  }
+
+  setNfcScanning(true);
+  setNfcError(null);
+
+  try {
+    const ndef = new (window as any).NDEFReader();
+    await ndef.scan();
+
+    ndef.addEventListener('reading', async (event: any) => {
+      const uid = event.serialNumber?.replace(/:/g, '').toUpperCase();
+      if (!uid) {
+        setNfcError('Could not read card');
+        setNfcScanning(false);
+        return;
+      }
+
+      setNfcScanning(false);
+      setPaymentProcessing(true);
+
+      try {
+        const res = await fetch(`${API_URL}/nfc/pay`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            card_uid: uid,
+            store_id: storeId,
+            amount: data?.total || 0,
+            items: data?.cart || []
+          })
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+          if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+        } else {
+          setNfcError(result.error || 'Payment failed');
+        }
+      } catch (err) {
+        setNfcError('Payment failed');
+      } finally {
+        setPaymentProcessing(false);
+      }
+    });
+
+    ndef.addEventListener('readingerror', () => {
+      setNfcError('Error reading card');
+      setNfcScanning(false);
+    });
+
+  } catch (err: any) {
+    if (err.name === 'NotAllowedError') {
+      setNfcError('NFC permission denied');
+    } else {
+      setNfcError('Failed to start NFC');
+    }
+    setNfcScanning(false);
+  }
 };
 
 // NFC Scan for signup
@@ -254,6 +326,13 @@ useEffect(() => {
     return () => clearInterval(interval);
   }
 }, [data]);
+
+// Check NFC support
+useEffect(() => {
+  if ('NDEFReader' in window) {
+    setNfcSupported(true);
+  }
+}, []);
 
   // No store ID
   if (!storeId) {
@@ -575,7 +654,11 @@ useEffect(() => {
     <div className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
       
       {/* NFC Tap Zone */}
-      <div className="flex flex-col items-center">
+      <button 
+        onClick={startNFCPayment}
+        disabled={nfcScanning || paymentProcessing}
+        className="flex flex-col items-center cursor-pointer"
+      >
         <div className="w-40 h-40 sm:w-56 sm:h-56 bg-emerald-500/20 rounded-full flex items-center justify-center relative mb-5 sm:mb-8">
           <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
           <div className="absolute inset-4 bg-emerald-500/10 rounded-full animate-pulse"></div>
@@ -583,9 +666,16 @@ useEffect(() => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
           </svg>
         </div>
-        <p className="text-2xl sm:text-4xl font-bold text-emerald-400 mb-2">Tap Card</p>
-        <p className="text-zinc-500 text-lg sm:text-xl text-center">Hold your NFC card<br/>to the terminal</p>
-      </div>
+        <p className={`text-2xl sm:text-4xl font-bold mb-2 ${nfcScanning ? 'text-amber-400' : 'text-emerald-400'}`}>
+          {paymentProcessing ? 'Processing...' : nfcScanning ? 'Tap Now...' : 'Tap Card'}
+        </p>
+        <p className="text-zinc-500 text-lg sm:text-xl text-center">
+          {nfcScanning ? 'Hold your card to this device' : 'Tap here, then hold your NFC card'}
+        </p>
+        {nfcError && (
+          <p className="text-red-400 text-sm mt-2">{nfcError}</p>
+        )}
+      </button>
 
       {/* Divider */}
       <div className="flex items-center gap-4">
@@ -633,17 +723,39 @@ useEffect(() => {
     <div className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
       
       {/* NFC Tap Zone */}
-      <div className="flex flex-col items-center">
-        <div className="w-40 h-40 sm:w-56 sm:h-56 bg-emerald-500/20 rounded-full flex items-center justify-center relative mb-5 sm:mb-8">
-          <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
+      <button 
+        onClick={startNFCPayment}
+        disabled={nfcScanning || paymentProcessing}
+        className="flex flex-col items-center cursor-pointer"
+      >
+        <div className={`w-40 h-40 sm:w-56 sm:h-56 rounded-full flex items-center justify-center relative mb-5 sm:mb-8 ${
+          nfcScanning ? 'bg-amber-500/30' : paymentProcessing ? 'bg-emerald-500/40' : 'bg-emerald-500/20'
+        }`}>
+          {!nfcScanning && !paymentProcessing && (
+            <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
+          )}
+          {nfcScanning && (
+            <div className="absolute inset-0 bg-amber-500/30 rounded-full animate-pulse"></div>
+          )}
           <div className="absolute inset-4 bg-emerald-500/10 rounded-full animate-pulse"></div>
-          <svg className="w-20 h-20 sm:w-28 sm:h-28 text-emerald-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-          </svg>
+          {paymentProcessing ? (
+            <div className="w-16 h-16 sm:w-20 sm:h-20 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <svg className={`w-20 h-20 sm:w-28 sm:h-28 relative z-10 ${nfcScanning ? 'text-amber-400' : 'text-emerald-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+          )}
         </div>
-        <p className="text-2xl sm:text-4xl font-bold text-emerald-400 mb-2">Tap Card</p>
-        <p className="text-zinc-500 text-lg sm:text-xl text-center">Hold your NFC card<br/>to the terminal</p>
-      </div>
+        <p className={`text-2xl sm:text-4xl font-bold mb-2 ${nfcScanning ? 'text-amber-400' : 'text-emerald-400'}`}>
+          {paymentProcessing ? 'Processing...' : nfcScanning ? 'Tap Now...' : 'Tap Card'}
+        </p>
+        <p className="text-zinc-500 text-lg sm:text-xl text-center">
+          {nfcScanning ? 'Hold your card to this device' : 'Tap here, then hold your NFC card'}
+        </p>
+        {nfcError && (
+          <p className="text-red-400 text-sm mt-2">{nfcError}</p>
+        )}
+      </button>
 
       {/* Divider */}
       <div className="flex items-center gap-4">

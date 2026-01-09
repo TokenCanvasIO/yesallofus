@@ -63,6 +63,11 @@ export default function PayPage() {
 // Split success message
   const [showToast, setShowToast] = useState(false);
 
+  // Email modal state
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailAddress, setEmailAddress] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+
   // Fetch live conversion rate
   useEffect(() => {
     const fetchRate = async () => {
@@ -414,23 +419,8 @@ if (allPaid || payment?.status === 'paid') {
 
         {/* Email & Print buttons */}
         <div className="flex justify-center gap-3 mb-8">
-          <button 
-            onClick={() => {
-              const email = prompt('Enter your email for receipt:');
-              if (email && email.includes('@')) {
-                fetch('https://api.dltpays.com/nfc/api/v1/receipt/email', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    email: email,
-                    store_name: payment?.store_name,
-                    store_id: payment?.store_id,
-                    amount: payment?.amount,
-                    tx_hash: txHash
-                  })
-                }).then(() => alert('Receipt sent!')).catch(() => alert('Failed to send'));
-              }
-            }}
+          <button
+            onClick={() => setShowEmailModal(true)}
             className="bg-zinc-800 hover:bg-zinc-700 px-5 py-3 rounded-xl text-sm transition flex items-center gap-2"
           >
             <span>📧</span> Email Receipt
@@ -443,14 +433,25 @@ if (allPaid || payment?.status === 'paid') {
           </button>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-zinc-800">
-          <img 
-            src="https://yesallofus.com/dltpayslogo1.png" 
-            alt="YesAllOfUs" 
-            className="w-10 h-10 rounded-lg mx-auto mb-3"
-          />
-          <p className="text-zinc-500 text-sm">Thank you for using YesAllOfUs</p>
-          <p className="text-emerald-400 text-sm font-medium">You are a pioneer!</p>
+        <div className="mt-8 pt-6 border-t border-zinc-800 flex justify-center">
+          <svg viewBox="0 0 140 48" className="w-32 h-12">
+            <defs>
+              <linearGradient id="yaofuGradientPay" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#10b981" />
+                <stop offset="40%" stopColor="#3b82f6" />
+                <stop offset="100%" stopColor="#8b5cf6" />
+              </linearGradient>
+            </defs>
+            <text x="70" y="12" textAnchor="middle" fill="#71717a" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="500" fontSize="9" letterSpacing="1">
+              PAYMENT COMPLETE
+            </text>
+            <text x="70" y="28" textAnchor="middle" fill="url(#yaofuGradientPay)" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="14" letterSpacing="3">
+              YAOFUS
+            </text>
+            <text x="70" y="43" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="600" fontSize="10" letterSpacing="1.5">
+              PIONEERS
+            </text>
+          </svg>
         </div>
       </div>
     </div>
@@ -752,6 +753,62 @@ if (allPaid || payment?.status === 'paid') {
                 className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black py-4 rounded-xl font-bold transition disabled:opacity-50"
               >
                 {splitting ? 'Splitting...' : 'Split'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm">
+            <h3 className="text-lg font-bold mb-4">Send Receipt</h3>
+            <input
+              type="email"
+              placeholder="Your email"
+              value={emailAddress}
+              onChange={(e) => setEmailAddress(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 mb-4"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowEmailModal(false);
+                  setEmailAddress('');
+                }}
+                className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!emailAddress || !emailAddress.includes('@')) return;
+                  setSendingEmail(true);
+                  try {
+                    await fetch('https://api.dltpays.com/nfc/api/v1/receipt/email', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        email: emailAddress,
+                        store_name: payment?.store_name,
+                        store_id: payment?.store_id,
+                        amount: payment?.amount,
+                        tx_hash: txHash
+                      })
+                    });
+                    setShowEmailModal(false);
+                    setEmailAddress('');
+                  } catch (err) {
+                    console.error('Failed to send email');
+                  }
+                  setSendingEmail(false);
+                }}
+                disabled={sendingEmail}
+                className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 rounded-xl transition disabled:opacity-50"
+              >
+                {sendingEmail ? 'Sending...' : 'Send'}
               </button>
             </div>
           </div>
