@@ -5,7 +5,7 @@ interface CartItem {
   emoji?: string;
 }
 
-export type DisplayStatus = 'idle' | 'ready' | 'processing' | 'success' | 'error' | 'qr';
+export type DisplayStatus = 'idle' | 'ready' | 'processing' | 'success' | 'error' | 'qr' | 'signup' | 'split_pending' | 'link_pending';
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
