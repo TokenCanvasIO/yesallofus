@@ -640,6 +640,7 @@ setQrPaymentUrl(null);
 setXamanQR(null);
 setXamanPaymentId(null);
 setError(null);
+nfcScanActiveRef.current = false;
 setShowManualEntry(false);
 if (storeId) clearCustomerDisplay(storeId, storeName);
 };
