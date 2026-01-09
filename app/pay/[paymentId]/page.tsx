@@ -79,6 +79,9 @@ export default function PayPage() {
 
   // Print receipt
 const printReceipt = () => {
+  const items = payment?.items || [];
+  const tip = payment?.tip || 0;
+  
   const receiptHtml = `
     <!DOCTYPE html>
     <html>
@@ -103,7 +106,13 @@ const printReceipt = () => {
         .store-name { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
         .receipt-label { font-size: 12px; color: #666; }
         .date { font-size: 12px; color: #666; margin-bottom: 20px; text-align: center; }
-        .total-section { margin-top: 20px; padding-top: 20px; border-top: 2px solid #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
+        .items { margin: 20px 0; }
+        .item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .item-name { font-weight: 500; }
+        .item-qty { color: #666; font-size: 14px; }
+        .item-price { font-weight: 600; }
+        .tip-row { display: flex; justify-content: space-between; padding: 8px 0; color: #10b981; }
+        .total-section { margin-top: 12px; padding-top: 12px; border-top: 2px solid #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
         .total-label { font-size: 16px; font-weight: 600; }
         .total-amount { font-size: 24px; font-weight: 700; color: #10b981; }
         .tx-section { margin-top: 20px; padding: 12px; background: #f5f5f5; border-radius: 8px; }
@@ -128,6 +137,29 @@ const printReceipt = () => {
       <div class="date">${new Date().toLocaleDateString('en-GB', { 
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
       })}</div>
+      ${items.length > 0 ? `
+        <div class="items">
+          ${items.map(item => {
+            const price = item.price || item.unit_price || 0;
+            const qty = item.quantity || 1;
+            return `
+              <div class="item">
+                <div>
+                  <div class="item-name">${item.name}</div>
+                  <div class="item-qty">${qty} × £${price.toFixed(2)}</div>
+                </div>
+                <div class="item-price">£${(price * qty).toFixed(2)}</div>
+              </div>
+            `;
+          }).join('')}
+          ${tip > 0 ? `
+            <div class="tip-row">
+              <span>Tip</span>
+              <span>£${tip.toFixed(2)}</span>
+            </div>
+          ` : ''}
+        </div>
+      ` : ''}
       <div class="total-section">
         <span class="total-label">Total Paid</span>
         <span class="total-amount">£${(payment?.amount || 0).toFixed(2)}</span>
