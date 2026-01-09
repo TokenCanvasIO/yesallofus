@@ -773,8 +773,8 @@ const NavIcon = ({ name }: { name: string }) => {
   const navItems = [
     { id: 'earnings', label: 'Total Earnings', icon: 'earnings' },
     { id: 'wallet-status', label: 'Wallet Status', icon: 'wallet', show: !!walletStatus },
-    { id: 'top-up', label: 'Top Up Wallet', icon: 'wallet', show: loginMethod === 'web3auth' && !!walletStatus },
-    { id: 'withdraw', label: 'Withdraw', icon: 'wallet', show: loginMethod === 'web3auth' && !!walletStatus },
+    { id: 'top-up', label: 'Top Up Wallet', icon: 'wallet', show: !!walletStatus },
+    { id: 'withdraw', label: 'Withdraw', icon: 'wallet', show: !!walletStatus },
     { id: 'payment-cards', label: 'Payment Cards', icon: 'card' },
     { id: 'tap-to-pay', label: 'Tap-to-Pay', icon: 'tap' },
     { id: 'browser-wallet', label: 'Browser Wallet', icon: 'crossmark' },
@@ -1118,7 +1118,7 @@ const NavIcon = ({ name }: { name: string }) => {
 </div>
 
 {/* TOP UP WALLET */}
-            {loginMethod === 'web3auth' && walletStatus && (
+            {walletStatus && (
               <div id="top-up" className="mb-6">
                 <TopUpRLUSD
                   walletAddress={walletAddress}
@@ -1132,7 +1132,7 @@ const NavIcon = ({ name }: { name: string }) => {
             )}
 
             {/* WITHDRAW */}
-            {loginMethod === 'web3auth' && walletStatus && (
+            {walletStatus && (
               <div id="withdraw" className="mb-6">
                 <WithdrawRLUSD
                   walletAddress={walletAddress}

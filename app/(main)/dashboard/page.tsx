@@ -1247,7 +1247,7 @@ return (
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m6-6H6" />
       </svg>
     ),
-    show: (walletType === 'web3auth' || walletType === 'crossmark') && !walletNeedsFunding && !walletNeedsTrustline
+    show: !walletNeedsFunding && !walletNeedsTrustline
   },
   { 
     id: 'withdraw', 
@@ -1257,7 +1257,7 @@ return (
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
       </svg>
     ),
-    show: (walletType === 'web3auth' || walletType === 'crossmark') && !walletNeedsFunding && !walletNeedsTrustline
+    show: !walletNeedsFunding && !walletNeedsTrustline
   },
   { 
     id: 'payout-method', 
@@ -2154,7 +2154,7 @@ onClick={async () => {
 )}
 
 {/* Show Top-Up and Withdraw components when wallet is ready */}
-{!walletNeedsFunding && !walletNeedsTrustline && (walletType === 'web3auth' || walletType === 'crossmark') && walletAddress && (
+{!walletNeedsFunding && !walletNeedsTrustline && walletAddress && (
   <div id="wallet-funding">
     <TopUpRLUSD
       walletAddress={walletAddress}
