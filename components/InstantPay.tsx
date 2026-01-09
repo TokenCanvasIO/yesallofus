@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 
 interface InstantPayProps {
@@ -25,7 +24,7 @@ export default function InstantPay({
   onSuccess,
   onError
 }: InstantPayProps) {
-  const [step, setStep] = useState<'login' | 'setup' | 'ready'>('login');
+  const [step, setStep] = useState<'login' | 'setup' | 'reauth' | 'ready'>('login');
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -39,7 +38,6 @@ export default function InstantPay({
         
         if (stored && method === 'web3auth') {
           setWalletAddress(stored);
-          
           const res = await fetch(`${API_URL}/customer/autosign-status/${stored}`);
           const data = await res.json();
           
@@ -53,7 +51,6 @@ export default function InstantPay({
         console.error('Session check error:', err);
       }
     };
-    
     checkSession();
   }, []);
 
@@ -68,13 +65,15 @@ export default function InstantPay({
   // Process payment with wallet address
   const processPaymentWithWallet = async (wallet: string) => {
     setPaying(true);
-    
     try {
       const { getWeb3Auth } = await import('@/lib/web3auth');
       const web3auth = await getWeb3Auth();
       
       if (!web3auth || !web3auth.provider) {
-        throw new Error('Session expired. Please sign in again.');
+        // Session expired - need to re-login
+        setStep('reauth');
+        setPaying(false);
+        return;
       }
 
       const tx = {
@@ -103,16 +102,14 @@ export default function InstantPay({
 
       console.log('Transaction result:', JSON.stringify(result, null, 2));
 
-      // Check for transaction failure BEFORE treating as success
       const engineResult = result?.result?.engine_result || 
-                          result?.engine_result || 
-                          result?.meta?.TransactionResult ||
-                          result?.result?.meta?.TransactionResult ||
-                          result?.result?.result?.engine_result;
-      
+        result?.engine_result || 
+        result?.meta?.TransactionResult ||
+        result?.result?.meta?.TransactionResult ||
+        result?.result?.result?.engine_result;
+
       console.log('Engine result:', engineResult);
-      
-      // Check for insufficient funds or other failures
+
       if (engineResult && engineResult !== 'tesSUCCESS') {
         console.error('Transaction failed with:', engineResult);
         if (engineResult === 'tecUNFUNDED_PAYMENT' || engineResult === 'tecPATH_DRY' || engineResult === 'tecPATH_PARTIAL') {
@@ -122,18 +119,18 @@ export default function InstantPay({
       }
 
       const txHash = result?.hash || 
-                     result?.tx_hash || 
-                     result?.result?.hash ||
-                     result?.result?.tx_json?.hash ||
-                     result?.tx_blob?.hash ||
-                     result?.response?.hash ||
-                     result?.txHash;
-      
+        result?.tx_hash || 
+        result?.result?.hash ||
+        result?.result?.tx_json?.hash ||
+        result?.tx_blob?.hash ||
+        result?.response?.hash ||
+        result?.txHash;
+
       if (!txHash) {
         console.error('Full result object:', JSON.stringify(result, null, 2));
         throw new Error('Transaction failed - no hash returned');
       }
-      
+
       await fetch(`${API_URL}/payment-link/${paymentId}/pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -142,16 +139,13 @@ export default function InstantPay({
           tx_hash: txHash
         })
       }).catch(() => {});
-      
+
       onSuccess(txHash);
       if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-      
     } catch (error: any) {
       console.error('Payment error:', error);
-      
       const errorMsg = error.message || error.toString() || 'Payment failed';
       
-      // Check for insufficient funds errors
       if (
         errorMsg.includes('tecUNFUNDED_PAYMENT') ||
         errorMsg.includes('tecPATH_PARTIAL') ||
@@ -171,7 +165,7 @@ export default function InstantPay({
     }
   };
 
-  // Step 1: Login with Web3Auth
+  // Login with Web3Auth
   const login = async () => {
     setLoading(true);
     try {
@@ -182,7 +176,7 @@ export default function InstantPay({
         setLoading(false);
         return;
       }
-      
+
       const address = typeof result === 'string' ? result : result.address;
       const provider = typeof result === 'string' ? 'google' : (result.provider || 'google');
       
@@ -191,13 +185,12 @@ export default function InstantPay({
       sessionStorage.setItem('socialProvider', provider);
       
       setWalletAddress(address);
-      
+
       const res = await fetch(`${API_URL}/customer/autosign-status/${address}`);
       const data = await res.json();
       
       if (data.auto_sign_enabled) {
         setStep('ready');
-        // Auto-trigger payment after short delay
         setTimeout(() => {
           processPaymentWithWallet(address);
         }, 500);
@@ -205,20 +198,15 @@ export default function InstantPay({
         setStep('setup');
       }
     } catch (error: any) {
-      console.error('Payment error:', error);
+      console.error('Login error:', error);
+      const errorMsg = error.message || error.toString() || 'Login failed';
       
-      const errorMsg = error.message || error.toString() || 'Payment failed';
-      
-      // Check for insufficient funds errors
       if (
         errorMsg.includes('tecUNFUNDED_PAYMENT') ||
         errorMsg.includes('tecPATH_PARTIAL') ||
         errorMsg.includes('tecPATH_DRY') ||
         errorMsg.includes('insufficient') ||
-        errorMsg.includes('Insufficient') ||
-        errorMsg.includes('unfunded') ||
-        errorMsg.includes('balance') ||
-        errorMsg.includes('not enough')
+        errorMsg.includes('Insufficient')
       ) {
         onError('INSUFFICIENT_FUNDS');
       } else {
@@ -229,7 +217,38 @@ export default function InstantPay({
     }
   };
 
-  // Step 2: Enable auto-sign
+  // Re-authenticate and continue
+  const reauth = async () => {
+    setLoading(true);
+    try {
+      const { loginWithWeb3Auth } = await import('@/lib/web3auth');
+      const result = await loginWithWeb3Auth();
+      
+      if (!result) {
+        setLoading(false);
+        return;
+      }
+
+      const address = typeof result === 'string' ? result : result.address;
+      sessionStorage.setItem('walletAddress', address);
+      sessionStorage.setItem('loginMethod', 'web3auth');
+      
+      setWalletAddress(address);
+      setStep('ready');
+      
+      // Auto-trigger payment
+      setTimeout(() => {
+        processPaymentWithWallet(address);
+      }, 500);
+    } catch (error: any) {
+      console.error('Reauth error:', error);
+      onError(error.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Enable auto-sign
   const enableAutoSign = async () => {
     setLoading(true);
     try {
@@ -237,7 +256,10 @@ export default function InstantPay({
       const web3auth = await getWeb3Auth();
       
       if (!web3auth || !web3auth.provider) {
-        throw new Error('Please sign in again');
+        // Session expired - need to re-login first
+        setStep('reauth');
+        setLoading(false);
+        return;
       }
 
       const res = await fetch('https://api.dltpays.com/nfc/api/v1/customer/setup-autosign', {
@@ -261,7 +283,7 @@ export default function InstantPay({
     }
   };
 
-  // Step 3: Process payment (uses state wallet)
+  // Process payment
   const processPayment = async () => {
     if (!walletAddress) return;
     await processPaymentWithWallet(walletAddress);
@@ -308,6 +330,36 @@ export default function InstantPay({
           </>
         )}
       </button>
+    );
+  }
+
+  // STEP 2.5: Session expired - need to re-login (friendly message)
+  if (step === 'reauth') {
+    return (
+      <div className="space-y-3">
+        <div className="bg-sky-500/10 border border-sky-500/30 rounded-xl p-3 flex items-center gap-3">
+          <svg className="w-5 h-5 text-sky-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-sky-400 text-sm">Session expired. Please sign in again to continue.</p>
+        </div>
+        <button
+          onClick={reauth}
+          disabled={loading}
+          className="w-full bg-gradient-to-r from-sky-500 to-blue-500 hover:from-sky-400 hover:to-blue-400 disabled:opacity-50 text-white font-bold py-5 rounded-2xl transition flex items-center justify-center gap-3"
+        >
+          {loading ? (
+            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+              </svg>
+              Sign In to Continue
+            </>
+          )}
+        </button>
+      </div>
     );
   }
 
