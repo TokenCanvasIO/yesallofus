@@ -1585,10 +1585,53 @@ return (
         <div className="max-w-3xl lg:max-w-none mx-auto px-6 lg:px-4 pt-0 pb-2">
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
-            <p className="text-red-400 text-sm">{error}</p>
-            <button onClick={() => setError(null)} className="text-red-400 text-xs mt-2 hover:underline">Dismiss</button>
-          </div>
+          error.includes('beta') || error.includes('full') || error.includes('waitlist') ? (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6 mb-6">
+              <div className="text-center">
+                <div className="text-4xl mb-4">🚀</div>
+                <h3 className="text-xl font-bold text-amber-400 mb-2">Beta is Full!</h3>
+                <p className="text-zinc-400 mb-6">We're at capacity right now, but we'd love to have you join when spots open up.</p>
+                
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  const form = e.target as HTMLFormElement;
+                  const email = (form.elements.namedItem('waitlistEmail') as HTMLInputElement).value;
+                  
+                  try {
+                    await fetch('https://api.dltpays.com/api/v1/waitlist', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email, source: 'beta_full' })
+                    });
+                    setError(null);
+                    alert('Thanks! We\'ll notify you when a spot opens up.');
+                  } catch (err) {
+                    alert('Failed to join waitlist. Please try again.');
+                  }
+                }} className="max-w-sm mx-auto">
+                  <input
+                    name="waitlistEmail"
+                    type="email"
+                    required
+                    placeholder="your@email.com"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white mb-3"
+                  />
+                  <button type="submit" className="w-full bg-amber-500 hover:bg-amber-400 text-black font-semibold py-3 rounded-lg transition">
+                    Join Waitlist
+                  </button>
+                </form>
+                
+                <button onClick={() => setError(null)} className="text-zinc-500 text-sm mt-4 hover:text-white">
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
+              <p className="text-red-400 text-sm">{error}</p>
+              <button onClick={() => setError(null)} className="text-red-400 text-xs mt-2 hover:underline">Dismiss</button>
+            </div>
+          )
         )}
 
         {/* No store yet - show create form */}
