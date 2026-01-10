@@ -99,6 +99,7 @@ const addTip = (tipAmount: number) => {
 };
 
 const startNFCPayment = async () => {
+  alert('NFC function called');
   if (!('NDEFReader' in window)) {
     setNfcError('NFC not supported on this device');
     return;
@@ -296,17 +297,18 @@ useEffect(() => {
 // Poll API for display data
 useEffect(() => {
   if (!storeId) return;
+  if (nfcScanning || paymentProcessing) return; // Stop polling during NFC
 
   const fetchDisplay = async () => {
     try {
       const res = await fetch(`${API_URL}/display/${storeId}`);
       if (!res.ok) throw new Error('Failed');
       const val = await res.json();
-setData(val);
-setConnected(true);
-if (val.status === 'qr') {
-  setIsProcessing(false);
-}
+      setData(val);
+      setConnected(true);
+      if (val.status === 'qr') {
+        setIsProcessing(false);
+      }
     } catch (error) {
       setConnected(false);
     }
@@ -315,7 +317,7 @@ if (val.status === 'qr') {
   fetchDisplay();
   const interval = setInterval(fetchDisplay, 500);
   return () => clearInterval(interval);
-}, [storeId]);
+}, [storeId, nfcScanning, paymentProcessing]);
 
 // Fetch live conversion rate
 useEffect(() => {
