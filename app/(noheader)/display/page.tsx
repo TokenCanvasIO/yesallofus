@@ -99,31 +99,34 @@ const addTip = (tipAmount: number) => {
 };
 
 const startNFCPayment = async () => {
-  alert('NFC function called');
   if (!('NDEFReader' in window)) {
+    alert('NFC not supported');
     setNfcError('NFC not supported on this device');
     return;
   }
 
-  // Capture current values before async operations
   const currentVendorWallet = data?.vendor_wallet || '';
   const currentStoreId = storeId || '';
   const currentTotal = data?.total || 0;
   const currentCart = data?.cart || [];
 
   if (!currentVendorWallet) {
+    alert('No vendor wallet');
     setNfcError('Vendor wallet not available');
     return;
   }
 
+  alert('Starting NFC scan');
   setNfcScanning(true);
   setNfcError(null);
 
   try {
     const ndef = new (window as any).NDEFReader();
     await ndef.scan();
+    alert('NFC scan active - tap your card');
 
     ndef.addEventListener('reading', async (event: any) => {
+      alert('Card read!');
       const uid = event.serialNumber?.replace(/:/g, '').toUpperCase();
       if (!uid) {
         setNfcError('Could not read card');
@@ -139,14 +142,14 @@ const startNFCPayment = async () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-  uid: uid,
-  vendor_wallet: currentVendorWallet,
-  store_id: currentStoreId,
-  amount: currentTotal,
-  gbp_amount: currentTotal,
-  items: currentCart,
-  payment_id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
-})
+            uid: uid,
+            vendor_wallet: currentVendorWallet,
+            store_id: currentStoreId,
+            amount: currentTotal,
+            gbp_amount: currentTotal,
+            items: currentCart,
+            payment_id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+          })
         });
 
         const result = await res.json();
@@ -169,6 +172,7 @@ const startNFCPayment = async () => {
     });
 
   } catch (err: any) {
+    alert('NFC error: ' + err.message);
     if (err.name === 'NotAllowedError') {
       setNfcError('NFC permission denied');
     } else {
