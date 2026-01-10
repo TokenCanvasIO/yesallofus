@@ -76,8 +76,18 @@ function AnalyticsPage() {
         `${API_URL}/store/${storeId}/receipts?wallet_address=${walletAddress}&limit=500`
       );
       const data = await res.json();
+      console.log('📊 Receipts response:', data);
       if (data.success) {
         setReceipts(data.receipts);
+        // Debug: Check for tips in receipts
+        const receiptsWithTips = data.receipts.filter((r: Receipt) => 
+          r.items?.some((i: ReceiptItem) => i.name?.toLowerCase() === 'tip')
+        );
+        console.log('🧾 Total receipts:', data.receipts.length);
+        console.log('💰 Receipts with tips:', receiptsWithTips.length);
+        if (data.receipts.length > 0) {
+          console.log('📝 Sample receipt items:', data.receipts[0].items);
+        }
       }
     } catch (err) {
       console.error('Failed to load receipts');
@@ -141,10 +151,14 @@ function AnalyticsPage() {
     ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 
     : totalRevenue > 0 ? 100 : 0;
 
-  // Tips calculation
+  // Tips calculation - check multiple possible tip naming conventions
   const totalTips = filteredReceipts.reduce((sum, r) => {
-    const tipItem = r.items.find(i => i.name.toLowerCase() === 'tip');
-    return sum + (tipItem?.line_total || 0);
+    const tipItem = r.items.find(i => 
+      i.name.toLowerCase() === 'tip' || 
+      i.name.toLowerCase() === 'gratuity' ||
+      i.name.toLowerCase().includes('tip')
+    );
+    return sum + (tipItem?.line_total || tipItem?.unit_price || 0);
   }, 0);
 
   // Payment method breakdown

@@ -6,6 +6,7 @@ import { updateCustomerDisplay, clearCustomerDisplay } from '@/lib/customerDispl
 import StaffSelector from '@/components/StaffSelector';
 import SendPaymentLink from '@/components/SendPaymentLink';
 import PendingPayments from '@/components/PendingPayments';
+import LiveConversionWidget from '@/components/LiveConversionWidget';
 interface Product {
 product_id: string;
 name: string;
@@ -492,6 +493,25 @@ startNFCScan(amount);
 
 // Don't update display yet - wait for QR code
 try {
+// Build items array for receipt
+const paymentItems = cart.length > 0 
+  ? [
+      ...cart.map(item => ({
+        product_id: item.product_id,
+        name: item.name,
+        quantity: item.quantity,
+        unit_price: item.price,
+        line_total: item.price * item.quantity
+      })),
+      ...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, unit_price: tipAmount, line_total: tipAmount }] : [])
+    ]
+  : [
+      { name: 'Payment', quantity: 1, unit_price: gbpAmount - tipAmount, line_total: gbpAmount - tipAmount },
+      ...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, unit_price: tipAmount, line_total: tipAmount }] : [])
+    ];
+
+console.log('🧾 QR Payment items being sent:', paymentItems);
+
 const res = await fetch('https://api.dltpays.com/api/v1/xaman/payment', {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
@@ -499,7 +519,9 @@ body: JSON.stringify({
 amount: amount,
 vendor_wallet: walletAddress,
 store_id: storeId,
-store_name: storeName
+store_name: storeName,
+items: paymentItems,
+amount_gbp: gbpAmount
       })
     });
 const data = await res.json();
@@ -597,11 +619,11 @@ line_total: item.price * item.quantity
       })),
 ...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, unit_price: tipAmount, line_total: tipAmount }] : [])
     ]
-: [{ name: 'Payment', quantity: 1, unit_price: paymentAmount, line_total: paymentAmount }];
-const response = await fetch(`${API_URL}/nfc/payment`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
+: [
+    { name: 'Payment', quantity: 1, unit_price: paymentAmount - tipAmount, line_total: paymentAmount - tipAmount },
+    ...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, unit_price: tipAmount, line_total: tipAmount }] : [])
+  ]
+const paymentPayload = {
     uid: uid,
     amount: paymentAmount,
     vendor_wallet: walletAddress,
@@ -611,7 +633,15 @@ const response = await fetch(`${API_URL}/nfc/payment`, {
     staff_id: activeStaff?.staff_id || null,
     staff_name: activeStaff?.name || null,
     payment_id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
-  })
+};
+console.log('💳 Payment payload:', paymentPayload);
+console.log('💰 Tip amount state:', tipAmount);
+console.log('🧾 Items being sent:', items);
+
+const response = await fetch(`${API_URL}/nfc/payment`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(paymentPayload)
 });
 const data = await response.json();
 if (data.success) {
@@ -1230,6 +1260,15 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
 <div className="p-4 flex-1">
 <ProductsManager storeId={storeId} walletAddress={walletAddress} />
 </div>
+{/* Live Conversion Widget - Shows actual payment amount */}
+<div className="px-4 pb-6 flex justify-center">
+  <LiveConversionWidget 
+    initialGbpAmount={getPaymentAmount() > 0 ? getPaymentAmount() : 1} 
+    compact={true} 
+    showCompliance={false} 
+  />
+</div>
+
 {/* YAOFUS Pioneers Badge - Footer */}
 <footer className="py-6 flex flex-col items-center gap-1">
   <span className="text-zinc-500 text-[10px] font-medium tracking-wider">CATALOG</span>
@@ -1944,6 +1983,44 @@ className="block w-full text-center text-sm text-zinc-400 hover:text-white py-4 
 </div>
 )}
 </main>
+
+{/* Live Conversion Widget - Show in payment states */}
+{(status === 'qr' || status === 'waiting' || (status === 'idle' && (cart.length > 0 || customAmount > 0))) && liveRate && (
+  <div className="relative z-10 px-6 sm:px-8 pb-4">
+    <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 max-w-md mx-auto">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <img 
+            src="https://static.coingecko.com/s/coingecko-logo-8903d34ce19ca4be1c81f0db30e924154750d208683fad7ae6f2ce06c76d0a56.png" 
+            alt="CoinGecko" 
+            className="h-5 w-auto object-contain"
+          />
+          <span className="text-xs text-zinc-500">Live rate from CoinGecko Pro</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+          <span className="text-xs text-emerald-500 font-medium">LIVE</span>
+        </div>
+      </div>
+      <div className="flex items-baseline justify-between">
+        <span className="text-zinc-400 text-sm">Settlement amount</span>
+        <div className="text-right">
+          <span className="text-2xl font-bold text-white font-mono">
+            {rlusdAmount?.toFixed(4)} <span className="text-emerald-400 text-lg">RLUSD</span>
+          </span>
+          <p className="text-xs text-zinc-500 mt-1">
+            £1 = {liveRate?.toFixed(4)} RLUSD
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 pt-3 border-t border-zinc-800">
+        <p className="text-[11px] text-zinc-500 leading-relaxed">
+          <span className="text-zinc-400 font-medium">Live price.</span> Updated every 10s via CoinGecko Pro (600+ exchanges). Settlement variance &lt;0.1%.
+        </p>
+      </div>
+    </div>
+  </div>
+)}
 
 {/* YAOFUS Pioneers Badge - Footer */}
 <footer className="py-6 flex flex-col items-center gap-1">
