@@ -21,6 +21,7 @@ interface DisplayData {
   qr_code?: string | null;
   tip?: number;
   tips_enabled?: boolean;
+  vendor_wallet?: string | null;
   last_updated: number | null;
   split_payment?: {
     parent_id: string;
@@ -30,7 +31,7 @@ interface DisplayData {
     all_paid?: boolean;
   };
 }
-const API_URL = 'https://api.dltpays.com/nfc/api/v1';
+const API_URL = 'https://api.dltpays.com/api/v1';
 
 function CustomerDisplay() {
   const searchParams = useSearchParams();
@@ -118,16 +119,18 @@ const startNFCPayment = async () => {
       setPaymentProcessing(true);
 
       try {
-        const res = await fetch(`${API_URL}/nfc/pay`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            card_uid: uid,
-            store_id: storeId,
-            amount: data?.total || 0,
-            items: data?.cart || []
-          })
-        });
+        const res = await fetch('https://api.dltpays.com/nfc/api/v1/nfc/payment', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    uid: uid,
+    vendor_wallet: data?.vendor_wallet || '',
+    store_id: storeId,
+    amount: data?.total || 0,
+    gbp_amount: data?.total || 0,
+    items: data?.cart || []
+  })
+});
 
         const result = await res.json();
 

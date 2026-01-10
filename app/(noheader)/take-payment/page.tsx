@@ -290,7 +290,7 @@ setTxHash(data.tx_hash);
 setLastOrder([...cart]);
 setStatus('success');
 paymentInProgressRef.current = false;
-if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'success', null, tipAmount);
+if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'success', null, tipAmount, tipsEnabled, walletAddress || undefined);
 if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
 } else if (data.status === 'expired' || data.status === 'cancelled') {
 setError(`Payment ${data.status}`);

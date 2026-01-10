@@ -17,7 +17,8 @@ export async function updateCustomerDisplay(
   status: DisplayStatus,
   qrCode?: string | null,
   tip?: number,
-  tipsEnabled?: boolean
+  tipsEnabled?: boolean,
+  vendorWallet?: string
 ) {
   try {
     await fetch(`${API_URL}/display/update`, {
@@ -31,7 +32,8 @@ export async function updateCustomerDisplay(
         status,
         qr_code: qrCode || null,
         tip: tip || 0,
-        tips_enabled: tipsEnabled ?? false
+        tips_enabled: tipsEnabled ?? false,
+        vendor_wallet: vendorWallet || null
       })
     });
   } catch (error) {
