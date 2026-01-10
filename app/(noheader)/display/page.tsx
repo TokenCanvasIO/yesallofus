@@ -75,6 +75,11 @@ const [signupSuccess, setSignupSuccess] = useState(false);
 const [liveRate, setLiveRate] = useState<number | null>(null);
 const [rlusdAmount, setRlusdAmount] = useState<number | null>(null);
 
+// NFC Payment refs
+const nfcScanActiveRef = useRef(false);
+const paymentInProgressRef = useRef(false);
+const lastReadTimeRef = useRef(0);
+
 // Sync selectedTip with data from API
 useEffect(() => {
   if (data?.tip !== undefined) {
@@ -92,11 +97,6 @@ const addTip = (tipAmount: number) => {
     body: JSON.stringify({ tip: tipAmount })
   }).catch(err => console.error('Failed to add tip:', err));
 };
-
-// NFC Payment scan
-const nfcScanActiveRef = useRef(false);
-const paymentInProgressRef = useRef(false);
-const lastReadTimeRef = useRef(0);
 
 const startNFCPayment = async () => {
   if (!('NDEFReader' in window)) {
@@ -208,16 +208,17 @@ const startSignupNFCScan = async () => {
     const ndef = new (window as any).NDEFReader();
     await ndef.scan();
 
-    ndef.addEventListener('reading', async (event: any) => {
-      const serialNumber = event.serialNumber;
-      
-      if (!serialNumber) {
-        setSignupError('Could not read card. Please try again.');
-        setSignupScanning(false);
+    let lastReadTime = 0;
+    ndef.addEventListener('reading', async ({ serialNumber }: { serialNumber: string }) => {
+      // Debounce: ignore reads within 5 seconds
+      const now = Date.now();
+      if (now - lastReadTime < 5000) {
+        console.log('NFC read debounced');
         return;
       }
+      lastReadTime = now;
 
-      const uid = serialNumber.replace(/:/g, '').toUpperCase();
+      const uid = serialNumber?.replace(/:/g, '').toUpperCase();
       setSignupCardUid(uid);
       setSignupScanning(false);
     });
