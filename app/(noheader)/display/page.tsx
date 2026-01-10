@@ -725,7 +725,7 @@ useEffect(() => {
         className="flex flex-col items-center cursor-pointer"
       >
         <div className="w-40 h-40 sm:w-56 sm:h-56 bg-emerald-500/20 rounded-full flex items-center justify-center relative mb-5 sm:mb-8">
-          <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
+          <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping pointer-events-none" style={{ animationDuration: '2s' }}></div>
           <div className="absolute inset-4 bg-emerald-500/10 rounded-full animate-pulse"></div>
           <svg className="w-20 h-20 sm:w-28 sm:h-28 text-emerald-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -797,7 +797,7 @@ useEffect(() => {
           nfcScanning ? 'bg-amber-500/30' : paymentProcessing ? 'bg-emerald-500/40' : 'bg-emerald-500/20'
         }`}>
           {!nfcScanning && !paymentProcessing && (
-            <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
+            <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping pointer-events-none" style={{ animationDuration: '2s' }}></div>
           )}
           {nfcScanning && (
             <div className="absolute inset-0 bg-amber-500/30 rounded-full animate-pulse"></div>
@@ -934,7 +934,7 @@ useEffect(() => {
           
           {/* NFC Animation */}
           <div className="relative w-24 h-24 sm:w-28 sm:h-28">
-            <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
+            <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping pointer-events-none" style={{ animationDuration: '2s' }}></div>
             <div className="absolute inset-3 bg-emerald-500/15 rounded-full animate-ping" style={{ animationDuration: '2s', animationDelay: '0.4s' }}></div>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-20 h-20 sm:w-24 sm:h-24 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/30">
