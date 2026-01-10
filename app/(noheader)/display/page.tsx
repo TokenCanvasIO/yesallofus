@@ -104,12 +104,6 @@ const startNFCPayment = async () => {
     return;
   }
 
-  if (nfcScanActiveRef.current) {
-    console.log('NFC scan already active');
-    return;
-  }
-  nfcScanActiveRef.current = true;
-
   setNfcScanning(true);
   setNfcError(null);
 
@@ -117,28 +111,13 @@ const startNFCPayment = async () => {
     const ndef = new (window as any).NDEFReader();
     await ndef.scan();
 
-    ndef.addEventListener('reading', async ({ serialNumber }: { serialNumber: string }) => {
-      // Debounce: ignore reads within 5 seconds
-      const now = Date.now();
-      if (now - lastReadTimeRef.current < 5000) {
-        console.log('NFC read debounced');
-        return;
-      }
-      lastReadTimeRef.current = now;
-
-      const uid = serialNumber?.replace(/:/g, '').toUpperCase();
+    ndef.addEventListener('reading', async (event: any) => {
+      const uid = event.serialNumber?.replace(/:/g, '').toUpperCase();
       if (!uid) {
         setNfcError('Could not read card');
         setNfcScanning(false);
         return;
       }
-
-      // Prevent duplicate payment processing
-      if (paymentInProgressRef.current) {
-        console.log('Payment already in progress');
-        return;
-      }
-      paymentInProgressRef.current = true;
 
       setNfcScanning(false);
       setPaymentProcessing(true);
@@ -163,18 +142,12 @@ const startNFCPayment = async () => {
         if (result.success) {
           if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
         } else {
-          // Only show error if not already succeeded
-          if (data?.status !== 'success') {
-            setNfcError(result.error || 'Payment failed');
-          }
+          setNfcError(result.error || 'Payment failed');
         }
       } catch (err) {
-        if (data?.status !== 'success') {
-          setNfcError('Payment failed');
-        }
+        setNfcError('Payment failed');
       } finally {
         setPaymentProcessing(false);
-        paymentInProgressRef.current = false;
       }
     });
 
@@ -192,7 +165,6 @@ const startNFCPayment = async () => {
     setNfcScanning(false);
   }
 };
-
 // NFC Scan for signup
 const startSignupNFCScan = async () => {
   setSignupError(null);
