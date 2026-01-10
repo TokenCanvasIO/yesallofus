@@ -295,7 +295,7 @@ if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
 } else if (data.status === 'expired' || data.status === 'cancelled') {
 setError(`Payment ${data.status}`);
 setStatus('idle');
-if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'idle', null, 0);
+if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'idle', null, 0, tipsEnabled, walletAddress || undefined);
 }
     } catch (err) {
 console.error('Poll error:', err);
@@ -340,7 +340,7 @@ useEffect(() => {
 // Sync cart to customer display
 useEffect(() => {
 if (storeId && status === 'idle' && cart.length > 0) {
-updateCustomerDisplay(storeId, storeName, cart, cartTotal + tipAmount, 'idle', null, tipAmount, tipsEnabled);
+updateCustomerDisplay(storeId, storeName, cart, cartTotal + tipAmount, 'idle', null, tipAmount, tipsEnabled, walletAddress || undefined);
   } else if (storeId && status === 'idle' && cart.length === 0) {
 clearCustomerDisplay(storeId, storeName);
   }
@@ -457,7 +457,7 @@ setManualAmount(prev => prev + num);
 useEffect(() => {
 if (storeId && status === 'idle' && showManualEntry && customAmount > 0) {
 const manualCart = [{ name: 'Payment', quantity: 1, price: customAmount, emoji: '💷' }];
-updateCustomerDisplay(storeId, storeName, manualCart, customAmount + tipAmount, 'idle', null, tipAmount, tipsEnabled);
+updateCustomerDisplay(storeId, storeName, manualCart, customAmount + tipAmount, 'idle', null, tipAmount, tipsEnabled, walletAddress || undefined);
   }
 }, [customAmount, storeId, storeName, status, showManualEntry, tipAmount, tipsEnabled]);
 
@@ -531,7 +531,7 @@ setXamanPaymentId(data.payment_id);
 const displayCart = cart.length > 0 
   ? cart 
   : [{ name: 'Payment', quantity: 1, price: customAmount || gbpAmount, emoji: '💷' }];
-if (storeId) updateCustomerDisplay(storeId, storeName, displayCart, gbpAmount, 'qr', data.qr_png, tipAmount);
+if (storeId) updateCustomerDisplay(storeId, storeName, displayCart, gbpAmount, 'qr', data.qr_png, tipAmount, tipsEnabled, walletAddress || undefined);
 }else {
 setError(data.error || 'Failed to create payment request');
 setStatus('idle');
@@ -551,7 +551,7 @@ return;
     }
 setStatus('waiting');
 setError(null);
-if (storeId) updateCustomerDisplay(storeId, storeName, cart, amount, 'ready');
+if (storeId) updateCustomerDisplay(storeId, storeName, cart, amount, 'ready', null, tipAmount, tipsEnabled, walletAddress || undefined);
 // Try Web NFC if available (Android Chrome)
 if ('NDEFReader' in window) {
 startNFCScan(amount);
@@ -605,7 +605,7 @@ if (paymentInProgressRef.current) {
 }
 paymentInProgressRef.current = true;
 setStatus('processing');
-if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'processing');
+if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'processing', null, tipAmount, tipsEnabled, walletAddress || undefined);
 try {
 // Build items array from cart
 const items = cart.length > 0 
@@ -648,7 +648,7 @@ if (data.success) {
 setTxHash(data.tx_hash);
 setLastOrder([...cart]);
 setStatus('success');
-if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'success');
+if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'success', null, tipAmount, tipsEnabled, walletAddress || undefined);
 // Haptic + sound feedback
 if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
 } else {
@@ -657,7 +657,7 @@ if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
     setError(data.error || 'Payment failed');
     setStatus('error');
     paymentInProgressRef.current = false;
-    if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'error');
+    if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'error', null, tipAmount, tipsEnabled, walletAddress || undefined);
   }
       }
     } catch (err: any) {
@@ -665,7 +665,7 @@ if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
   if (status !== 'success') {
     setError(err.message || 'Payment failed');
     setStatus('error');
-    if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'error');
+    if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'error', null, tipAmount, tipsEnabled, walletAddress || undefined);
   }
     }
   };
@@ -1649,7 +1649,7 @@ className="w-full bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 active:scale-
       setStatus('idle');
       setXamanQR(null);
       setXamanPaymentId(null);
-      if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'idle', null, 0);
+      if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'idle', null, 0, tipsEnabled, walletAddress || undefined);
     }}
     className="bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-12 py-4 rounded-2xl transition active:scale-95 cursor-pointer text-lg"
   >
