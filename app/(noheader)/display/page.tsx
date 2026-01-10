@@ -117,7 +117,7 @@ const startNFCPayment = async () => {
     const ndef = new (window as any).NDEFReader();
     await ndef.scan();
 
-    ndef.addEventListener('reading', async (event: any) => {
+    ndef.addEventListener('reading', async ({ serialNumber }: { serialNumber: string }) => {
       // Debounce: ignore reads within 5 seconds
       const now = Date.now();
       if (now - lastReadTimeRef.current < 5000) {
@@ -126,7 +126,7 @@ const startNFCPayment = async () => {
       }
       lastReadTimeRef.current = now;
 
-      const uid = event.serialNumber?.replace(/:/g, '').toUpperCase();
+      const uid = serialNumber?.replace(/:/g, '').toUpperCase();
       if (!uid) {
         setNfcError('Could not read card');
         setNfcScanning(false);
@@ -371,8 +371,9 @@ useEffect(() => {
 }, []);
 
 // Reset payment refs when status changes to idle or success
+// Reset payment refs when payment succeeds
 useEffect(() => {
-  if (data?.status === 'idle' || data?.status === 'success') {
+  if (data?.status === 'success') {
     paymentInProgressRef.current = false;
     nfcScanActiveRef.current = false;
   }
