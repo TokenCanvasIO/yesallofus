@@ -31,7 +31,7 @@ interface DisplayData {
     all_paid?: boolean;
   };
 }
-const API_URL = 'https://api.dltpays.com/api/v1';
+const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
 function CustomerDisplay() {
   const searchParams = useSearchParams();
