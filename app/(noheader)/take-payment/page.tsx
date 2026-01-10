@@ -1144,7 +1144,14 @@ title="Dashboard"
 {/* Customer Display */}
 <div className="relative group">
 <button
-onClick={() => window.open(`/display?store=${storeId}`, '_blank')}
+onClick={() => {
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+  if (isPWA) {
+    window.location.href = `/display?store=${storeId}`;
+  } else {
+    window.open(`/display?store=${storeId}`, '_blank');
+  }
+}}
 className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
 >
 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
