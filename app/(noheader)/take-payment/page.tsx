@@ -200,6 +200,9 @@ const [showSendPaymentLink, setShowSendPaymentLink] = useState(false);
 const [showPendingPayments, setShowPendingPayments] = useState(false);
 // Header staff UI
 const [showStaffModal, setShowStaffModal] = useState(false);
+// Wallet status for RLUSD
+const [walletReady, setWalletReady] = useState<boolean | null>(null);
+const [settingUpWallet, setSettingUpWallet] = useState(false);
 
 // Convert GBP to RLUSD - Live price from CoinGecko Pro with audit trail
 const convertGBPtoRLUSD = async (gbpAmount: number): Promise<number> => {
@@ -255,6 +258,15 @@ sessionStorage.setItem('storeData', JSON.stringify(updatedStore));
         .catch(err => console.error('Failed to fetch store:', err));
     }
   }
+// Check wallet status for RLUSD
+fetch(`https://api.dltpays.com/api/v1/wallet/status/${stored}`)
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      setWalletReady(data.funded && data.rlusd_trustline);
+    }
+  })
+  .catch(err => console.error('Failed to check wallet:', err));
 }, [router]);
 
 // Fetch products
@@ -782,6 +794,50 @@ setError('Failed to remove logo');
   }
 setUploadingLogo(false);
 };
+
+// Setup wallet for RLUSD payments
+const setupWalletForPayments = async () => {
+  setSettingUpWallet(true);
+  try {
+    const loginMethod = sessionStorage.getItem('loginMethod');
+    
+    if (loginMethod === 'web3auth') {
+      const { getWeb3Auth } = await import('@/lib/web3auth');
+      const web3auth = await getWeb3Auth();
+      
+      if (!web3auth || !web3auth.provider) {
+        setError('Please sign in again to set up your wallet');
+        setSettingUpWallet(false);
+        return;
+      }
+      
+      const trustlineTx = {
+        TransactionType: 'TrustSet',
+        Account: walletAddress,
+        LimitAmount: {
+          currency: '524C555344000000000000000000000000000000',
+          issuer: 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
+          value: '1000000',
+        },
+      };
+      
+      await web3auth.provider.request({
+        method: 'xrpl_submitTransaction',
+        params: { transaction: trustlineTx },
+      });
+      
+      setWalletReady(true);
+    } else {
+      // For Xaman/Crossmark, redirect to dashboard
+      router.push('/affiliate-dashboard?setup=wallet');
+    }
+  } catch (err: any) {
+    console.error('Wallet setup error:', err);
+    setError(err.message || 'Failed to set up wallet');
+  }
+  setSettingUpWallet(false);
+};
+
 // Send receipt email
 const sendReceiptEmail = async () => {
 if (!emailAddress || !emailAddress.includes('@')) {
@@ -1193,6 +1249,26 @@ className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-
 </div>
 </div>
 </header>
+
+{/* Wallet Setup Banner */}
+{walletReady === false && (
+  <div className="bg-amber-500/10 border-b border-amber-500/30 px-4 py-3">
+    <div className="max-w-lg mx-auto sm:max-w-none flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <span className="text-amber-400">⚠️</span>
+        <p className="text-amber-400 text-sm">Wallet not set up to receive payments</p>
+      </div>
+      <button
+        onClick={setupWalletForPayments}
+        disabled={settingUpWallet}
+        className="bg-amber-500 hover:bg-amber-400 text-black text-sm font-semibold px-4 py-1.5 rounded-lg transition disabled:opacity-50"
+      >
+        {settingUpWallet ? 'Setting up...' : 'Set Up Now'}
+      </button>
+    </div>
+  </div>
+)}
+
 {/* Logo Upload Modal */}
 {showLogoUpload && (
 <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">

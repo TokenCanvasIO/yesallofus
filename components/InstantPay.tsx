@@ -63,10 +63,29 @@ export default function InstantPay({
   };
 
   // Process payment with wallet address
-  const processPaymentWithWallet = async (wallet: string) => {
-    setPaying(true);
-    try {
-      const { getWeb3Auth } = await import('@/lib/web3auth');
+const processPaymentWithWallet = async (wallet: string) => {
+// Check for self-payment
+if (wallet.toLowerCase() === vendorWallet.toLowerCase()) {
+onError('SELF_PAYMENT_NOT_ALLOWED');
+return;
+    }
+
+// Check if wallet is ready (funded + RLUSD enabled)
+try {
+const statusRes = await fetch(`${API_URL}/wallet/status/${wallet}`);
+const statusData = await statusRes.json();
+
+if (statusData.success && (!statusData.funded || !statusData.rlusd_trustline)) {
+onError('WALLET_NOT_READY');
+return;
+    }
+} catch (err) {
+console.error('Wallet status check failed:', err);
+}
+
+setPaying(true);
+try {
+const { getWeb3Auth } = await import('@/lib/web3auth');
       const web3auth = await getWeb3Auth();
       
       if (!web3auth || !web3auth.provider) {

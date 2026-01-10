@@ -291,6 +291,33 @@ const setupAutoSignWeb3Auth = async () => {
       throw new Error('Web3Auth session not available. Please sign in again.');
     }
 
+    // Check if wallet needs RLUSD setup
+    const walletStatusRes = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${walletAddress}`);
+    const walletStatusData = await walletStatusRes.json();
+    
+    if (walletStatusData.success && walletStatusData.funded && !walletStatusData.rlusd_trustline) {
+      console.log('Setting up RLUSD for wallet...');
+      
+      const trustlineTx = {
+        TransactionType: 'TrustSet',
+        Account: walletAddress,
+        LimitAmount: {
+          currency: '524C555344000000000000000000000000000000',
+          issuer: 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
+          value: '1000000',
+        },
+      };
+      
+      await web3auth.provider.request({
+        method: 'xrpl_submitTransaction',
+        params: { transaction: trustlineTx },
+      });
+      
+      console.log('RLUSD enabled successfully');
+      // Wait for ledger
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
     // Get platform signer address from API
     const settingsRes = await fetch(`https://api.dltpays.com/nfc/api/v1/customer/setup-autosign`, {
       method: 'POST',

@@ -734,15 +734,13 @@ if (allPaid || payment?.status === 'paid') {
           </div>
         </div>
 
-        {/* Error message */}
         {error && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 text-center">
             {error === 'INSUFFICIENT_FUNDS' ? (
               <>
                 <p className="text-red-400 font-medium mb-2">Insufficient funds in your wallet</p>
                 <p className="text-zinc-400 text-sm mb-3">Please top up your RLUSD balance to complete this payment.</p>
-                
-                 <a  href="/affiliate-dashboard"
+                <a href="/affiliate-dashboard"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-4 py-2 rounded-lg transition"
@@ -751,6 +749,21 @@ if (allPaid || payment?.status === 'paid') {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                   Top Up Wallet
+                </a>
+              </>
+            ) : error === 'SELF_PAYMENT_NOT_ALLOWED' ? (
+              <>
+                <p className="text-red-400 font-medium mb-2">Cannot pay to your own wallet</p>
+                <p className="text-zinc-400 text-sm">You're trying to pay with the same wallet that receives payments for this store.</p>
+              </>
+            ) : error === 'WALLET_NOT_READY' ? (
+              <>
+                <p className="text-red-400 font-medium mb-2">Wallet not ready for payments</p>
+                <p className="text-zinc-400 text-sm mb-3">Your wallet needs to be set up to send RLUSD payments.</p>
+                <a href="/affiliate-dashboard"
+                  className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-black font-semibold px-4 py-2 rounded-lg transition"
+                >
+                  Set Up Wallet
                 </a>
               </>
             ) : (
