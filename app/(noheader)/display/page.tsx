@@ -99,9 +99,12 @@ const addTip = (tipAmount: number) => {
 };
 
 const startNFCPayment = async () => {
+  // TEMP DEBUG - remove later
+  setNfcError('Button clicked! Starting NFC...');
+  
   // Guard against duplicate scans
   if (nfcScanActiveRef.current) {
-    console.log('NFC scan already active, skipping');
+    setNfcError('NFC scan already active, skipping');
     return;
   }
 
