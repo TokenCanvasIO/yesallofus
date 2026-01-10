@@ -1655,47 +1655,6 @@ className="w-full bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 active:scale-
   >
     Cancel
   </button>
-  {/* Live Conversion Rate - Powered by CoinGecko */}
-  <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 mt-8 w-full max-w-sm">
-    <div className="flex items-center justify-between mb-3">
-      <div className="flex items-center gap-2">
-        <img 
-src="https://static.coingecko.com/s/coingecko-logo-8903d34ce19ca4be1c81f0db30e924154750d208683fad7ae6f2ce06c76d0a56.png" 
-alt="CoinGecko" 
-className="h-5 w-auto object-contain"
-/>
-        <span className="text-xs text-zinc-500">Live rate from CoinGecko Pro</span>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-        <span className="text-xs text-emerald-500 font-medium">LIVE</span>
-      </div>
-    </div>
-    
-    <div className="flex items-baseline justify-between">
-      <span className="text-zinc-400 text-sm">Settlement amount</span>
-      <div className="text-right">
-        <span className="text-2xl font-bold text-white font-mono">
-          {rlusdAmount ? rlusdAmount.toFixed(4) : '...'} <span className="text-emerald-400 text-lg">RLUSD</span>
-        </span>
-        {liveRate && (
-          <p className="text-xs text-zinc-500 mt-1">
-            £1 = {liveRate.toFixed(4)} RLUSD
-          </p>
-        )}
-      </div>
-    </div>
-    
-    <div className="mt-3 pt-3 border-t border-zinc-800 flex items-start gap-2">
-      <svg className="w-4 h-4 text-amber-400/80 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 16v-4M12 8h.01" />
-      </svg>
-      <p className="text-[11px] text-zinc-500 leading-relaxed">
-  <span className="text-zinc-400 font-medium">Live price.</span> Updated every 10s via CoinGecko Pro (600+ exchanges). Settlement variance &lt;0.1%.
-</p>
-    </div>
-  </div>
 </div>
 )}
 {/* ============================================================= */}
@@ -1984,10 +1943,10 @@ className="block w-full text-center text-sm text-zinc-400 hover:text-white py-4 
 )}
 </main>
 
-{/* Live Conversion Widget - Show in payment states */}
-{(status === 'qr' || status === 'waiting' || (status === 'idle' && (cart.length > 0 || customAmount > 0))) && liveRate && (
-  <div className="relative z-10 px-6 sm:px-8 pb-4">
-    <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 max-w-md mx-auto">
+{/* Live Conversion Widget - Always visible */}
+{liveRate && (
+  <div className="w-full sm:max-w-lg mx-auto px-2 sm:px-4 pb-4">
+    <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <img 
