@@ -187,6 +187,7 @@ export default function AffiliateDashboard() {
   // Add auto sign
 const [autoSignEnabled, setAutoSignEnabled] = useState(false);
 const [settingUpAutoSign, setSettingUpAutoSign] = useState(false);
+const [setupProgress, setSetupProgress] = useState<string | null>(null);
 const [showAutoSignPrompt, setShowAutoSignPrompt] = useState(false);
   
   // Ref to prevent double registration
@@ -282,6 +283,7 @@ const setupAutoSignWeb3Auth = async () => {
 
   setSettingUpAutoSign(true);
   setError(null);
+  setSetupProgress(null);
 
   try {
     const { getWeb3Auth } = await import('@/lib/web3auth');
@@ -292,11 +294,12 @@ const setupAutoSignWeb3Auth = async () => {
     }
 
     // Check if wallet needs RLUSD setup
+    setSetupProgress('Checking wallet...');
     const walletStatusRes = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${walletAddress}`);
     const walletStatusData = await walletStatusRes.json();
     
     if (walletStatusData.success && walletStatusData.funded && !walletStatusData.rlusd_trustline) {
-      console.log('Setting up RLUSD for wallet...');
+      setSetupProgress('Setting up RLUSD trustline... (1/2)');
       
       const trustlineTx = {
         TransactionType: 'TrustSet',
@@ -313,12 +316,12 @@ const setupAutoSignWeb3Auth = async () => {
         params: { transaction: trustlineTx },
       });
       
-      console.log('RLUSD enabled successfully');
-      // Wait for ledger
+      setSetupProgress('RLUSD enabled ✓ Now confirm Tap-to-Pay... (2/2)');
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
     // Get platform signer address from API
+    setSetupProgress('Preparing Tap-to-Pay...');
     const settingsRes = await fetch(`https://api.dltpays.com/nfc/api/v1/customer/setup-autosign`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -335,6 +338,7 @@ const setupAutoSignWeb3Auth = async () => {
       setAutoSignEnabled(true);
       setShowAutoSignPrompt(false);
       setSettingUpAutoSign(false);
+      setSetupProgress(null);
       return;
     }
 
@@ -342,6 +346,8 @@ const setupAutoSignWeb3Auth = async () => {
     if (!platformSignerAddress) {
       throw new Error('Platform signer not configured');
     }
+
+    setSetupProgress('Confirm in your wallet...');
 
     // Build SignerListSet transaction
     const signerListSetTx = {
@@ -359,14 +365,13 @@ const setupAutoSignWeb3Auth = async () => {
     };
 
     // Sign and submit via Web3Auth
-    const result = await web3auth.provider.request({
+    await web3auth.provider.request({
       method: 'xrpl_submitTransaction',
-      params: {
-        transaction: signerListSetTx
-      }
+      params: { transaction: signerListSetTx }
     });
 
-    console.log('SignerListSet result:', result);
+    setSetupProgress('Verifying setup...');
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Verify the setup
     const verifyRes = await fetch(`https://api.dltpays.com/nfc/api/v1/customer/autosign-status/${walletAddress}`);
@@ -384,6 +389,7 @@ const setupAutoSignWeb3Auth = async () => {
     setError(message);
   }
   setSettingUpAutoSign(false);
+  setSetupProgress(null);
 };
 
   // Check for existing session on mount
@@ -975,11 +981,11 @@ const NavIcon = ({ name }: { name: string }) => {
       className="w-full bg-amber-500 hover:bg-amber-400 text-black font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
     >
       {settingUpAutoSign ? (
-        <>
-          <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
-          Setting up...
-        </>
-      ) : (
+  <>
+    <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
+    {setupProgress || 'Setting up...'}
+  </>
+) : (
         '🔐 Enable Tap-to-Pay Now'
       )}
     </button>

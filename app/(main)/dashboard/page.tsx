@@ -37,6 +37,7 @@ const [sidebarOpen, setSidebarOpen] = useState(false);
 const router = useRouter();
 // Disconnect modal state
 const [showDisconnectModal, setShowDisconnectModal] = useState(false);
+const [setupProgress, setSetupProgress] = useState<string | null>(null);
 
   // Settings state
   const [commissionRates, setCommissionRates] = useState([25, 5, 3, 2, 1]);
@@ -858,145 +859,155 @@ try {
   const setupAutoSignWeb3Auth = async () => {
   if (!store || !walletAddress) return;
 
-    setSettingUpAutoSign(true);
-    setError(null);
+  setSettingUpAutoSign(true);
+  setError(null);
 
-    try {
-      const { getWeb3Auth } = await import('@/lib/web3auth');
-      const web3auth = await getWeb3Auth();
+  try {
+    const { getWeb3Auth } = await import('@/lib/web3auth');
+    const web3auth = await getWeb3Auth();
+    
+    if (!web3auth || !web3auth.provider) {
+      throw new Error('Web3Auth session not available. Please sign in again.');
+    }
+
+    // Check if wallet needs RLUSD setup
+    const walletStatusRes = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${walletAddress}`);
+    const walletStatusData = await walletStatusRes.json();
+    
+    if (walletStatusData.success && walletStatusData.funded && !walletStatusData.rlusd_trustline) {
+      // POSITIVE MESSAGE instead of just console.log
+      setError(null);
+      setSetupProgress('Setting up RLUSD trustline... (1/2)');
       
-      if (!web3auth || !web3auth.provider) {
-        throw new Error('Web3Auth session not available. Please sign in again.');
-      }
-
-      // Check if wallet needs RLUSD setup
-      const walletStatusRes = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${walletAddress}`);
-      const walletStatusData = await walletStatusRes.json();
-      
-      if (walletStatusData.success && walletStatusData.funded && !walletStatusData.rlusd_trustline) {
-        console.log('Setting up RLUSD for wallet...');
-        
-        const trustlineTx = {
-          TransactionType: 'TrustSet',
-          Account: walletAddress,
-          LimitAmount: {
-            currency: '524C555344000000000000000000000000000000',
-            issuer: 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
-            value: '1000000',
-          },
-        };
-        
-        await web3auth.provider.request({
-          method: 'xrpl_submitTransaction',
-          params: { transaction: trustlineTx },
-        });
-        
-        console.log('RLUSD enabled successfully');
-        // Wait for ledger
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-
-      // Get platform signer address from API
-      const settingsRes = await fetch(`${API_URL}/xaman/setup-autosign`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ store_id: store.store_id })
-      });
-      const settingsData = await settingsRes.json();
-      
-      if (settingsData.error) {
-        throw new Error(settingsData.error);
-      }
-
-      // Handle unfunded wallet - show funding component
-      if (settingsData.needs_funding) {
-        setWalletNeedsFunding(true);
-        setSettingUpAutoSign(false);
-        return;
-      }
-
-      // If signer already exists, just verify
-      if (settingsData.signer_exists) {
-        const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`);
-        const verifyData = await verifyRes.json();
-        
-        if (verifyData.auto_signing_enabled) {
-          setStore({
-            ...store,
-            payout_mode: 'auto',
-            auto_signing_enabled: true,
-            daily_limit: dailyLimit,
-            auto_sign_max_single_payout: maxSinglePayout
-          });
-          setAutoSignTermsAccepted(false);
-          setSettingUpAutoSign(false);
-          return;
-        }
-      }
-
-      const platformSignerAddress = settingsData.platform_signer_address;
-      if (!platformSignerAddress) {
-        throw new Error('Platform signer not configured');
-      }
-
-      // Build SignerListSet transaction
-      const signerListSetTx = {
-        TransactionType: 'SignerListSet',
+      const trustlineTx = {
+        TransactionType: 'TrustSet',
         Account: walletAddress,
-        SignerQuorum: 1,
-        SignerEntries: [
-          {
-            SignerEntry: {
-              Account: platformSignerAddress,
-              SignerWeight: 1
-            }
-          }
-        ]
+        LimitAmount: {
+          currency: '524C555344000000000000000000000000000000',
+          issuer: 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
+          value: '1000000',
+        },
       };
-
-      // Sign and submit via Web3Auth
-      const result = await web3auth.provider.request({
+      
+      await web3auth.provider.request({
         method: 'xrpl_submitTransaction',
-        params: {
-          transaction: signerListSetTx
-        }
+        params: { transaction: trustlineTx },
       });
+      
+      setSetupProgress('RLUSD enabled ✓ Now confirm Auto-Pay... (2/2)');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
 
-      // Verify the setup
+    // Get platform signer address from API
+    const settingsRes = await fetch(`${API_URL}/xaman/setup-autosign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ store_id: store.store_id })
+    });
+    const settingsData = await settingsRes.json();
+    
+    if (settingsData.error) {
+      throw new Error(settingsData.error);
+    }
+
+    // Handle unfunded wallet
+    if (settingsData.needs_funding) {
+      setWalletNeedsFunding(true);
+      setSettingUpAutoSign(false);
+      setSetupProgress(null);
+      return;
+    }
+
+    // If signer already exists, just verify
+    if (settingsData.signer_exists) {
       const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`);
       const verifyData = await verifyRes.json();
-
-      if (!verifyData.auto_signing_enabled) {
-        throw new Error('Signer setup failed. Please try again.');
-      }
-
-      // Update store settings with limits
-      await fetch(`${API_URL}/store/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          store_id: store.store_id,
-          wallet_address: walletAddress,
+      
+      if (verifyData.auto_signing_enabled) {
+        setStore({
+          ...store,
+          payout_mode: 'auto',
+          auto_signing_enabled: true,
           daily_limit: dailyLimit,
           auto_sign_max_single_payout: maxSinglePayout
-        })
-      });
+        });
+        setAutoSignTermsAccepted(false);
+        setSettingUpAutoSign(false);
+        setSetupProgress(null);
+        return;
+      }
+    }
 
-      setStore({
-        ...store,
-        payout_mode: 'auto',
-        auto_signing_enabled: true,
+    const platformSignerAddress = settingsData.platform_signer_address;
+    if (!platformSignerAddress) {
+      throw new Error('Platform signer not configured');
+    }
+
+    // POSITIVE MESSAGE before SignerList
+    setSetupProgress('Confirm Auto-Pay in your wallet...');
+
+    const signerListSetTx = {
+      TransactionType: 'SignerListSet',
+      Account: walletAddress,
+      SignerQuorum: 1,
+      SignerEntries: [
+        {
+          SignerEntry: {
+            Account: platformSignerAddress,
+            SignerWeight: 1
+          }
+        }
+      ]
+    };
+
+    await web3auth.provider.request({
+      method: 'xrpl_submitTransaction',
+      params: { transaction: signerListSetTx }
+    });
+
+    setSetupProgress('Verifying setup...');
+
+    // Wait a moment for XRPL to confirm
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Verify the setup
+    const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`);
+    const verifyData = await verifyRes.json();
+
+    if (!verifyData.auto_signing_enabled) {
+      throw new Error('Signer setup failed. Please try again.');
+    }
+
+    // Update store settings
+    await fetch(`${API_URL}/store/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        store_id: store.store_id,
+        wallet_address: walletAddress,
         daily_limit: dailyLimit,
         auto_sign_max_single_payout: maxSinglePayout
-      });
-      setAutoSignTermsAccepted(false);
+      })
+    });
 
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to enable auto-sign';
-      setError(message);
-    }
-    setSettingUpAutoSign(false);
-  };
+    // SUCCESS - update state immediately (no manual refresh needed)
+    setStore({
+      ...store,
+      payout_mode: 'auto',
+      auto_signing_enabled: true,
+      daily_limit: dailyLimit,
+      auto_sign_max_single_payout: maxSinglePayout
+    });
+    setAutoSignTermsAccepted(false);
+    setSetupProgress(null);
+
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to enable auto-sign';
+    setError(message);
+    setSetupProgress(null);
+  }
+  setSettingUpAutoSign(false);
+};
 
   // =========================================================================
   // REVOKE AUTO-SIGN
@@ -1585,48 +1596,54 @@ return (
         <div className="max-w-3xl lg:max-w-none mx-auto px-6 lg:px-4 pt-0 pb-2">
 
         {error && (
-          error.includes('beta') || error.includes('full') || error.includes('waitlist') ? (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6 mb-6">
-              <div className="text-center">
-                <div className="text-4xl mb-4">🚀</div>
-                <h3 className="text-xl font-bold text-amber-400 mb-2">Beta is Full!</h3>
-                <p className="text-zinc-400 mb-6">We're at capacity right now, but we'd love to have you join when spots open up.</p>
-                
-                <form onSubmit={async (e) => {
-                  e.preventDefault();
-                  const form = e.target as HTMLFormElement;
-                  const email = (form.elements.namedItem('waitlistEmail') as HTMLInputElement).value;
-                  
-                  try {
-                    await fetch('https://api.dltpays.com/api/v1/waitlist', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ email, source: 'beta_full' })
-                    });
-                    setError(null);
-                    alert('Thanks! We\'ll notify you when a spot opens up.');
-                  } catch (err) {
-                    alert('Failed to join waitlist. Please try again.');
-                  }
-                }} className="max-w-sm mx-auto">
-                  <input
-                    name="waitlistEmail"
-                    type="email"
-                    required
-                    placeholder="your@email.com"
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white mb-3"
-                  />
-                  <button type="submit" className="w-full bg-amber-500 hover:bg-amber-400 text-black font-semibold py-3 rounded-lg transition">
-                    Join Waitlist
-                  </button>
-                </form>
-                
-                <button onClick={() => setError(null)} className="text-zinc-500 text-sm mt-4 hover:text-white">
-                  Dismiss
-                </button>
-              </div>
-            </div>
-          ) : (
+  error.includes('beta') || error.includes('full') || error.includes('waitlist') ? (
+    <div className="bg-gradient-to-b from-sky-900/50 to-slate-900/50 border border-sky-500/30 rounded-xl p-6 mb-6">
+      <div className="text-center">
+        
+        {/* Professional Shield Icon */}
+        <div className="w-16 h-16 mx-auto mb-4 bg-sky-500/20 rounded-full flex items-center justify-center">
+          <svg className="w-8 h-8 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+          </svg>
+        </div>
+        
+        <h3 className="text-xl font-bold text-sky-400 mb-2">Beta is Full!</h3>
+        <p className="text-sky-200/70 mb-6">We're at capacity right now, but we'd love to have you join when spots open up.</p>
+        
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          const form = e.target as HTMLFormElement;
+          const email = (form.elements.namedItem('waitlistEmail') as HTMLInputElement).value;
+          try {
+            await fetch('https://api.dltpays.com/api/v1/waitlist', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, source: 'beta_full' })
+            });
+            setError(null);
+            alert('Thanks! We\'ll notify you when a spot opens up.');
+          } catch (err) {
+            alert('Failed to join waitlist. Please try again.');
+          }
+        }} className="max-w-sm mx-auto">
+          <input
+            name="waitlistEmail"
+            type="email"
+            required
+            placeholder="your@email.com"
+            className="w-full bg-slate-800/50 border border-sky-500/30 rounded-lg px-4 py-3 text-white placeholder-slate-400 mb-3 focus:outline-none focus:border-sky-400 transition-all"
+          />
+          <button type="submit" className="w-full bg-sky-500 hover:bg-sky-400 text-white font-semibold py-3 rounded-lg transition shadow-lg shadow-sky-500/25">
+            Join Waitlist
+          </button>
+        </form>
+        
+        <button onClick={() => setError(null)} className="text-slate-400 text-sm mt-4 hover:text-white transition-colors">
+          Dismiss
+        </button>
+      </div>
+    </div>
+  ) : (
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
               <p className="text-red-400 text-sm">{error}</p>
               <button onClick={() => setError(null)} className="text-red-400 text-xs mt-2 hover:underline">Dismiss</button>
@@ -2347,27 +2364,27 @@ onClick={async () => {
                   </span>
                 </label>
 
-                {/* Setup Button - different for Web3Auth vs Crossmark */}
-                {walletType === 'web3auth' ? (
-                  <button
-                    onClick={setupAutoSignWeb3Auth}
-                    disabled={!autoSignTermsAccepted || settingUpAutoSign}
-                    className={`w-full py-3 rounded-lg font-semibold transition ${
-                      autoSignTermsAccepted
-                        ? 'bg-blue-500 hover:bg-blue-400 text-white'
-                        : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
-                    }`}
-                  >
-                    {settingUpAutoSign ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                        Setting up...
-                      </span>
-                    ) : (
-                      '🔐 Sign to Enable Auto-Sign'
-                    )}
-                  </button>
-                ) : (
+                {/* Setup Button - Web3Auth */}
+{walletType === 'web3auth' ? (
+  <button
+    onClick={setupAutoSignWeb3Auth}
+    disabled={!autoSignTermsAccepted || settingUpAutoSign}
+    className={`w-full py-3 rounded-lg font-semibold transition ${
+      autoSignTermsAccepted
+        ? 'bg-blue-500 hover:bg-blue-400 text-white'
+        : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
+    }`}
+  >
+    {settingUpAutoSign ? (
+  <span className="flex items-center justify-center gap-2">
+    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+    {setupProgress || 'Setting up...'}
+  </span>
+) : (
+      '🔐 Sign to Enable Auto-Sign'
+    )}
+  </button>
+) : (
                   <button
                     onClick={setupAutoSign}
                     disabled={!autoSignTermsAccepted || settingUpAutoSign}
