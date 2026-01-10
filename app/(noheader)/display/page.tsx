@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -94,11 +94,21 @@ const addTip = (tipAmount: number) => {
 };
 
 // NFC Payment scan
+const nfcScanActiveRef = useRef(false);
+const paymentInProgressRef = useRef(false);
+const lastReadTimeRef = useRef(0);
+
 const startNFCPayment = async () => {
   if (!('NDEFReader' in window)) {
     setNfcError('NFC not supported on this device');
     return;
   }
+
+  if (nfcScanActiveRef.current) {
+    console.log('NFC scan already active');
+    return;
+  }
+  nfcScanActiveRef.current = true;
 
   setNfcScanning(true);
   setNfcError(null);
@@ -108,6 +118,14 @@ const startNFCPayment = async () => {
     await ndef.scan();
 
     ndef.addEventListener('reading', async (event: any) => {
+      // Debounce: ignore reads within 5 seconds
+      const now = Date.now();
+      if (now - lastReadTimeRef.current < 5000) {
+        console.log('NFC read debounced');
+        return;
+      }
+      lastReadTimeRef.current = now;
+
       const uid = event.serialNumber?.replace(/:/g, '').toUpperCase();
       if (!uid) {
         setNfcError('Could not read card');
@@ -115,34 +133,48 @@ const startNFCPayment = async () => {
         return;
       }
 
+      // Prevent duplicate payment processing
+      if (paymentInProgressRef.current) {
+        console.log('Payment already in progress');
+        return;
+      }
+      paymentInProgressRef.current = true;
+
       setNfcScanning(false);
       setPaymentProcessing(true);
 
       try {
         const res = await fetch('https://api.dltpays.com/nfc/api/v1/nfc/payment', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    uid: uid,
-    vendor_wallet: data?.vendor_wallet || '',
-    store_id: storeId,
-    amount: data?.total || 0,
-    gbp_amount: data?.total || 0,
-    items: data?.cart || []
-  })
-});
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: uid,
+            vendor_wallet: data?.vendor_wallet || '',
+            store_id: storeId,
+            amount: data?.total || 0,
+            gbp_amount: data?.total || 0,
+            items: data?.cart || [],
+            payment_id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+          })
+        });
 
         const result = await res.json();
 
         if (result.success) {
           if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
         } else {
-          setNfcError(result.error || 'Payment failed');
+          // Only show error if not already succeeded
+          if (data?.status !== 'success') {
+            setNfcError(result.error || 'Payment failed');
+          }
         }
       } catch (err) {
-        setNfcError('Payment failed');
+        if (data?.status !== 'success') {
+          setNfcError('Payment failed');
+        }
       } finally {
         setPaymentProcessing(false);
+        paymentInProgressRef.current = false;
       }
     });
 
@@ -336,6 +368,14 @@ useEffect(() => {
     setNfcSupported(true);
   }
 }, []);
+
+// Reset payment refs when status changes to idle or success
+useEffect(() => {
+  if (data?.status === 'idle' || data?.status === 'success') {
+    paymentInProgressRef.current = false;
+    nfcScanActiveRef.current = false;
+  }
+}, [data?.status]);
 
   // No store ID
   if (!storeId) {
