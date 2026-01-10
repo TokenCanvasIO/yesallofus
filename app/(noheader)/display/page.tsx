@@ -104,6 +104,17 @@ const startNFCPayment = async () => {
     return;
   }
 
+  // Capture current values before async operations
+  const currentVendorWallet = data?.vendor_wallet || '';
+  const currentStoreId = storeId || '';
+  const currentTotal = data?.total || 0;
+  const currentCart = data?.cart || [];
+
+  if (!currentVendorWallet) {
+    setNfcError('Vendor wallet not available');
+    return;
+  }
+
   setNfcScanning(true);
   setNfcError(null);
 
@@ -127,14 +138,14 @@ const startNFCPayment = async () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            uid: uid,
-            vendor_wallet: data?.vendor_wallet || '',
-            store_id: storeId,
-            amount: data?.total || 0,
-            gbp_amount: data?.total || 0,
-            items: data?.cart || [],
-            payment_id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
-          })
+  uid: uid,
+  vendor_wallet: currentVendorWallet,
+  store_id: currentStoreId,
+  amount: currentTotal,
+  gbp_amount: currentTotal,
+  items: currentCart,
+  payment_id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+})
         });
 
         const result = await res.json();
