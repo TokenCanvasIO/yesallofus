@@ -184,6 +184,20 @@ const startNFCPayment = async () => {
 
         if (result.success) {
           if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+          // Update display to success status
+          await fetch(`${API_URL}/display/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              store_id: storeId,
+              store_name: freshData.store_name,
+              cart: [],
+              total: 0,
+              status: 'success',
+              tip: 0,
+              vendor_wallet: vendorWallet
+            })
+          });
         } else {
           setNfcError(result.error || 'Payment failed');
         }
@@ -210,8 +224,16 @@ const startNFCPayment = async () => {
     }
     setNfcScanning(false);
     nfcScanActiveRef.current = false;
-  }
+    }
 };
+
+// Auto-start NFC scan when QR code is displayed
+useEffect(() => {
+  if (data?.status === 'qr' && nfcSupported && !nfcScanActiveRef.current && !paymentProcessing) {
+    startNFCPayment();
+  }
+}, [data?.status, nfcSupported, paymentProcessing]);
+
 // NFC Scan for signup
 const startSignupNFCScan = async () => {
   setSignupError(null);
