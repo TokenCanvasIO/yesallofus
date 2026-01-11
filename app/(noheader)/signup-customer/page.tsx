@@ -254,7 +254,7 @@ function SignupCustomerPage() {
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Header */}
       <header className="border-b border-zinc-800 p-4">
-        <div className="max-w-md mx-auto flex items-center justify-between">
+<div className="max-w-md mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <a 
               href="/dashboard" 
@@ -281,7 +281,7 @@ function SignupCustomerPage() {
         </div>
       </header>
 
-      <main className="max-w-md mx-auto px-6 py-8">
+      <main className="max-w-md mx-auto px-4 sm:px-6 py-8">
         <h1 className="text-2xl font-bold mb-2">New Member Sign Up</h1>
         <p className="text-zinc-400 mb-8">
           Register a new customer to earn rewards with {store.store_name}

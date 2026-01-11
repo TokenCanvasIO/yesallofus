@@ -103,8 +103,8 @@ export default function TopUpRLUSD({
       {/* Wallet address section */}
       <div className="bg-zinc-800/50 rounded-lg p-3 sm:p-4 mb-4">
         <p className="text-zinc-500 text-xs mb-2">Your payout wallet:</p>
-        <div className="flex items-center gap-3">
-          <code className="text-emerald-400 text-sm font-mono flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+<code className="text-emerald-400 text-sm font-mono flex-1 min-w-0 truncate">
             {walletAddress.substring(0, 8)}...{walletAddress.slice(-6)}
           </code>
           <button
@@ -137,7 +137,7 @@ export default function TopUpRLUSD({
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-5 -mx-0">
+      <div className="flex gap-2 mb-5">
         <button
           onClick={() => setActiveTab('card')}
           className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition ${
@@ -195,7 +195,7 @@ export default function TopUpRLUSD({
                 </svg>
               </div>
 
-              <div className="flex gap-2 mt-3">
+              <div className="flex flex-wrap gap-2 mt-3">
                 {option.methods.map((m) => (
                   <span key={m} className="text-xs bg-zinc-700 px-2 py-1 rounded">
                     {m === 'visa' && 'Visa'}
@@ -278,14 +278,14 @@ export default function TopUpRLUSD({
 
           <div className="border-t border-zinc-800 pt-5">
             <p className="text-xs text-zinc-500 mb-3">For larger amounts — centralized exchanges:</p>
-            <div className="flex flex-wrap gap-3">
-              {cexOptions.map((ex) => (
-                <a
-                  key={ex.name}
-                  href={ex.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg text-sm transition"
+            <div className="grid grid-cols-2 gap-2">
+{cexOptions.map((ex) => (
+
+<a key={ex.name}
+href={ex.url}
+target="_blank"
+rel="noopener noreferrer"
+className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg text-xs transition"
                 >
                   {ex.logo && <img src={ex.logo} alt={ex.name} className="w-5 h-5 object-contain" />}
                   <span>{ex.name}</span>

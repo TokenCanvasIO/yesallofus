@@ -182,6 +182,8 @@ const FullProductModal = ({ product }: { product: typeof products[0] }) => {
 
 interface EarnInterestProps {
   noBorder?: boolean;
+  rightColumnRef?: React.RefObject<HTMLDivElement | null>;
+  openSections?: Record<string, boolean>;
 }
 
 // Base height of the card without products (header + stats + button + footer)
@@ -191,58 +193,46 @@ const SMALL_CARD_HEIGHT = 60;
 // Height of each full modal
 const FULL_MODAL_HEIGHT = 220;
 
-export default function EarnInterest({ noBorder = false }: EarnInterestProps) {
+export default function EarnInterest({ noBorder = false, rightColumnRef, openSections = {} }: EarnInterestProps) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [availableHeight, setAvailableHeight] = useState(0);
   const [isTwoColumn, setIsTwoColumn] = useState(false);
 
-  // Measure container height with ResizeObserver
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
     const checkLayout = () => {
       setIsTwoColumn(window.innerWidth >= 1024);
     };
     checkLayout();
     window.addEventListener('resize', checkLayout);
 
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const height = entry.contentRect.height;
-        setAvailableHeight(height);
-      }
-    });
-
-    resizeObserver.observe(container);
-
     return () => {
-      resizeObserver.disconnect();
       window.removeEventListener('resize', checkLayout);
     };
   }, []);
 
-  // Calculate what to show based on available height
-  const extraHeight = Math.max(0, availableHeight - BASE_HEIGHT);
-  
-  // Only show extra products on two-column layout
+  // Calculate how many sections are open
+  const openCount = Object.values(openSections).filter(Boolean).length;
+
+  // Calculate what to show based on open sections
   let smallCardsCount = 0;
   let fullModalsCount = 0;
+
+  if (isTwoColumn && openCount > 0) {
+  // Each open section adds roughly 350px of space
+  const estimatedExtraHeight = openCount * 350;
   
-  if (isTwoColumn && extraHeight > 0) {
-    // First try to fit full modals
-    fullModalsCount = Math.floor(extraHeight / FULL_MODAL_HEIGHT);
-    const remainingAfterModals = extraHeight - (fullModalsCount * FULL_MODAL_HEIGHT);
-    
-    // Fill remaining space with small cards
-    smallCardsCount = Math.floor(remainingAfterModals / SMALL_CARD_HEIGHT);
-    
-    // Cap totals
-    const totalProducts = Math.min(smallCardsCount + fullModalsCount, products.length);
-    if (fullModalsCount > totalProducts) fullModalsCount = totalProducts;
-    smallCardsCount = Math.min(smallCardsCount, totalProducts - fullModalsCount);
-  }
+  // First allocate full modals (they look better with more space)
+  fullModalsCount = Math.floor(estimatedExtraHeight / FULL_MODAL_HEIGHT);
+  
+  // Then fill remaining space with small cards
+  const remainingHeight = estimatedExtraHeight - (fullModalsCount * FULL_MODAL_HEIGHT);
+  smallCardsCount = Math.floor(remainingHeight / SMALL_CARD_HEIGHT);
+  
+  // Cap totals to available products
+  const totalProducts = products.length;
+  fullModalsCount = Math.min(fullModalsCount, totalProducts);
+  smallCardsCount = Math.min(smallCardsCount, Math.max(0, totalProducts - fullModalsCount));
+}
 
   const smallCards = products.slice(0, smallCardsCount);
   const fullModals = products.slice(smallCardsCount, smallCardsCount + fullModalsCount);

@@ -9,6 +9,7 @@ interface DashboardHeaderProps {
   onSignOut?: () => void;
   showBalances?: boolean;
   onToggleBalances?: () => void;
+  dashboardType?: 'vendor' | 'affiliate';
 }
 
 // Eye icon component
@@ -27,7 +28,7 @@ const EyeIcon = ({ open }: { open: boolean }) => (
   </svg>
 );
 
-export default function DashboardHeader({ walletAddress, storeId, onSignOut, showBalances = false, onToggleBalances }: DashboardHeaderProps) {
+export default function DashboardHeader({ walletAddress, storeId, onSignOut, showBalances = false, onToggleBalances, dashboardType = 'vendor' }: DashboardHeaderProps) {
   const router = useRouter();
   const shortWallet = walletAddress 
     ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
@@ -35,13 +36,33 @@ export default function DashboardHeader({ walletAddress, storeId, onSignOut, sho
   const isConnected = !!walletAddress;
 
   return (
-    <header className="sticky top-0 z-50 bg-zinc-900/80 backdrop-blur-sm">
-      <div className="px-6 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3 hover:opacity-80">
-  <Logo size={32} />
-  <span className="font-bold text-white text-xl hidden md:block">YesAllofUs</span>
+    <header className={`fixed top-0 left-0 right-0 z-40 backdrop-blur-sm w-full ${
+  dashboardType === 'vendor' 
+    ? 'bg-gradient-to-r from-pink-500/40 via-orange-500/35 via-50% via-red-500/40 to-red-800/45 border-b border-red-500/40'
+    : 'bg-gradient-to-r from-lime-300/50 via-teal-400/50 via-cyan-400/55 via-blue-500/55 to-violet-500/60 border-b border-cyan-400/50'
+}`}>
+      <div className="px-6 py-3 flex items-center justify-between w-full max-w-full">
+<div className="flex items-center gap-3">
+  {/* Mobile hamburger */}
+  <button 
+  className="lg:hidden text-zinc-400 hover:text-white p-2 -ml-3 landscape:-ml-5"
+    onClick={() => {
+      // We need to pass this from parent
+      const event = new CustomEvent('toggleSidebar');
+      window.dispatchEvent(event);
+    }}
+  >
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  </button>
+  <Link href="/" className="hidden lg:flex items-center hover:opacity-80 ml-12 gap-3">
+{!walletAddress && dashboardType === 'vendor' && (
+  <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllofUs" className="w-8 h-8 rounded-lg" />
+)}
+<span className="font-bold text-white text-xl">YesAllofUs</span>
 </Link>
-
+</div>
         <div className="flex items-center gap-2">
           {isConnected && storeId && (
             <>
@@ -147,11 +168,11 @@ export default function DashboardHeader({ walletAddress, storeId, onSignOut, sho
     </div>
     {onSignOut && (
       <button
-        onClick={onSignOut}
-        className="text-zinc-500 hover:text-white text-sm px-3 py-1.5 hidden md:block"
-      >
+onClick={onSignOut}
+className="text-zinc-300 hover:text-white text-sm px-3 py-1.5 hidden md:block"
+>
         Sign out
-      </button>
+</button>
     )}
   </>
 ) : (

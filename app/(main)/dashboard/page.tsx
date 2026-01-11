@@ -101,6 +101,12 @@ const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 const [progressHidden, setProgressHidden] = useState(false);
 
 useEffect(() => {
+  const handleToggle = () => setSidebarOpen(prev => !prev);
+  window.addEventListener('toggleSidebar', handleToggle);
+  return () => window.removeEventListener('toggleSidebar', handleToggle);
+}, []);
+
+useEffect(() => {
   if (store?.store_id) {
     const dismissed = localStorage.getItem(`milestones_dismissed_${store.store_id}`);
     setProgressHidden(dismissed === 'true');
@@ -1317,23 +1323,24 @@ setSetupProgress(null);
       <>
         <DashboardHeader />
         <LoginScreen 
-          onLogin={(wallet, method, extras) => {
-            setWalletAddress(wallet);
-            setWalletType(method);
-            if (extras?.xamanUserToken) setXamanUserToken(extras.xamanUserToken);
-            if (extras?.socialProvider) setSocialProvider(extras.socialProvider);
-            sessionStorage.setItem('vendorWalletAddress', wallet);
-            sessionStorage.setItem('vendorLoginMethod', method);
-            if (extras?.socialProvider) sessionStorage.setItem('socialProvider', extras.socialProvider);
-            loadOrCreateStore(wallet, method, extras?.xamanUserToken);
+onLogin={(wallet, method, extras) => {
+setWalletAddress(wallet);
+setWalletType(method);
+if (extras?.xamanUserToken) setXamanUserToken(extras.xamanUserToken);
+if (extras?.socialProvider) setSocialProvider(extras.socialProvider);
+sessionStorage.setItem('vendorWalletAddress', wallet);
+sessionStorage.setItem('vendorLoginMethod', method);
+if (extras?.socialProvider) sessionStorage.setItem('socialProvider', extras.socialProvider);
+loadOrCreateStore(wallet, method, extras?.xamanUserToken);
           }}
-          requireTrustline={true}
-          claimStore={claimStore}
-          referringStore={referringStore}
-          storagePrefix="vendor"
-          title="Partners Dashboard"
-          subtitle="Sign in to manage your affiliate commissions"
-        />
+requireTrustline={true}
+claimStore={claimStore}
+referringStore={referringStore}
+storagePrefix="vendor"
+title="Partners Dashboard"
+subtitle="Sign in to manage your affiliate commissions"
+showLogo={true}
+/>
       </>
     );
   }
@@ -1544,13 +1551,14 @@ return (
 // =========================================================================
 return (
 <>
-<NebulaBackground opacity={0.3} />
+<NebulaBackground opacity={0.2} />
 <DashboardHeader
-  walletAddress={walletAddress || undefined}
-  storeId={store?.store_id}
-  onSignOut={signOut}
+dashboardType="vendor"
+walletAddress={walletAddress || undefined}
+storeId={store?.store_id}
+onSignOut={signOut}
 />
-    <div className="min-h-screen bg-transparent text-white font-sans relative z-10">
+    <div className="min-h-screen bg-transparent text-white font-sans relative z-0 overflow-x-hidden">
       <Script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" />
 
       {/* Celebration Toast */}
@@ -1569,16 +1577,6 @@ return (
     onClose={closeInfo}
   />
 )}
-
-      {/* Mobile Menu Button - NOT a full header, just the hamburger */}
-      <button 
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="lg:hidden fixed top-3 left-4 z-50 text-zinc-400 hover:text-white p-2 bg-zinc-900/95 rounded-lg backdrop-blur"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
 
       <Sidebar
   isOpen={sidebarOpen}
@@ -1661,7 +1659,7 @@ return (
 
       {/* Main Content */}
 <main className={`min-h-screen pt-2 lg:pt-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-0' : 'lg:ml-64'}`}>
-        <div className="max-w-3xl lg:max-w-none mx-auto px-6 lg:px-4 pt-6 pb-2">
+        <div className="max-w-3xl lg:max-w-none mx-auto px-3 sm:px-6 lg:px-4 pt-20 pb-2">
 
         {error && (
   error.includes('beta') || error.includes('full') || error.includes('waitlist') ? (
@@ -2390,7 +2388,7 @@ onClick={async () => {
       Take Payment
     </button>
 
-    <CollapsibleSection
+    <CollapsibleSection dashboardType="vendor"
       id="wallet-funding"
       title="Top Up Wallet"
       icon={
@@ -2411,7 +2409,7 @@ onClick={async () => {
       />
     </CollapsibleSection>
 
-    <CollapsibleSection
+    <CollapsibleSection dashboardType="vendor"
       id="withdraw"
       title="Withdraw"
       icon={
@@ -2610,7 +2608,7 @@ onClick={async () => {
 
 {/* CUSTOMERS - SIGN UP + PENDING */}
 <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Customers</h3>
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
   {/* SIGN UP CUSTOMER BUTTON */}
   <SignUpCustomerCard storeId={store.store_id} walletAddress={walletAddress} onSignUp={async () => {
     try {
@@ -2642,7 +2640,7 @@ onClick={async () => {
 <div className="space-y-4">
   <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-1">Settings</h3>
   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    <CollapsibleSection
+    <CollapsibleSection dashboardType="vendor"
       id="commission-rates"
       title="Commission Rates"
       icon={
@@ -2747,7 +2745,7 @@ onClick={async () => {
       )}
     </CollapsibleSection>
 
-    <CollapsibleSection
+    <CollapsibleSection dashboardType="vendor"
       id="quick-links"
       title="Quick Links"
       icon={
@@ -2802,7 +2800,7 @@ onClick={async () => {
 <div className="space-y-4">
   <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-1">Marketing</h3>
   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    <CollapsibleSection
+    <CollapsibleSection dashboardType="vendor"
       id="affiliate-link"
       title="Affiliate Link"
       icon={
@@ -2836,7 +2834,7 @@ onClick={async () => {
     </CollapsibleSection>
 
     {store && walletAddress && (
-      <CollapsibleSection
+      <CollapsibleSection dashboardType="vendor"
         id="activity"
         title="Activity"
         icon={
@@ -2860,7 +2858,7 @@ onClick={async () => {
   <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-1">Developer & Account</h3>
   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
     {/* API Credentials */}
-    <CollapsibleSection
+    <CollapsibleSection dashboardType="vendor"
       id="api-credentials"
       title="API Credentials"
       icon={
@@ -2947,7 +2945,7 @@ onClick={async () => {
     </CollapsibleSection>
 
     {/* Danger Zone */}
-    <CollapsibleSection
+    <CollapsibleSection dashboardType="vendor"
       id="danger-zone"
       title="Danger Zone"
       icon={

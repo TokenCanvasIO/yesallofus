@@ -20,6 +20,7 @@ interface LoginScreenProps {
   storagePrefix?: 'vendor' | 'affiliate';
   title?: string;
   subtitle?: string;
+  showLogo?: boolean;
 }
 
 export default function LoginScreen({ 
@@ -29,7 +30,8 @@ export default function LoginScreen({
   referringStore = null,
   storagePrefix = 'affiliate',
   title = 'Members & Affiliate Dashboard',
-  subtitle = 'Connect your wallet to view your earnings'
+  subtitle = 'Connect your wallet to view your earnings',
+  showLogo = false
 }: LoginScreenProps) {
   const [error, setError] = useState('');
   const [connecting, setConnecting] = useState<'none' | 'xaman' | 'crossmark' | 'web3auth'>('none');
@@ -302,10 +304,21 @@ const completeCustomerSignup = async (wallet: string) => {
 
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
-      <main className="max-w-xl mx-auto px-6 pt-0 pb-6 min-h-[calc(100vh-200px)] flex items-start justify-center">
+      <main className={`max-w-xl mx-auto px-6 pb-6 min-h-[calc(100vh-200px)] flex items-start justify-center ${storagePrefix === 'vendor' ? 'pt-24' : 'pt-16'}`}>
         <div className="w-full">
           <h1 className="text-3xl font-bold mb-2 text-center">{title}</h1>
-          <p className="text-zinc-400 mb-8 text-center">{subtitle}</p>
+<p className="text-zinc-400 mb-4 text-center">{subtitle}</p>
+
+{/* Back to Homepage */}
+<a 
+  href="/" 
+  className="flex items-center justify-center gap-2 text-zinc-500 hover:text-zinc-300 text-sm mb-8 transition"
+>
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+  </svg>
+  <span>Back to Homepage</span>
+</a>
           
           {/* Error Message */}
           {error && (

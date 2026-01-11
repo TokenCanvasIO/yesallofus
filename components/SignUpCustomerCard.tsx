@@ -47,7 +47,7 @@ export default function SignUpCustomerCard({ storeId, walletAddress, onSignUp }:
   };
 
   return (
-    <div id="signup-customer" className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl p-6 flex flex-col">
+    <div id="signup-customer" className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl p-6 h-full flex flex-col">
       <button
         onClick={onSignUp}
         className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white font-semibold text-lg py-4 rounded-xl transition flex items-center justify-center gap-3"

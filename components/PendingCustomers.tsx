@@ -118,7 +118,7 @@ export default function PendingCustomers({
 
   if (loading) {
     return (
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 h-full">
         <h2 className="text-lg font-bold mb-4">Pending Customers</h2>
         <div className="flex items-center justify-center py-8">
           <div className="w-6 h-6 border-2 border-zinc-600 border-t-white rounded-full animate-spin" />
@@ -128,8 +128,8 @@ export default function PendingCustomers({
   }
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-      <div className="flex items-center justify-between mb-4">
+<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 h-full flex flex-col">
+<div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold">Pending Customers</h2>
         <span className="text-zinc-500 text-sm">{customers.length} pending</span>
       </div>

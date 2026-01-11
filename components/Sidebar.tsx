@@ -74,15 +74,15 @@ export default function Sidebar({
 
       {/* Sidebar */}
       <aside
-        className={`
-          fixed top-0 left-0 h-full w-64 bg-zinc-900/70 border-r border-zinc-800 z-50 
-          transform transition-transform duration-300 ease-in-out
-          lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:rounded-tr-2xl lg:rounded-br-2xl
-          flex flex-col
-          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-          ${!isCollapsed ? 'lg:translate-x-0' : 'lg:-translate-x-full'}
-        `}
-      >
+  className={`
+    fixed left-0 w-64 bg-zinc-900 lg:bg-zinc-900/90 border-r border-zinc-800 z-[60]
+    transform transition-transform duration-300 ease-in-out
+    top-14 h-[calc(100vh-3.5rem)] lg:rounded-tr-2xl lg:rounded-br-2xl
+    flex flex-col
+    ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+    ${!isCollapsed ? 'lg:translate-x-0' : 'lg:-translate-x-full'}
+  `}
+>
         {/* Close button (desktop only when expanded) */}
         <button
           onClick={onToggleCollapsed}
@@ -95,11 +95,11 @@ export default function Sidebar({
         </button>
 
         {/* Store Info Header */}
-        <div className="p-6 landscape:p-3 border-b border-zinc-800 flex-shrink-0">
+<div className="p-6 landscape:p-2 landscape:pt-4 border-b border-zinc-800 flex-shrink-0">
           <div className="flex items-center gap-3 mb-2">
             <button
-              onClick={onLogoClick}
-              className={`relative w-10 h-10 landscape:w-8 landscape:h-8 rounded-lg overflow-hidden transition flex-shrink-0 cursor-pointer ${
+onClick={onLogoClick}
+className={`relative w-10 h-10 landscape:w-7 landscape:h-7 rounded-lg overflow-hidden transition flex-shrink-0 cursor-pointer ${
                 storeLogo ? 'hover:opacity-80' : 'border border-zinc-700 hover:border-emerald-500'
               }`}
               title="Store logo"
@@ -140,13 +140,17 @@ export default function Sidebar({
                 </button>
                 {onInfoClick && (
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onInfoClick(item.id);
-                    }}
-                    className="p-1.5 text-zinc-600 hover:text-sky-400 opacity-0 group-hover:opacity-100 transition-all"
-                    title="Learn more"
-                  >
+  onClick={(e) => {
+    e.stopPropagation();
+    onInfoClick(item.id);
+  }}
+  className={`p-1.5 transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100 ${
+  dashboardType === 'vendor' 
+    ? 'text-zinc-500 hover:text-rose-400' 
+    : 'text-zinc-500 hover:text-cyan-400'
+}`}
+  title="Learn more"
+>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
                     </svg>
@@ -157,7 +161,22 @@ export default function Sidebar({
         </nav>
 
         {/* Footer - fixed at bottom */}
-        <div className="flex-shrink-0 p-4 landscape:p-2 border-t border-zinc-800 bg-zinc-900/70">
+<div className="flex-shrink-0 p-4 landscape:p-2 border-t border-zinc-800 bg-zinc-900 lg:bg-transparent relative overflow-hidden">
+  {/* Guernsey Flag Video Background - desktop only */}
+  <div className="hidden lg:block absolute inset-0 z-0">
+    <video
+  autoPlay
+  loop
+  muted
+  playsInline
+  className="w-full h-full object-cover"
+  ref={(el) => { if (el) el.playbackRate = 0.2; }}
+>
+      <source src="/guernsey-flag.webm" type="video/webm" />
+    </video>
+    <div className="absolute inset-0 bg-black/90"></div>
+  </div>
+  <div className="relative z-10">
           {/* Show Progress Button */}
           {onShowProgress && (
             <button
@@ -217,7 +236,8 @@ export default function Sidebar({
             </svg>
             <span className="text-sm">Sign out</span>
           </button>
-        </div>
+  </div>
+</div>
       </aside>
     </>
   );

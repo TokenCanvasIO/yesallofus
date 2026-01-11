@@ -187,6 +187,13 @@ export default function AffiliateDashboard() {
   const { activeInfo, openInfo, closeInfo, getContent } = useInfoModal();
   
   const registeringRef = useRef(false);
+const rightColumnRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+  const handleToggle = () => setSidebarOpen(prev => !prev);
+  window.addEventListener('toggleSidebar', handleToggle);
+  return () => window.removeEventListener('toggleSidebar', handleToggle);
+}, []);
 
   // Load progress hidden state
   useEffect(() => {
@@ -636,35 +643,27 @@ export default function AffiliateDashboard() {
   ].filter(item => item.show !== false);
 
   // RENDER: Loading
-  if (loading) {
-    return (
-      <>
-        <DashboardHeader />
-        <div className="min-h-screen bg-[#0d0d0d] text-white flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-zinc-400">Loading dashboard...</p>
-          </div>
-        </div>
-      </>
+if (loading) {
+return (
+<div className="min-h-screen bg-[#0d0d0d] text-white flex items-center justify-center">
+<div className="text-center">
+<div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+<p className="text-zinc-400">Loading dashboard...</p>
+</div>
+</div>
     );
   }
 
   // RENDER: Login screen
   if (!isLoggedIn) {
-    return (
-      <>
-        <DashboardHeader />
-        <LoginScreen onLogin={handleLogin} />
-      </>
-    );
+return <LoginScreen onLogin={handleLogin} />;
   }
 
   // RENDER: Main dashboard
   return (
     <>
       <NebulaBackground opacity={0.3} />
-      <DashboardHeader walletAddress={walletAddress} onSignOut={handleSignOut} showBalances={showBalances} onToggleBalances={() => setShowBalances(!showBalances)} />
+      <DashboardHeader dashboardType="affiliate" walletAddress={walletAddress} onSignOut={handleSignOut} showBalances={showBalances} onToggleBalances={() => setShowBalances(!showBalances)} />
       
       <div className="min-h-screen bg-transparent text-white font-sans relative z-10">
         {/* Celebration Toast */}
@@ -672,14 +671,6 @@ export default function AffiliateDashboard() {
         
         {/* Info Modal */}
         {activeInfo && getContent() && <InfoModal content={getContent()!} isOpen={!!activeInfo} onClose={closeInfo} />}
-
-        {/* Mobile Menu Button */}
-        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden fixed top-3 left-4 z-50 text-zinc-400 hover:text-white p-2 bg-zinc-900/70/90 rounded-lg backdrop-blur">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-        </button>
-
-        {/* Mobile Overlay */}
-        {sidebarOpen && <div className="lg:hidden fixed inset-0 bg-black/99 z-40" onClick={() => setSidebarOpen(false)} />}
 
         {/* Sidebar Component */}
         <Sidebar
@@ -713,7 +704,7 @@ export default function AffiliateDashboard() {
 
         {/* Main Content */}
         <main className={`min-h-screen pt-2 lg:pt-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-0' : 'lg:ml-64'}`}>
-          <div className="max-w-3xl lg:max-w-none mx-auto px-6 lg:px-4 pt-0 pb-8">
+          <div className={`max-w-3xl lg:max-w-none mx-auto px-3 sm:px-6 lg:px-4 pb-8 ${progressHidden ? 'pt-16' : 'pt-24'}`}>
 
             {error && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
@@ -765,7 +756,7 @@ export default function AffiliateDashboard() {
             {/* ============================================================= */}
             {/* EARNINGS GROUP */}
             {/* ============================================================= */}
-            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 mt-8">Earnings</h3>
+            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 mt-2">Earnings</h3>
             <div id="earnings" className="mb-6">
               {dashboardData && dashboardData.stores.length > 0 ? (
                 <div className="bg-gradient-to-br from-sky-500/20 to-indigo-500/20 border border-sky-500/30 rounded-xl p-6">
@@ -870,7 +861,7 @@ export default function AffiliateDashboard() {
 
                     {/* Earn Interest - grows to fill remaining space */}
                     <div id="earn-interest" className="mt-4 pt-4 border-t border-zinc-800 flex-1">
-                      <EarnInterest noBorder />
+                      <EarnInterest noBorder rightColumnRef={rightColumnRef} openSections={openSections} />
                     </div>
 
                     {!walletStatus.funded && (
@@ -888,21 +879,19 @@ export default function AffiliateDashboard() {
               </div>
 
               {/* RIGHT COLUMN: Payments + Manage Funds in ONE card, same height as Wallet Status */}
-              <div id="top-up" className="bg-zinc-900/70 border border-zinc-800 rounded-xl p-5 h-full">
+<div ref={rightColumnRef} id="top-up" className="bg-zinc-900/70 border border-zinc-800 rounded-xl p-4 sm:p-5 h-full">
                 {walletStatus && (
                   <div>
                     {/* PAYMENTS */}
                     <h3 className="text-sm font-semibold text-zinc-400 mb-4">Payments</h3>
                     <div className="space-y-3">
                       {/* TAP-TO-PAY */}
-                      <CollapsibleSection id="tap-to-pay" title="Tap-to-Pay Wallet" size="tall" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>} isOpen={openSections['tap-to-pay']} onToggle={() => toggleSection('tap-to-pay')}>
-                        <div className="p-4">
-                          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-3 mb-4">
-                            <div className="flex items-center gap-2 text-zinc-300 text-sm">
-                              <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                              <span>Auto-pay limit: <strong className="text-white">£25</strong> per transaction</span>
-                            </div>
-                          </div>
+                      <CollapsibleSection dashboardType="affiliate" id="tap-to-pay" title="Tap-to-Pay Wallet" size="tall" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>} isOpen={openSections['tap-to-pay']} onToggle={() => toggleSection('tap-to-pay')}>
+                        <div className="px-0 py-3">
+                          <div className="flex items-center gap-2 text-zinc-300 text-sm mb-4">
+  <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+  <span>Auto-pay limit: <strong className="text-white">£25</strong> per transaction</span>
+</div>
                           {loginMethod === 'web3auth' ? (
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2 text-emerald-400 text-sm"><span className="w-2 h-2 bg-emerald-500 rounded-full"></span>Connected via {socialProvider || 'Social'}</div>
@@ -934,8 +923,8 @@ export default function AffiliateDashboard() {
                       </CollapsibleSection>
 
                       {/* CROSSMARK */}
-                      <CollapsibleSection id="browser-wallet" title="Browser Wallet" size="tall" icon={<img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-5 h-5 rounded" />} isOpen={openSections['browser-wallet']} onToggle={() => toggleSection('browser-wallet')}>
-                        <div className="p-4">
+                      <CollapsibleSection dashboardType="affiliate" id="browser-wallet" title="Browser Wallet" size="tall" icon={<img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-5 h-5 rounded" />} isOpen={openSections['browser-wallet']} onToggle={() => toggleSection('browser-wallet')}>
+                        <div className="px-0 py-3">
                           <p className="text-zinc-400 text-sm mb-4">Crossmark browser extension for XRP Ledger.</p>
                           {loginMethod === 'crossmark' ? (
                             <div className="flex items-center justify-between">
@@ -969,8 +958,8 @@ export default function AffiliateDashboard() {
                       </CollapsibleSection>
 
                       {/* XAMAN */}
-                      <CollapsibleSection id="xaman-wallet" title="Manual Wallet" size="tall" icon={<img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-5 h-5 rounded" />} isOpen={openSections['xaman-wallet']} onToggle={() => toggleSection('xaman-wallet')}>
-                        <div className="p-4">
+                      <CollapsibleSection dashboardType="affiliate" id="xaman-wallet" title="Manual Wallet" size="tall" icon={<img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-5 h-5 rounded" />} isOpen={openSections['xaman-wallet']} onToggle={() => toggleSection('xaman-wallet')}>
+                        <div className="px-0 py-3">
                           {connectingXaman && xamanQR ? (
                             <div className="text-center py-4">
                               <p className="text-zinc-300 mb-4">Scan with Xaman app</p>
@@ -1001,7 +990,7 @@ export default function AffiliateDashboard() {
                       </CollapsibleSection>
 
                       {/* NFC PAYMENT CARDS */}
-                      <CollapsibleSection id="payment-cards" title="Payment Cards" size="tall" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>} isOpen={openSections['payment-cards']} onToggle={() => toggleSection('payment-cards')}>
+                      <CollapsibleSection dashboardType="affiliate" id="payment-cards" title="Payment Cards" size="tall" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>} isOpen={openSections['payment-cards']} onToggle={() => toggleSection('payment-cards')}>
                         {walletAddress ? <LinkNFCCard walletAddress={walletAddress} noBorder /> : <p className="text-zinc-500 text-sm p-4">Connect a wallet to link your NFC cards</p>}
                       </CollapsibleSection>
                     </div>
@@ -1010,10 +999,10 @@ export default function AffiliateDashboard() {
                     <div className="mt-6 pt-4 border-t border-zinc-800">
                       <h3 className="text-sm font-semibold text-zinc-400 mb-4">Manage Funds</h3>
                       <div className="space-y-3">
-                      <CollapsibleSection id="top-up-inner" title="Top Up Wallet" size="tall" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m6-6H6" /></svg>} isOpen={openSections['top-up-inner']} onToggle={() => toggleSection('top-up-inner')}>
+                      <CollapsibleSection dashboardType="affiliate" id="top-up-inner" title="Top Up Wallet" size="tall" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m6-6H6" /></svg>} isOpen={openSections['top-up-inner']} onToggle={() => toggleSection('top-up-inner')}>
                         <TopUpRLUSD walletAddress={walletAddress} xrpBalance={walletStatus.xrp_balance} rlusdBalance={walletStatus.rlusd_balance} showAmounts={showBalances} onToggleAmounts={() => setShowBalances(!showBalances)} onRefresh={() => fetchWalletStatus(walletAddress)} />
                       </CollapsibleSection>
-                      <CollapsibleSection id="withdraw" title="Withdraw" size="tall" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>} isOpen={openSections['withdraw']} onToggle={() => toggleSection('withdraw')}>
+                      <CollapsibleSection dashboardType="affiliate" id="withdraw" title="Withdraw" size="tall" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>} isOpen={openSections['withdraw']} onToggle={() => toggleSection('withdraw')}>
                         <WithdrawRLUSD walletAddress={walletAddress} rlusdBalance={walletStatus.rlusd_balance} showAmounts={showBalances} onToggleAmounts={() => setShowBalances(!showBalances)} onRefresh={() => fetchWalletStatus(walletAddress)} />
                       </CollapsibleSection>
                       </div>
@@ -1119,7 +1108,7 @@ export default function AffiliateDashboard() {
             {dashboardData && dashboardData.stores.length > 0 && (
               <>
                 <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">History</h3>
-                <CollapsibleSection id="payouts" title="Recent Payouts" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} isOpen={openSections['payouts']} onToggle={() => toggleSection('payouts')}>
+                <CollapsibleSection dashboardType="affiliate" id="payouts" title="Recent Payouts" videoBg="/nebula-bgActivityButton.webm" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} isOpen={openSections['payouts']} onToggle={() => toggleSection('payouts')}>
                   <PayoutsTable payouts={dashboardData.recent_payouts} showBalances={showBalances} />
                 </CollapsibleSection>
               </>
