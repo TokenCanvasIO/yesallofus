@@ -1,6 +1,98 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+
+// Product data - same as earn page
+const products = [
+  {
+    id: 'flexible-savings',
+    name: 'Flexible Savings',
+    description: 'No lock-up, withdraw anytime',
+    fullDescription: 'Earn daily interest with no lock-up. Withdraw anytime.',
+    apy: '4.5%',
+    risk: 'Low' as const,
+    lockPeriod: 'None',
+    minDeposit: '$10',
+    color: 'emerald',
+    features: ['Daily interest accrual', 'Instant withdrawals', 'No minimum lock', 'Compound earnings']
+  },
+  {
+    id: 'fixed-30',
+    name: '30-Day Fixed',
+    description: 'Higher returns with 30-day lock',
+    fullDescription: 'Lock your funds for 30 days for higher returns.',
+    apy: '5.2%',
+    risk: 'Low' as const,
+    lockPeriod: '30 Days',
+    minDeposit: '$50',
+    color: 'sky',
+    features: ['Guaranteed rate', 'Auto-renewal option', 'Early exit penalty: 1%', 'Interest paid at maturity']
+  },
+  {
+    id: 'fixed-90',
+    name: '90-Day Fixed',
+    description: 'Best balance of yield & flexibility',
+    fullDescription: 'Our most popular product. Great balance of yield and flexibility.',
+    apy: '6.0%',
+    risk: 'Low' as const,
+    lockPeriod: '90 Days',
+    minDeposit: '$100',
+    color: 'indigo',
+    features: ['Best fixed rate', 'Monthly interest payouts', 'Early exit penalty: 2%', 'Priority support']
+  },
+  {
+    id: 'fixed-180',
+    name: '180-Day Fixed',
+    description: 'Maximum returns for patient investors.',
+    fullDescription: 'Maximum returns for patient investors.',
+    apy: '7.0%',
+    risk: 'Low' as const,
+    lockPeriod: '180 Days',
+    minDeposit: '$250',
+    color: 'purple',
+    features: ['Highest fixed APY', 'Monthly compounding', 'Early exit penalty: 3%', 'VIP support']
+  },
+  {
+    id: 'liquidity-pool',
+    name: 'Liquidity Pools',
+    description: 'Earn trading fees plus rewards',
+    fullDescription: 'Provide liquidity and earn trading fees plus rewards.',
+    apy: '8-12%',
+    risk: 'Medium' as const,
+    lockPeriod: 'Flexible',
+    minDeposit: '$100',
+    color: 'cyan',
+    features: ['Variable APY', 'Trading fee share', 'Impermanent loss risk', 'Bonus rewards']
+  },
+  {
+    id: 'staking',
+    name: 'XRP Staking',
+    description: 'Network rewards',
+    fullDescription: 'Stake XRP and earn rewards while supporting the network.',
+    apy: '3.2%',
+    risk: 'Low' as const,
+    lockPeriod: '7 Days',
+    minDeposit: '100 XRP',
+    color: 'amber',
+    features: ['Network rewards', '7-day unbonding', 'Auto-compound option', 'No slashing risk']
+  }
+];
+
+const productColors: Record<string, { bg: string; border: string; text: string }> = {
+  emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400' },
+  sky: { bg: 'bg-sky-500/10', border: 'border-sky-500/20', text: 'text-sky-400' },
+  indigo: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/20', text: 'text-indigo-400' },
+  purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/20', text: 'text-purple-400' },
+  cyan: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', text: 'text-cyan-400' },
+  amber: { bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-400' }
+};
+
+const riskColors = {
+  Low: 'text-emerald-400 bg-emerald-500/20',
+  Medium: 'text-amber-400 bg-amber-500/20',
+  High: 'text-red-400 bg-red-500/20'
+};
 
 // Stable Asset Exchange Logo SVG
 const StableAssetLogo = ({ className = "w-10 h-10" }: { className?: string }) => (
@@ -27,11 +119,139 @@ const StableAssetLogo = ({ className = "w-10 h-10" }: { className?: string }) =>
   </svg>
 );
 
-export default function EarnInterest() {
+// Small product card component
+const SmallProductCard = ({ product, onClick }: { product: typeof products[0]; onClick: () => void }) => {
+  const colors = productColors[product.color];
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full ${colors.bg} border ${colors.border} rounded-lg p-3 text-left hover:scale-[1.01] transition-all`}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex-1 min-w-0">
+          <h4 className="font-medium text-white text-sm">{product.name}</h4>
+          <p className="text-zinc-500 text-xs truncate">{product.description}</p>
+        </div>
+        <p className={`font-bold ${colors.text} ml-3`}>{product.apy}</p>
+      </div>
+    </button>
+  );
+};
+
+// Full product modal component
+const FullProductModal = ({ product }: { product: typeof products[0] }) => {
+  const colors = productColors[product.color];
+  return (
+    <div className={`${colors.bg} border ${colors.border} rounded-xl p-4`}>
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <h4 className="font-bold text-white">{product.name}</h4>
+          <p className="text-zinc-400 text-sm">{product.fullDescription}</p>
+        </div>
+        <span className={`text-xs px-2 py-1 rounded-full ${riskColors[product.risk]}`}>
+          {product.risk} Risk
+        </span>
+      </div>
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="bg-zinc-900/50 rounded-lg p-2 text-center">
+          <p className="text-zinc-500 text-xs">APY</p>
+          <p className={`font-bold ${colors.text}`}>{product.apy}</p>
+        </div>
+        <div className="bg-zinc-900/50 rounded-lg p-2 text-center">
+          <p className="text-zinc-500 text-xs">Lock</p>
+          <p className="font-bold text-white text-sm">{product.lockPeriod}</p>
+        </div>
+        <div className="bg-zinc-900/50 rounded-lg p-2 text-center">
+          <p className="text-zinc-500 text-xs">Min</p>
+          <p className="font-bold text-white text-sm">{product.minDeposit}</p>
+        </div>
+      </div>
+      <div className="space-y-1">
+        {product.features.map((feature, i) => (
+          <div key={i} className="flex items-center gap-2 text-xs text-zinc-300">
+            <svg className="w-3 h-3 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            {feature}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+interface EarnInterestProps {
+  noBorder?: boolean;
+}
+
+// Base height of the card without products (header + stats + button + footer)
+const BASE_HEIGHT = 320;
+// Height of each small product card
+const SMALL_CARD_HEIGHT = 60;
+// Height of each full modal
+const FULL_MODAL_HEIGHT = 220;
+
+export default function EarnInterest({ noBorder = false }: EarnInterestProps) {
   const router = useRouter();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [availableHeight, setAvailableHeight] = useState(0);
+  const [isTwoColumn, setIsTwoColumn] = useState(false);
+
+  // Measure container height with ResizeObserver
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const checkLayout = () => {
+      setIsTwoColumn(window.innerWidth >= 1024);
+    };
+    checkLayout();
+    window.addEventListener('resize', checkLayout);
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const height = entry.contentRect.height;
+        setAvailableHeight(height);
+      }
+    });
+
+    resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', checkLayout);
+    };
+  }, []);
+
+  // Calculate what to show based on available height
+  const extraHeight = Math.max(0, availableHeight - BASE_HEIGHT);
+  
+  // Only show extra products on two-column layout
+  let smallCardsCount = 0;
+  let fullModalsCount = 0;
+  
+  if (isTwoColumn && extraHeight > 0) {
+    // First try to fit full modals
+    fullModalsCount = Math.floor(extraHeight / FULL_MODAL_HEIGHT);
+    const remainingAfterModals = extraHeight - (fullModalsCount * FULL_MODAL_HEIGHT);
+    
+    // Fill remaining space with small cards
+    smallCardsCount = Math.floor(remainingAfterModals / SMALL_CARD_HEIGHT);
+    
+    // Cap totals
+    const totalProducts = Math.min(smallCardsCount + fullModalsCount, products.length);
+    if (fullModalsCount > totalProducts) fullModalsCount = totalProducts;
+    smallCardsCount = Math.min(smallCardsCount, totalProducts - fullModalsCount);
+  }
+
+  const smallCards = products.slice(0, smallCardsCount);
+  const fullModals = products.slice(smallCardsCount, smallCardsCount + fullModalsCount);
 
   return (
-    <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-xl p-6 mb-6">
+    <div 
+      ref={containerRef}
+      className={`h-full ${noBorder ? "" : "bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-xl p-6 mb-6"}`}
+    >
       <div className="flex items-start gap-4">
         <StableAssetLogo className="w-12 h-12 flex-shrink-0" />
         <div className="flex-1">
@@ -62,6 +282,29 @@ export default function EarnInterest() {
           <p className="text-zinc-500 text-xs">Liquidity Pools</p>
         </div>
       </div>
+
+      {/* Dynamic product display based on available height */}
+      {(smallCards.length > 0 || fullModals.length > 0) && (
+        <div className="mt-4 space-y-3">
+          {/* Small cards first */}
+          {smallCards.length > 0 && (
+            <div className="space-y-2">
+              {smallCards.map((product) => (
+                <SmallProductCard 
+                  key={product.id} 
+                  product={product} 
+                  onClick={() => router.push('/earn')} 
+                />
+              ))}
+            </div>
+          )}
+          
+          {/* Full modals */}
+          {fullModals.map((product) => (
+            <FullProductModal key={product.id} product={product} />
+          ))}
+        </div>
+      )}
 
       {/* CTA Button */}
       <button

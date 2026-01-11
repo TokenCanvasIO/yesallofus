@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import CollapsibleCard from './CollapsibleCard';
 
 const RLUSD_HEX = '524C555344000000000000000000000000000000';
 const RLUSD_ISSUER = 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De';
@@ -123,11 +122,7 @@ export default function WithdrawRLUSD({
   };
 
   return (
-  <CollapsibleCard 
-    title="Withdraw RLUSD" 
-    icon="💸" 
-    defaultOpen={false}
-  >
+  <div>
     <div className="flex items-center justify-end gap-2 mb-4">
       <div className="text-right">
         <p className="text-zinc-500 text-xs">Available</p>
@@ -188,26 +183,26 @@ export default function WithdrawRLUSD({
         </div>
 
         {/* Amount */}
-        <div>
-          <label className="text-zinc-400 text-sm block mb-2">Amount (RLUSD)</label>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00"
-              min="0"
-              step="0.01"
-              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white"
-            />
-            <button
-              onClick={setMaxAmount}
-              className="bg-zinc-700 hover:bg-zinc-600 px-4 py-3 rounded-lg text-sm transition"
-            >
-              Max
-            </button>
-          </div>
-        </div>
+<div>
+  <label className="text-zinc-400 text-sm block mb-2">Amount (RLUSD)</label>
+  <div className="relative">
+    <input
+      type="number"
+      value={amount}
+      onChange={(e) => setAmount(e.target.value)}
+      placeholder="0.00"
+      min="0"
+      step="0.01"
+      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 pr-16 text-white"
+    />
+    <button
+      onClick={setMaxAmount}
+      className="absolute right-2 top-1/2 -translate-y-1/2 bg-zinc-600 hover:bg-zinc-500 px-3 py-1 rounded text-xs font-medium transition"
+    >
+      Max
+    </button>
+  </div>
+</div>
 
         {/* Error Message */}
         {error && (
@@ -246,6 +241,6 @@ export default function WithdrawRLUSD({
         )}
       </button>
     </div>
-  </CollapsibleCard>
+  </div>
 );
 }

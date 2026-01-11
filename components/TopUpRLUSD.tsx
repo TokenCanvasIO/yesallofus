@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import CollapsibleCard from './CollapsibleCard';
 
 interface TopUpRLUSDProps {
   walletAddress: string;
@@ -90,13 +89,7 @@ export default function TopUpRLUSD({
   ];
 
   return (
-  <CollapsibleCard 
-    title="Top Up RLUSD" 
-    icon="💰" 
-    defaultOpen={false}
-    badge={rlusdBalance < 10 ? 'Low Balance' : undefined}
-    badgeColor="yellow"
-  >
+  <div>
 
       {/* Low balance warning */}
       {rlusdBalance < 10 && showAmounts && (
@@ -312,6 +305,6 @@ export default function TopUpRLUSD({
           </div>
         </div>
       )}
-    </CollapsibleCard>
-  );
+    </div>
+);
 }

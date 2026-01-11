@@ -35,7 +35,7 @@ export default function DashboardHeader({ walletAddress, storeId, onSignOut, sho
   const isConnected = !!walletAddress;
 
   return (
-    <header className="sticky top-0 z-50 bg-[#0d0d0d]">
+    <header className="sticky top-0 z-50 bg-zinc-900/80 backdrop-blur-sm">
       <div className="px-6 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 hover:opacity-80">
   <Logo size={32} />

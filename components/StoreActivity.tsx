@@ -160,21 +160,24 @@ export default function StoreActivity({ storeId, walletAddress, showAmounts = fa
     return idx >= 0 ? idx + 1 : '-';
   };
 
-  const getRankEmoji = (rank: number) => {
-    if (rank === 1) return '🥇';
-    if (rank === 2) return '🥈';
-    if (rank === 3) return '🥉';
-    return '';
-  };
-
-  const getSortLabel = () => {
-    switch (sortOption) {
-      case 'rank': return '🏆 Top Earners';
-      case 'lowest': return '📉 Lowest First';
-      case 'newest': return '🆕 Newest First';
-      case 'oldest': return '📅 Oldest First';
-    }
-  };
+  const getRankIcon = (rank: number) => {
+  if (rank === 1) return (
+    <svg className="w-5 h-5 inline-block ml-1" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#FFD700" stroke="#B8860B" strokeWidth="1"/>
+    </svg>
+  );
+  if (rank === 2) return (
+    <svg className="w-5 h-5 inline-block ml-1" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#C0C0C0" stroke="#808080" strokeWidth="1"/>
+    </svg>
+  );
+  if (rank === 3) return (
+    <svg className="w-5 h-5 inline-block ml-1" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#CD7F32" stroke="#8B4513" strokeWidth="1"/>
+    </svg>
+  );
+  return null;
+};
 
   if (loading) {
     return (
@@ -238,24 +241,38 @@ export default function StoreActivity({ storeId, walletAddress, showAmounts = fa
       onChange={(e) => { setSortOption(e.target.value as any); setPage(0); }}
       className="appearance-none bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 pr-7 sm:pr-8 text-xs sm:text-sm text-zinc-300 cursor-pointer hover:border-zinc-700 transition focus:outline-none focus:border-emerald-500"
     >
-              <option value="rank">🏆 Top Earners</option>
-              <option value="lowest">📉 Lowest First</option>
-              <option value="newest">🆕 Newest First</option>
-              <option value="oldest">📅 Oldest First</option>
-            </select>
-            <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        ) : (
-          <button
-            onClick={() => setPaymentSortNewest(!paymentSortNewest)}
-            className="text-zinc-500 hover:text-white text-sm flex items-center gap-2 transition"
-          >
-            {paymentSortNewest ? '↓ Newest first' : '↑ Oldest first'}
-          </button>
-        )}
-      </div>
+      <option value="rank">⏶ Top Earners</option>
+      <option value="lowest">⏷ Lowest First</option>
+      <option value="newest">★ Newest First</option>
+      <option value="oldest">◷ Oldest First</option>
+    </select>
+    <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  </div>
+) : (
+  <button
+    onClick={() => setPaymentSortNewest(!paymentSortNewest)}
+    className="text-zinc-500 hover:text-white text-sm flex items-center gap-2 transition"
+  >
+    {paymentSortNewest ? (
+      <>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+        </svg>
+        Newest first
+      </>
+    ) : (
+      <>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+        </svg>
+        Oldest first
+      </>
+    )}
+  </button>
+)}
+</div>
 
       {tab === 'affiliates' && (
         <>
@@ -284,9 +301,9 @@ export default function StoreActivity({ storeId, walletAddress, showAmounts = fa
                       return (
                         <tr key={aff.affiliate_id} className="border-t border-zinc-800/50 hover:bg-zinc-800/30 transition">
                           <td className="px-4 py-3 text-sm">
-                            <span className="text-zinc-400">{rank}</span>
-                            <span className="ml-1">{getRankEmoji(rank)}</span>
-                          </td>
+  <span className="text-zinc-400">{rank}</span>
+  {getRankIcon(rank)}
+</td>
                           <td className="px-4 py-3">
                             <a
                               href={`https://livenet.xrpl.org/accounts/${aff.wallet}`}
@@ -382,13 +399,27 @@ export default function StoreActivity({ storeId, walletAddress, showAmounts = fa
                             <span className="text-sm font-medium text-emerald-400">{formatAmount(commissionTotal)}</span>
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              pay.auto_signed 
-                                ? 'bg-emerald-500/20 text-emerald-400' 
-                                : 'bg-sky-500/20 text-sky-400'
-                            }`}>
-                              {pay.auto_signed ? '⚡ Auto' : '📱 Manual'}
-                            </span>
+                            <span className={`text-xs px-2 py-1 rounded inline-flex items-center gap-1 ${
+  pay.auto_signed 
+    ? 'bg-emerald-500/20 text-emerald-400' 
+    : 'bg-sky-500/20 text-sky-400'
+}`}>
+  {pay.auto_signed ? (
+    <>
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M13 3L4 14h7v7l9-11h-7V3z"/>
+      </svg>
+      Auto
+    </>
+  ) : (
+    <>
+      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+      </svg>
+      Manual
+    </>
+  )}
+</span>
                           </td>
                           <td className="px-4 py-3 text-right">
                             <span className="text-sm text-zinc-500">{formatDate(pay.paid_at)}</span>

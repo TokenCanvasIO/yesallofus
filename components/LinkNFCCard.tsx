@@ -12,9 +12,10 @@ interface Card {
 interface LinkNFCCardProps {
   walletAddress: string;
   onCardLinked?: () => void;
+  noBorder?: boolean;
 }
 
-export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCardProps) {
+export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = false }: LinkNFCCardProps) {
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -202,7 +203,7 @@ export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCard
 
   if (loading) {
     return (
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
+      <div className={noBorder ? "p-4" : "bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6"}>
         <div className="flex items-center gap-3">
           <div className="w-5 h-5 border-2 border-zinc-500 border-t-white rounded-full animate-spin"></div>
           <span className="text-zinc-400">Loading cards...</span>
@@ -212,28 +213,46 @@ export default function LinkNFCCard({ walletAddress, onCardLinked }: LinkNFCCard
   }
 
   return (
-<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6 mt-6">
-{/* Header */}
-<div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <svg className="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-          </svg>
-          <div>
-            <h2 className="text-lg font-bold">Payment Cards</h2>
-            <p className="text-zinc-500 text-sm">{cards.length} card{cards.length !== 1 ? 's' : ''} linked</p>
+    <div className={noBorder ? "p-4" : "bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6 mt-6"}>
+      {/* Header - only show if not noBorder (since CollapsibleSection has its own header) */}
+      {!noBorder && (
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <svg className="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+            <div>
+              <h2 className="text-lg font-bold">Payment Cards</h2>
+              <p className="text-zinc-500 text-sm">{cards.length} card{cards.length !== 1 ? 's' : ''} linked</p>
+            </div>
           </div>
+          {cards.length > 0 && cards.length < 5 && !scanning && (
+            <button
+              onClick={startNFCScan}
+              className="bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium py-1.5 px-3 rounded-lg transition flex items-center gap-1"
+            >
+              <span>+</span>
+              Add
+            </button>
+          )}
         </div>
-        {cards.length > 0 && cards.length < 5 && !scanning && (
-          <button
-  onClick={startNFCScan}
-  className="bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium py-1.5 px-3 rounded-lg transition flex items-center gap-1"
->
-  <span>+</span>
-  Add
-</button>
-        )}
-      </div>
+      )}
+
+      {/* Card count for noBorder mode */}
+      {noBorder && cards.length > 0 && (
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-zinc-500 text-sm">{cards.length} card{cards.length !== 1 ? 's' : ''} linked</p>
+          {cards.length < 5 && !scanning && (
+            <button
+              onClick={startNFCScan}
+              className="bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium py-1.5 px-3 rounded-lg transition flex items-center gap-1"
+            >
+              <span>+</span>
+              Add
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Error */}
       {error && (
