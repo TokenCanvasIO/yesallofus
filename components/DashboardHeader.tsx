@@ -56,12 +56,23 @@ export default function DashboardHeader({ walletAddress, storeId, onSignOut, sho
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
     </svg>
   </button>
-  <Link href="/" className="hidden lg:flex items-center hover:opacity-80 ml-12 gap-3">
+  <Link href="/" className="hidden md:flex items-center hover:opacity-80 ml-12 gap-3">
 {!walletAddress && dashboardType === 'vendor' && (
   <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllofUs" className="w-8 h-8 rounded-lg" />
 )}
 <span className="font-bold text-white text-xl">YesAllofUs</span>
 </Link>
+
+{/* Logo flush top-left - desktop/tablet only, logged in only */}
+{walletAddress && (
+  <div className="hidden md:block absolute top-0 left-0 z-50 h-full">
+    <img 
+      src="https://yesallofus.com/dltpayslogo1.png" 
+      alt="YesAllofUs" 
+      className="h-full w-auto object-cover" 
+    />
+  </div>
+)}
 </div>
         <div className="flex items-center gap-2">
           {isConnected && storeId && (
