@@ -81,11 +81,11 @@ export default function CollapsibleSection({
 </div>
         <div className="relative z-[2]">
         {isOpen ? (
-          <svg className={`w-5 h-5 transition-all duration-200 ${dashboardType === 'vendor' ? 'text-emerald-400' : 'text-cyan-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-5 h-5 transition-all duration-200 ${dashboardType === 'vendor' ? 'text-emerald-400' : 'text-violet-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
           </svg>
         ) : (
-          <svg className={`w-5 h-5 transition-all duration-200 ${dashboardType === 'vendor' ? 'text-emerald-400' : 'text-cyan-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-5 h-5 transition-all duration-200 ${dashboardType === 'vendor' ? 'text-emerald-400' : 'text-violet-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
         )}
