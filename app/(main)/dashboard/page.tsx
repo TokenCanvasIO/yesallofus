@@ -1431,7 +1431,7 @@ return (
   },
   { 
     id: 'withdraw', 
-    label: 'Withdraw', 
+    label: 'Balance/Withdraw', 
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
@@ -1659,7 +1659,7 @@ onSignOut={signOut}
 
       {/* Main Content */}
 <main className={`min-h-screen pt-2 lg:pt-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-0' : 'lg:ml-64'}`}>
-        <div className="max-w-3xl lg:max-w-none mx-auto px-3 sm:px-6 lg:px-4 pt-20 pb-2">
+        <div className="max-w-3xl lg:max-w-none mx-auto px-3 sm:px-6 lg:px-4 pt-20 pb-4">
 
         {error && (
   error.includes('beta') || error.includes('full') || error.includes('waitlist') ? (
@@ -2411,7 +2411,7 @@ onClick={async () => {
 
     <CollapsibleSection dashboardType="vendor"
       id="withdraw"
-      title="Withdraw"
+      title="BALANCE | WITHDRAW"
       icon={
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
@@ -2440,56 +2440,56 @@ onClick={async () => {
     </CollapsibleSection>
 
     {/* QUICK LINKS POS */}
-    <div className="bg-zinc-900/95 border border-zinc-800 rounded-xl p-4">
-      <p className="text-zinc-500 text-xs uppercase tracking-wider mb-3">Quick Links</p>
-      <div className="grid grid-cols-5 gap-2">
-        <button
-          onClick={() => router.push('/take-payment')}
-          className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
-        >
-          <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-          </svg>
-          <span className="text-zinc-500 text-xs">Payment</span>
-        </button>
-        <button
-          onClick={() => router.push('/analytics')}
-          className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
-        >
-          <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          <span className="text-zinc-500 text-xs">Analytics</span>
-        </button>
-        <button
-          onClick={() => router.push('/receipts')}
-          className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
-        >
-          <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <span className="text-zinc-500 text-xs">Receipts</span>
-        </button>
-        <button
-          onClick={() => window.open(`/display?store=${store.store_id}`, '_blank')}
-          className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
-        >
-          <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-          <span className="text-zinc-500 text-xs">Display</span>
-        </button>
-        <button
-          onClick={() => router.push('/staff')}
-          className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
-        >
-          <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-          <span className="text-zinc-500 text-xs">Staff</span>
-        </button>
-      </div>
-    </div>
+<div className="bg-zinc-900/95 border border-zinc-800 rounded-xl p-4">
+  <p className="text-zinc-500 text-xs uppercase tracking-wider mb-3">Quick Links</p>
+  <div className="grid grid-cols-5 gap-2">
+    <button
+      onClick={() => router.push('/take-payment')}
+      className="group flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
+    >
+      <svg className="w-5 h-5 text-zinc-400 group-hover:text-emerald-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+      </svg>
+      <span className="text-zinc-500 text-xs group-hover:text-emerald-400 transition">Payment</span>
+    </button>
+    <button
+      onClick={() => router.push('/analytics')}
+      className="group flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
+    >
+      <svg className="w-5 h-5 text-zinc-400 group-hover:text-emerald-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+      <span className="text-zinc-500 text-xs group-hover:text-emerald-400 transition">Analytics</span>
+    </button>
+    <button
+      onClick={() => router.push('/receipts')}
+      className="group flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
+    >
+      <svg className="w-5 h-5 text-zinc-400 group-hover:text-emerald-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <span className="text-zinc-500 text-xs group-hover:text-emerald-400 transition">Receipts</span>
+    </button>
+    <button
+      onClick={() => window.open(`/display?store=${store.store_id}`, '_blank')}
+      className="group flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
+    >
+      <svg className="w-5 h-5 text-zinc-400 group-hover:text-emerald-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+      <span className="text-zinc-500 text-xs group-hover:text-emerald-400 transition">Display</span>
+    </button>
+    <button
+      onClick={() => router.push('/staff')}
+      className="group flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
+    >
+      <svg className="w-5 h-5 text-zinc-400 group-hover:text-emerald-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+      <span className="text-zinc-500 text-xs group-hover:text-emerald-400 transition">Staff</span>
+    </button>
+  </div>
+</div>
   </div>
 )}
 </div>

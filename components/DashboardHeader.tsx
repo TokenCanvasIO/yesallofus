@@ -38,7 +38,7 @@ export default function DashboardHeader({ walletAddress, storeId, onSignOut, sho
   return (
     <header className={`fixed top-0 left-0 right-0 z-40 backdrop-blur-sm w-full ${
   dashboardType === 'vendor' 
-    ? 'bg-gradient-to-r from-pink-500/40 via-orange-500/35 via-50% via-red-500/40 to-red-800/45 border-b border-red-500/40'
+    ? 'bg-gradient-to-r from-emerald-300/55 via-emerald-500/50 via-green-600/45 to-green-900/50 border-b border-emerald-400/50'
     : 'bg-gradient-to-r from-lime-300/50 via-teal-400/50 via-cyan-400/55 via-blue-500/55 to-violet-500/60 border-b border-cyan-400/50'
 }`}>
       <div className="px-6 py-3 flex items-center justify-between w-full max-w-full">

@@ -132,9 +132,13 @@ className={`relative w-10 h-10 landscape:w-7 landscape:h-7 rounded-lg overflow-h
             .map((item) => (
               <div key={item.id} className="flex items-center group">
                 <button
-                  onClick={() => onNavClick(item.id, item.onClick)}
-                  className="flex-1 flex items-center gap-3 px-3 py-2 landscape:py-1.5 text-left text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition"
-                >
+  onClick={() => onNavClick(item.id, item.onClick)}
+  className={`flex-1 flex items-center gap-3 px-3 py-2 landscape:py-1.5 text-left text-zinc-400 hover:bg-zinc-800 rounded-lg transition ${
+    dashboardType === 'vendor' 
+      ? 'hover:text-emerald-400' 
+      : 'hover:text-cyan-400'
+  }`}
+>
                   <span className="text-zinc-500">{item.icon}</span>
                   <span className="text-sm">{item.label}</span>
                 </button>
@@ -146,7 +150,7 @@ className={`relative w-10 h-10 landscape:w-7 landscape:h-7 rounded-lg overflow-h
   }}
   className={`p-1.5 transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100 ${
   dashboardType === 'vendor' 
-    ? 'text-zinc-500 hover:text-rose-400' 
+    ? 'text-zinc-500 hover:text-emerald-400' 
     : 'text-zinc-500 hover:text-cyan-400'
 }`}
   title="Learn more"
