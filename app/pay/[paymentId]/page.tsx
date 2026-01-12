@@ -355,6 +355,15 @@ useEffect(() => {
     }
   };
 
+  // Stop NFC scan
+  const stopNFCScan = () => {
+    if (nfcController) {
+      nfcController.abort();
+      setNfcController(null);
+    }
+    setNfcScanning(false);
+  };
+
   // Start NFC scan
   const startNFCScan = async () => {
     if (!('NDEFReader' in window)) {
@@ -362,10 +371,8 @@ useEffect(() => {
       return;
     }
 
-    // Abort any existing scan
-    if (nfcController) {
-      nfcController.abort();
-    }
+    // Always abort any existing scan first
+    stopNFCScan();
 
     const controller = new AbortController();
     setNfcController(controller);
@@ -400,12 +407,8 @@ useEffect(() => {
   setTxHash(result.tx_hash);
   setError(null);
   
-  // Stop NFC scanning
-  if (nfcController) {
-    nfcController.abort();
-    setNfcController(null);
-  }
-  setNfcScanning(false);
+  // Stop NFC scanning immediately
+  stopNFCScan();
   
   // Mark current split as paid
   if (splits) {
@@ -440,16 +443,16 @@ setTimeout(() => setShowToast(false), 2500);
 
       ndef.addEventListener('readingerror', () => {
         setError('Error reading card');
-        setNfcScanning(false);
+        stopNFCScan();
       });
 
     } catch (err: any) {
       if (err.name === 'NotAllowedError') {
         setError('NFC permission denied');
-      } else {
+      } else if (err.name !== 'AbortError') {
         setError('Failed to start NFC');
       }
-      setNfcScanning(false);
+      stopNFCScan();
     }
   };
 
