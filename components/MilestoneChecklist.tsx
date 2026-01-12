@@ -198,8 +198,16 @@ export default function MilestoneChecklist({
       setMilestones(customerMilestones);
       setLoading(false);
     } else {
-      // Vendor - fetch from API
+      // Vendor - fetch from API with polling
       fetchMilestones();
+      
+      // *** NEW CODE: Poll every 5 seconds for real-time updates ***
+      const pollInterval = setInterval(() => {
+        fetchMilestones();
+      }, 5000);
+      
+      return () => clearInterval(pollInterval);
+      // *** END NEW CODE ***
     }
   }, [storeId, walletAddress, autoSignEnabled, type, walletFunded, trustlineSet, tapPayEnabled, nfcCardAdded, joinedAffiliate]);
 
@@ -214,7 +222,11 @@ export default function MilestoneChecklist({
     } catch (err) {
       console.error('Failed to fetch milestones:', err);
     }
-    setLoading(false);
+    // *** CHANGED: Only set loading false on first load to prevent flicker ***
+    if (loading) {
+      setLoading(false);
+    }
+    // *** END CHANGE ***
   };
 
   // Calculate completed count
