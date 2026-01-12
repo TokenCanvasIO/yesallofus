@@ -384,18 +384,35 @@ useEffect(() => {
       await ndef.scan({ signal: controller.signal });
 
       ndef.addEventListener('reading', async (event: any) => {
+        // Immediately abort to prevent duplicate reads
+        controller.abort();
+        
         const uid = event.serialNumber?.replace(/:/g, '').toUpperCase();
         if (!uid) {
           setError('Could not read card');
           setNfcScanning(false);
+          setNfcController(null);
           return;
         }
 
         setNfcScanning(false);
+        setNfcController(null);
         setProcessing(true);
 
+        // Get the current payment ID at the moment of scan
+        const currentPaymentId = splits && splits.length > 0 
+          ? splits[currentSplitIndex]?.payment_id 
+          : paymentId;
+          
+        // Check if this split is already paid
+        if (splits && splits[currentSplitIndex]?.status === 'paid') {
+          setError(null);
+          setProcessing(false);
+          return;
+        }
+
         try {
-          const res = await fetch(`${API_URL}/payment-link/${getCurrentPaymentId()}/pay`, {
+          const res = await fetch(`${API_URL}/payment-link/${currentPaymentId}/pay`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ card_uid: uid })
@@ -407,9 +424,6 @@ useEffect(() => {
   setTxHash(result.tx_hash);
   setError(null);
   
-  // Stop NFC scanning immediately
-  stopNFCScan();
-  
   // Mark current split as paid
   if (splits) {
     setSplits(prev => prev!.map((s, idx) => 
@@ -419,17 +433,17 @@ useEffect(() => {
   
   // Show success toast
   setShowToast(true);
-setTimeout(() => setShowToast(false), 2500);
+  setTimeout(() => setShowToast(false), 2500);
   
   // Move to next split or show success
   if (splits && currentSplitIndex < splits.length - 1) {
     setTimeout(() => {
       setCurrentSplitIndex(prev => prev + 1);
-    }, 500); // Small delay so user sees the success state
+    }, 800);
   } else {
     setAllPaid(true);
   }
-
+  
   if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
 } else {
   setError(result.error || 'Payment failed');
@@ -438,6 +452,8 @@ setTimeout(() => setShowToast(false), 2500);
           setError('Payment failed');
         } finally {
           setProcessing(false);
+          setNfcScanning(false);
+          setNfcController(null);
         }
       });
 
