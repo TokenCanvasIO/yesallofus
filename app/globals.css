@@ -55,3 +55,26 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  appearance: none;
+  border: 1px solid #3f3f46;
+  border-radius: 3px;
+  background-color: #18181b;
+  cursor: pointer;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #52525b;
+  border-color: #52525b;
+}
+
+input[type="checkbox"]:checked::after {
+  content: '✓';
+  display: block;
+  text-align: center;
+  color: white;
+  font-size: 10px;
+  line-height: 14px;
+}

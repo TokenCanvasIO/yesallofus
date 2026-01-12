@@ -27,8 +27,9 @@ interface Store {
   referral_link: string;
   total_earned: number;
   level: number;
+  commission_rates?: number[];
+  logo_url?: string;  // ADD THIS LINE
 }
-
 interface Payout {
   store_name: string;
   order_id: string;
@@ -1021,34 +1022,162 @@ return <LoginScreen onLogin={handleLogin} />;
             {dashboardData && dashboardData.stores.length > 0 && (
               <div id="vendors" className="mb-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold">Your Vendors</h2>
-                  <button onClick={() => { setShowDiscover(!showDiscover); if (!showDiscover) fetchPublicStores(); }} className="text-sky-400 hover:text-sky-300 text-sm">{showDiscover ? 'Hide' : 'Discover More →'}</button>
+                  <h2 className="text-lg font-bold">My Affiliate Programs</h2>
+                  <button 
+  onClick={() => { setShowDiscover(!showDiscover); if (!showDiscover) fetchPublicStores(); }} 
+  className="group relative"
+>
+  {showDiscover ? (
+    <span className="text-zinc-400 hover:text-white text-sm transition-colors">Hide ✕</span>
+  ) : (
+    <svg 
+      viewBox="0 0 180 42" 
+      className="w-auto h-10 transition-all duration-300 hover:scale-105"
+    >
+      <defs>
+        <linearGradient id="discoverGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#06b6d4" />
+          <stop offset="50%" stopColor="#3b82f6" />
+          <stop offset="100%" stopColor="#8b5cf6" />
+        </linearGradient>
+        
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      
+      <rect 
+        x="1" 
+        y="1" 
+        width="178" 
+        height="40" 
+        rx="8" 
+        fill="rgba(24, 24, 27, 0.6)"
+        stroke="url(#discoverGradient)"
+        strokeWidth="1.5"
+        className="transition-all duration-300 group-hover:fill-zinc-800/80"
+      />
+      
+      <circle cx="15" cy="21" r="1.5" fill="#3b82f6" opacity="0.4" />
+      <circle cx="165" cy="21" r="1.5" fill="#8b5cf6" opacity="0.4" />
+      
+      <text 
+        x="35" 
+        y="26" 
+        fill="url(#discoverGradient)"
+        fontFamily="system-ui, -apple-system, sans-serif" 
+        fontWeight="600" 
+        fontSize="14"
+        letterSpacing="0.5"
+        filter="url(#glow)"
+      >
+        Discover More
+      </text>
+      
+      <g transform="translate(145, 16)" className="transition-transform duration-300 group-hover:translate-x-1">
+        <path 
+          d="M0 5 L8 5 M5 2 L8 5 L5 8" 
+          stroke="url(#discoverGradient)" 
+          strokeWidth="2" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"
+          fill="none"
+        />
+      </g>
+    </svg>
+  )}
+</button>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {dashboardData.stores.map((store, i) => (
-                    <div key={`${store.store_id}-${i}`} className="bg-zinc-900/70 border border-zinc-800 rounded-xl p-5">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="font-semibold text-lg">{store.store_name}</h3>
-                          <p className="text-zinc-500 text-sm">{store.store_url}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xl font-bold text-emerald-400">{formatBalance(store.total_earned)}</p>
-                          <p className="text-zinc-500 text-sm">earned</p>
-                        </div>
-                      </div>
-                      <div className="bg-zinc-800/50 rounded-lg p-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-zinc-400 text-xs mb-1">Your Referral Link</p>
-                            <p className="text-sm font-mono truncate">{store.referral_link}</p>
-                          </div>
-                          <button onClick={() => handleCopyLink(store.referral_link, store.referral_code)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${copiedCode === store.referral_code ? 'bg-emerald-500 text-black' : 'bg-zinc-700 hover:bg-zinc-600 text-white'}`}>{copiedCode === store.referral_code ? '✓ Copied' : 'Copy'}</button>
-                          <button onClick={() => { setQrUrl(store.referral_link); setQrStoreName(store.store_name); setShowQRModal(true); }} className="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-500 text-white transition-colors">QR</button>
-                        </div>
-                        <p className="text-zinc-500 text-xs mt-2">Code: <span className="font-mono text-zinc-300">{store.referral_code}</span> · Level {store.level}</p>
-                      </div>
-                    </div>
+                    <div 
+  key={`${store.store_id}-${i}`} 
+  className="group relative bg-zinc-900/70 border border-zinc-800 hover:border-sky-500/50 rounded-xl p-5 transition-all duration-300 hover:shadow-[0_0_30px_-5px_rgba(14,165,233,0.3)] hover:scale-[1.02]"
+>
+  {/* Gradient glow on hover */}
+  <div className="absolute inset-0 bg-gradient-to-br from-sky-500/0 via-purple-500/0 to-emerald-500/0 group-hover:from-sky-500/5 group-hover:via-purple-500/5 group-hover:to-emerald-500/5 rounded-xl transition-all duration-300 pointer-events-none"></div>
+  
+  <div className="relative flex items-start gap-4 mb-4">
+    {/* Store Logo */}
+    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-sky-500/20 to-purple-500/20 border border-sky-500/30 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+      {store.logo_url ? (
+        <img src={store.logo_url} alt={store.store_name} className="w-full h-full rounded-xl object-cover" />
+      ) : (
+        <span className="text-2xl font-bold bg-gradient-to-br from-sky-400 to-purple-400 bg-clip-text text-transparent">
+          {store.store_name.charAt(0)}
+        </span>
+      )}
+    </div>
+    
+    <div className="flex-1 min-w-0">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-lg truncate group-hover:text-sky-400 transition-colors">
+            {store.store_name}
+          </h3>
+          <p className="text-zinc-500 text-sm truncate">{store.store_url}</p>
+        </div>
+        <div className="text-right flex-shrink-0">
+          <p className="text-xl font-bold text-emerald-400">{formatBalance(store.total_earned)}</p>
+          <p className="text-zinc-500 text-sm">earned</p>
+        </div>
+      </div>
+      
+      {/* Level Badge */}
+      <div className="flex items-center gap-2 mt-2">
+        <div className="bg-gradient-to-r from-emerald-500/20 to-sky-500/20 border border-emerald-500/30 rounded-full px-3 py-1 text-xs font-semibold text-emerald-400">
+          Level {store.level}
+        </div>
+        {store.commission_rates && store.commission_rates[0] && (
+          <div className="text-zinc-500 text-xs">
+            {store.commission_rates[0]}% commission
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+  
+  {/* Referral Link Section */}
+  <div className="relative bg-zinc-800/50 border border-zinc-700/50 group-hover:border-sky-500/30 rounded-lg p-3 transition-colors">
+    {/* Gradient accent line */}
+    <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-sky-500/0 via-sky-500/50 to-sky-500/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-lg"></div>
+    
+    <div className="flex items-center justify-between gap-3 mb-2">
+      <div className="flex-1 min-w-0">
+        <p className="text-zinc-400 text-xs mb-1">Your Referral Link</p>
+        <p className="text-sm font-mono truncate text-sky-400">{store.referral_link}</p>
+      </div>
+      <div className="flex gap-2 flex-shrink-0">
+        <button 
+          onClick={() => handleCopyLink(store.referral_link, store.referral_code)} 
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            copiedCode === store.referral_code 
+              ? 'bg-emerald-500 text-black scale-95' 
+              : 'bg-zinc-700 hover:bg-zinc-600 text-white hover:scale-105'
+          }`}
+        >
+          {copiedCode === store.referral_code ? '✓ Copied' : 'Copy'}
+        </button>
+        <button 
+          onClick={() => { setQrUrl(store.referral_link); setQrStoreName(store.store_name); setShowQRModal(true); }} 
+          className="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-emerald-600 to-sky-600 hover:from-emerald-500 hover:to-sky-500 text-white transition-all hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/25"
+        >
+          QR
+        </button>
+      </div>
+    </div>
+    
+    <div className="flex items-center justify-between text-xs">
+      <p className="text-zinc-500">
+        Code: <span className="font-mono text-zinc-300 bg-zinc-900/50 px-2 py-0.5 rounded">{store.referral_code}</span>
+      </p>
+    </div>
+  </div>
+</div>
                   ))}
                 </div>
               </div>

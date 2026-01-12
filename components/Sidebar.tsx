@@ -56,21 +56,21 @@ export default function Sidebar({
 
       {/* Desktop Collapsed Tab Handle */}
       {isCollapsed && (
-        <button
-          onClick={onToggleCollapsed}
-          className="hidden lg:flex fixed left-0 top-1/2 -translate-y-1/2 z-50 w-6 h-24 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 border-l-0 rounded-r-lg items-center justify-center transition-colors"
-          title="Open menu"
-        >
-          <svg 
-            className="w-4 h-4 text-zinc-400" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      )}
+  <button
+    onClick={onToggleCollapsed}
+    className="hidden lg:flex fixed left-0 top-1/2 -translate-y-1/2 z-50 w-6 h-24 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 border-l-0 rounded-r-lg items-center justify-center transition-colors animate-pulse"
+    title="Open menu"
+  >
+    <svg 
+      className="w-4 h-4 text-zinc-400" 
+      fill="none" 
+      stroke="currentColor" 
+      viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
+  </button>
+)}
 
       {/* Sidebar */}
       <aside
@@ -178,7 +178,7 @@ className={`relative w-10 h-10 landscape:w-7 landscape:h-7 rounded-lg overflow-h
 >
       <source src="/guernsey-flag.webm" type="video/webm" />
     </video>
-    <div className="absolute inset-0 bg-black/90"></div>
+    <div className="absolute inset-0 bg-gradient-to-b from-zinc-900/90 via-zinc-900/85 to-zinc-900/95" style={{ mixBlendMode: 'multiply' }}></div>
   </div>
   <div className="relative z-10 space-y-1">
           {/* Show Progress Button */}

@@ -135,9 +135,9 @@ const toggleSection = (id: string) => {
       if (data.rlusd_trustline) {
         setMilestone('trustline_set');
       }
-      if (data.rlusd_balance > 0) {
-        setMilestone('first_payment_received');
-      }
+      // *** REMOVED: Don't use balance to detect first payment ***
+      // Balance check is unreliable - first_payment_received should be
+      // triggered by the backend when actual payment is processed
     }
   } catch (err) {
     console.error('Failed to refresh wallet status:', err);
@@ -278,6 +278,13 @@ const setMilestone = async (milestoneId: string) => {
     console.error('Failed to set milestone:', err);
   }
 };
+
+// Check wallet status and set milestones on dashboard load
+useEffect(() => {
+  if (walletAddress && store?.store_id && (walletType === 'web3auth' || walletType === 'crossmark')) {
+    refreshWalletStatus();
+  }
+}, [walletAddress, store?.store_id, walletType]);
 
   // Check URL for claim token on load
   useEffect(() => {
