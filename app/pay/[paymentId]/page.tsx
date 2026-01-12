@@ -425,12 +425,19 @@ useEffect(() => {
   };
 
   // Handle split bill
-  const handleSplitBill = async () => {
-    setSplitting(true);
-    setError(null);
+const handleSplitBill = async () => {
+  // Prevent if already split
+  if (payment?.status === 'split' || splits) {
+    setError('This bill has already been split');
+    setShowSplitModal(false);
+    return;
+  }
 
-    try {
-      const res = await fetch(`${API_URL}/payment-link/${paymentId}/split`, {
+  setSplitting(true);
+  setError(null);
+
+  try {
+    const res = await fetch(`${API_URL}/payment-link/${paymentId}/split`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ num_splits: splitCount })
@@ -848,9 +855,9 @@ if (allPaid || payment?.status === 'paid') {
             </button>
 
             {/* Split bill button (only if not already split) */}
-            {!payment?.split_index && !splits && (
-              <button
-                onClick={() => setShowSplitModal(true)}
+{!payment?.split_index && !splits && payment?.status === 'pending' && (
+  <button
+    onClick={() => setShowSplitModal(true)}
                 className="w-full bg-zinc-800 hover:bg-zinc-700 rounded-xl py-4 font-medium transition mb-6"
               >
                 Split Bill

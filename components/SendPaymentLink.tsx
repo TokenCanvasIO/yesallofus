@@ -146,17 +146,45 @@ export default function SendPaymentLink({
   };
 
 // Poll for payment status - ALWAYS poll once we have a payment ID
-  useEffect(() => {
-    if (!paymentId) return;
-    
-    const pollInterval = setInterval(async () => {
-      try {
-        const res = await fetch(`${API_URL}/payment-link/${paymentId}`);
-        const data = await res.json();
+useEffect(() => {
+  if (!paymentId) return;
+  
+  const pollInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`${API_URL}/payment-link/${paymentId}`);
+      const data = await res.json();
+      
+      console.log('Payment status:', data.payment?.status);
+      
+      // Check for direct payment completion
+      if (data.payment?.status === 'paid' || data.payment?.status === 'complete' || data.payment?.status === 'completed') {
+        setPaymentComplete(true);
+        setWaitingForPayment(false);
         
-        console.log('Payment status:', data.payment?.status);
+        // Update customer display to success
+        try {
+          const { updateCustomerDisplay } = await import('@/lib/customerDisplay');
+          await updateCustomerDisplay(storeId, storeName, [], amount, 'success', null, 0);
+        } catch (displayErr) {
+          console.error('Display update error:', displayErr);
+        }
         
-        if (data.payment?.status === 'paid' || data.payment?.status === 'complete' || data.payment?.status === 'completed') {
+        // Haptic feedback
+        if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+        
+        if (onSuccess) onSuccess();
+        return;
+      }
+      
+      // Check for split payment completion
+      if (data.payment?.status === 'split') {
+        // Poll split status to see if all splits are paid
+        const splitRes = await fetch(`${API_URL}/payment-link/${paymentId}/split-status`);
+        const splitData = await splitRes.json();
+        
+        console.log('Split status:', splitData);
+        
+        if (splitData.success && splitData.all_paid) {
           setPaymentComplete(true);
           setWaitingForPayment(false);
           
@@ -173,13 +201,14 @@ export default function SendPaymentLink({
           
           if (onSuccess) onSuccess();
         }
-      } catch (err) {
-        console.error('Poll error:', err);
       }
-    }, 2000);
-    
-    return () => clearInterval(pollInterval);
-  }, [paymentId, storeId, storeName, amount, onSuccess]);
+    } catch (err) {
+      console.error('Poll error:', err);
+    }
+  }, 2000);
+  
+  return () => clearInterval(pollInterval);
+}, [paymentId, storeId, storeName, amount, onSuccess]);
   
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
