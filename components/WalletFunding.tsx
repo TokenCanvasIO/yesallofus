@@ -94,12 +94,14 @@ interface Exchange {
 
 interface WalletFundingProps {
   walletAddress: string;
+  walletType?: 'xaman' | 'crossmark' | 'web3auth' | null;
   onFunded?: () => void;
   onTrustlineSet?: () => void;
 }
 
 export default function WalletFunding({
   walletAddress,
+  walletType,
   onFunded,
   onTrustlineSet,
 }: WalletFundingProps) {
@@ -529,7 +531,6 @@ const [reauthing, setReauthing] = useState(false);
 
   // Funded but no trustline
   if (status === 'funded_no_trustline') {
-    // Check if they have enough for trustline (need 0.2 XRP reserve + some for fees)
     const needsMoreXrp = xrpBalance < 1.2;
     
     return (
@@ -560,22 +561,61 @@ const [reauthing, setReauthing] = useState(false);
               </p>
             </div>
 
-            <button
-              onClick={setTrustline}
-              disabled={settingTrustline || needsMoreXrp}
-              className="w-full bg-blue-500 hover:bg-blue-400 text-white py-3 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {settingTrustline ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                  Setting up RLUSD...
-                </span>
-              ) : needsMoreXrp ? (
-                '⚠️ Add more XRP first'
-              ) : (
-                '🔓 Enable RLUSD Trustline'
-              )}
-            </button>
+            {walletType === 'xaman' ? (
+              <>
+                <div className="bg-zinc-800/90 rounded-lg p-4 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-6 h-6 rounded" />
+                    <p className="text-zinc-300 text-sm font-medium">In Xaman app:</p>
+                  </div>
+                  <ol className="text-zinc-400 text-sm text-left space-y-1">
+                    <li>1. Go to Settings → Advanced → Add Trustline</li>
+                    <li>2. Search for <strong className="text-white">RLUSD</strong></li>
+                    <li>3. Confirm the trustline transaction</li>
+                  </ol>
+                </div>
+                
+                <a 
+                  href="/trustline"
+                  target="_blank"
+                  className="inline-block text-blue-400 hover:text-blue-300 text-sm transition mb-4"
+                >
+                  📖 View Full Trustline Setup Guide
+                </a>
+                
+                <button
+                  onClick={checkWalletStatus}
+                  disabled={checking}
+                  className="w-full bg-yellow-500 hover:bg-yellow-400 text-black py-3 rounded-lg font-semibold transition disabled:opacity-50"
+                >
+                  {checking ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
+                      Checking...
+                    </span>
+                  ) : (
+                    "I've Added the Trustline → Check Status"
+                  )}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={setTrustline}
+                disabled={settingTrustline || needsMoreXrp}
+                className="w-full bg-blue-500 hover:bg-blue-400 text-white py-3 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {settingTrustline ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                    Setting up RLUSD...
+                  </span>
+                ) : needsMoreXrp ? (
+                  '⚠️ Add more XRP first'
+                ) : (
+                  '🔓 Enable RLUSD Trustline'
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -10,6 +10,7 @@ interface TopUpRLUSDProps {
   showAmounts: boolean;
   onToggleAmounts: () => void;
   onRefresh?: () => Promise<void>;
+  walletType?: 'xaman' | 'crossmark' | 'web3auth' | null;
 }
 
 export default function TopUpRLUSD({
@@ -19,6 +20,7 @@ export default function TopUpRLUSD({
   showAmounts,
   onToggleAmounts,
   onRefresh,
+  walletType,
 }: TopUpRLUSDProps) {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'card' | 'swap'>('card');
@@ -26,9 +28,11 @@ export default function TopUpRLUSD({
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = async () => {
+    if (!onRefresh) return;
+    
     setRefreshing(true);
     try {
-      await onRefresh?.();
+      await onRefresh();
     } finally {
       setRefreshing(false);
     }
@@ -89,47 +93,57 @@ export default function TopUpRLUSD({
   ];
 
   return (
-  <div>
-
-      {/* Low balance warning */}
+    <div className="space-y-6">
+      {/* Low RLUSD balance warning */}
       {rlusdBalance < 10 && showAmounts && (
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
           <p className="text-yellow-400 text-sm">
             Warning: Low balance — add RLUSD to continue paying affiliate commissions
           </p>
         </div>
       )}
 
-      {/* Wallet address section */}
-      <div className="bg-zinc-800/50 rounded-lg p-3 sm:p-4 mb-4">
-        <p className="text-zinc-500 text-xs mb-2">Your payout wallet:</p>
-        <div className="flex items-center gap-2 flex-wrap">
-<code className="text-emerald-400 text-sm font-mono flex-1 min-w-0 truncate">
+      {/* Wallet address & controls */}
+      <div className="bg-zinc-800/50 rounded-lg p-4">
+        <div className="flex items-center gap-2 mb-3">
+          {walletType === 'xaman' && (
+            <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-5 h-5 rounded" />
+          )}
+          {walletType === 'crossmark' && (
+            <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-5 h-5 rounded" />
+          )}
+          <p className="text-zinc-500 text-xs">Your payout wallet:</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <code className="text-emerald-400 text-sm font-mono flex-1 min-w-0 truncate">
             {walletAddress.substring(0, 8)}...{walletAddress.slice(-6)}
           </code>
+
           <button
             onClick={() => setShowQR(!showQR)}
-            className="bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 rounded text-xs"
+            className="bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 rounded text-xs transition"
           >
-            {showQR ? 'Hide QR' : 'QR'}
+            {showQR ? 'Hide QR' : 'Show QR'}
           </button>
+
           <button
             onClick={copyAddress}
-            className="bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 rounded text-xs"
+            className="bg-zinc-700 hover:bg-zinc-600 px-3 py-1.5 rounded text-xs transition"
           >
-            {copied ? 'Copied' : 'Copy'}
+            {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
 
         {showQR && (
-          <div className="mt-4 text-center">
+          <div className="mt-5 text-center">
             <div className="inline-block bg-white p-4 rounded-lg">
               <QRCodeSVG value={walletAddress} size={180} level="M" />
             </div>
-            <p className="text-zinc-500 text-xs mt-3 block">
+            <p className="text-zinc-500 text-xs mt-3">
               Scan to send XRP or RLUSD
             </p>
-            <code className="text-emerald-400 text-xs font-mono mt-2 block">
+            <code className="text-emerald-400 text-xs font-mono mt-2 block break-all">
               {walletAddress}
             </code>
           </div>
@@ -137,10 +151,10 @@ export default function TopUpRLUSD({
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-5">
+      <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => setActiveTab('card')}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition ${
+          className={`py-2.5 rounded-lg text-sm font-medium transition ${
             activeTab === 'card'
               ? 'bg-blue-600 text-white'
               : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
@@ -150,13 +164,13 @@ export default function TopUpRLUSD({
         </button>
         <button
           onClick={() => setActiveTab('swap')}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition ${
+          className={`py-2.5 rounded-lg text-sm font-medium transition ${
             activeTab === 'swap'
               ? 'bg-blue-600 text-white'
               : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
           }`}
         >
-          XRP to RLUSD
+          XRP → RLUSD
         </button>
       </div>
 
@@ -182,7 +196,7 @@ export default function TopUpRLUSD({
                       src={option.logo}
                       alt={option.name}
                       className="max-w-full max-h-full object-contain p-1"
-                      onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
+                      onError={(e) => (e.currentTarget.style.display = 'none')}
                     />
                   </div>
                   <div>
@@ -196,19 +210,19 @@ export default function TopUpRLUSD({
               </div>
 
               <div className="flex flex-wrap gap-2 mt-3">
-                {option.methods.map((m) => (
-                  <span key={m} className="text-xs bg-zinc-700 px-2 py-1 rounded">
-                    {m === 'visa' && 'Visa'}
-                    {m === 'mastercard' && 'Mastercard'}
-                    {m === 'googlepay' && 'Google Pay'}
-                    {m === 'applepay' && 'Apple Pay'}
+                {option.methods.map((method) => (
+                  <span key={method} className="text-xs bg-zinc-700 px-2 py-1 rounded">
+                    {method === 'visa' && 'Visa'}
+                    {method === 'mastercard' && 'Mastercard'}
+                    {method === 'googlepay' && 'Google Pay'}
+                    {method === 'applepay' && 'Apple Pay'}
                   </span>
                 ))}
               </div>
             </a>
           ))}
 
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-zinc-500 pt-2">
             RLUSD is sent directly to the wallet address shown above.
           </p>
         </div>
@@ -217,20 +231,22 @@ export default function TopUpRLUSD({
       {/* Swap Tab */}
       {activeTab === 'swap' && (
         <div className="space-y-5">
-          {xrpBalance > 1.5 && showAmounts && (
-            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">
-              <p className="text-emerald-400 text-sm">
-                You have <strong>{xrpBalance.toFixed(2)} XRP</strong> ready to swap
-              </p>
-            </div>
-          )}
-
-          {xrpBalance <= 1.5 && showAmounts && (
-            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-              <p className="text-yellow-400 text-sm">
-                Warning: Low XRP — send more XRP first, then swap to RLUSD
-              </p>
-            </div>
+          {showAmounts && (
+            <>
+              {xrpBalance > 1.5 ? (
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">
+                  <p className="text-emerald-400 text-sm">
+                    You have <strong>{xrpBalance.toFixed(2)} XRP</strong> ready to swap
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                  <p className="text-yellow-400 text-sm">
+                    Warning: Low XRP — send more XRP first, then swap to RLUSD
+                  </p>
+                </div>
+              )}
+            </>
           )}
 
           <p className="text-zinc-400 text-sm">Swap on XRPL DEX (3–5 s settlement):</p>
@@ -254,7 +270,7 @@ export default function TopUpRLUSD({
                       src={option.logo}
                       alt={option.name}
                       className="w-10 h-10 object-contain rounded bg-white p-1"
-                      onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
+                      onError={(e) => (e.currentTarget.style.display = 'none')}
                     />
                   )}
                   <div>
@@ -276,16 +292,17 @@ export default function TopUpRLUSD({
             ))}
           </div>
 
+          {/* CEX section */}
           <div className="border-t border-zinc-800 pt-5">
             <p className="text-xs text-zinc-500 mb-3">For larger amounts — centralized exchanges:</p>
-            <div className="grid grid-cols-2 gap-2">
-{cexOptions.map((ex) => (
-
-<a key={ex.name}
-href={ex.url}
-target="_blank"
-rel="noopener noreferrer"
-className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg text-xs transition"
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {cexOptions.map((ex) => (
+                <a
+                  key={ex.name}
+                  href={ex.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg text-xs transition"
                 >
                   {ex.logo && <img src={ex.logo} alt={ex.name} className="w-5 h-5 object-contain" />}
                   <span>{ex.name}</span>
@@ -306,5 +323,5 @@ className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 px-3 py-2 round
         </div>
       )}
     </div>
-);
+  );
 }

@@ -2128,240 +2128,14 @@ onClick={async () => {
 </div>
 
 {/* ============================================================= */}
-{/* WALLET BALANCE (for Xaman users) */}
-{/* ============================================================= */}
-{walletType === 'xaman' && walletAddress && store && (
-  <div id="wallet-balance" className="bg-zinc-900/95 border border-zinc-800 rounded-xl p-6">
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="text-lg font-bold">Wallet Balance</h2>
-      <button
-        onClick={() => setShowAmounts(!showAmounts)}
-        className="text-zinc-400 hover:text-white transition"
-      >
-        {showAmounts ? (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-        ) : (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-          </svg>
-        )}
-      </button>
-    </div>
-
-    {/* State 1: Wallet not funded (no XRP) */}
-{walletXrpBalance < 1 && (
-  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center">
-    <div className="text-4xl mb-3">⚠️</div>
-    <h3 className="text-xl font-bold text-red-400 mb-2">Wallet Not Activated</h3>
-    <p className="text-zinc-400 mb-4">
-      Your wallet needs at least <strong className="text-white">1 XRP</strong> to activate and set up the RLUSD trustline.
-    </p>
-    <div className="bg-zinc-800/90 rounded-lg p-4 mb-4">
-      <p className="text-zinc-500 text-sm mb-2">Send XRP to:</p>
-      <div className="flex items-center gap-2">
-        <code className="flex-1 bg-zinc-900/95 px-3 py-2 rounded text-xs font-mono text-emerald-400 overflow-x-auto">
-          {walletAddress}
-        </code>
-        <button
-          onClick={() => copyToClipboard(walletAddress || '', 'wallet_address')}
-          className="bg-zinc-700 hover:bg-zinc-600 px-3 py-2 rounded text-sm transition"
-        >
-          {copied === 'wallet_address' ? '✓' : 'Copy'}
-        </button>
-      </div>
-    </div>
-    <button
-      onClick={() => setShowQR(!showQR)}
-      className="text-blue-400 hover:text-blue-300 text-sm transition"
-    >
-      {showQR ? '▼ Hide QR Code' : '▶ Show QR Code to Scan'}
-    </button>
-    {showQR && (
-      <div className="mt-4 flex justify-center">
-        <img 
-          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${walletAddress}`}
-          alt="Wallet QR Code"
-          className="rounded-lg"
-        />
-      </div>
-    )}
-    <button
-      onClick={refreshWalletStatus}
-      className="mt-4 block w-full text-zinc-500 hover:text-zinc-300 text-sm transition"
-    >
-      ↻ Refresh Balance
-    </button>
-  </div>
-)}
-
-    {/* State 2: Funded but no RLUSD trustline */}
-{walletXrpBalance >= 1 && walletNeedsTrustline && (
-  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6 text-center">
-    <div className="text-4xl mb-3">🔗</div>
-    <h3 className="text-xl font-bold text-yellow-400 mb-2">Add RLUSD Trustline</h3>
-    <p className="text-zinc-400 mb-4">
-      Your wallet is activated! Now add the <strong className="text-white">RLUSD trustline</strong> in Xaman to receive payments.
-    </p>
-    <div className="bg-zinc-800/90 rounded-lg p-4">
-      <p className="text-zinc-300 text-sm mb-2"><strong>In Xaman app:</strong></p>
-      <ol className="text-zinc-400 text-sm text-left space-y-1">
-        <li>1. Go to Settings → Advanced → Add Trustline</li>
-        <li>2. Search for <strong className="text-white">RLUSD</strong></li>
-        <li>3. Confirm the trustline transaction</li>
-      </ol>
-    </div>
-    
-      <a href="/trustline"
-      target="_blank"
-      className="mt-4 inline-block text-blue-400 hover:text-blue-300 text-sm transition"
-    >
-      📖 View Full Trustline Setup Guide
-    </a>
-    <button
-      onClick={refreshWalletStatus}
-      className="mt-4 block w-full bg-yellow-500 hover:bg-yellow-400 text-black font-semibold px-6 py-2 rounded-lg transition"
-    >
-      I've Added the Trustline → Check Status
-    </button>
-  </div>
-)}
-    {/* State 3: Ready but no RLUSD balance */}
-{walletXrpBalance >= 1 && !walletNeedsTrustline && walletRlusdBalance === 0 && (
-  <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6">
-    <div className="grid grid-cols-2 gap-4 mb-4">
-      <div className="bg-zinc-800/90 rounded-lg p-4">
-        <p className="text-zinc-400 text-sm mb-1">RLUSD</p>
-        <p className="text-xl font-bold text-yellow-400">
-          {showAmounts ? '$0.00' : '••••••'}
-        </p>
-      </div>
-      <div className="bg-zinc-800/90 rounded-lg p-4">
-        <p className="text-zinc-400 text-sm mb-1">XRP</p>
-        <p className="text-xl font-bold">
-          {showAmounts ? walletXrpBalance.toFixed(2) : '••••••'}
-        </p>
-      </div>
-    </div>
-
-    <div className="text-center">
-      <div className="text-4xl mb-3">💰</div>
-      <h3 className="text-xl font-bold text-blue-400 mb-2">Top Up RLUSD</h3>
-      <p className="text-zinc-400 mb-4">
-        Your wallet is ready! Add <strong className="text-white">RLUSD</strong> to start paying affiliate commissions.
-      </p>
-    </div>
-
-    <div className="bg-zinc-800/90 rounded-lg p-4 mb-4">
-      <p className="text-zinc-500 text-sm mb-2">Send RLUSD to:</p>
-      <div className="flex items-center gap-2">
-        <code className="flex-1 bg-zinc-900/95 px-3 py-2 rounded text-xs font-mono text-emerald-400 overflow-x-auto">
-          {walletAddress}
-        </code>
-        <button
-          onClick={() => copyToClipboard(walletAddress || '', 'wallet_address')}
-          className="bg-zinc-700 hover:bg-zinc-600 px-3 py-2 rounded text-sm transition"
-        >
-          {copied === 'wallet_address' ? '✓' : 'Copy'}
-        </button>
-      </div>
-    </div>
-    <button
-      onClick={() => setShowQR(!showQR)}
-      className="text-blue-400 hover:text-blue-300 text-sm transition"
-    >
-      {showQR ? '▼ Hide QR Code' : '▶ Show QR Code to Scan'}
-    </button>
-    {showQR && (
-      <div className="mt-4 flex justify-center">
-        <img 
-          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${walletAddress}`}
-          alt="Wallet QR Code"
-          className="rounded-lg"
-        />
-      </div>
-    )}
-    <button
-      onClick={refreshWalletStatus}
-      className="mt-4 block w-full text-zinc-500 hover:text-zinc-300 text-sm transition"
-    >
-      ↻ Refresh Balance
-    </button>
-  </div>
-)}
-
-    {/* State 4: Wallet ready with RLUSD */}
-    {walletXrpBalance >= 1 && !walletNeedsTrustline && walletRlusdBalance > 0 && (
-      <>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-zinc-800/90 rounded-lg p-4">
-            <p className="text-zinc-400 text-sm mb-1">RLUSD</p>
-            <p className="text-xl font-bold text-emerald-400">
-              {showAmounts ? `$${walletRlusdBalance.toFixed(2)}` : '••••••'}
-            </p>
-          </div>
-          <div className="bg-zinc-800/90 rounded-lg p-4">
-            <p className="text-zinc-400 text-sm mb-1">XRP</p>
-            <p className="text-xl font-bold">
-              {showAmounts ? walletXrpBalance.toFixed(2) : '••••••'}
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mt-4">
-          <p className="text-blue-400 text-sm font-medium mb-2">💡 Top up in Xaman</p>
-          <p className="text-zinc-400 text-sm mb-3">
-            Send RLUSD to your wallet address to pay affiliate commissions.
-          </p>
-          <div className="flex items-center gap-2 mb-3">
-            <code className="flex-1 bg-zinc-800/90 px-3 py-2 rounded text-xs font-mono text-emerald-400 overflow-x-auto">
-              {walletAddress}
-            </code>
-            <button
-              onClick={() => copyToClipboard(walletAddress || '', 'wallet_address')}
-              className="bg-zinc-800/90 hover:bg-zinc-700 px-3 py-2 rounded text-sm transition"
-            >
-              {copied === 'wallet_address' ? '✓' : 'Copy'}
-            </button>
-          </div>
-          <button
-            onClick={() => setShowQR(!showQR)}
-            className="text-blue-400 hover:text-blue-300 text-sm transition flex items-center gap-2"
-          >
-            {showQR ? '▼ Hide QR Code' : '▶ Show QR Code'}
-          </button>
-          {showQR && (
-            <div className="mt-3 flex justify-center">
-              <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${walletAddress}`}
-                alt="Wallet QR Code"
-                className="rounded-lg"
-              />
-            </div>
-          )}
-        </div>
-
-        <button
-          onClick={refreshWalletStatus}
-          className="mt-4 w-full text-zinc-500 hover:text-zinc-300 text-sm transition"
-        >
-          ↻ Refresh Balance
-        </button>
-      </>
-    )}
-  </div>
-)}
-
-{/* ============================================================= */}
 {/* WALLET FUNDING (show for Web3Auth wallets that need funding or trustline) */}
 {/* ============================================================= */}
-{(walletNeedsFunding || walletNeedsTrustline) && walletType === 'web3auth' && walletAddress && (
+{(walletNeedsFunding || walletNeedsTrustline) && walletAddress && (
   <div id="wallet-funding">
   <WalletFunding
-    walletAddress={walletAddress}
-    onFunded={() => {
+  walletAddress={walletAddress}
+  walletType={walletType}
+  onFunded={() => {
       console.log('Wallet funded!');
       setWalletNeedsFunding(false);
     }}
@@ -2400,18 +2174,19 @@ onClick={async () => {
       onToggle={() => toggleSection('wallet-funding')}
     >
       <TopUpRLUSD
-        walletAddress={walletAddress}
-        xrpBalance={walletXrpBalance}
-        rlusdBalance={walletRlusdBalance}
-        showAmounts={showAmounts}
-        onToggleAmounts={() => setShowAmounts(!showAmounts)} 
-        onRefresh={refreshWalletStatus} 
-      />
+  walletAddress={walletAddress}
+  xrpBalance={walletXrpBalance}
+  rlusdBalance={walletRlusdBalance}
+  showAmounts={showAmounts}
+  onToggleAmounts={() => setShowAmounts(!showAmounts)} 
+  onRefresh={refreshWalletStatus}
+  walletType={walletType}
+/>
     </CollapsibleSection>
 
     <CollapsibleSection dashboardType="vendor"
       id="withdraw"
-      title="BALANCE | WITHDRAW"
+      title="Balance | Withdraw"
       icon={
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
