@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import BackgroundVideo from './BackgroundVideo';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
 
@@ -303,8 +304,14 @@ const completeCustomerSignup = async (wallet: string) => {
   const walletOptionsEnabled = !requireTrustline || trustlineConfirmed;
 
   return (
-  <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
-    <main className={`max-w-xl mx-auto px-6 pb-6 min-h-[calc(100vh-200px)] flex items-start justify-center ${storagePrefix === 'vendor' ? 'pt-12' : 'pt-8'}`}>
+  <div className="min-h-screen bg-[#0d0d0d] text-white font-sans relative">
+    {/* Background Video - same for both vendor and affiliate */}
+    <BackgroundVideo 
+      src="/affiliate-hq.webm"
+      overlay={true}
+    />
+    
+    <main className={`relative z-10 max-w-xl mx-auto px-6 pb-6 min-h-[calc(100vh-200px)] flex items-start justify-center ${storagePrefix === 'vendor' ? 'pt-12' : 'pt-8'}`}>
       <div className="w-full">
         {/* Title - SVG Badge Style */}
         <div className="flex flex-col items-center mb-6 mt-4">
@@ -395,17 +402,18 @@ const completeCustomerSignup = async (wallet: string) => {
   <div className="space-y-4">
 
     {/* Terms Agreement - Above all cards */}
-<label className="flex items-center justify-center gap-2 cursor-pointer">
+<label className="flex items-center justify-center gap-2 cursor-pointer text-sm text-zinc-400 hover:text-zinc-300">
   <input
     type="checkbox"
     checked={termsAccepted}
     onChange={(e) => setTermsAccepted(e.target.checked)}
+    className="w-4 h-4"
   />
-  <span className="text-xs text-zinc-600">
+  <span>
     I agree to the{' '}
-    <a href="/terms" target="_blank" className="text-zinc-500 hover:text-zinc-300 underline">Terms of Service</a>
+    <a href="/terms" target="_blank" className="text-sky-400 hover:underline">Terms of Service</a>
     {' '}and{' '}
-    <a href="/privacy" target="_blank" className="text-zinc-500 hover:text-zinc-300 underline">Privacy Policy</a>
+    <a href="/privacy" target="_blank" className="text-sky-400 hover:underline">Privacy Policy</a>
   </span>
 </label>
 
@@ -606,7 +614,7 @@ const completeCustomerSignup = async (wallet: string) => {
 
 {/* YAOFUS Instant Badge - Footer */}
 {/* YAOFUS Instant Badge - Footer */}
-<footer className="py-4 -mt-8 flex flex-col items-center gap-0.5">
+<footer className="relative z-10 py-4 -mt-8 flex flex-col items-center gap-0.5">
   <span className="text-zinc-500 text-[10px] font-medium tracking-wider">SECURE</span>
   <span className="text-base font-extrabold tracking-widest">
     <span className="text-emerald-500">Y</span>

@@ -1328,9 +1328,8 @@ setSetupProgress(null);
   if (step === 'login') {
     return (
       <>
-        <DashboardHeader />
         <LoginScreen 
-onLogin={(wallet, method, extras) => {
+          onLogin={(wallet, method, extras) => {
 setWalletAddress(wallet);
 setWalletType(method);
 if (extras?.xamanUserToken) setXamanUserToken(extras.xamanUserToken);

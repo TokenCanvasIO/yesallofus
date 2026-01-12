@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import InstallAppButton from '@/components/InstallAppButton';
+import BackgroundVideo from '@/components/BackgroundVideo';
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -11,10 +12,6 @@ export default function WelcomePage() {
   const [error, setError] = useState<string | null>(null);
 
   const handleSelection = async (userType: 'partner' | 'member' | 'affiliate') => {
-    if (!agreedToTerms) {
-      setError('Please agree to the Terms and Privacy Policy to continue');
-      return;
-    }
     
     setIsLoading(userType);
     setError(null);
@@ -62,9 +59,12 @@ export default function WelcomePage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col">
-      {/* Custom animations */}
-      <style jsx global>{`
+  <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col relative">
+    {/* Background Video */}
+    <BackgroundVideo src="/affiliate-hq.webm" overlay={true} />
+    
+    {/* Custom animations */}
+    <style jsx global>{`
         @keyframes breathe {
   0%, 100% { transform: scale(1.2); opacity: 0.3; }
   50% { transform: scale(1.5); opacity: 0.5; }
@@ -104,34 +104,23 @@ export default function WelcomePage() {
         .delay-400 { animation-delay: 0.4s; }
       `}
       </style>
-
-     {/* Subtle gradient background with noise to prevent banding */}
-<div className="fixed inset-0 pointer-events-none">
-  <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/50 via-emerald-950/10 to-transparent" />
-  <svg className="absolute inset-0 w-full h-full opacity-[0.05] mix-blend-soft-light">
-    <filter id="noise">
-      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch" />
-    </filter>
-    <rect width="100%" height="100%" filter="url(#noise)" />
-  </svg>
-</div>
       
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-12 relative z-10">
+      <main className="flex-1 flex flex-col items-center justify-start px-4 py-2 relative z-10">
         <div className="w-full max-w-md">
           
           {/* Logo */}
-          <div className="flex flex-col items-center justify-center mb-10">
-            <div className="relative mb-4">
+          <div className="flex flex-col items-center justify-center mb-6">
+            <div className="relative mb-3">
               <div className="absolute inset-0 bg-emerald-500/40 blur-2xl rounded-full animate-breathe scale-150" />
               <div className="logo-container rounded-2xl">
   <img 
     src="https://yesallofus.com/dltpayslogo1.png" 
     alt="YesAllOfUs" 
-    className="w-20 h-20 rounded-2xl relative z-10"
+    className="w-16 h-16 rounded-2xl relative z-10"
   />
 </div>
             </div>
-            <h1 className="text-4xl font-bold tracking-tight">YesAllOfUs</h1>
+            <h1 className="text-3xl font-bold tracking-tight">YesAllOfUs</h1>
             <div className="mt-2 mb-1">
               <svg viewBox="0 0 160 28" className="w-36 h-7 mx-auto">
                 <defs>
@@ -150,17 +139,17 @@ export default function WelcomePage() {
           </div>
 
           {/* User Type Selection */}
-<div className="mb-8">
+<div className="mb-6">
   
   {/* Install App Button */}
 <InstallAppButton />
   
-  <div className="grid grid-cols-2 gap-3">
+  <div className="grid grid-cols-2 gap-2">
               {/* Partner */}
               <button
                 onClick={() => router.push('/dashboard')}
                 disabled={isLoading !== null}
-                className={`group p-6 rounded-2xl border transition-all duration-300 animate-fade-in-up delay-100 ${
+                className={`group p-4 rounded-2xl border transition-all duration-300 animate-fade-in-up delay-100 ${
                   isLoading === 'partner'
                     ? 'border-emerald-500 bg-emerald-500/10'
                     : 'border-transparent bg-zinc-800/30 hover:border-emerald-500/50 hover:bg-zinc-800/50 hover:shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)]'
@@ -168,13 +157,13 @@ export default function WelcomePage() {
               >
                 {isLoading === 'partner' ? <LoadingSpinner /> : (
                   <>
-                    <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
                       </svg>
                     </div>
-                    <p className="font-semibold text-sm text-white">Partner</p>
-                    <p className="text-zinc-500 text-xs mt-1">Accept payments</p>
+                    <p className="font-semibold text-xs text-white">Partner</p>
+<p className="text-zinc-500 text-[10px] mt-0.5">Accept payments</p>
                   </>
                 )}
               </button>
@@ -183,7 +172,7 @@ export default function WelcomePage() {
               <button
                 onClick={() => handleSelection('member')}
                 disabled={isLoading !== null}
-                className={`group p-6 rounded-2xl border transition-all duration-300 animate-fade-in-up delay-200 ${
+                className={`group p-4 rounded-2xl border transition-all duration-300 animate-fade-in-up delay-200 ${
                   isLoading === 'member'
                     ? 'border-emerald-500 bg-emerald-500/10'
                     : 'border-transparent bg-zinc-800/30 hover:border-sky-500/50 hover:bg-zinc-800/50 hover:shadow-[0_0_30px_-5px_rgba(14,165,233,0.3)]'
@@ -191,7 +180,7 @@ export default function WelcomePage() {
               >
                 {isLoading === 'member' ? <LoadingSpinner /> : (
                   <>
-                    <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-sky-500/20 to-sky-600/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-gradient-to-br from-sky-500/20 to-sky-600/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <svg className="w-5 h-5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                       </svg>
@@ -206,7 +195,7 @@ export default function WelcomePage() {
               <button
                 onClick={() => handleSelection('affiliate')}
                 disabled={isLoading !== null}
-                className={`group p-6 rounded-2xl border transition-all duration-300 animate-fade-in-up delay-300 ${
+                className={`group p-4 rounded-2xl border transition-all duration-300 animate-fade-in-up delay-300 ${
                   isLoading === 'affiliate'
                     ? 'border-emerald-500 bg-emerald-500/10'
                     : 'border-transparent bg-zinc-800/30 hover:border-amber-500/50 hover:bg-zinc-800/50 hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.3)]'
@@ -214,7 +203,7 @@ export default function WelcomePage() {
               >
                 {isLoading === 'affiliate' ? <LoadingSpinner /> : (
                   <>
-                    <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
                       </svg>
@@ -242,27 +231,6 @@ export default function WelcomePage() {
             </div>
           </div>
 
-          {/* Terms */}
-          <div className="mb-6 bg-zinc-900/30 border border-zinc-800/50 rounded-xl p-4 backdrop-blur-sm animate-fade-in-up delay-400">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={agreedToTerms}
-                onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="mt-0.5 w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer"
-              />
-              <span className="text-zinc-400 text-sm leading-relaxed">
-                I agree to the{' '}
-                <a href="/terms" className="text-emerald-400 hover:text-emerald-300 transition-colors">Terms of Service</a>
-                {' '}and{' '}
-                <a href="/privacy" className="text-emerald-400 hover:text-emerald-300 transition-colors">Privacy Policy</a>
-              </span>
-            </label>
-            <p className="text-zinc-600 text-xs mt-3 pl-7 leading-relaxed">
-              A secure, non-custodial wallet will be created using your social account.
-            </p>
-          </div>
-
           {/* Error */}
           {error && (
             <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-xl p-4">
@@ -280,7 +248,7 @@ export default function WelcomePage() {
         
       </main>
 
-      <footer className="p-6 text-center relative z-10">
+      <footer className="-mt-1 py-1 px-3 text-center relative z-10">
         <p className="text-zinc-700 text-xs">© 2025 YesAllOfUs. All rights reserved.</p>
       </footer>
     </div>
