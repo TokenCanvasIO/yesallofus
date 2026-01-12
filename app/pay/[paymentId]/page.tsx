@@ -389,19 +389,33 @@ useEffect(() => {
           const result = await res.json();
 
           if (result.success) {
-            setTxHash(result.tx_hash);
-            
-            // Move to next split or show success
-            if (splits && currentSplitIndex < splits.length - 1) {
-              setCurrentSplitIndex(prev => prev + 1);
-            } else {
-              setAllPaid(true);
-            }
+  setTxHash(result.tx_hash);
+  setError(null); // Clear any previous errors
+  
+  // Mark current split as paid
+  if (splits) {
+    setSplits(prev => prev!.map((s, idx) => 
+      idx === currentSplitIndex ? { ...s, status: 'paid' } : s
+    ));
+  }
+  
+  // Show success toast
+  setShowToast(true);
+setTimeout(() => setShowToast(false), 2500);
+  
+  // Move to next split or show success
+  if (splits && currentSplitIndex < splits.length - 1) {
+    setTimeout(() => {
+      setCurrentSplitIndex(prev => prev + 1);
+    }, 500); // Small delay so user sees the success state
+  } else {
+    setAllPaid(true);
+  }
 
-            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-          } else {
-            setError(result.error || 'Payment failed');
-          }
+  if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+} else {
+  setError(result.error || 'Payment failed');
+}
         } catch (err) {
           setError('Payment failed');
         } finally {
