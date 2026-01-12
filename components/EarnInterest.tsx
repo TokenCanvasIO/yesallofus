@@ -184,6 +184,7 @@ interface EarnInterestProps {
   noBorder?: boolean;
   rightColumnRef?: React.RefObject<HTMLDivElement | null>;
   openSections?: Record<string, boolean>;
+  dashboardType?: 'vendor' | 'affiliate';
 }
 
 // Base height of the card without products (header + stats + button + footer)
@@ -193,7 +194,7 @@ const SMALL_CARD_HEIGHT = 60;
 // Height of each full modal
 const FULL_MODAL_HEIGHT = 220;
 
-export default function EarnInterest({ noBorder = false, rightColumnRef, openSections = {} }: EarnInterestProps) {
+export default function EarnInterest({ noBorder = false, rightColumnRef, openSections = {}, dashboardType = 'vendor' }: EarnInterestProps) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isTwoColumn, setIsTwoColumn] = useState(false);
@@ -258,20 +259,20 @@ export default function EarnInterest({ noBorder = false, rightColumnRef, openSec
       </div>
 
       {/* Preview Stats */}
-      <div className="grid grid-cols-3 gap-3 mt-5">
-        <div className="bg-zinc-900/50 rounded-lg p-3 text-center">
-          <p className="text-indigo-400 text-xl font-bold">4.5%</p>
-          <p className="text-zinc-500 text-xs">Flexible APY</p>
-        </div>
-        <div className="bg-zinc-900/50 rounded-lg p-3 text-center">
-          <p className="text-purple-400 text-xl font-bold">6.0%</p>
-          <p className="text-zinc-500 text-xs">90-Day Fixed</p>
-        </div>
-        <div className="bg-zinc-900/50 rounded-lg p-3 text-center">
-          <p className="text-emerald-400 text-xl font-bold">8.5%</p>
-          <p className="text-zinc-500 text-xs">Liquidity Pools</p>
-        </div>
-      </div>
+<div className="grid grid-cols-3 gap-3 mt-5">
+  <div className="bg-zinc-900/50 rounded-lg p-3 text-center">
+    <p className={`text-xl font-bold ${dashboardType === 'vendor' ? 'text-emerald-400' : 'text-cyan-400'}`}>4.5%</p>
+    <p className="text-zinc-500 text-xs">Flexible APY</p>
+  </div>
+  <div className="bg-zinc-900/50 rounded-lg p-3 text-center">
+    <p className={`text-xl font-bold ${dashboardType === 'vendor' ? 'text-teal-400' : 'text-blue-400'}`}>6.0%</p>
+    <p className="text-zinc-500 text-xs">90-Day Fixed</p>
+  </div>
+  <div className="bg-zinc-900/50 rounded-lg p-3 text-center">
+    <p className={`text-xl font-bold ${dashboardType === 'vendor' ? 'text-green-400' : 'text-violet-400'}`}>8.5%</p>
+    <p className="text-zinc-500 text-xs">Liquidity Pools</p>
+  </div>
+</div>
 
       {/* Dynamic product display based on available height */}
       {(smallCards.length > 0 || fullModals.length > 0) && (

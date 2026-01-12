@@ -297,10 +297,10 @@ export default function MilestoneChecklist({
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1">
-            <span className="font-medium">Your Progress</span>
-            <span className="text-zinc-500 text-sm">{completed}/{total}</span>
-          </div>
-          <div className="flex items-center gap-3 flex-1 max-w-xs">
+  <span className="font-medium">Your Progress</span>
+  <span className="text-zinc-500 text-sm mr-2">{completed}/{total}</span>
+</div>
+<div className="flex items-center gap-3 flex-1 max-w-xs">
             <div className="h-2 bg-zinc-800 rounded-full flex-1 overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-emerald-500 to-sky-500 transition-all duration-500"
@@ -394,11 +394,11 @@ export default function MilestoneChecklist({
                 {m.label}
               </span>
               {onInfoClick && (
-                <button
-                  onClick={() => onInfoClick(m.id)}
-                  className="p-1 text-zinc-600 hover:text-sky-400 opacity-0 group-hover:opacity-100 transition-all"
-                  title="Learn more"
-                >
+  <button
+    onClick={() => onInfoClick(m.id)}
+    className="p-1 text-zinc-600 hover:text-sky-400 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
+    title="Learn more"
+  >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
                   </svg>

@@ -2406,7 +2406,7 @@ onClick={async () => {
 
 {/* EARN INTEREST */}
 <div id="earn-interest">
-  <EarnInterest />
+  <EarnInterest dashboardType="vendor" />
 </div>
 
 {/* ============================================================= */}

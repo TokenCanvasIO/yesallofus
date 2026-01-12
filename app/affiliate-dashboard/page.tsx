@@ -860,9 +860,9 @@ return <LoginScreen onLogin={handleLogin} />;
                     </div>
 
                     {/* Earn Interest - grows to fill remaining space */}
-                    <div id="earn-interest" className="mt-4 pt-4 border-t border-zinc-800 flex-1">
-                      <EarnInterest noBorder rightColumnRef={rightColumnRef} openSections={openSections} />
-                    </div>
+<div id="earn-interest" className="mt-4 pt-4 border-t border-zinc-800 flex-1">
+  <EarnInterest noBorder rightColumnRef={rightColumnRef} openSections={openSections} dashboardType="affiliate" />
+</div>
 
                     {!walletStatus.funded && (
                       <div className="mt-4 bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
