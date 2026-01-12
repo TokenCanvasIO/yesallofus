@@ -280,9 +280,8 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
     className="text-zinc-400 hover:text-white transition flex items-center gap-1 cursor-pointer active:scale-95"
   >
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
     </svg>
-    <span className="hidden sm:inline">Back</span>
   </button>
   <button
     onClick={() => router.push('/dashboard')}

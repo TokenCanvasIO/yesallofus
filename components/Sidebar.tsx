@@ -126,7 +126,7 @@ className={`relative w-10 h-10 landscape:w-7 landscape:h-7 rounded-lg overflow-h
         </div>
 
         {/* Navigation - scrollable area */}
-        <nav className="flex-1 p-4 landscape:p-2 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-4 landscape:p-2 space-y-1 overflow-y-auto bg-gradient-to-b from-transparent to-zinc-900/20">
           {navItems
             .filter(item => item.show !== false)
             .map((item) => (
@@ -140,7 +140,7 @@ className={`relative w-10 h-10 landscape:w-7 landscape:h-7 rounded-lg overflow-h
   }`}
 >
                   <span className="text-zinc-500">{item.icon}</span>
-                  <span className="text-sm">{item.label}</span>
+                  <span className="text-[1.09375rem]">{item.label}</span>
                 </button>
                 {onInfoClick && (
                   <button
@@ -165,9 +165,9 @@ className={`relative w-10 h-10 landscape:w-7 landscape:h-7 rounded-lg overflow-h
         </nav>
 
         {/* Footer - fixed at bottom */}
-<div className="flex-shrink-0 p-4 landscape:p-2 border-t border-zinc-800 bg-zinc-900 lg:bg-transparent relative overflow-hidden">
+<div className="flex-shrink-0 p-4 landscape:p-2 border-t border-zinc-800 bg-zinc-900 lg:bg-transparent relative">
   {/* Guernsey Flag Video Background - desktop only */}
-  <div className="hidden lg:block absolute inset-0 z-0">
+  <div className="hidden lg:block absolute inset-0 z-0 pointer-events-none">
     <video
   autoPlay
   loop
@@ -180,12 +180,12 @@ className={`relative w-10 h-10 landscape:w-7 landscape:h-7 rounded-lg overflow-h
     </video>
     <div className="absolute inset-0 bg-black/90"></div>
   </div>
-  <div className="relative z-10">
+  <div className="relative z-10 space-y-1">
           {/* Show Progress Button */}
           {onShowProgress && (
             <button
               onClick={onShowProgress}
-              className="w-full flex items-center gap-3 px-3 py-2 landscape:py-1.5 mb-1 text-zinc-400 hover:text-sky-400 hover:bg-zinc-800 rounded-lg transition"
+              className="w-full flex items-center gap-3 px-3 py-2 landscape:py-1.5 text-zinc-400 hover:text-sky-400 hover:bg-zinc-800 rounded-lg transition"
             >
               <svg className="w-5 h-5 landscape:w-4 landscape:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -199,7 +199,7 @@ className={`relative w-10 h-10 landscape:w-7 landscape:h-7 rounded-lg overflow-h
           {onTakeTour && (
             <button
               onClick={onTakeTour}
-              className="w-full flex items-center gap-3 px-3 py-2 landscape:py-1.5 mb-1 text-zinc-400 hover:text-emerald-400 hover:bg-zinc-800 rounded-lg transition"
+              className="w-full flex items-center gap-3 px-3 py-2 landscape:py-1.5 text-zinc-400 hover:text-emerald-400 hover:bg-zinc-800 rounded-lg transition"
             >
               <svg className="w-5 h-5 landscape:w-4 landscape:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -209,8 +209,8 @@ className={`relative w-10 h-10 landscape:w-7 landscape:h-7 rounded-lg overflow-h
           )}
 
           {/* YAOFU Badge - desktop only */}
-          <div className="hidden lg:flex mt-4 mb-4 justify-center">
-            <svg viewBox="0 0 140 58" className="w-28 h-14">
+          <div className="hidden lg:flex mt-3 mb-3 justify-center">
+            <svg viewBox="0 0 140 58" className="w-28 h-auto">
               <defs>
                 <linearGradient id="yaofuGradientSidebar" x1="0%" y1="0%" x2="100%" y2="0%">
                   <stop offset="0%" stopColor="#10b981" />

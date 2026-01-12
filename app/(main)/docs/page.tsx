@@ -183,9 +183,9 @@ export default function YesAllofUsDocs() {
       </div>
 
       {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-white overflow-y-auto">
-          <nav className="p-6 pt-16 space-y-6">
+{mobileMenuOpen && (
+  <div className="lg:hidden fixed inset-0 z-40 bg-white overflow-y-auto bottom-0" style={{ top: '69px', paddingTop: '5px' }}>
+    <nav className="p-6 pb-32 space-y-6">
             <div>
               <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Getting Started</h3>
               <a href="#overview" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-600">Overview</a>
@@ -282,7 +282,7 @@ export default function YesAllofUsDocs() {
               </div>
               <div className="p-5 border border-slate-200 rounded-xl">
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-2xl mb-3">💰</div>
-                <h4 className="font-semibold text-slate-900 mb-1">5-Level MLM</h4>
+                <h4 className="font-semibold text-slate-900 mb-1">5-Level Commissions</h4>
                 <p className="text-sm text-slate-600">Affiliates earn on their referrals&apos; referrals. Configurable rates.</p>
               </div>
               <div className="p-5 border border-slate-200 rounded-xl">

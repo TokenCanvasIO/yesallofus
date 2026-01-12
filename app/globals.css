@@ -46,3 +46,12 @@ div[class*="cursor-pointer"]:active {
     @apply cursor-pointer;
   }
 }
+html {
+  font-size: 125%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
