@@ -56,6 +56,7 @@ export default function PayPage() {
   // NFC state
   const [nfcSupported, setNfcSupported] = useState(false);
   const [nfcScanning, setNfcScanning] = useState(false);
+  const [nfcController, setNfcController] = useState<AbortController | null>(null);
 
   // Live conversion state
   const [liveRate, setLiveRate] = useState<number | null>(null);
@@ -361,12 +362,19 @@ useEffect(() => {
       return;
     }
 
+    // Abort any existing scan
+    if (nfcController) {
+      nfcController.abort();
+    }
+
+    const controller = new AbortController();
+    setNfcController(controller);
     setNfcScanning(true);
     setError(null);
 
     try {
       const ndef = new (window as any).NDEFReader();
-      await ndef.scan();
+      await ndef.scan({ signal: controller.signal });
 
       ndef.addEventListener('reading', async (event: any) => {
         const uid = event.serialNumber?.replace(/:/g, '').toUpperCase();
@@ -390,7 +398,14 @@ useEffect(() => {
 
           if (result.success) {
   setTxHash(result.tx_hash);
-  setError(null); // Clear any previous errors
+  setError(null);
+  
+  // Stop NFC scanning
+  if (nfcController) {
+    nfcController.abort();
+    setNfcController(null);
+  }
+  setNfcScanning(false);
   
   // Mark current split as paid
   if (splits) {
