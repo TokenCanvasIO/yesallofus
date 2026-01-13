@@ -140,7 +140,7 @@ className={`relative w-10 h-10 landscape:w-7 landscape:h-7 rounded-lg overflow-h
   }`}
 >
                   <span className="text-zinc-500">{item.icon}</span>
-                  <span className="text-[1.09375rem]">{item.label}</span>
+                  <span className="text-sm">{item.label}</span>
                 </button>
                 {onInfoClick && (
                   <button
