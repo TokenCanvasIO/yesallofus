@@ -45,6 +45,25 @@ export default function MilestoneChecklist({
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
 
+  // Color scheme based on type - matches dashboard header gradients
+  const colors = type === 'customer' ? {
+    progressBg: 'from-lime-300 via-teal-400 via-cyan-400 via-blue-500 to-violet-500',
+    completeBg: 'bg-violet-500/10',
+    completeBorder: 'border-violet-500/30',
+    completeText: 'text-violet-400',
+    completeHover: 'hover:text-violet-400',
+    iconComplete: 'text-violet-400',
+    iconIncomplete: 'text-zinc-600'
+  } : {
+    progressBg: 'from-emerald-300 via-emerald-500 via-green-600 to-green-900',
+    completeBg: 'bg-emerald-500/10',
+    completeBorder: 'border-emerald-500/30',
+    completeText: 'text-emerald-400',
+    completeHover: 'hover:text-emerald-400',
+    iconComplete: 'text-emerald-400',
+    iconIncomplete: 'text-zinc-600'
+  };
+
   // Vendor milestones
   const vendorMilestoneConfig: Milestone[] = [
     {
@@ -271,18 +290,18 @@ export default function MilestoneChecklist({
   // Complete and collapsed - minimal bar
   if (isComplete && !isExpanded) {
     return (
-      <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 mb-6 flex items-center justify-between">
+      <div className={`${colors.completeBg} border ${colors.completeBorder} rounded-xl p-4 mb-6 flex items-center justify-between`}>
         <div className="flex items-center gap-3">
-          <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-6 h-6 ${colors.completeText}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span className="text-emerald-400 font-medium">All milestones complete!</span>
-          <span className="text-emerald-400/60 text-sm">{completed}/{total}</span>
+          <span className={`${colors.completeText} font-medium`}>All milestones complete!</span>
+          <span className={`${colors.completeText}/60 text-sm`}>{completed}/{total}</span>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleToggleExpand}
-            className="p-1.5 text-zinc-500 hover:text-emerald-400 transition"
+            className={`p-1.5 text-zinc-500 ${colors.completeHover} transition`}
             title="Expand"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -315,7 +334,7 @@ export default function MilestoneChecklist({
 <div className="flex items-center gap-3 flex-1 max-w-xs">
             <div className="h-2 bg-zinc-800 rounded-full flex-1 overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-emerald-500 to-sky-500 transition-all duration-500"
+                className={`h-full bg-gradient-to-r ${colors.progressBg} transition-all duration-500`}
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -378,7 +397,7 @@ export default function MilestoneChecklist({
 
       <div className="h-2 bg-zinc-800 rounded-full mb-6 overflow-hidden">
         <div 
-          className="h-full bg-gradient-to-r from-emerald-500 to-sky-500 transition-all duration-500"
+          className={`h-full bg-gradient-to-r ${colors.progressBg} transition-all duration-500`}
           style={{ width: `${progressPercent}%` }}
         />
       </div>
@@ -390,10 +409,10 @@ export default function MilestoneChecklist({
             <div 
               key={m.id}
               className={`flex items-center gap-3 p-2 rounded-lg transition group ${
-                isComplete ? 'bg-emerald-500/10' : 'bg-zinc-800/50'
+                isComplete ? colors.completeBg : 'bg-zinc-800/50'
               }`}
             >
-              <div className={`${isComplete ? 'text-emerald-400' : 'text-zinc-600'}`}>
+              <div className={`${isComplete ? colors.iconComplete : colors.iconIncomplete}`}>
                 {isComplete ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -402,7 +421,7 @@ export default function MilestoneChecklist({
                   m.icon
                 )}
               </div>
-              <span className={`flex-1 text-sm ${isComplete ? 'text-emerald-400' : 'text-zinc-400'}`}>
+              <span className={`flex-1 text-sm ${isComplete ? colors.completeText : 'text-zinc-400'}`}>
                 {m.label}
               </span>
               {onInfoClick && (
