@@ -98,39 +98,22 @@ export const tourSteps = [
 export default function AffiliateDashboardTour({ run, onComplete, hasJoinedVendor = false }: AffiliateDashboardTourProps) {
   const { startNextStep, closeNextStep } = useNextStep();
 
-  // Start tour when run changes to true
   useEffect(() => {
     if (run) {
       console.log('Starting affiliate tour...');
-      // Force close first, then start fresh
       try {
         closeNextStep();
       } catch (e) {
         // Ignore if no tour running
       }
       const timeout = setTimeout(() => {
-        console.log('Calling startNextStep...');
         startNextStep('affiliateDashboard');
+        // Save immediately when tour starts - user has seen it
+        onComplete();
       }, 700);
       return () => clearTimeout(timeout);
     }
   }, [run]);
-
-  // Listen for tour completion
-  useEffect(() => {
-    const handleComplete = () => {
-      console.log('Tour completed');
-      onComplete();
-    };
-
-    window.addEventListener('nextstep:complete', handleComplete);
-    window.addEventListener('nextstep:skip', handleComplete);
-    
-    return () => {
-      window.removeEventListener('nextstep:complete', handleComplete);
-      window.removeEventListener('nextstep:skip', handleComplete);
-    };
-  }, [onComplete]);
 
   return null;
 }

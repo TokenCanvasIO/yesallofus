@@ -116,25 +116,12 @@ export default function TakePaymentTour({ run, onComplete }: TakePaymentTourProp
       }
       const timeout = setTimeout(() => {
         startNextStep('takePayment');
+        // Save immediately when tour starts - user has seen it
+        onComplete();
       }, 700);
       return () => clearTimeout(timeout);
     }
   }, [run]);
-
-  useEffect(() => {
-    const handleComplete = () => {
-      console.log('Take payment tour completed');
-      onComplete();
-    };
-
-    window.addEventListener('nextstep:complete', handleComplete);
-    window.addEventListener('nextstep:skip', handleComplete);
-    
-    return () => {
-      window.removeEventListener('nextstep:complete', handleComplete);
-      window.removeEventListener('nextstep:skip', handleComplete);
-    };
-  }, [onComplete]);
 
   return null;
 }

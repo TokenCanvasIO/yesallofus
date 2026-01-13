@@ -122,14 +122,11 @@ export const tourSteps = [
 ];
 
 export default function VendorDashboardTour({ run, onComplete }: VendorDashboardTourProps) {
-  const { startNextStep, closeNextStep } = useNextStep();
+  const { startNextStep, closeNextStep, currentTour, currentStep } = useNextStep();
 
   useEffect(() => {
     if (run) {
       console.log('Starting vendor tour...');
-      
-      // On mobile, skip directly to step 2 (index 2) after welcome
-      const isMobile = window.innerWidth < 640;
       
       try {
         closeNextStep();
@@ -138,25 +135,12 @@ export default function VendorDashboardTour({ run, onComplete }: VendorDashboard
       }
       const timeout = setTimeout(() => {
         startNextStep('vendorDashboard');
+        // Save immediately when tour starts - user has seen it
+        onComplete();
       }, 700);
       return () => clearTimeout(timeout);
     }
   }, [run]);
-
-  useEffect(() => {
-    const handleComplete = () => {
-      console.log('Vendor tour completed');
-      onComplete();
-    };
-
-    window.addEventListener('nextstep:complete', handleComplete);
-    window.addEventListener('nextstep:skip', handleComplete);
-    
-    return () => {
-      window.removeEventListener('nextstep:complete', handleComplete);
-      window.removeEventListener('nextstep:skip', handleComplete);
-    };
-  }, [onComplete]);
 
   return null;
 }
