@@ -341,9 +341,9 @@ const completeCustomerSignup = async (wallet: string) => {
             <line x1="80" y1="60" x2="200" y2="60" stroke="#27272a" strokeWidth="1"/>
             
             {/* Subtitle */}
-            <text x="140" y="76" textAnchor="middle" fill="#a1a1aa" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="400" fontSize="10" letterSpacing="0.5">
-              Sign in to manage your affiliate commissions
-            </text>
+<text x="140" y="76" textAnchor="middle" fill="#a1a1aa" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="400" fontSize="10" letterSpacing="0.5">
+  {storagePrefix === 'vendor' ? 'Sign in to manage your account' : 'Sign in to manage your affiliate commissions'}
+</text>
           </svg>
         </div>
 
@@ -471,7 +471,7 @@ const completeCustomerSignup = async (wallet: string) => {
     EASIEST
   </div>
   {/* Social Icons Stack */}
-  <div className="flex justify-center -space-x-2 mb-4">
+<div className="flex justify-center -space-x-2 mb-3 mt-4">
     {/* Google */}
     <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border-2 border-zinc-900 shadow-lg">
       <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -493,7 +493,7 @@ const completeCustomerSignup = async (wallet: string) => {
     </div>
   </div>
   {/* Title */}
-  <h3 className="font-bold text-center mb-2">Social Login</h3>
+<h3 className="font-bold text-center mb-2">Social Login</h3>
 <p className="text-zinc-400 text-xs text-center mb-4">Instant wallet with Google, Apple & more</p>
 
 {/* Connect Button */}
@@ -508,16 +508,42 @@ const completeCustomerSignup = async (wallet: string) => {
 <button
   onClick={connectCrossmark}
   disabled={!termsAccepted}
-  className={`hidden md:block order-3 group relative bg-zinc-900 border rounded-xl p-6 transition-all ${
+  className={`hidden md:block order-3 group relative bg-zinc-900 border rounded-xl p-4 transition-all ${
     termsAccepted
       ? 'border-zinc-800 hover:border-sky-500 hover:shadow-[0_0_30px_-5px_rgba(14,165,233,0.3)] hover:scale-[1.02]'
       : 'border-zinc-800 opacity-50 cursor-not-allowed'
   }`}
 >
-        {/* Badge */}
-        <div className="absolute top-3 right-3 bg-violet-500/20 text-violet-400 text-[10px] px-2 py-0.5 rounded font-semibold">
-          AUTO
-        </div>
+        {/* Badge - Browser Icons Stack */}
+<div className="absolute top-2 right-2 flex flex-col items-center gap-1">
+  <div className="flex -space-x-1">
+    {/* Chrome */}
+    <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center border border-zinc-800 shadow-sm">
+      <img 
+        src="https://www.google.com/chrome/static/images/chrome-logo.svg" 
+        alt="Chrome" 
+        className="w-4 h-4"
+      />
+    </div>
+    {/* Edge */}
+    <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center border border-zinc-800 shadow-sm">
+      <img 
+        src="https://upload.wikimedia.org/wikipedia/commons/9/98/Microsoft_Edge_logo_%282019%29.svg" 
+        alt="Edge" 
+        className="w-4 h-4"
+      />
+    </div>
+    {/* Brave - Icon only */}
+    <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center border border-zinc-800 shadow-sm">
+      <img 
+        src="https://cdn.svgporn.com/logos/brave.svg" 
+        alt="Brave" 
+        className="w-3.5 h-3.5"
+      />
+    </div>
+  </div>
+  <span className="text-[7px] text-zinc-500 font-semibold tracking-wide">BROWSER</span>
+</div>
 
         {/* Logo */}
         <div className="w-14 h-14 mx-auto mb-3 rounded-xl overflow-hidden">
@@ -525,29 +551,11 @@ const completeCustomerSignup = async (wallet: string) => {
         </div>
 
         {/* Title */}
-        <h3 className="font-bold text-center mb-2">Crossmark</h3>
-        <p className="text-zinc-500 text-xs text-center mb-4 min-h-[32px]">Browser extension with auto-sign</p>
+<h3 className="font-bold text-center mb-2">Crossmark</h3>
+<p className="text-zinc-500 text-xs text-center mb-4">Browser extension with auto-sign</p>
 
-        {/* Expand Icon */}
-        <div className="flex justify-center">
-          <div
-  onClick={(e) => {
-    e.stopPropagation();
-    // Toggle info modal
-  }}
-  className="text-zinc-500 hover:text-sky-400 transition-colors p-2 cursor-pointer"
-  title="Learn more"
-  role="button"
-  tabIndex={0}
->
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-</div>
-        </div>
-
-        {/* Connect Button */}
-        <div className="mt-4 pt-4 border-t border-zinc-800">
+{/* Connect Button */}
+<div className="mt-4 pt-4 border-t border-zinc-800">
           <span className="text-sm font-medium text-center block group-hover:text-sky-400 transition-colors">
             Connect →
           </span>
