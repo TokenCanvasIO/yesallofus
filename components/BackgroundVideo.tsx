@@ -20,15 +20,16 @@ export default function BackgroundVideo({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-0 overflow-hidden">
+    <div className="fixed inset-0 z-0 overflow-hidden" style={{ minHeight: '100vh' }}>
       <video
-        ref={videoRef}
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute min-w-full min-h-full w-full h-full object-cover"
-      >
+  ref={videoRef}
+  autoPlay
+  loop
+  muted
+  playsInline
+  className="absolute min-w-full min-h-full w-full h-full object-cover"
+  style={{ minHeight: '100vh', minWidth: '100vw' }}
+>
         <source src={src} type="video/webm" />
       </video>
       {overlay && <div className="absolute inset-0 bg-black/40" />}

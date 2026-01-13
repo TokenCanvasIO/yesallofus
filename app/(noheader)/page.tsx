@@ -84,16 +84,6 @@ export default function WelcomePage() {
   position: relative;
   overflow: hidden;
 }
-.logo-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  animation: shine 12s ease-in-out infinite;
-}
         .animate-fade-in-up {
           animation: fadeInUp 0.5s ease-out forwards;
           opacity: 0;
