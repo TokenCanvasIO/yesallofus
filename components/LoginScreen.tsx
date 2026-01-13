@@ -311,7 +311,7 @@ const completeCustomerSignup = async (wallet: string) => {
       overlay={true}
     />
     
-    <main className={`relative z-10 max-w-xl mx-auto px-6 pb-6 min-h-[calc(100vh-200px)] flex items-start justify-center pt-4 md:pt-8 ${storagePrefix === 'vendor' ? 'md:pt-12' : ''}`}>
+    <main className={`relative z-10 max-w-xl mx-auto px-6 pb-6 min-h-[calc(100vh-200px)] flex items-start justify-center -mt-3 md:pt-8 ${storagePrefix === 'vendor' ? 'md:pt-12' : ''}`}>
       <div className="w-full">
         {/* Title - SVG Badge Style */}
         <div className="flex flex-col items-center mb-4 mt-2 md:mb-6 md:mt-4">
@@ -403,23 +403,18 @@ const completeCustomerSignup = async (wallet: string) => {
 
     {/* Terms Agreement - Above all cards */}
 <label className="flex items-center justify-center gap-2 cursor-pointer text-xs md:text-sm text-zinc-400 hover:text-zinc-300 px-4 md:px-0">
-  <input
-    type="checkbox"
-    checked={termsAccepted}
-    onChange={(e) => setTermsAccepted(e.target.checked)}
-    className="w-4 h-4 flex-shrink-0 md:inline hidden"
-  />
   <span className="leading-tight text-center md:text-left">
     I agree to the{' '}
     <a href="/terms" target="_blank" className="text-sky-400 hover:underline">Terms of Service</a>
     {' '}and{' '}
-    <a href="/privacy" target="_blank" className="text-sky-400 hover:underline">Privacy Policy</a>
+    <a href="/privacy" target="_blank" className="text-sky-400 hover:underline">Privacy</a>{' '}
+<span className="text-sky-400">Policy</span>
     {' '}
     <input
       type="checkbox"
       checked={termsAccepted}
       onChange={(e) => setTermsAccepted(e.target.checked)}
-      className="w-4 h-4 inline-block md:hidden align-middle"
+      className="w-4 h-4 inline-block align-middle"
     />
   </span>
 </label>
@@ -447,29 +442,11 @@ const completeCustomerSignup = async (wallet: string) => {
         </div>
 
         {/* Title */}
-        <h3 className="font-bold text-center mb-2">Xaman</h3>
-        <p className="text-zinc-500 text-xs text-center mb-4 min-h-[32px]">Mobile wallet with push notifications</p>
+<h3 className="font-bold text-center mb-2">Xaman</h3>
+<p className="text-zinc-500 text-xs text-center mb-4">Mobile wallet with push notifications</p>
 
-        {/* Expand Icon */}
-        <div className="flex justify-center">
-          <div
-  onClick={(e) => {
-    e.stopPropagation();
-    // Toggle info modal
-  }}
-  className="text-zinc-500 hover:text-emerald-400 transition-colors p-2 cursor-pointer"
-  title="Learn more"
-  role="button"
-  tabIndex={0}
->
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-</div>
-        </div>
-
-        {/* Connect Button */}
-        <div className="mt-4 pt-4 border-t border-zinc-800">
+{/* Connect Button */}
+<div className="mt-4 pt-4 border-t border-zinc-800">
           <span className="text-sm font-medium text-center block group-hover:text-emerald-400 transition-colors">
             Connect →
           </span>
@@ -514,28 +491,10 @@ const completeCustomerSignup = async (wallet: string) => {
   </div>
   {/* Title */}
   <h3 className="font-bold text-center mb-2">Social Login</h3>
-  <p className="text-zinc-400 text-xs text-center mb-4 min-h-[32px]">Instant wallet with Google, Apple & more</p>
+<p className="text-zinc-400 text-xs text-center mb-4">Instant wallet with Google, Apple & more</p>
 
-  {/* Expand Icon */}
-  <div className="flex justify-center">
-    <div
-      onClick={(e) => {
-        e.stopPropagation();
-        // Toggle info modal
-      }}
-      className="text-zinc-500 hover:text-emerald-400 transition-colors p-2 cursor-pointer"
-      title="Learn more"
-      role="button"
-      tabIndex={0}
-    >
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    </div>
-  </div>
-
-  {/* Connect Button */}
-  <div className="mt-4 pt-4 border-t border-zinc-800">
+{/* Connect Button */}
+<div className="mt-4 pt-4 border-t border-zinc-800">
     <span className="text-sm font-medium text-center block group-hover:text-emerald-400 transition-colors">
       Connect →
     </span>
@@ -543,10 +502,10 @@ const completeCustomerSignup = async (wallet: string) => {
 </button>
 
       {/* RIGHT: Crossmark */}
-      <button
+<button
   onClick={connectCrossmark}
   disabled={!termsAccepted}
-  className={`order-3 group relative bg-zinc-900 border rounded-xl p-6 transition-all ${
+  className={`hidden md:block order-3 group relative bg-zinc-900 border rounded-xl p-6 transition-all ${
     termsAccepted
       ? 'border-zinc-800 hover:border-sky-500 hover:shadow-[0_0_30px_-5px_rgba(14,165,233,0.3)] hover:scale-[1.02]'
       : 'border-zinc-800 opacity-50 cursor-not-allowed'

@@ -196,12 +196,12 @@ className="text-zinc-400 hover:text-white text-sm transition py-3 border-b borde
   Pricing
 </button>
             <Link 
-              href="/discover-vendors" 
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-zinc-400 hover:text-white text-sm transition py-3 border-b border-zinc-800/50"
-            >
-              Affiliates
-            </Link>
+  href="/affiliate-dashboard" 
+  onClick={() => setMobileMenuOpen(false)}
+  className="text-zinc-400 hover:text-white text-sm transition py-3 border-b border-zinc-800/50"
+>
+  Affiliates
+</Link>
             
             {/* Mobile Resources Section */}
             <div className="py-3 border-b border-zinc-800/50">
