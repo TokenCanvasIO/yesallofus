@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import TourProvider from '@/components/TourProvider';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -75,27 +74,28 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#0d0d0d" />
-  <script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" async></script>
-  <script src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" type="module" async></script>
-  {/* Google Analytics */}
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-13PHKRLJ2R"></script>
-  <script
-  dangerouslySetInnerHTML={{
-    __html: `
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js');
-        });
-      }
-    `,
-  }}
-/>
-</head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0d0d0d" />
+        <script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" async></script>
+        <script src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" type="module" async></script>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-13PHKRLJ2R"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                  navigator.serviceWorker.register('/sw.js');
+                });
+              }
+            `,
+          }}
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-{children}
-</body>
+        <TourProvider>
+          {children}
+        </TourProvider>
+      </body>
     </html>
   );
 }

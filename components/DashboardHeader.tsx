@@ -158,14 +158,15 @@ export default function DashboardHeader({ walletAddress, storeId, onSignOut, sho
           )}
 
           {/* Eye icon - show/hide balances */}
-          {isConnected && onToggleBalances && (
-            <div className="relative group">
-              <button
-                onClick={onToggleBalances}
-                className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
-              >
-                <EyeIcon open={showBalances} />
-              </button>
+{isConnected && onToggleBalances && (
+  <div className="relative group">
+    <button
+      id="balance-toggle"
+      onClick={onToggleBalances}
+      className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
+    >
+      <EyeIcon open={showBalances} />
+    </button>
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
                 {showBalances ? 'Hide balances' : 'Show balances'}
               </span>

@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 
 interface Milestone {
@@ -46,22 +45,51 @@ export default function MilestoneChecklist({
   const [isExpanded, setIsExpanded] = useState(true);
 
   // Color scheme based on type - matches dashboard header gradients
+  // Vendor: emerald -> green gradient
+  // Customer/Affiliate: lime -> teal -> cyan -> blue -> violet gradient
   const colors = type === 'customer' ? {
+    // Affiliate/Customer colors - matching header gradient (green -> teal -> cyan -> blue -> violet)
     progressBg: 'from-lime-300 via-teal-400 via-cyan-400 via-blue-500 to-violet-500',
-    completeBg: 'bg-violet-500/10',
-    completeBorder: 'border-violet-500/30',
-    completeText: 'text-violet-400',
-    completeHover: 'hover:text-violet-400',
-    iconComplete: 'text-violet-400',
-    iconIncomplete: 'text-zinc-600'
-  } : {
-    progressBg: 'from-emerald-300 via-emerald-500 via-green-600 to-green-900',
-    completeBg: 'bg-emerald-500/10',
-    completeBorder: 'border-emerald-500/30',
-    completeText: 'text-emerald-400',
+    // Card backgrounds - exact header gradient colors on dark base
+    completeBg: 'bg-gradient-to-r from-lime-300/15 via-teal-400/15 via-cyan-400/18 via-blue-500/18 to-violet-500/20',
+    completeBorder: 'border-cyan-400/20',
+    // Text with gradient matching header
+    completeTextClass: 'bg-gradient-to-r from-emerald-400 via-teal-400 via-cyan-400 via-blue-400 to-violet-400 bg-clip-text text-transparent',
+    // For SVG icons - solid emerald for ticks
+    iconComplete: 'text-emerald-500',
+    iconIncomplete: 'text-zinc-600',
+    // Hover states
     completeHover: 'hover:text-emerald-400',
+    // Tick - solid emerald (not gradient)
+    tickGradientId: 'customerTickGradient',
+    tickGradient: (
+      <linearGradient id="customerTickGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#10b981" />
+        <stop offset="100%" stopColor="#10b981" />
+      </linearGradient>
+    ),
+  } : {
+    // Vendor colors - matching header gradient
+    progressBg: 'from-emerald-300 via-emerald-500 via-green-600 to-green-900',
+    // Card backgrounds with gradient tint
+    completeBg: 'bg-gradient-to-r from-emerald-500/10 via-green-500/10 to-green-700/10',
+    completeBorder: 'border-emerald-500/30',
+    // Text with gradient
+    completeTextClass: 'bg-gradient-to-r from-emerald-300 via-emerald-400 to-green-500 bg-clip-text text-transparent',
+    // For SVG icons
     iconComplete: 'text-emerald-400',
-    iconIncomplete: 'text-zinc-600'
+    iconIncomplete: 'text-zinc-600',
+    // Hover states
+    completeHover: 'hover:text-emerald-400',
+    // Tick/check gradient
+    tickGradientId: 'vendorTickGradient',
+    tickGradient: (
+      <linearGradient id="vendorTickGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#6ee7b7" />
+        <stop offset="50%" stopColor="#10b981" />
+        <stop offset="100%" stopColor="#15803d" />
+      </linearGradient>
+    ),
   };
 
   // Vendor milestones
@@ -203,7 +231,7 @@ export default function MilestoneChecklist({
     if (collapsed === 'true') {
       setIsExpanded(false);
     }
-    
+
     if (type === 'customer') {
       // Build milestones from props - no API call needed
       const now = new Date().toISOString();
@@ -219,14 +247,10 @@ export default function MilestoneChecklist({
     } else {
       // Vendor - fetch from API with polling
       fetchMilestones();
-      
-      // *** NEW CODE: Poll every 5 seconds for real-time updates ***
       const pollInterval = setInterval(() => {
         fetchMilestones();
       }, 5000);
-      
       return () => clearInterval(pollInterval);
-      // *** END NEW CODE ***
     }
   }, [storeId, walletAddress, autoSignEnabled, type, walletFunded, trustlineSet, tapPayEnabled, nfcCardAdded, joinedAffiliate]);
 
@@ -241,26 +265,14 @@ export default function MilestoneChecklist({
     } catch (err) {
       console.error('Failed to fetch milestones:', err);
     }
-    // *** CHANGED: Only set loading false on first load to prevent flicker ***
     if (loading) {
       setLoading(false);
     }
-    // *** END CHANGE ***
   };
 
   // Calculate completed count
   const completed = Object.values(milestones).filter(v => v !== null).length;
   const total = milestoneConfig.length;
-
-  const formatDate = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString('en-GB', { 
-      day: 'numeric', 
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   const handleToggleExpand = () => {
     const newState = !isExpanded;
@@ -275,6 +287,22 @@ export default function MilestoneChecklist({
 
   const progressPercent = Math.round((completed / total) * 100);
   const isComplete = completed === total;
+
+  // Gradient tick icon component
+  const GradientTick = () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24">
+      <defs>
+        {colors.tickGradient}
+      </defs>
+      <path 
+        stroke={`url(#${colors.tickGradientId})`} 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth={2.5} 
+        d="M5 13l4 4L19 7" 
+      />
+    </svg>
+  );
 
   if (loading) {
     return (
@@ -292,11 +320,20 @@ export default function MilestoneChecklist({
     return (
       <div className={`${colors.completeBg} border ${colors.completeBorder} rounded-xl p-4 mb-6 flex items-center justify-between`}>
         <div className="flex items-center gap-3">
-          <svg className={`w-6 h-6 ${colors.completeText}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
+            <defs>
+              {colors.tickGradient}
+            </defs>
+            <path 
+              stroke={`url(#${colors.tickGradientId})`}
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" 
+            />
           </svg>
-          <span className={`${colors.completeText} font-medium`}>All milestones complete!</span>
-          <span className={`${colors.completeText}/60 text-sm`}>{completed}/{total}</span>
+          <span className={`font-medium ${colors.completeTextClass}`}>All milestones complete!</span>
+          <span className="text-zinc-500 text-sm">{completed}/{total}</span>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -328,10 +365,10 @@ export default function MilestoneChecklist({
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1">
-  <span className="font-medium">Your Progress</span>
-  <span className="text-zinc-500 text-sm mr-2">{completed}/{total}</span>
-</div>
-<div className="flex items-center gap-3 flex-1 max-w-xs">
+            <span className="font-medium">Your Progress</span>
+            <span className="text-zinc-500 text-sm mr-2">{completed}/{total}</span>
+          </div>
+          <div className="flex items-center gap-3 flex-1 max-w-xs">
             <div className="h-2 bg-zinc-800 rounded-full flex-1 overflow-hidden">
               <div 
                 className={`h-full bg-gradient-to-r ${colors.progressBg} transition-all duration-500`}
@@ -368,6 +405,13 @@ export default function MilestoneChecklist({
   // Expanded state
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
+      {/* SVG Defs for gradients - must be in DOM */}
+      <svg width="0" height="0" className="absolute">
+        <defs>
+          {colors.tickGradient}
+        </defs>
+      </svg>
+
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold">Your Progress</h3>
         <div className="flex items-center gap-2">
@@ -404,32 +448,30 @@ export default function MilestoneChecklist({
 
       <div className="space-y-3">
         {milestoneConfig.map((m) => {
-          const isComplete = !!milestones[m.id];
+          const isItemComplete = !!milestones[m.id];
           return (
             <div 
               key={m.id}
-              className={`flex items-center gap-3 p-2 rounded-lg transition group ${
-                isComplete ? colors.completeBg : 'bg-zinc-800/50'
+              className={`flex items-center gap-3 p-3 rounded-lg transition group ${
+                isItemComplete ? colors.completeBg : 'bg-zinc-800/50'
               }`}
             >
-              <div className={`${isComplete ? colors.iconComplete : colors.iconIncomplete}`}>
-                {isComplete ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+              <div className={isItemComplete ? '' : colors.iconIncomplete}>
+                {isItemComplete ? (
+                  <GradientTick />
                 ) : (
                   m.icon
                 )}
               </div>
-              <span className={`flex-1 text-sm ${isComplete ? colors.completeText : 'text-zinc-400'}`}>
+              <span className={`flex-1 text-sm font-medium ${isItemComplete ? colors.completeTextClass : 'text-zinc-400'}`}>
                 {m.label}
               </span>
               {onInfoClick && (
-  <button
-    onClick={() => onInfoClick(m.id)}
-    className="p-1 text-zinc-600 hover:text-sky-400 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
-    title="Learn more"
-  >
+                <button
+                  onClick={() => onInfoClick(m.id)}
+                  className="p-1 text-zinc-600 hover:text-sky-400 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
+                  title="Learn more"
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
                   </svg>

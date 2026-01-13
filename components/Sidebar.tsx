@@ -57,10 +57,11 @@ export default function Sidebar({
       {/* Desktop Collapsed Tab Handle */}
       {isCollapsed && (
   <button
-    onClick={onToggleCollapsed}
-    className="hidden lg:flex fixed left-0 top-1/2 -translate-y-1/2 z-50 w-6 h-24 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 border-l-0 rounded-r-lg items-center justify-center transition-colors animate-pulse"
-    title="Open menu"
-  >
+  id="sidebar-tab"
+  onClick={onToggleCollapsed}
+  className="hidden lg:flex fixed left-0 top-1/2 -translate-y-1/2 z-50 w-6 h-24 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 border-l-0 rounded-r-lg items-center justify-center transition-colors animate-pulse"
+  title="Open menu"
+>
     <svg 
       className="w-4 h-4 text-zinc-400" 
       fill="none" 

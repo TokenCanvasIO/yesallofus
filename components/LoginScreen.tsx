@@ -307,18 +307,18 @@ const completeCustomerSignup = async (wallet: string) => {
   const walletOptionsEnabled = !requireTrustline || trustlineConfirmed;
 
   return (
-  <div className="min-h-screen bg-[#0d0d0d] text-white font-sans relative flex flex-col">
+  <div className="min-h-screen bg-[#0d0d0d] text-white font-sans relative flex flex-col overflow-x-hidden">
     {/* Background Video - same for both vendor and affiliate */}
     <BackgroundVideo 
       src="/affiliate-hq.webm"
       overlay={true}
     />
     
-    <main className="relative z-10 max-w-xl mx-auto px-6 flex-1 flex items-center justify-center py-8">
-      <div className="w-full">
+    <main className="relative z-10 w-full max-w-xl lg:max-w-4xl xl:max-w-5xl mx-auto px-4 sm:px-6 flex-1 flex items-center justify-center py-8">
+  <div className="w-full max-w-full">
         {/* Title - SVG Badge Style */}
         <div className="flex flex-col items-center mb-4 mt-2 md:mb-6 md:mt-4">
-          <svg viewBox="0 0 280 85" className="w-72 h-auto">
+          <svg viewBox="0 0 280 85" className="w-full max-w-72 h-auto">
             <defs>
               <linearGradient id="partnerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor="#10b981" />
@@ -402,10 +402,10 @@ const completeCustomerSignup = async (wallet: string) => {
           
           {/* Login Options - 3 Column Grid */}
 {connecting === 'none' && (
-  <div className="space-y-4">
+  <div className="space-y-4 w-full max-w-full overflow-hidden">
 
     {/* Terms Agreement - Above all cards */}
-<label className="flex items-center justify-center gap-2 cursor-pointer text-xs md:text-sm text-zinc-400 hover:text-zinc-300 px-4 md:px-0">
+<label className="flex items-center justify-center gap-2 cursor-pointer text-xs md:text-sm text-zinc-400 hover:text-zinc-300 px-2 md:px-0 w-full max-w-full">
   <span className="leading-tight text-center md:text-left">
     I agree to the{' '}
     <a href="/terms" target="_blank" className="text-sky-400 hover:underline">Terms of Service</a>
@@ -423,12 +423,12 @@ const completeCustomerSignup = async (wallet: string) => {
 </label>
 
     {/* 3 Column Grid */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 lg:gap-6 w-full max-w-full">
       
       <button
   onClick={connectXaman}
   disabled={!termsAccepted}
-  className={`order-2 md:order-1 group relative bg-zinc-900 border rounded-xl p-4 transition-all ${
+  className={`order-2 md:order-1 group relative bg-zinc-900 border rounded-xl p-4 lg:p-6 xl:p-8 transition-all ${
     termsAccepted
       ? 'border-zinc-800 hover:border-sky-500 hover:shadow-[0_0_30px_-5px_rgba(14,165,233,0.3)] hover:scale-[1.02]'
       : 'border-zinc-800 opacity-50 cursor-not-allowed'
@@ -440,27 +440,27 @@ const completeCustomerSignup = async (wallet: string) => {
         </div>
 
         {/* Logo */}
-        <div className="w-14 h-14 mx-auto mb-3 rounded-xl overflow-hidden">
-          <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-full h-full object-cover" />
-        </div>
+<div className="w-14 h-14 lg:w-20 lg:h-20 xl:w-24 xl:h-24 mx-auto mb-3 lg:mb-4 rounded-xl overflow-hidden">
+  <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-full h-full object-cover" />
+</div>
 
         {/* Title */}
-<h3 className="font-bold text-center mb-2">Xaman</h3>
-<p className="text-zinc-500 text-xs text-center mb-4">Mobile wallet with push notifications</p>
+<h3 className="font-bold text-center mb-2 lg:text-lg xl:text-xl">Xaman</h3>
+<p className="text-zinc-500 text-xs lg:text-sm xl:text-base text-center mb-4">Mobile wallet with push notifications</p>
 
 {/* Connect Button */}
 <div className="mt-4 pt-4 border-t border-zinc-800">
-          <span className="text-sm font-medium text-center block group-hover:text-emerald-400 transition-colors">
-            Connect →
-          </span>
-        </div>
+  <span className="text-sm lg:text-base font-medium text-center block group-hover:text-emerald-400 transition-colors">
+    Connect →
+  </span>
+</div>
       </button>
 
       {/* CENTER: Web3Auth (Primary) */}
 <button
   onClick={connectWeb3Auth}
   disabled={!termsAccepted}
-  className={`order-1 md:order-2 group relative bg-gradient-to-br from-emerald-500/10 to-sky-500/10 border-2 rounded-xl p-4 transition-all ${
+  className={`order-1 md:order-2 group relative bg-gradient-to-br from-emerald-500/10 to-sky-500/10 border-2 rounded-xl p-4 lg:p-6 xl:p-8 transition-all ${
     termsAccepted
       ? 'border-emerald-500/50 hover:border-emerald-500 hover:shadow-[0_0_40px_-5px_rgba(16,185,129,0.4)] hover:scale-[1.02]'
       : 'border-zinc-700 opacity-50 cursor-not-allowed'
@@ -471,10 +471,10 @@ const completeCustomerSignup = async (wallet: string) => {
     EASIEST
   </div>
   {/* Social Icons Stack */}
-<div className="flex justify-center -space-x-2 mb-3 mt-4">
+<div className="flex justify-center -space-x-2 lg:-space-x-3 mb-3 mt-4">
     {/* Google */}
-    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border-2 border-zinc-900 shadow-lg">
-      <svg className="w-5 h-5" viewBox="0 0 24 24">
+    <div className="w-10 h-10 lg:w-14 lg:h-14 bg-white rounded-full flex items-center justify-center border-2 border-zinc-900 shadow-lg">
+  <svg className="w-5 h-5 lg:w-7 lg:h-7" viewBox="0 0 24 24">
         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -493,8 +493,8 @@ const completeCustomerSignup = async (wallet: string) => {
     </div>
   </div>
   {/* Title */}
-<h3 className="font-bold text-center mb-2">Social Login</h3>
-<p className="text-zinc-400 text-xs text-center mb-4">Instant wallet with Google, Apple & more</p>
+<h3 className="font-bold text-center mb-2 lg:text-lg xl:text-xl">Social Login</h3>
+<p className="text-zinc-400 text-xs lg:text-sm xl:text-base text-center mb-4">Instant wallet with Google, Apple & more</p>
 
 {/* Connect Button */}
 <div className="mt-4 pt-4 border-t border-zinc-800">
@@ -508,7 +508,7 @@ const completeCustomerSignup = async (wallet: string) => {
 <button
   onClick={connectCrossmark}
   disabled={!termsAccepted}
-  className={`hidden md:block order-3 group relative bg-zinc-900 border rounded-xl p-4 transition-all ${
+  className={`hidden md:block order-3 group relative bg-zinc-900 border rounded-xl p-4 lg:p-6 xl:p-8 transition-all ${
     termsAccepted
       ? 'border-zinc-800 hover:border-sky-500 hover:shadow-[0_0_30px_-5px_rgba(14,165,233,0.3)] hover:scale-[1.02]'
       : 'border-zinc-800 opacity-50 cursor-not-allowed'
@@ -546,19 +546,19 @@ const completeCustomerSignup = async (wallet: string) => {
 </div>
 
         {/* Logo */}
-        <div className="w-14 h-14 mx-auto mb-3 rounded-xl overflow-hidden">
-          <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-full h-full object-cover" />
-        </div>
+        <div className="w-14 h-14 lg:w-20 lg:h-20 xl:w-24 xl:h-24 mx-auto mb-3 lg:mb-4 rounded-xl overflow-hidden">
+  <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-full h-full object-cover" />
+</div>
 
         {/* Title */}
-<h3 className="font-bold text-center mb-2">Crossmark</h3>
-<p className="text-zinc-500 text-xs text-center mb-4">Browser extension with auto-sign</p>
+<h3 className="font-bold text-center mb-2 lg:text-lg xl:text-xl">Crossmark</h3>
+<p className="text-zinc-500 text-xs lg:text-sm xl:text-base text-center mb-4">Browser extension with auto-sign</p>
 
 {/* Connect Button */}
 <div className="mt-4 pt-4 border-t border-zinc-800">
-          <span className="text-sm font-medium text-center block group-hover:text-sky-400 transition-colors">
-            Connect →
-          </span>
+          <span className="text-sm lg:text-base font-medium text-center block group-hover:text-sky-400 transition-colors">
+  Connect →
+</span>
         </div>
       </button>
     </div>

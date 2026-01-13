@@ -78,3 +78,53 @@ input[type="checkbox"]:checked::after {
   font-size: 10px;
   line-height: 14px;
 }
+/* Tour scroll offset for fixed header */
+#payout-method,
+#wallet-funding,
+#withdraw,
+#pending-customers,
+#commission-rates,
+#affiliate-link,
+#activity,
+#api-credentials,
+#danger-zone,
+#quick-links,
+#auto-sign,
+#earn-interest,
+#earnings,
+#wallet-balances,
+#tap-to-pay,
+#top-up-inner,
+#vendors {
+  scroll-margin-top: 160px;
+}
+#take-payment-btn {
+  scroll-margin-top: 160px;
+}
+#tp-home-btn,
+#tp-store-logo,
+#tp-staff-selector,
+#tp-analytics-btn,
+#tp-pending-btn,
+#tp-display-btn,
+#tp-receipts-btn,
+#tp-products-btn,
+#tp-amount-display,
+#tp-search-bar,
+#tp-products-grid,
+#tp-tips-section,
+#tp-pay-btn,
+#tp-send-link-btn,
+#tp-manual-btn,
+#tp-live-rate {
+  scroll-margin-top: 160px;
+}
+/* Force tour cards to stay on screen on mobile */
+@media (max-width: 640px) {
+  .nextstep-card {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+}

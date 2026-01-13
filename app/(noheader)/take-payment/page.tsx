@@ -7,6 +7,7 @@ import StaffSelector from '@/components/StaffSelector';
 import SendPaymentLink from '@/components/SendPaymentLink';
 import PendingPayments from '@/components/PendingPayments';
 import LiveConversionWidget from '@/components/LiveConversionWidget';
+import TakePaymentTour from '@/components/TakePaymentTour';
 interface Product {
 product_id: string;
 name: string;
@@ -203,6 +204,8 @@ const [showStaffModal, setShowStaffModal] = useState(false);
 // Wallet status for RLUSD
 const [walletReady, setWalletReady] = useState<boolean | null>(null);
 const [settingUpWallet, setSettingUpWallet] = useState(false);
+// State
+const [runTour, setRunTour] = useState(false);
 
 // Convert GBP to RLUSD - Live price from CoinGecko Pro with audit trail
 const convertGBPtoRLUSD = async (gbpAmount: number): Promise<number> => {
@@ -318,6 +321,16 @@ return () => clearInterval(pollInterval);
 // Cart calculations
 const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 const customAmount = parseFloat(manualAmount) || 0;
+
+// Auto-start for first time
+useEffect(() => {
+  if (storeId && !loadingProducts) {
+    const hasSeenTour = localStorage.getItem(`take_payment_tour_completed_${storeId}`);
+    if (!hasSeenTour) {
+      setTimeout(() => setRunTour(true), 1500);
+    }
+  }
+}, [storeId, loadingProducts]);
 
 // Fetch live conversion rate
 useEffect(() => {
@@ -1110,26 +1123,41 @@ return (
 {/* Header */}
 <header className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-zinc-800">
 <div className="max-w-lg mx-auto sm:max-w-none sm:mx-0 w-full px-4 py-3 flex items-center justify-between">
-{/* Left - Home button */}
-<button
-onClick={() => router.push('/dashboard')}
-className="text-zinc-400 hover:text-white transition p-2 active:scale-95 cursor-pointer"
-title="Dashboard"
->
-<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-</svg>
-</button>
-
+{/* Left - Home and Tour buttons */}
+<div className="flex items-center">
+  <button
+    id="tp-home-btn"
+    onClick={() => router.push('/dashboard')}
+    className="text-zinc-400 hover:text-white transition p-2 active:scale-95 cursor-pointer"
+    title="Dashboard"
+  >
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    </svg>
+  </button>
+  <button
+    onClick={() => {
+      setRunTour(false);
+      setTimeout(() => setRunTour(true), 100);
+    }}
+    className="text-zinc-400 hover:text-emerald-400 transition p-2 active:scale-95 cursor-pointer"
+    title="Take Tour"
+  >
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+    </svg>
+  </button>
+</div>
 {/* Center - Logo and Store Name */}
 <div className="flex items-center gap-2 landscape:ml-0 md:absolute md:left-1/2 md:-translate-x-1/2">
-  <button
-    onClick={() => setShowLogoUpload(true)}
-    className={`relative w-8 h-8 rounded-lg overflow-hidden transition flex-shrink-0 cursor-pointer ${
-      storeLogo ? 'hover:opacity-80' : 'border border-zinc-700 hover:border-emerald-500'
-    }`}
-    title="Store logo"
-  >
+<button
+id="tp-store-logo"
+  onClick={() => setShowLogoUpload(true)}
+  className={`relative w-8 h-8 rounded-lg overflow-hidden transition flex-shrink-0 cursor-pointer ${
+    storeLogo ? 'hover:opacity-80' : 'border border-zinc-700 hover:border-emerald-500'
+  }`}
+  title="Store logo"
+>
     {storeLogo ? (
       <img src={storeLogo} alt="Logo" className="w-full h-full object-cover" />
     ) : (
@@ -1144,10 +1172,10 @@ title="Dashboard"
 </div>
 
 {/* Right - Staff selector and icons */}
-<div className="flex items-center gap-1">
+<div id="tp-toolbar" className="flex items-center gap-1">
 {/* Staff Selector - Icon only on mobile, full on desktop */}
 {storeId && walletAddress && (
-  <div className="hidden sm:block">
+  <div id="tp-staff-selector" className="hidden sm:block">
     <StaffSelector
       storeId={storeId}
       walletAddress={walletAddress}
@@ -1170,9 +1198,10 @@ title="Dashboard"
 {/* Analytics */}
 <div className="relative group">
   <button
-    onClick={() => router.push('/analytics')}
-    className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
-  >
+  id="tp-analytics-btn"
+  onClick={() => router.push('/analytics')}
+  className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
+>
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
     </svg>
@@ -1185,9 +1214,10 @@ title="Dashboard"
 {/* Pending Payments */}
 <div className="relative group">
   <button
-    onClick={() => setShowPendingPayments(true)}
-    className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
-  >
+  id="tp-pending-btn"
+  onClick={() => setShowPendingPayments(true)}
+  className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
+>
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
@@ -1200,6 +1230,7 @@ title="Dashboard"
 {/* Customer Display */}
 <div className="relative group">
 <button
+id="tp-display-btn"
 onClick={() => {
   const isPWA = window.matchMedia('(display-mode: standalone)').matches;
   if (isPWA) {
@@ -1221,6 +1252,7 @@ className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-
 {/* Receipts */}
 <div className="relative group">
 <button
+id="tp-receipts-btn"
 onClick={() => router.push('/receipts?from=take-payment')}
 className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
 >
@@ -1235,6 +1267,7 @@ className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-
 {/* Add Products */}
 <div className="relative group">
 <button
+id="tp-products-btn"
 onClick={() => setShowProductsManager(true)}
 className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
 >
@@ -1249,6 +1282,16 @@ className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-
 </div>
 </div>
 </header>
+
+<TakePaymentTour 
+  run={runTour} 
+  onComplete={() => {
+    setRunTour(false);
+    if (storeId) {
+      localStorage.setItem(`take_payment_tour_completed_${storeId}`, 'true');
+    }
+  }}
+/>
 
 {/* Wallet Setup Banner */}
 {walletReady === false && (
@@ -1379,7 +1422,7 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
 {status === 'idle' && (
 <>
 {/* Amount Display */}
-<div className="py-8 text-center">
+<div id="tp-amount-display" className="py-8 text-center">
 <p className="text-zinc-500 text-sm mb-1">
 {cartCount > 0 ? `${cartCount} item${cartCount > 1 ? 's' : ''}` : 'Total'}
 </p>
@@ -1397,6 +1440,7 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
 {!showManualEntry ? (
 <>
 {/* Products */}
+<div id="tp-products-area">
 {loadingProducts ? (
 <div className="text-center py-12">
 <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
@@ -1418,6 +1462,7 @@ className="text-emerald-400 hover:text-emerald-300 font-medium"
 {/* Search Bar */}
 <div className="mb-4">
 <input
+id="tp-search-bar"
 type="text"
 placeholder="Search products..."
 value={searchQuery}
@@ -1477,7 +1522,7 @@ activeCategory === cat
 </div>
     )}
 {/* Products Grid */}
-<div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+<div id="tp-products-grid" className="grid grid-cols-3 sm:grid-cols-4 gap-3">
 {filteredProducts.map((product) => {
 const inCart = cart.find(item => item.product_id === product.product_id);
 return (
@@ -1508,6 +1553,8 @@ inCart ? 'border-emerald-500 bg-emerald-500/10' : 'border-zinc-800'
     )}
 </div>
 )}
+</div>
+
 {/* Cart */}
 {cart.length > 0 && (
 <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-6">
@@ -1578,7 +1625,7 @@ className="w-full text-zinc-500 hover:text-white text-sm py-2 transition"
 </div>
             )}
 {/* Tip Section */}
-<div className="mb-4">
+<div id="tp-tips-section" className="mb-4">
 {/* Tips Toggle */}
 <div className="flex items-center justify-between mb-3">
 <p className="text-zinc-500 text-sm">Tips</p>
@@ -1639,6 +1686,7 @@ className="flex-1 py-2 rounded-xl text-sm font-medium cursor-pointer text-center
 {/* Payment Buttons */}
 <div className="space-y-3">
 <button
+id="tp-pay-btn"
 onClick={() => showQRPayment()}
 disabled={getPaymentAmount() <= 0}
 className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-bold text-xl py-6 rounded-2xl transition flex items-center justify-center gap-3 cursor-pointer disabled:cursor-not-allowed"
@@ -1651,6 +1699,7 @@ className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 disab
 
 {getPaymentAmount() > 0 && (
 <button
+id="tp-send-link-btn"
 onClick={() => setShowSendPaymentLink(true)}
 className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white font-medium py-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
 >
@@ -1663,6 +1712,7 @@ className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-whit
 
 {!showManualEntry && (
 <button
+id="tp-manual-btn"
 onClick={() => setShowManualEntry(true)}
 className="w-full bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 active:scale-95 border border-zinc-800 text-zinc-400 font-medium py-3 rounded-xl transition cursor-pointer"
 >
@@ -2042,7 +2092,7 @@ className="block w-full text-center text-sm text-zinc-400 hover:text-white py-4 
 {/* Live Conversion Widget - Always visible */}
 {liveRate && (
   <div className="w-full sm:max-w-lg mx-auto px-2 sm:px-4 pb-4">
-    <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4">
+    <div id="tp-live-rate" className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <img 
@@ -2078,7 +2128,7 @@ className="block w-full text-center text-sm text-zinc-400 hover:text-white py-4 
 )}
 
 {/* YAOFUS Pioneers Badge - Footer */}
-<footer className="py-6 flex flex-col items-center gap-1">
+<footer id="tp-footer" className="py-6 flex flex-col items-center gap-1">
   <span className="text-zinc-500 text-[10px] font-medium tracking-wider">INSTANT</span>
   <span className="text-base font-extrabold tracking-widest">
     <span className="text-emerald-500">Y</span>

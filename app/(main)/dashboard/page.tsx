@@ -21,6 +21,7 @@ import { InfoButton, InfoModal, useInfoModal } from '@/components/InfoModal';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import SignUpCustomerCard from '@/components/SignUpCustomerCard';
 import NebulaBackground from '@/components/NebulaBackground';
+import VendorDashboardTour from '@/components/VendorDashboardTour';
 
 export default function StoreDashboard() {
   const [step, setStep] = useState<'login' | 'xaman' | 'dashboard'>('login');
@@ -45,6 +46,8 @@ const router = useRouter();
 // Disconnect modal state
 const [showDisconnectModal, setShowDisconnectModal] = useState(false);
 const [setupProgress, setSetupProgress] = useState<string | null>(null);
+// State (add with other state)
+const [runTour, setRunTour] = useState(false);
 
   // Settings state
   const [commissionRates, setCommissionRates] = useState([25, 5, 3, 2, 1]);
@@ -99,6 +102,16 @@ const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 // Progress bar on button
 // Progress bar on button
 const [progressHidden, setProgressHidden] = useState(false);
+
+// Effect (add with other effects)
+useEffect(() => {
+  if (store?.store_id && !loading) {
+    const hasSeenTour = localStorage.getItem(`vendor_tour_completed_${store.store_id}`);
+    if (!hasSeenTour) {
+      setTimeout(() => setRunTour(true), 1000);
+    }
+  }
+}, [store?.store_id, loading]);
 
 useEffect(() => {
   const handleToggle = () => setSidebarOpen(prev => !prev);
@@ -1564,6 +1577,15 @@ walletAddress={walletAddress || undefined}
 storeId={store?.store_id}
 onSignOut={signOut}
 />
+<VendorDashboardTour 
+  run={runTour} 
+  onComplete={() => {
+    setRunTour(false);
+    if (store?.store_id) {
+      localStorage.setItem(`vendor_tour_completed_${store.store_id}`, 'true');
+    }
+  }}
+/>
     <div className="min-h-screen bg-transparent text-white font-sans relative z-0 overflow-x-hidden">
       <Script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" />
 
@@ -1596,15 +1618,19 @@ onSignOut={signOut}
   onNavClick={handleNavClick}
   onLogoClick={() => setShowLogoUpload(true)}
   onSignOut={signOut}
-  onTakeTour={() => console.log('Tour clicked')}
+  onTakeTour={() => {
+  setSidebarOpen(false);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setRunTour(false);
+  setTimeout(() => setRunTour(true), 100);
+}}
   onInfoClick={openInfo}
   onShowProgress={() => {
-  console.log('Show progress clicked', store?.store_id);
-  if (store?.store_id) {
-    localStorage.removeItem(`milestones_dismissed_${store.store_id}`);
-    setProgressHidden(false);
-  }
-}}
+    if (store?.store_id) {
+      localStorage.removeItem(`milestones_dismissed_${store.store_id}`);
+      setProgressHidden(false);
+    }
+  }}
 />
 
 {/* Logo Upload Modal */}
@@ -2159,9 +2185,10 @@ onClick={async () => {
   <div className="space-y-4">
     {/* TAKE PAYMENT BUTTON */}
     <button
-      onClick={() => router.push('/take-payment')}
-      className="w-full bg-white hover:bg-zinc-100 text-black font-semibold text-lg py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-lg"
-    >
+  id="take-payment-btn"
+  onClick={() => router.push('/take-payment')}
+  className="w-full bg-white hover:bg-zinc-100 text-black font-semibold text-lg py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-lg"
+>
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
       </svg>

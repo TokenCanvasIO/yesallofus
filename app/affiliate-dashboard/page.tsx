@@ -16,6 +16,7 @@ import CelebrationToast from '@/components/CelebrationToast';
 import NebulaBackground from '@/components/NebulaBackground';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import { InfoModal, useInfoModal } from '@/components/InfoModal';
+import AffiliateDashboardTour from '@/components/AffiliateDashboardTour';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
 
@@ -186,9 +187,21 @@ export default function AffiliateDashboard() {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [celebrateMilestone, setCelebrateMilestone] = useState<string | null>(null);
   const { activeInfo, openInfo, closeInfo, getContent } = useInfoModal();
+  // NEW: Tour
+  const [runTour, setRunTour] = useState(false);
   
   const registeringRef = useRef(false);
 const rightColumnRef = useRef<HTMLDivElement>(null);
+
+// Check if first time user
+useEffect(() => {
+  if (walletAddress && !loading) {
+    const hasSeenTour = localStorage.getItem(`tour_completed_${walletAddress}`);
+    if (!hasSeenTour) {
+      setTimeout(() => setRunTour(true), 1000);
+    }
+  }
+}, [walletAddress, loading]);
 
   useEffect(() => {
   const handleToggle = () => setSidebarOpen(prev => !prev);
@@ -665,7 +678,14 @@ return <LoginScreen onLogin={handleLogin} />;
     <>
       <NebulaBackground opacity={0.3} />
       <DashboardHeader dashboardType="affiliate" walletAddress={walletAddress} onSignOut={handleSignOut} showBalances={showBalances} onToggleBalances={() => setShowBalances(!showBalances)} />
-      
+      <AffiliateDashboardTour 
+  run={runTour} 
+  onComplete={() => {
+    setRunTour(false);  // This must happen!
+    localStorage.setItem(`tour_completed_${walletAddress}`, 'true');
+  }}
+  hasJoinedVendor={!!(dashboardData && dashboardData.stores.length > 0)}
+/>
       <div className="min-h-screen bg-transparent text-white font-sans relative z-10">
         {/* Celebration Toast */}
         {celebrateMilestone && <CelebrationToast milestone={celebrateMilestone} onClose={() => setCelebrateMilestone(null)} />}
@@ -688,13 +708,16 @@ return <LoginScreen onLogin={handleLogin} />;
           onInfoClick={openInfo}
           onLogoClick={() => {}}
           onTakeTour={() => {
-            setSidebarOpen(false);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            if (walletAddress) {
-              localStorage.removeItem(`milestones_dismissed_customer_${walletAddress}`);
-              setProgressHidden(false);
-            }
-          }}
+  setSidebarOpen(false);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Force reset then set true
+  setRunTour(false);
+  setTimeout(() => setRunTour(true), 100);
+  if (walletAddress) {
+    localStorage.removeItem(`milestones_dismissed_customer_${walletAddress}`);
+    setProgressHidden(false);
+  }
+}}
           onShowProgress={() => {
             if (walletAddress) {
               localStorage.removeItem(`milestones_dismissed_customer_${walletAddress}`);
@@ -798,49 +821,51 @@ return <LoginScreen onLogin={handleLogin} />;
               <div id="wallet-status" className="h-full">
                 {walletStatus && (
                   <div className="bg-zinc-900/70 border border-zinc-800 rounded-xl p-5 h-full flex flex-col">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-semibold text-zinc-400">Wallet Status</h3>
-                        {loginMethod === 'web3auth' && socialProvider && (
-                          <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded capitalize flex items-center gap-1.5">
-                            <SocialIcon provider={socialProvider} size="sm" />
-                            {socialProvider}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => fetchWalletStatus(walletAddress, true)} className="text-zinc-400 hover:text-white transition-colors p-1" title="Refresh" disabled={refreshingWallet}>
-                          <svg className={`w-5 h-5 ${refreshingWallet ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                        </button>
-                        <button onClick={() => setShowBalances(!showBalances)} className="text-zinc-400 hover:text-white transition-colors p-1">
-                          <EyeIcon open={showBalances} />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <p className="text-zinc-500 text-xs mb-1">XRP Balance</p>
-                        <p className={`text-lg font-bold ${walletStatus.funded ? 'text-white' : 'text-orange-400'}`}>{walletStatus.funded ? formatXRP(walletStatus.xrp_balance) : 'Not Funded'}</p>
-                      </div>
-                      <div>
-                        <p className="text-zinc-500 text-xs mb-1">RLUSD Balance</p>
-                        <p className="text-lg font-bold text-white">{formatBalance(walletStatus.rlusd_balance)}</p>
-                      </div>
-                      <div>
-                        <p className="text-zinc-500 text-xs mb-1">RLUSD Trustline</p>
+                    <div id="wallet-balances">
+                      <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${walletStatus.rlusd_trustline ? 'bg-emerald-500' : 'bg-orange-500'}`}></span>
-                          <span className={walletStatus.rlusd_trustline ? 'text-emerald-400 text-sm' : 'text-orange-400 text-sm'}>{walletStatus.rlusd_trustline ? 'Set' : 'Not Set'}</span>
+                          <h3 className="text-sm font-semibold text-zinc-400">Wallet Status</h3>
+                          {loginMethod === 'web3auth' && socialProvider && (
+                            <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded capitalize flex items-center gap-1.5">
+                              <SocialIcon provider={socialProvider} size="sm" />
+                              {socialProvider}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => fetchWalletStatus(walletAddress, true)} className="text-zinc-400 hover:text-white transition-colors p-1" title="Refresh" disabled={refreshingWallet}>
+                            <svg className={`w-5 h-5 ${refreshingWallet ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                          </button>
+                          <button onClick={() => setShowBalances(!showBalances)} className="text-zinc-400 hover:text-white transition-colors p-1">
+                            <EyeIcon open={showBalances} />
+                          </button>
                         </div>
                       </div>
-                      <div>
-                        <p className="text-zinc-500 text-xs mb-1">Pending</p>
-                        {walletStatus.pending_commissions ? (
-                          <p className="text-lg font-bold text-amber-400">{formatBalance(walletStatus.pending_commissions.total)}</p>
-                        ) : (
-                          <p className="text-zinc-500 text-sm">None</p>
-                        )}
+                      
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <p className="text-zinc-500 text-xs mb-1">XRP Balance</p>
+                          <p className={`text-lg font-bold ${walletStatus.funded ? 'text-white' : 'text-orange-400'}`}>{walletStatus.funded ? formatXRP(walletStatus.xrp_balance) : 'Not Funded'}</p>
+                        </div>
+                        <div>
+                          <p className="text-zinc-500 text-xs mb-1">RLUSD Balance</p>
+                          <p className="text-lg font-bold text-white">{formatBalance(walletStatus.rlusd_balance)}</p>
+                        </div>
+                        <div>
+                          <p className="text-zinc-500 text-xs mb-1">RLUSD Trustline</p>
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${walletStatus.rlusd_trustline ? 'bg-emerald-500' : 'bg-orange-500'}`}></span>
+                            <span className={walletStatus.rlusd_trustline ? 'text-emerald-400 text-sm' : 'text-orange-400 text-sm'}>{walletStatus.rlusd_trustline ? 'Set' : 'Not Set'}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-zinc-500 text-xs mb-1">Pending</p>
+                          {walletStatus.pending_commissions ? (
+                            <p className="text-lg font-bold text-amber-400">{formatBalance(walletStatus.pending_commissions.total)}</p>
+                          ) : (
+                            <p className="text-zinc-500 text-sm">None</p>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -1187,7 +1212,7 @@ return <LoginScreen onLogin={handleLogin} />;
             <div id="discover">
               {showDiscover && (
                 <section className="mb-6">
-                  <div className="flex items-center justify-between mb-4">
+<div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold">{dashboardData?.stores.length ? 'Discover More Vendors' : 'Join a Vendor to Start Earning'}</h2>
                     {dashboardData?.stores.length ? <button onClick={() => setShowDiscover(false)} className="text-zinc-400 hover:text-white text-sm">Close ✕</button> : null}
                   </div>
