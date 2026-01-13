@@ -238,19 +238,17 @@ export default function WelcomePage() {
             </div>
           )}
 
-          {/* Footer */}
-          <div className="text-center">
-            <p className="text-zinc-600 text-xs">
-              Powered by <span className="text-zinc-500">Web3Auth</span> · <span className="text-zinc-500">XRPL</span> · <span className="text-zinc-500">RLUSD</span>
-            </p>
-          </div>
+          {/* Footer - removed, moved below */}
         </div>
         
       </main>
 
-      <footer className="-mt-1 py-1 px-3 text-center relative z-10">
-        <p className="text-zinc-700 text-xs">© 2025 YesAllOfUs. All rights reserved.</p>
-      </footer>
+      <footer className="-mt-1 py-1 px-3 text-center relative z-10 space-y-1">
+  <p className="text-zinc-600 text-xs">
+    Powered by <span className="text-zinc-500">XRPL</span> · <span className="text-zinc-500">RLUSD</span>
+  </p>
+  <p className="text-zinc-700 text-xs">© 2025 YesAllOfUs. All rights reserved.</p>
+</footer>
     </div>
   );
 }
