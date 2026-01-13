@@ -12,6 +12,7 @@ export const tourSteps = [
     tour: 'takePayment',
     steps: [
       {
+        icon: null,
         title: 'Welcome to Take Payment',
         content: 'This is your Point of Sale. Take payments from customers using NFC cards or QR codes. Let me show you around.',
         side: 'top' as const,
@@ -19,6 +20,7 @@ export const tourSteps = [
         showSkip: true,
       },
       {
+        icon: null,
         title: 'Header Controls',
         content: 'Your quick access toolbar: Home button returns to dashboard, tap your logo to customize it for receipts and customer displays.',
         selector: '#tp-header',
@@ -27,6 +29,7 @@ export const tourSteps = [
         showSkip: true,
       },
       {
+        icon: null,
         title: 'Your Tools',
         content: 'Staff selector tracks who made each sale. Analytics shows your revenue. Pending payments shows unpaid links. Customer display opens a screen for customers. Receipts shows transaction history. The + button adds products to your catalog.',
         selector: '#tp-toolbar',
@@ -35,6 +38,7 @@ export const tourSteps = [
         showSkip: true,
       },
       {
+        icon: null,
         title: 'Payment Amount',
         content: 'The total amount to charge. This updates as you add items to the cart.',
         selector: '#tp-amount-display',
@@ -43,6 +47,7 @@ export const tourSteps = [
         showSkip: true,
       },
       {
+        icon: null,
         title: 'Products & Search',
         content: 'Search for products or tap them to add to the cart. Tap again to increase quantity. Add your first product using the + icon in the header.',
         selector: '#tp-products-area',
@@ -51,6 +56,7 @@ export const tourSteps = [
         showSkip: true,
       },
       {
+        icon: null,
         title: 'Tips',
         content: 'Enable tips to let customers add gratuity. Choose preset percentages or custom amounts.',
         selector: '#tp-tips-section',
@@ -59,6 +65,7 @@ export const tourSteps = [
         showSkip: true,
       },
       {
+        icon: null,
         title: 'Take Payment',
         content: 'Tap here when ready to collect payment. Shows QR code for scanning and enables NFC tap.',
         selector: '#tp-pay-btn',
@@ -67,6 +74,7 @@ export const tourSteps = [
         showSkip: true,
       },
       {
+        icon: null,
         title: 'Manual Entry',
         content: 'Enter a custom amount using the number pad instead of selecting products. Send Payment Link button will appear once you have items in your cart.',
         selector: '#tp-manual-btn',
@@ -75,6 +83,7 @@ export const tourSteps = [
         showSkip: true,
       },
       {
+        icon: null,
         title: 'Live Conversion',
         content: 'See the real-time RLUSD conversion rate from CoinGecko Pro. This will appear once you add your first product.',
         selector: '#tp-footer',
@@ -83,6 +92,7 @@ export const tourSteps = [
         showSkip: true,
       },
       {
+        icon: null,
         title: 'You\'re Ready!',
         content: 'That covers the basics. Add products, take payments, and grow your business with instant crypto settlements.',
         side: 'top' as const,
