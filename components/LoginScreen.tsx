@@ -182,7 +182,7 @@ const completeCustomerSignup = async (wallet: string) => {
   }, [loginId, connecting, onLogin, walletKey, methodKey]);
 
   const connectXaman = async () => {
-    if (requireTrustline && !trustlineConfirmed) return;
+    if (!termsAccepted) return;
     
     setConnecting('xaman');
     setError('');
@@ -211,7 +211,7 @@ const completeCustomerSignup = async (wallet: string) => {
   };
 
   const connectCrossmark = async () => {
-    if (requireTrustline && !trustlineConfirmed) return;
+    if (!termsAccepted) return;
     
     setConnecting('crossmark');
     setError('');
