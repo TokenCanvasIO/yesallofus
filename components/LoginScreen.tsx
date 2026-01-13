@@ -311,10 +311,10 @@ const completeCustomerSignup = async (wallet: string) => {
       overlay={true}
     />
     
-    <main className={`relative z-10 max-w-xl mx-auto px-6 pb-6 min-h-[calc(100vh-200px)] flex items-start justify-center ${storagePrefix === 'vendor' ? 'pt-12' : 'pt-8'}`}>
+    <main className={`relative z-10 max-w-xl mx-auto px-6 pb-6 min-h-[calc(100vh-200px)] flex items-start justify-center pt-4 md:pt-8 ${storagePrefix === 'vendor' ? 'md:pt-12' : ''}`}>
       <div className="w-full">
         {/* Title - SVG Badge Style */}
-        <div className="flex flex-col items-center mb-6 mt-4">
+        <div className="flex flex-col items-center mb-4 mt-2 md:mb-6 md:mt-4">
           <svg viewBox="0 0 280 85" className="w-72 h-auto">
             <defs>
               <linearGradient id="partnerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -402,18 +402,25 @@ const completeCustomerSignup = async (wallet: string) => {
   <div className="space-y-4">
 
     {/* Terms Agreement - Above all cards */}
-<label className="flex items-center justify-center gap-2 cursor-pointer text-sm text-zinc-400 hover:text-zinc-300">
+<label className="flex items-center justify-center gap-2 cursor-pointer text-xs md:text-sm text-zinc-400 hover:text-zinc-300 px-4 md:px-0">
   <input
     type="checkbox"
     checked={termsAccepted}
     onChange={(e) => setTermsAccepted(e.target.checked)}
-    className="w-4 h-4"
+    className="w-4 h-4 flex-shrink-0 md:inline hidden"
   />
-  <span>
+  <span className="leading-tight text-center md:text-left">
     I agree to the{' '}
     <a href="/terms" target="_blank" className="text-sky-400 hover:underline">Terms of Service</a>
     {' '}and{' '}
     <a href="/privacy" target="_blank" className="text-sky-400 hover:underline">Privacy Policy</a>
+    {' '}
+    <input
+      type="checkbox"
+      checked={termsAccepted}
+      onChange={(e) => setTermsAccepted(e.target.checked)}
+      className="w-4 h-4 inline md:hidden align-middle"
+    />
   </span>
 </label>
 
