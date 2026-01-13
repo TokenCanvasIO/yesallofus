@@ -419,7 +419,7 @@ const completeCustomerSignup = async (wallet: string) => {
       type="checkbox"
       checked={termsAccepted}
       onChange={(e) => setTermsAccepted(e.target.checked)}
-      className="w-4 h-4 inline md:hidden align-middle"
+      className="w-4 h-4 inline-block md:hidden align-middle"
     />
   </span>
 </label>
