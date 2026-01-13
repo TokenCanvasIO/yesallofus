@@ -105,18 +105,18 @@ export default function WelcomePage() {
       `}
       </style>
       
-      <main className="flex-1 flex flex-col items-center justify-start px-4 py-2 relative z-10">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-8 relative z-10">
         <div className="w-full max-w-md">
           
           {/* Logo */}
           <div className="flex flex-col items-center justify-center mb-6">
             <div className="relative mb-3">
               <div className="absolute inset-0 bg-emerald-500/40 blur-2xl rounded-full animate-breathe scale-150" />
-              <div className="logo-container rounded-2xl">
+              <div className="logo-container rounded-2xl bg-transparent">
   <img 
     src="https://yesallofus.com/dltpayslogo1.png" 
     alt="YesAllOfUs" 
-    className="w-16 h-16 rounded-2xl relative z-10"
+    className="w-16 h-16 rounded-2xl relative z-10 bg-transparent"
   />
 </div>
             </div>

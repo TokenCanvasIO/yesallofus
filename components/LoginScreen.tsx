@@ -41,6 +41,9 @@ export default function LoginScreen({
   const [loginId, setLoginId] = useState<string | null>(null);
   const [trustlineConfirmed, setTrustlineConfirmed] = useState(!requireTrustline);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  // Detect if we're on affiliate dashboard route
+const isAffiliateDashboard = typeof window !== 'undefined' && window.location.pathname === '/affiliate-dashboard';
+const displayTitle = isAffiliateDashboard ? 'AFFILIATES' : 'MEMBERS';
 
   // Storage keys based on prefix
   const walletKey = storagePrefix === 'vendor' ? 'vendorWalletAddress' : 'walletAddress';
@@ -304,14 +307,14 @@ const completeCustomerSignup = async (wallet: string) => {
   const walletOptionsEnabled = !requireTrustline || trustlineConfirmed;
 
   return (
-  <div className="min-h-screen bg-[#0d0d0d] text-white font-sans relative">
+  <div className="min-h-screen bg-[#0d0d0d] text-white font-sans relative flex flex-col">
     {/* Background Video - same for both vendor and affiliate */}
     <BackgroundVideo 
       src="/affiliate-hq.webm"
       overlay={true}
     />
     
-    <main className={`relative z-10 max-w-xl mx-auto px-6 pb-6 min-h-[calc(100vh-200px)] flex items-start justify-center -mt-3 md:pt-8 ${storagePrefix === 'vendor' ? 'md:pt-12' : ''}`}>
+    <main className="relative z-10 max-w-xl mx-auto px-6 flex-1 flex items-center justify-center py-8">
       <div className="w-full">
         {/* Title - SVG Badge Style */}
         <div className="flex flex-col items-center mb-4 mt-2 md:mb-6 md:mt-4">
@@ -326,7 +329,7 @@ const completeCustomerSignup = async (wallet: string) => {
             
             {/* Dynamic text - PARTNERS or MEMBERS */}
 <text x="140" y="28" textAnchor="middle" fill="url(#partnerGradient)" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="18" letterSpacing="4">
-  {storagePrefix === 'vendor' ? 'PARTNERS' : 'MEMBERS'}
+  {storagePrefix === 'vendor' ? 'PARTNERS' : displayTitle}
 </text>
             
             {/* DASHBOARD text */}
@@ -587,7 +590,7 @@ const completeCustomerSignup = async (wallet: string) => {
 
 {/* YAOFUS Instant Badge - Footer */}
 {/* YAOFUS Instant Badge - Footer */}
-<footer className="relative z-10 py-4 -mt-8 flex flex-col items-center gap-0.5">
+<footer className="relative z-10 py-4 flex flex-col items-center gap-0.5 mt-auto">
   <span className="text-zinc-500 text-[10px] font-medium tracking-wider">SECURE</span>
   <span className="text-base font-extrabold tracking-widest">
     <span className="text-emerald-500">Y</span>
