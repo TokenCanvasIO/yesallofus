@@ -307,10 +307,11 @@ setStatus('success');
 paymentInProgressRef.current = false;
 if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'success', null, tipAmount, tipsEnabled, walletAddress || undefined);
 if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-} else if (data.status === 'expired' || data.status === 'cancelled') {
-setError(`Payment ${data.status}`);
-setStatus('idle');
-if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'idle', null, 0, tipsEnabled, walletAddress || undefined);
+} else if (data.status === 'expired' || data.status === 'cancelled' || data.status === 'failed') {
+  setError(data.message || `Payment ${data.status}`);
+  setStatus('idle');
+  paymentInProgressRef.current = false;
+  if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'idle', null, 0, tipsEnabled, walletAddress || undefined);
 }
     } catch (err) {
 console.error('Poll error:', err);

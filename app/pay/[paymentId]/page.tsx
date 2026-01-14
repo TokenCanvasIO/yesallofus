@@ -299,8 +299,8 @@ useEffect(() => {
           }
 
           if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-        } else if (data.status === 'expired' || data.status === 'cancelled') {
-          setError(`Payment ${data.status}`);
+        } else if (data.status === 'expired' || data.status === 'cancelled' || data.status === 'failed') {
+          setError(data.message || `Payment ${data.status}`);
           setXamanQR(null);
           setXamanPaymentId(null);
         }
