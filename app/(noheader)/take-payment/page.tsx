@@ -860,6 +860,7 @@ const sendReceiptEmail = async () => {
     return;
   }
   setSendingEmail(true);
+  console.log('DEBUG: receiptId =', receiptId);
   
   try {
     // If we have a receipt_id, fetch the complete receipt from backend
