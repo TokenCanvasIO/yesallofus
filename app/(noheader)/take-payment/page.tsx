@@ -864,7 +864,7 @@ const sendReceiptEmail = async () => {
   try {
     // If we have a receipt_id, fetch the complete receipt from backend
     if (receiptId) {
-      const receiptRes = await fetch(`https://api.dltpays.com/nfc/api/v1/receipt/${receiptId}`);
+      const receiptRes = await fetch(`https://api.dltpays.com/nfc/api/v1/receipts/${receiptId}`);
       const receiptData = await receiptRes.json();
       
       if (receiptData.success && receiptData.receipt) {
