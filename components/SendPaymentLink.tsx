@@ -9,6 +9,7 @@ interface SendPaymentLinkProps {
   storeLogo: string | null;
   amount: number;
   items?: any[];
+  tip?: number;
   onClose: () => void;
   onSuccess?: () => void;
 }
@@ -21,6 +22,7 @@ export default function SendPaymentLink({
   storeLogo, 
   amount, 
   items,
+  tip = 0,
   onClose,
   onSuccess 
 }: SendPaymentLinkProps) {
@@ -56,6 +58,7 @@ export default function SendPaymentLink({
           store_id: storeId,
           amount: amount,
           items: items || [],
+          tip: tip || 0,
           currency: 'GBP'
         })
       });

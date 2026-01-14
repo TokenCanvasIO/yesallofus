@@ -1996,6 +1996,7 @@ className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 
     storeName={storeName}
     storeLogo={storeLogo}
     amount={getPaymentAmount()}
+    tip={tipAmount}
     items={cart.length > 0 ? cart.map(item => ({
       name: item.name,
       quantity: item.quantity,

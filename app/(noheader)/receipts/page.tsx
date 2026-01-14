@@ -16,6 +16,8 @@ interface Receipt {
   receipt_number: string;
   customer_wallet: string;
   items: ReceiptItem[];
+  tip_amount?: number;
+  subtotal?: number;
   total: number;
   currency: string;
   payment_method?: string;
@@ -23,6 +25,9 @@ interface Receipt {
   payment_tx_hash: string;
   paid_at: string;
   created_at: string;
+  conversion_rate?: {
+    rlusd_gbp: number;
+  };
 }
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
@@ -57,10 +62,14 @@ function ReceiptsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const receiptsPerPage = 20;
 
+  // Print preview modal
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [previewReceipt, setPreviewReceipt] = useState<Receipt | null>(null);
+
   // Email modal
-const [showEmailModal, setShowEmailModal] = useState(false);
-const [emailAddress, setEmailAddress] = useState('');
-const [sendingEmail, setSendingEmail] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailAddress, setEmailAddress] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   // Load store data
 useEffect(() => {
@@ -220,204 +229,15 @@ useEffect(() => {
     }
   };
 
-  // Print receipt
-const printReceipt = (receipt: Receipt) => {
-  const receiptHtml = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Receipt - ${storeName}</title>
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          max-width: 400px; 
-          margin: 0 auto; 
-          padding: 30px 20px;
-          color: #1a1a1a;
-        }
-        .header {
-          text-align: center;
-          margin-bottom: 20px;
-          padding-bottom: 20px;
-          border-bottom: 2px solid #e5e5e5;
-        }
-        .store-logo {
-          width: 60px;
-          height: 60px;
-          border-radius: 12px;
-          object-fit: cover;
-          margin: 0 auto 12px;
-          display: block;
-        }
-        .store-name {
-          font-size: 22px;
-          font-weight: 700;
-          margin-bottom: 4px;
-        }
-        .receipt-number {
-          font-size: 12px;
-          color: #666;
-        }
-        .store-logo {
-          width: 50px;
-          height: 50px;
-          border-radius: 10px;
-          object-fit: cover;
-        }
-        .store-info {
-          flex: 1;
-        }
-        .store-name {
-          font-size: 20px;
-          font-weight: 700;
-        }
-        .receipt-number {
-          font-size: 12px;
-          color: #666;
-        }
-        .date {
-          font-size: 12px;
-          color: #666;
-          margin-bottom: 20px;
-        }
-        .items {
-          margin: 20px 0;
-        }
-        .item {
-          display: flex;
-          justify-content: space-between;
-          padding: 10px 0;
-          border-bottom: 1px solid #eee;
-        }
-        .item-name {
-          font-weight: 500;
-        }
-        .item-qty {
-          color: #666;
-          font-size: 14px;
-        }
-        .item-price {
-          font-weight: 600;
-        }
-        .total-section {
-          margin-top: 20px;
-          padding-top: 20px;
-          border-top: 2px solid #1a1a1a;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .total-label {
-          font-size: 16px;
-          font-weight: 600;
-        }
-        .total-amount {
-          font-size: 24px;
-          font-weight: 700;
-          color: #10b981;
-        }
-        .tx-section {
-          margin-top: 20px;
-          padding: 12px;
-          background: #f5f5f5;
-          border-radius: 8px;
-        }
-        .tx-label {
-          font-size: 10px;
-          color: #666;
-          margin-bottom: 4px;
-        }
-        .tx-hash {
-          font-size: 9px;
-          font-family: monospace;
-          word-break: break-all;
-          color: #333;
-        }
-        .footer {
-          margin-top: 30px;
-          padding-top: 20px;
-          border-top: 1px solid #eee;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-        }
-        .footer-logo {
-          width: 20px;
-          height: 20px;
-          border-radius: 4px;
-          opacity: 0.6;
-        }
-        .footer-text {
-          color: #999;
-          font-size: 11px;
-        }
-        @media print {
-          body { padding: 0; }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        ${storeLogo 
-          ? `<img src="${storeLogo}" alt="${storeName}" class="store-logo">`
-          : `<img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="store-logo">`
-        }
-        <div class="store-name">${storeName}</div>
-        <div class="receipt-number">${receipt.receipt_number}</div>
-      </div>
-      
-      <div class="date">${new Date(receipt.paid_at).toLocaleDateString('en-GB', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })}</div>
-      
-      <div class="items">
-        ${receipt.items.map(item => `
-          <div class="item">
-            <div>
-              <div class="item-name">${item.name}</div>
-              <div class="item-qty">Qty: ${item.quantity || 1} × £${(item.unit_price || item.price || 0).toFixed(2)}</div>
-            </div>
-            <div class="item-price">£${(item.line_total || (item.unit_price || item.price || 0) * (item.quantity || 1)).toFixed(2)}</div>
-          </div>
-        `).join('')}
-      </div>
-      
-      <div class="total-section">
-        <span class="total-label">Total</span>
-        <span class="total-amount">£${(receipt.total || 0).toFixed(2)}</span>
-      </div>
-      
-      <div class="tx-section">
-        <div class="tx-label">Transaction ID (XRPL)</div>
-        <div class="tx-hash">${receipt.payment_tx_hash}</div>
-      </div>
-      
-      <div class="footer" style="flex-direction: column; gap: 4px;">
-        <span style="color: #71717a; font-size: 9px; font-weight: 500; letter-spacing: 1px;">RECEIPT</span>
-        <span style="font-size: 16px; font-weight: 800; letter-spacing: 2px;"><span style="color: #10b981;">Y</span><span style="color: #22c55e;">A</span><span style="color: #3b82f6;">O</span><span style="color: #6366f1;">F</span><span style="color: #8b5cf6;">U</span><span style="color: #a855f7;">S</span></span>
-        <span style="color: #52525b; font-size: 10px; font-weight: 600; letter-spacing: 1.5px;">INSTANT</span>
-        <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
-          <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="footer-logo">
-          <span class="footer-text">Powered by YesAllOfUs</span>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-  
-  const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.write(receiptHtml);
-    printWindow.document.close();
-    setTimeout(() => printWindow.print(), 500);
-  }
+  // Show print preview
+const showPrintModal = (receipt: Receipt) => {
+  setPreviewReceipt(receipt);
+  setShowPrintPreview(true);
+};
+
+// Actually print
+const handlePrint = () => {
+  window.print();
 };
 // Export to CSV
 const exportCSV = () => {
@@ -843,185 +663,342 @@ const exportPDF = () => {
         )}
 
         {/* Receipt Detail Modal */}
-        {selectedReceipt && (
-          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-            <div className="bg-zinc-900 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-              {/* Modal Header */}
-              <div className="sticky top-0 bg-zinc-900 p-4 border-b border-zinc-800 flex items-center justify-between">
-                <div>
-                  <p className="font-bold">{selectedReceipt.receipt_number}</p>
-                  <p className="text-zinc-500 text-sm">{formatDate(selectedReceipt.paid_at)}</p>
-                </div>
-                <button
-                  onClick={() => setSelectedReceipt(null)}
-                  className="text-zinc-400 hover:text-white p-2"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              {/* Modal Content */}
-              <div className="p-4">
-                {/* Items */}
-                <div className="mb-4">
-                  <p className="text-zinc-500 text-sm mb-2">Items</p>
-                  <div className="space-y-2">
-                    {selectedReceipt.items.map((item, idx) => (
-                      <div key={idx} className="flex justify-between py-2 border-b border-zinc-800 last:border-0">
-                        <div>
-                          <p className="font-medium">{item.name}</p>
-                          <p className="text-zinc-500 text-sm">
-                            {item.quantity || 1} × £{(item.unit_price || item.price || 0).toFixed(2)}
-                          </p>
-                        </div>
-                        <p className="font-medium">£{(item.line_total || (item.unit_price || item.price || 0) * (item.quantity || 1)).toFixed(2)}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Total */}
-                <div className="flex justify-between items-center py-3 border-t border-zinc-700 mb-4">
-                  <p className="font-semibold">Total</p>
-                  <p className="text-2xl font-bold text-emerald-400">
-                    £{selectedReceipt.total.toFixed(2)}
-                  </p>
-                </div>
-
-                {/* Details */}
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-zinc-500">Payment Method</span>
-                    <span>{getPaymentMethodDisplay(selectedReceipt.payment_method)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-500">Status</span>
-                    <span className="text-emerald-400">✓ {selectedReceipt.payment_status}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-500">Customer</span>
-                    <span className="font-mono text-xs">
-                      {selectedReceipt.customer_wallet.slice(0, 8)}...{selectedReceipt.customer_wallet.slice(-4)}
-                    </span>
-                  </div>
-                </div>
-                {/* Email Modal */}
-{showEmailModal && (
-  <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
-    <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm">
-      <h3 className="text-lg font-bold mb-4">Send Receipt</h3>
-      <input
-        type="email"
-        placeholder="Customer email"
-        value={emailAddress}
-        onChange={(e) => setEmailAddress(e.target.value)}
-        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 mb-4"
-        autoFocus
-      />
-      <div className="flex gap-3">
+{selectedReceipt && (
+  <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+    <div className="bg-zinc-900 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      {/* Modal Header */}
+      <div className="sticky top-0 bg-zinc-900 p-4 border-b border-zinc-800 flex items-center justify-between">
+        <div>
+          <p className="font-bold">{selectedReceipt.receipt_number}</p>
+          <p className="text-zinc-500 text-sm">{formatDate(selectedReceipt.paid_at)}</p>
+        </div>
         <button
-          onClick={() => {
-            setShowEmailModal(false);
-            setEmailAddress('');
-          }}
-          className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
+          onClick={() => setSelectedReceipt(null)}
+          className="text-zinc-400 hover:text-white p-2 transition-colors"
+          aria-label="Close receipt modal"
         >
-          Cancel
-        </button>
-        <button
-          onClick={async () => {
-            if (!emailAddress || !emailAddress.includes('@')) {
-              return;
-            }
-            setSendingEmail(true);
-            try {
-              const res = await fetch('https://api.dltpays.com/nfc/api/v1/receipt/email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  email: emailAddress,
-                  store_name: storeName,
-                  store_id: storeId,
-                  amount: selectedReceipt?.total,
-                  items: selectedReceipt?.items,
-                  tx_hash: selectedReceipt?.payment_tx_hash
-                })
-              });
-              const data = await res.json();
-              if (data.success) {
-                setShowEmailModal(false);
-                setEmailAddress('');
-              }
-            } catch (err) {
-              console.error('Failed to send email');
-            }
-            setSendingEmail(false);
-          }}
-          disabled={sendingEmail}
-          className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 rounded-xl transition disabled:opacity-50"
-        >
-          {sendingEmail ? 'Sending...' : 'Send'}
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
       </div>
+
+      {/* Modal Content */}
+      <div className="p-4">
+        {/* Items */}
+        <div className="mb-4">
+          <p className="text-zinc-500 text-sm mb-2">Items</p>
+          <div className="space-y-2">
+            {selectedReceipt.items?.map((item, idx) => (
+              <div
+                key={idx}
+                className="flex justify-between py-2 border-b border-zinc-800 last:border-0"
+              >
+                <div>
+                  <p className="font-medium">{item.name}</p>
+                  <p className="text-zinc-500 text-sm">
+                    {item.quantity || 1} × £{(item.unit_price || item.price || 0).toFixed(2)}
+                  </p>
+                </div>
+                <p className="font-medium">
+                  £{((item.line_total || (item.unit_price || item.price || 0) * (item.quantity || 1))).toFixed(2)}
+                </p>
+              </div>
+            )) ?? null}
+          </div>
+        </div>
+
+        {/* Total */}
+        <div className="flex justify-between items-center py-3 border-t border-zinc-700 mb-4">
+          <p className="font-semibold">Total</p>
+          <p className="text-2xl font-bold text-emerald-400">
+            £{Number(selectedReceipt.total || 0).toFixed(2)}
+          </p>
+        </div>
+
+        {/* Details */}
+        <div className="space-y-3 text-sm">
+          <div className="flex justify-between">
+            <span className="text-zinc-500">Payment Method</span>
+            <span>{getPaymentMethodDisplay(selectedReceipt.payment_method)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-zinc-500">Status</span>
+            <span className="text-emerald-400">✓ {selectedReceipt.payment_status}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-zinc-500">Customer</span>
+            <span className="font-mono text-xs">
+              {selectedReceipt.customer_wallet?.slice(0, 8) ?? '——'}...
+              {selectedReceipt.customer_wallet?.slice(-4) ?? '——'}
+            </span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={() => setShowEmailModal(true)}
+            className="flex-1 bg-zinc-800 hover:bg-zinc-700 rounded-xl p-3 transition flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <span>Email</span>
+          </button>
+          <button
+            onClick={() => showPrintModal(selectedReceipt)}
+            className="flex-1 bg-zinc-800 hover:bg-zinc-700 rounded-xl p-3 transition flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            <span>Print</span>
+          </button>
+        </div>
+
+        {/* Transaction Link */}
+        {selectedReceipt.payment_tx_hash && (
+          <a
+            href={`https://livenet.xrpl.org/transactions/${selectedReceipt.payment_tx_hash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block mt-4 bg-zinc-800 hover:bg-zinc-700 rounded-xl p-3 text-center transition"
+          >
+            <p className="text-zinc-500 text-xs mb-1">Transaction</p>
+            <p className="text-emerald-400 text-sm font-mono break-all">
+              {selectedReceipt.payment_tx_hash.slice(0, 12)}...
+              {selectedReceipt.payment_tx_hash.slice(-8)} ↗
+            </p>
+          </a>
+        )}
+      </div>
     </div>
+
+    {/* Email Modal */}
+    {showEmailModal && (
+      <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
+        <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm">
+          <h3 className="text-lg font-bold mb-4">Send Receipt</h3>
+          <input
+            type="email"
+            placeholder="Customer email"
+            value={emailAddress}
+            onChange={(e) => setEmailAddress(e.target.value)}
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 mb-4"
+            autoFocus
+          />
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                setShowEmailModal(false);
+                setEmailAddress('');
+              }}
+              className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={async () => {
+                if (!emailAddress || !emailAddress.includes('@')) return;
+                setSendingEmail(true);
+                try {
+                  const res = await fetch(`${API_URL}/receipt/email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      email: emailAddress,
+                      store_name: storeName,
+                      store_id: storeId,
+                      amount: selectedReceipt.total,
+                      items: selectedReceipt.items,
+                      tx_hash: selectedReceipt.payment_tx_hash,
+                    }),
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    setShowEmailModal(false);
+                    setEmailAddress('');
+                    // Optional: add success toast here
+                  } else {
+                    console.error('Email API error:', data);
+                  }
+                } catch (err) {
+                  console.error('Failed to send email:', err);
+                } finally {
+                  setSendingEmail(false);
+                }
+              }}
+              disabled={sendingEmail}
+              className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 rounded-xl transition disabled:opacity-50"
+            >
+              {sendingEmail ? 'Sending...' : 'Send'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   </div>
 )}
 
-                {/* Actions */}
-<div className="flex gap-3 mt-4">
-  <button
-    onClick={() => setShowEmailModal(true)}
-    className="flex-1 bg-zinc-800 hover:bg-zinc-700 rounded-xl p-3 transition flex items-center justify-center gap-2"
-  >
-    <span>📧</span>
-    <span>Email</span>
-  </button>
-  <button
-    onClick={() => printReceipt(selectedReceipt)}
-    className="flex-1 bg-zinc-800 hover:bg-zinc-700 rounded-xl p-3 transition flex items-center justify-center gap-2"
-  >
-    <span>🖨️</span>
-    <span>Print</span>
-  </button>
-</div>
+        {/* Print Preview Modal */}
+        {showPrintPreview && previewReceipt && (
+          <div className="fixed inset-0 bg-black z-50 overflow-y-auto">
+            {/* Print Actions - Hidden when printing */}
+            <div className="no-print sticky top-0 z-10 bg-zinc-900/95 backdrop-blur border-b border-zinc-800 p-4">
+              <div className="max-w-md mx-auto flex items-center justify-between">
+                <h2 className="font-bold">Print Preview</h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handlePrint}
+                    className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-6 py-2 rounded-xl transition flex items-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Print
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowPrintPreview(false);
+                      setPreviewReceipt(null);
+                    }}
+                    className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl transition"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
 
-{/* TX Link */}
-                <a
-                  href={`https://livenet.xrpl.org/transactions/${selectedReceipt.payment_tx_hash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block mt-4 bg-zinc-800 hover:bg-zinc-700 rounded-xl p-3 text-center transition"
-                >
-                  <p className="text-zinc-500 text-xs mb-1">Transaction</p>
-                  <p className="text-emerald-400 text-sm font-mono">
-                    {selectedReceipt.payment_tx_hash.slice(0, 12)}...{selectedReceipt.payment_tx_hash.slice(-8)} ↗
-                  </p>
-                </a>
+            {/* Print Content */}
+            <div className="max-w-md mx-auto bg-white text-black p-8 my-8">
+              {/* Header */}
+              <div className="text-center mb-6 pb-6 border-b-2 border-gray-200">
+                {storeLogo ? (
+                  <img 
+                    src={storeLogo} 
+                    alt={storeName} 
+                    className="w-16 h-16 rounded-xl object-cover mx-auto mb-3"
+                  />
+                ) : (
+                  <img 
+                    src="https://yesallofus.com/dltpayslogo1.png" 
+                    alt="YesAllOfUs" 
+                    className="w-16 h-16 rounded-xl object-cover mx-auto mb-3"
+                  />
+                )}
+                <h1 className="text-2xl font-bold mb-1">{storeName}</h1>
+                <p className="text-sm text-gray-600">{previewReceipt.receipt_number}</p>
+              </div>
+
+              {/* Date */}
+              <p className="text-sm text-gray-600 mb-6">
+                {new Date(previewReceipt.paid_at).toLocaleDateString('en-GB', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+
+              {/* Items */}
+              <div className="mb-6">
+                {previewReceipt.items.filter(item => item.name.toLowerCase() !== 'tip').map((item, idx) => (
+                  <div key={idx} className="flex justify-between py-3 border-b border-gray-200">
+                    <div>
+                      <p className="font-medium">{item.name}</p>
+                      <p className="text-sm text-gray-600">
+                        Qty: {item.quantity || 1} × £{(item.unit_price || item.price || 0).toFixed(2)}
+                      </p>
+                    </div>
+                    <p className="font-semibold">
+                      £{(item.line_total || (item.unit_price || item.price || 0) * (item.quantity || 1)).toFixed(2)}
+                    </p>
+                  </div>
+                ))}
+
+                {/* Tip */}
+                {previewReceipt.tip_amount && previewReceipt.tip_amount > 0 && (
+                  <div className="flex justify-between py-3 border-t border-gray-200 mt-2">
+                    <div className="flex items-center gap-2">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                      </svg>
+                      <div>
+                        <p className="font-medium text-emerald-600">Tip</p>
+                        <p className="text-sm text-gray-600">Thank you!</p>
+                      </div>
+                    </div>
+                    <p className="font-semibold text-emerald-600">
+                      £{(previewReceipt.tip_amount * (previewReceipt.conversion_rate?.rlusd_gbp || 0.74)).toFixed(2)}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Total */}
+              <div className="flex justify-between items-center py-4 border-t-2 border-black mb-6">
+                <span className="text-lg font-semibold">Total</span>
+                <span className="text-3xl font-bold text-emerald-600">
+                  £{previewReceipt.total.toFixed(2)}
+                </span>
+              </div>
+
+              {/* Transaction */}
+              <div className="bg-gray-100 rounded-lg p-4 mb-6">
+                <p className="text-xs text-gray-600 mb-1">Transaction ID (XRPL)</p>
+                <p className="text-xs font-mono break-all text-gray-800">
+                  {previewReceipt.payment_tx_hash}
+                </p>
+              </div>
+
+              {/* Footer */}
+              <div className="text-center pt-6 border-t border-gray-200">
+                <p className="text-xs text-gray-500 mb-1">RECEIPT</p>
+                <p className="text-lg font-extrabold tracking-widest mb-1">
+                  <span className="text-emerald-500">Y</span>
+                  <span className="text-green-500">A</span>
+                  <span className="text-blue-500">O</span>
+                  <span className="text-indigo-500">F</span>
+                  <span className="text-violet-500">U</span>
+                  <span className="text-purple-500">S</span>
+                </p>
+                <p className="text-xs text-gray-600 font-semibold mb-3">INSTANT</p>
+                <div className="flex items-center justify-center gap-2">
+                  <img 
+                    src="https://yesallofus.com/dltpayslogo1.png" 
+                    alt="YesAllOfUs" 
+                    className="w-5 h-5 rounded opacity-60"
+                  />
+                  <span className="text-xs text-gray-500">Powered by YesAllOfUs</span>
+                </div>
               </div>
             </div>
           </div>
         )}
-        {/* YAOFU Pioneers Badge */}
-<div className="mt-8 flex flex-col items-center gap-1">
-  <span className="text-zinc-500 text-[10px] font-medium tracking-wider">VERIFIED</span>
-  <span className="text-base font-extrabold tracking-widest">
-    <span className="text-emerald-500">Y</span>
-    <span className="text-green-500">A</span>
-    <span className="text-blue-500">O</span>
-    <span className="text-indigo-500">F</span>
-    <span className="text-violet-500">U</span>
-    <span className="text-purple-500">S</span>
-  </span>
-  <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">RECEIPTS</span>
-  <div className="flex items-center gap-2 mt-2 text-zinc-600 text-sm">
-    <img src="https://yesallofus.com/dltpayslogo1.png" alt="" className="w-5 h-5 rounded opacity-60" />
-    <span>Powered by YesAllOfUs</span>
-  </div>
-</div>
 
-</main>
+        {/* YAOFU Pioneers Badge */}
+        <div className="mt-8 flex flex-col items-center gap-1">
+          <span className="text-zinc-500 text-[10px] font-medium tracking-wider">VERIFIED</span>
+          <span className="text-base font-extrabold tracking-widest">
+            <span className="text-emerald-500">Y</span>
+            <span className="text-green-500">A</span>
+            <span className="text-blue-500">O</span>
+            <span className="text-indigo-500">F</span>
+            <span className="text-violet-500">U</span>
+            <span className="text-purple-500">S</span>
+          </span>
+          <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">RECEIPTS</span>
+          <div className="flex items-center gap-2 mt-2 text-zinc-600 text-sm">
+            <img src="https://yesallofus.com/dltpayslogo1.png" alt="" className="w-5 h-5 rounded opacity-60" />
+            <span>Powered by YesAllOfUs</span>
+          </div>
+        </div>
+
+      </main>
     </div>
   );
 }

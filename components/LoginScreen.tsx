@@ -423,7 +423,7 @@ const completeCustomerSignup = async (wallet: string) => {
 </label>
 
     {/* 3 Column Grid */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 lg:gap-6 w-full max-w-full">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 lg:gap-6 w-full max-w-full px-1 py-2">
       
       <button
   onClick={connectXaman}
