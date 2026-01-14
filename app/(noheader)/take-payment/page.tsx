@@ -166,6 +166,7 @@ const [status, setStatus] = useState<'idle' | 'qr' | 'waiting' | 'processing' | 
 const [error, setError] = useState<string | null>(null);
 const [lastUID, setLastUID] = useState<string | null>(null);
 const [txHash, setTxHash] = useState<string | null>(null);
+const [receiptId, setReceiptId] = useState<string | null>(null);
 const [qrPaymentUrl, setQrPaymentUrl] = useState<string | null>(null);
 // Last order for repeat
 const [lastOrder, setLastOrder] = useState<CartItem[] | null>(null);
@@ -301,9 +302,10 @@ try {
 const res = await fetch(`https://api.dltpays.com/api/v1/xaman/payment/poll/${xamanPaymentId}`);
 const data = await res.json();
 if (data.status === 'signed') {
-setTxHash(data.tx_hash);
-setLastOrder([...cart]);
-setStatus('success');
+          setTxHash(data.tx_hash);
+          setReceiptId(data.receipt_id);
+          setLastOrder([...cart]);
+          setStatus('success');
 paymentInProgressRef.current = false;
 if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'success', null, tipAmount, tipsEnabled, walletAddress || undefined);
 if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
@@ -852,57 +854,101 @@ const setupWalletForPayments = async () => {
   setSettingUpWallet(false);
 };
 
-// Send receipt email
 const sendReceiptEmail = async () => {
-if (!emailAddress || !emailAddress.includes('@')) {
-setError('Please enter a valid email');
-return;
+  if (!emailAddress || !emailAddress.includes('@')) {
+    setError('Please enter a valid email');
+    return;
   }
-setSendingEmail(true);
-try {
-const orderItems = cart.length > 0 
-? [
-...cart.map(item => ({
-name: item.name,
-quantity: item.quantity,
-unit_price: item.price
-      })),
-...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, unit_price: tipAmount }] : [])
-    ]
-: lastOrder 
-? [
-...lastOrder.map(item => ({
-name: item.name,
-quantity: item.quantity,
-unit_price: item.price
-        })),
-...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, unit_price: tipAmount }] : [])
-      ]
-: [];
-const res = await fetch('https://api.dltpays.com/nfc/api/v1/receipt/email', {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({
-email: emailAddress,
-store_name: storeName,
-store_id: storeId,
-amount: getPaymentAmount(),
-items: orderItems,
-tx_hash: txHash
-      })
-    });
-const data = await res.json();
-if (data.success) {
-setShowEmailModal(false);
-setEmailAddress('');
+  setSendingEmail(true);
+  
+  try {
+    // If we have a receipt_id, fetch the complete receipt from backend
+    if (receiptId) {
+      const receiptRes = await fetch(`https://api.dltpays.com/nfc/api/v1/receipt/${receiptId}`);
+      const receiptData = await receiptRes.json();
+      
+      if (receiptData.success && receiptData.receipt) {
+        const receipt = receiptData.receipt;
+        
+        // Send email with complete receipt data
+        const res = await fetch('https://api.dltpays.com/nfc/api/v1/receipt/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailAddress,
+            store_name: storeName,
+            store_id: storeId,
+            amount: receipt.total,
+            rlusd_amount: receipt.amount_rlusd,
+            items: receipt.items,
+            tx_hash: receipt.payment_tx_hash,
+            receipt_number: receipt.receipt_number,
+            conversion_rate: receipt.conversion_rate,
+            rate_source: receipt.conversion_rate?.source,
+            rate_timestamp: receipt.conversion_rate?.captured_at,
+            price_age_ms: receipt.conversion_rate?.price_age_ms
+          })
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+          setShowEmailModal(false);
+          setEmailAddress('');
+        } else {
+          setError('Failed to send email');
+        }
+      } else {
+        setError('Receipt not found');
+      }
     } else {
-setError('Failed to send email');
+      // Fallback: use local data (shouldn't happen with new backend)
+      const orderItems = cart.length > 0
+        ? [
+            ...cart.map(item => ({
+              name: item.name,
+              quantity: item.quantity,
+              unit_price: item.price
+            })),
+            ...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, unit_price: tipAmount }] : [])
+          ]
+        : lastOrder
+        ? [
+            ...lastOrder.map(item => ({
+              name: item.name,
+              quantity: item.quantity,
+              unit_price: item.price
+            })),
+            ...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, unit_price: tipAmount }] : [])
+          ]
+        : [];
+      
+      const res = await fetch('https://api.dltpays.com/nfc/api/v1/receipt/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailAddress,
+          store_name: storeName,
+          store_id: storeId,
+          amount: getPaymentAmount(),
+          items: orderItems,
+          tx_hash: txHash
+        })
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        setShowEmailModal(false);
+        setEmailAddress('');
+      } else {
+        setError('Failed to send email');
+      }
     }
   } catch (err) {
-setError('Failed to send email');
+    setError('Failed to send email');
   }
-setSendingEmail(false);
+  setSendingEmail(false);
 };
+
 // Print receipt
 const printReceipt = () => {
 const items = [
