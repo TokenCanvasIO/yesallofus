@@ -882,6 +882,7 @@ const sendReceiptEmail = async () => {
             amount: receipt.total,
             rlusd_amount: receipt.amount_rlusd,
             items: receipt.items,
+            tip_amount: receipt.tip_amount,
             tx_hash: receipt.payment_tx_hash,
             receipt_number: receipt.receipt_number,
             conversion_rate: receipt.conversion_rate,

@@ -671,6 +671,10 @@ if (allPaid || payment?.status === 'paid') {
                         store_name: payment?.store_name,
                         store_id: payment?.store_id,
                         amount: payment?.amount,
+                        items: [
+                          ...(payment?.items || []),
+                          ...(payment?.tip && payment.tip > 0 ? [{ name: 'Tip', quantity: 1, unit_price: payment.tip }] : [])
+                        ],
                         tx_hash: txHash
                       })
                     });
