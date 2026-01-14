@@ -13,7 +13,7 @@ interface MilestoneChecklistProps {
   storeId: string;
   walletAddress: string;
   autoSignEnabled?: boolean;
-  // Direct status props for customer milestones (auto-sync from parent)
+  // Direct status props for customer milestones (DEPRECATED - now fetches from API)
   walletFunded?: boolean;
   trustlineSet?: boolean;
   tapPayEnabled?: boolean;
@@ -224,7 +224,7 @@ export default function MilestoneChecklist({
   const storageKey = type === 'customer' ? `milestones_collapsed_customer_${walletAddress}` : `milestones_collapsed_${storeId}`;
   const dismissKey = type === 'customer' ? `milestones_dismissed_customer_${walletAddress}` : `milestones_dismissed_${storeId}`;
 
-  // For customer type, build milestones from props (auto-sync)
+  // Fetch milestones from API with polling
   useEffect(() => {
     // Check if collapsed preference
     const collapsed = localStorage.getItem(storageKey);
@@ -233,17 +233,12 @@ export default function MilestoneChecklist({
     }
 
     if (type === 'customer') {
-      // Build milestones from props - no API call needed
-      const now = new Date().toISOString();
-      const customerMilestones: Record<string, string | null> = {
-        wallet_funded: walletFunded ? now : null,
-        trustline_set: trustlineSet ? now : null,
-        tap_pay_enabled: tapPayEnabled ? now : null,
-        nfc_card_added: nfcCardAdded ? now : null,
-        joined_affiliate: joinedAffiliate ? now : null,
-      };
-      setMilestones(customerMilestones);
-      setLoading(false);
+      // Fetch customer milestones from API with polling
+      fetchCustomerMilestones();
+      const pollInterval = setInterval(() => {
+        fetchCustomerMilestones();
+      }, 5000);
+      return () => clearInterval(pollInterval);
     } else {
       // Vendor - fetch from API with polling
       fetchMilestones();
@@ -252,7 +247,7 @@ export default function MilestoneChecklist({
       }, 5000);
       return () => clearInterval(pollInterval);
     }
-  }, [storeId, walletAddress, autoSignEnabled, type, walletFunded, trustlineSet, tapPayEnabled, nfcCardAdded, joinedAffiliate]);
+  }, [storeId, walletAddress, type]);
 
   const fetchMilestones = async () => {
     try {
@@ -269,7 +264,21 @@ export default function MilestoneChecklist({
       setLoading(false);
     }
   };
-
+const fetchCustomerMilestones = async () => {
+    try {
+      const endpoint = `${API_URL}/customer/milestones/${walletAddress}`;
+      const res = await fetch(endpoint);
+      const data = await res.json();
+      if (data.success) {
+        setMilestones(data.milestones);
+      }
+    } catch (err) {
+      console.error('Failed to fetch customer milestones:', err);
+    }
+    if (loading) {
+      setLoading(false);
+    }
+  };
   // Calculate completed count
   const completed = Object.values(milestones).filter(v => v !== null).length;
   const total = milestoneConfig.length;
