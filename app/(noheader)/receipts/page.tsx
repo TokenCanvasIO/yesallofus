@@ -812,7 +812,8 @@ const exportPDF = () => {
                       store_id: storeId,
                       amount: selectedReceipt.total,
                       items: selectedReceipt.items,
-                      tx_hash: selectedReceipt.payment_tx_hash,
+                      tip_amount: selectedReceipt.tip_amount,
+		      tx_hash: selectedReceipt.payment_tx_hash,
                     }),
                   });
                   const data = await res.json();
