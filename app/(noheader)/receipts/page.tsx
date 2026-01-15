@@ -959,6 +959,37 @@ const exportPDF = () => {
                 </span>
               </div>
 
+              {/* Settlement Details */}
+              {previewReceipt.amount_rlusd && previewReceipt.conversion_rate && (
+                <div className="mb-6 p-4 bg-emerald-50 rounded-lg border-l-4 border-emerald-500">
+                  <p className="text-xs font-semibold text-emerald-800 mb-2">💱 SETTLEMENT DETAILS</p>
+                  <div className="text-sm space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Amount Quoted:</span>
+                      <span>£{previewReceipt.total.toFixed(2)} GBP</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Amount Settled:</span>
+                      <span className="font-semibold">{previewReceipt.amount_rlusd.toFixed(6)} RLUSD</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Exchange Rate:</span>
+                      <span>£1 = {previewReceipt.conversion_rate.gbp_to_rlusd?.toFixed(6) || 'N/A'} RLUSD</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Rate Source:</span>
+                      <span>{previewReceipt.conversion_rate.source || 'CoinGecko Pro API'}</span>
+                    </div>
+                    {previewReceipt.conversion_rate.captured_at && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Rate Timestamp:</span>
+                        <span className="text-xs text-gray-500">{new Date(previewReceipt.conversion_rate.captured_at).toISOString()}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Transaction */}
               <div className="bg-gray-100 rounded-lg p-4 mb-6">
                 <p className="text-xs text-gray-600 mb-1">Transaction ID (XRPL)</p>
