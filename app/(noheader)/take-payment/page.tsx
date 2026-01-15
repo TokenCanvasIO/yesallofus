@@ -674,6 +674,7 @@ const response = await fetch(`${API_URL}/nfc/payment`, {
 const data = await response.json();
 if (data.success) {
 setTxHash(data.tx_hash);
+setReceiptId(data.receipt_id);
 setLastOrder([...cart]);
 setStatus('success');
 if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'success', null, tipAmount, tipsEnabled, walletAddress || undefined);

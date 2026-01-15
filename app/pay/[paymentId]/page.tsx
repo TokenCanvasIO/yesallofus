@@ -40,6 +40,7 @@ export default function PayPage() {
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [receiptId, setReceiptId] = useState<string | null>(null);
 
   // Split bill state
   const [showSplitModal, setShowSplitModal] = useState(false);
@@ -285,11 +286,13 @@ useEffect(() => {
           setXamanPaymentId(null);
           
           // Mark payment as paid in our system
-          await fetch(`${API_URL}/payment-link/${getCurrentPaymentId()}/pay`, {
+          const payRes = await fetch(`${API_URL}/payment-link/${getCurrentPaymentId()}/pay`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ payer_wallet: 'xaman_payment' })
           });
+          const payData = await payRes.json();
+          if (payData.receipt_id) setReceiptId(payData.receipt_id);
 
           // Move to next split or show success
           if (splits && currentSplitIndex < splits.length - 1) {
@@ -422,6 +425,7 @@ useEffect(() => {
 
           if (result.success) {
   setTxHash(result.tx_hash);
+  setReceiptId(result.receipt_id);
   setError(null);
   
   // Mark current split as paid
@@ -853,8 +857,9 @@ if (allPaid || payment?.status === 'paid') {
   storeName={payment?.store_name || ''}
   storeId={payment?.store_id || ''}
   paymentId={getCurrentPaymentId()}
-  onSuccess={(txHash) => {
+  onSuccess={(txHash, receiptId) => {
   setTxHash(txHash);
+  if (receiptId) setReceiptId(receiptId);
   setShowToast(true);
   setTimeout(() => setShowToast(false), 3000); // Hide after 3 seconds
   
@@ -1127,13 +1132,32 @@ if (allPaid || payment?.status === 'paid') {
                     await fetch('https://api.dltpays.com/nfc/api/v1/receipt/email', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        email: emailAddress,
-                        store_name: payment?.store_name,
-                        store_id: payment?.store_id,
-                        amount: payment?.amount,
-                        tx_hash: txHash
-                      })
+                      body: JSON.stringify(
+  receiptId
+    ? await (async () => {
+        const receiptRes = await fetch(`https://api.dltpays.com/nfc/api/v1/receipts/${receiptId}`);
+        const receiptData = await receiptRes.json();
+        if (receiptData.success && receiptData.receipt) {
+          const r = receiptData.receipt;
+          return {
+            email: emailAddress,
+            store_name: r.store_name || payment?.store_name,
+            store_id: r.store_id || payment?.store_id,
+            amount: r.total,
+            rlusd_amount: r.amount_rlusd,
+            items: r.items,
+            tip_amount: r.tip_amount,
+            tx_hash: r.payment_tx_hash || txHash,
+            receipt_number: r.receipt_number,
+            conversion_rate: r.conversion_rate,
+            rate_source: r.conversion_rate?.source,
+            rate_timestamp: r.conversion_rate?.captured_at
+          };
+        }
+        return { email: emailAddress, store_name: payment?.store_name, store_id: payment?.store_id, amount: payment?.amount, tx_hash: txHash };
+      })()
+    : { email: emailAddress, store_name: payment?.store_name, store_id: payment?.store_id, amount: payment?.amount, tx_hash: txHash }
+)
                     });
                     setShowEmailModal(false);
                     setEmailAddress('');

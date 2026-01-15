@@ -8,7 +8,7 @@ interface InstantPayProps {
   storeName: string;
   storeId: string;
   paymentId: string;
-  onSuccess: (txHash: string) => void;
+  onSuccess: (txHash: string, receiptId?: string) => void;
   onError: (error: string) => void;
 }
 
@@ -150,16 +150,23 @@ const { getWeb3Auth } = await import('@/lib/web3auth');
         throw new Error('Transaction failed - no hash returned');
       }
 
-      await fetch(`${API_URL}/payment-link/${paymentId}/pay`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          payer_wallet: wallet,
-          tx_hash: txHash
-        })
-      }).catch(() => {});
+      let receiptId: string | undefined;
+      try {
+        const payRes = await fetch(`${API_URL}/payment-link/${paymentId}/pay`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            payer_wallet: wallet,
+            tx_hash: txHash
+          })
+        });
+        const payData = await payRes.json();
+        receiptId = payData.receipt_id;
+      } catch (e) {
+        console.error('Failed to mark payment:', e);
+      }
 
-      onSuccess(txHash);
+      onSuccess(txHash, receiptId);
       if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
     } catch (error: any) {
       console.error('Payment error:', error);

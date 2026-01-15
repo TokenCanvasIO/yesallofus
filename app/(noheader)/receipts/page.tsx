@@ -19,6 +19,7 @@ interface Receipt {
   tip_amount?: number;
   subtotal?: number;
   total: number;
+  amount_rlusd?: number;
   currency: string;
   payment_method?: string;
   payment_status: string;
@@ -27,6 +28,10 @@ interface Receipt {
   created_at: string;
   conversion_rate?: {
     rlusd_gbp: number;
+    gbp_to_rlusd?: number;
+    source?: string;
+    captured_at?: string;
+    price_age_ms?: number;
   };
 }
 
@@ -811,9 +816,14 @@ const exportPDF = () => {
                       store_name: storeName,
                       store_id: storeId,
                       amount: selectedReceipt.total,
+                      rlusd_amount: selectedReceipt.amount_rlusd,
                       items: selectedReceipt.items,
                       tip_amount: selectedReceipt.tip_amount,
-		      tx_hash: selectedReceipt.payment_tx_hash,
+                      tx_hash: selectedReceipt.payment_tx_hash,
+                      receipt_number: selectedReceipt.receipt_number,
+                      conversion_rate: selectedReceipt.conversion_rate,
+                      rate_source: selectedReceipt.conversion_rate?.source,
+                      rate_timestamp: selectedReceipt.conversion_rate?.captured_at,
                     }),
                   });
                   const data = await res.json();
