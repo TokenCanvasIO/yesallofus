@@ -952,24 +952,69 @@ const sendReceiptEmail = async () => {
   setSendingEmail(false);
 };
 
-// Print receipt
-const printReceipt = () => {
-const items = [
-...(lastOrder || cart),
-...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, price: tipAmount }] : [])
-];
-const amount = getPaymentAmount();
-const receiptHtml = `
+const printReceipt = async () => {
+  const items = [
+    ...(lastOrder || cart),
+    ...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, price: tipAmount }] : [])
+  ];
+  const amount = getPaymentAmount();
+
+  // Fetch receipt data if available
+  let receiptData = null;
+  if (receiptId) {
+    try {
+      const res = await fetch(`https://api.dltpays.com/nfc/api/v1/receipts/${receiptId}`);
+      const data = await res.json();
+      if (data.success && data.receipt) {
+        receiptData = data.receipt;
+      }
+    } catch (e) {
+      console.error('Failed to fetch receipt for print:', e);
+    }
+  }
+
+  // Build settlement details HTML
+  const settlementHtml = (receiptData?.amount_rlusd && receiptData?.conversion_rate) ? `
+    <div style="margin-top: 20px; padding: 15px; background: #f0fdf4; border-radius: 8px; border-left: 3px solid #10b981;">
+      <div style="font-size: 12px; color: #166534; font-weight: 600; margin-bottom: 8px;">💱 SETTLEMENT DETAILS</div>
+      <div style="font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: #666;">Amount Quoted:</span>
+          <span>£${amount.toFixed(2)} GBP</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: #666;">Amount Settled:</span>
+          <span style="font-weight: 600;">${receiptData.amount_rlusd.toFixed(6)} RLUSD</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: #666;">Exchange Rate:</span>
+          <span>£1 = ${receiptData.conversion_rate.gbp_to_rlusd?.toFixed(6) || 'N/A'} RLUSD</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: #666;">Rate Source:</span>
+          <span>${receiptData.conversion_rate.source || 'CoinGecko Pro API'}</span>
+        </div>
+        ${receiptData.conversion_rate.captured_at ? `
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: #666;">Rate Timestamp:</span>
+          <span style="font-size: 11px; color: #888;">${new Date(receiptData.conversion_rate.captured_at).toISOString()}</span>
+        </div>
+        ` : ''}
+      </div>
+    </div>
+  ` : '';
+
+  const receiptHtml = `
     <!DOCTYPE html>
     <html>
     <head>
       <title>Receipt - ${storeName}</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
+        body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          max-width: 400px; 
-          margin: 0 auto; 
+          max-width: 400px;
+          margin: 0 auto;
           padding: 30px 20px;
           color: #1a1a1a;
         }
@@ -1082,7 +1127,7 @@ const receiptHtml = `
     </head>
     <body>
       <div class="header">
-${storeLogo 
+${storeLogo
     ? `
       <img src="${storeLogo}" alt="${storeName}" class="store-logo">
       <div class="store-info">
@@ -1102,10 +1147,10 @@ ${storeLogo
     `
 }
 </div>
-      <div class="date">${new Date().toLocaleDateString('en-GB', { 
-weekday: 'long', 
-year: 'numeric', 
-month: 'long', 
+      <div class="date">${new Date().toLocaleDateString('en-GB', {
+weekday: 'long',
+year: 'numeric',
+month: 'long',
 day: 'numeric',
 hour: '2-digit',
 minute: '2-digit'
@@ -1125,6 +1170,7 @@ ${items.map(item => `
         <span class="total-label">Total</span>
         <span class="total-amount">£${amount.toFixed(2)}</span>
       </div>
+      ${settlementHtml}
 ${txHash ? `
         <div class="tx-section">
           <div class="tx-label">Transaction ID (XRPL)</div>
@@ -1143,11 +1189,11 @@ ${txHash ? `
     </body>
     </html>
   `;
-const printWindow = window.open('', '_blank');
-if (printWindow) {
-printWindow.document.write(receiptHtml);
-printWindow.document.close();
-setTimeout(() => printWindow.print(), 500);
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(receiptHtml);
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 500);
   }
 };
 // Group products by category
