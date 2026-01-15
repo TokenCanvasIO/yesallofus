@@ -82,6 +82,7 @@ export default function PayPage() {
   // Print receipt
 
   const printReceipt = async () => {
+  console.log('DEBUG printReceipt - receiptId:', receiptId);
   const items = payment?.items || [];
   const tip = payment?.tip || 0;
   
