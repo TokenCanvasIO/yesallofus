@@ -858,6 +858,7 @@ if (allPaid || payment?.status === 'paid') {
   storeId={payment?.store_id || ''}
   paymentId={getCurrentPaymentId()}
   onSuccess={(txHash, receiptId) => {
+  console.log('DEBUG onSuccess:', { txHash, receiptId });
   setTxHash(txHash);
   if (receiptId) setReceiptId(receiptId);
   setShowToast(true);
