@@ -80,10 +80,7 @@ export default function PayPage() {
   const [sendingSplitEmail, setSendingSplitEmail] = useState(false);
 
   // Print receipt
-const printReceipt = () => {
-  const items = payment?.items || [];
-  const tip = payment?.tip || 0;
-  
+
   const printReceipt = async () => {
   const items = payment?.items || [];
   const tip = payment?.tip || 0;
