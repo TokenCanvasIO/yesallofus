@@ -719,17 +719,32 @@ if (allPaid || payment?.status === 'paid') {
                     await fetch('https://api.dltpays.com/nfc/api/v1/receipt/email', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        email: emailAddress,
-                        store_name: payment?.store_name,
-                        store_id: payment?.store_id,
-                        amount: payment?.amount,
-                        items: [
-                          ...(payment?.items || []),
-                          ...(payment?.tip && payment.tip > 0 ? [{ name: 'Tip', quantity: 1, unit_price: payment.tip }] : [])
-                        ],
-                        tx_hash: txHash
-                      })
+                      body: JSON.stringify(
+                        receiptId
+                          ? await (async () => {
+                              const receiptRes = await fetch(`https://api.dltpays.com/nfc/api/v1/receipts/${receiptId}`);
+                              const receiptData = await receiptRes.json();
+                              if (receiptData.success && receiptData.receipt) {
+                                const r = receiptData.receipt;
+                                return {
+                                  email: emailAddress,
+                                  store_name: r.store_name || payment?.store_name,
+                                  store_id: r.store_id || payment?.store_id,
+                                  amount: r.total,
+                                  rlusd_amount: r.amount_rlusd,
+                                  items: r.items,
+                                  tip_amount: r.tip_amount,
+                                  tx_hash: r.payment_tx_hash || txHash,
+                                  receipt_number: r.receipt_number,
+                                  conversion_rate: r.conversion_rate,
+                                  rate_source: r.conversion_rate?.source,
+                                  rate_timestamp: r.conversion_rate?.captured_at
+                                };
+                              }
+                              return { email: emailAddress, store_name: payment?.store_name, store_id: payment?.store_id, amount: payment?.amount, tx_hash: txHash };
+                            })()
+                          : { email: emailAddress, store_name: payment?.store_name, store_id: payment?.store_id, amount: payment?.amount, tx_hash: txHash }
+                      )
                     });
                     setShowEmailModal(false);
                     setEmailAddress('');
