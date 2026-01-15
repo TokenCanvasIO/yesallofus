@@ -339,7 +339,7 @@ useEffect(() => {
           const payRes = await fetch(`${API_URL}/payment-link/${getCurrentPaymentId()}/pay`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ payer_wallet: 'xaman_payment' })
+            body: JSON.stringify({ payer_wallet: 'xaman_payment', tx_hash: data.tx_hash })
           });
           const payData = await payRes.json();
           if (payData.receipt_id) setReceiptId(payData.receipt_id);
