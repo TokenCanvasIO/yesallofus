@@ -84,6 +84,55 @@ const printReceipt = () => {
   const items = payment?.items || [];
   const tip = payment?.tip || 0;
   
+  const printReceipt = async () => {
+  const items = payment?.items || [];
+  const tip = payment?.tip || 0;
+  
+  // Fetch receipt data if available
+  let receiptData = null;
+  if (receiptId) {
+    try {
+      const res = await fetch(`https://api.dltpays.com/nfc/api/v1/receipts/${receiptId}`);
+      const data = await res.json();
+      if (data.success && data.receipt) {
+        receiptData = data.receipt;
+      }
+    } catch (e) {
+      console.error('Failed to fetch receipt for print:', e);
+    }
+  }
+  
+  // Build settlement details HTML if we have conversion data
+  const settlementHtml = (receiptData?.amount_rlusd && receiptData?.conversion_rate) ? `
+    <div style="margin-top: 20px; padding: 15px; background: #f0fdf4; border-radius: 8px; border-left: 3px solid #10b981;">
+      <div style="font-size: 12px; color: #166534; font-weight: 600; margin-bottom: 8px;">💱 SETTLEMENT DETAILS</div>
+      <div style="font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: #666;">Amount Quoted:</span>
+          <span>£${(receiptData.total || payment?.amount || 0).toFixed(2)} GBP</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: #666;">Amount Settled:</span>
+          <span style="font-weight: 600;">${receiptData.amount_rlusd.toFixed(6)} RLUSD</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: #666;">Exchange Rate:</span>
+          <span>£1 = ${receiptData.conversion_rate.gbp_to_rlusd?.toFixed(6) || 'N/A'} RLUSD</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: #666;">Rate Source:</span>
+          <span>${receiptData.conversion_rate.source || 'CoinGecko Pro API'}</span>
+        </div>
+        ${receiptData.conversion_rate.captured_at ? `
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: #666;">Rate Timestamp:</span>
+          <span style="font-size: 11px; color: #888;">${new Date(receiptData.conversion_rate.captured_at).toISOString()}</span>
+        </div>
+        ` : ''}
+      </div>
+    </div>
+  ` : '';
+
   const receiptHtml = `
     <!DOCTYPE html>
     <html>
@@ -166,6 +215,7 @@ const printReceipt = () => {
         <span class="total-label">Total Paid</span>
         <span class="total-amount">£${(payment?.amount || 0).toFixed(2)}</span>
       </div>
+      ${settlementHtml}
       ${txHash ? `
         <div class="tx-section">
           <div class="tx-label">Transaction ID (XRPL)</div>
