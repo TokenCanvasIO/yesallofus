@@ -329,6 +329,7 @@ useEffect(() => {
 
         if (data.status === 'signed') {
           setTxHash(data.tx_hash);
+          if (data.receipt_id) setReceiptId(data.receipt_id);
           setXamanQR(null);
           setXamanPaymentId(null);
           
