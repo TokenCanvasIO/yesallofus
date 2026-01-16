@@ -1,6 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 
+const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1';
+const PLUGINS_API_URL = 'https://api.dltpays.com/plugins/api/v1';
+
 interface InstantPayProps {
   amount: number;
   rlusdAmount: number;
@@ -10,9 +13,8 @@ interface InstantPayProps {
   paymentId: string;
   onSuccess: (txHash: string, receiptId?: string) => void;
   onError: (error: string) => void;
+  isCheckoutSession?: boolean;  // NEW: Flag to indicate this is a checkout session
 }
-
-const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
 export default function InstantPay({
   amount,
@@ -22,12 +24,23 @@ export default function InstantPay({
   storeId,
   paymentId,
   onSuccess,
-  onError
+  onError,
+  isCheckoutSession = false  // Default to false for backwards compatibility
 }: InstantPayProps) {
   const [step, setStep] = useState<'login' | 'setup' | 'reauth' | 'ready'>('login');
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [paying, setPaying] = useState(false);
+
+  // Helper function to get the correct pay endpoint
+  const getPayEndpoint = () => {
+    if (isCheckoutSession) {
+      // For checkout sessions, use the plugins API with session ID (storeId contains session_id)
+      return `${PLUGINS_API_URL}/checkout/session/${storeId}/pay`;
+    }
+    // For regular payment links, use NFC API
+    return `${NFC_API_URL}/payment-link/${paymentId}/pay`;
+  };
 
   // Check if user is already logged in and set up
   useEffect(() => {
@@ -38,7 +51,7 @@ export default function InstantPay({
         
         if (stored && method === 'web3auth') {
           setWalletAddress(stored);
-          const res = await fetch(`${API_URL}/customer/autosign-status/${stored}`);
+          const res = await fetch(`${NFC_API_URL}/customer/autosign-status/${stored}`);
           const data = await res.json();
           
           if (data.auto_sign_enabled) {
@@ -63,29 +76,29 @@ export default function InstantPay({
   };
 
   // Process payment with wallet address
-const processPaymentWithWallet = async (wallet: string) => {
-// Check for self-payment
-if (wallet.toLowerCase() === vendorWallet.toLowerCase()) {
-onError('SELF_PAYMENT_NOT_ALLOWED');
-return;
+  const processPaymentWithWallet = async (wallet: string) => {
+    // Check for self-payment
+    if (wallet.toLowerCase() === vendorWallet.toLowerCase()) {
+      onError('SELF_PAYMENT_NOT_ALLOWED');
+      return;
     }
 
-// Check if wallet is ready (funded + RLUSD enabled)
-try {
-const statusRes = await fetch(`${API_URL}/wallet/status/${wallet}`);
-const statusData = await statusRes.json();
+    // Check if wallet is ready (funded + RLUSD enabled)
+    try {
+      const statusRes = await fetch(`${NFC_API_URL}/wallet/status/${wallet}`);
+      const statusData = await statusRes.json();
 
-if (statusData.success && (!statusData.funded || !statusData.rlusd_trustline)) {
-onError('WALLET_NOT_READY');
-return;
+      if (statusData.success && (!statusData.funded || !statusData.rlusd_trustline)) {
+        onError('WALLET_NOT_READY');
+        return;
+      }
+    } catch (err) {
+      console.error('Wallet status check failed:', err);
     }
-} catch (err) {
-console.error('Wallet status check failed:', err);
-}
 
-setPaying(true);
-try {
-const { getWeb3Auth } = await import('@/lib/web3auth');
+    setPaying(true);
+    try {
+      const { getWeb3Auth } = await import('@/lib/web3auth');
       const web3auth = await getWeb3Auth();
       
       if (!web3auth || !web3auth.provider) {
@@ -152,7 +165,7 @@ const { getWeb3Auth } = await import('@/lib/web3auth');
 
       let receiptId: string | undefined;
       try {
-        const payRes = await fetch(`${API_URL}/payment-link/${paymentId}/pay`, {
+        const payRes = await fetch(getPayEndpoint(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -212,7 +225,7 @@ const { getWeb3Auth } = await import('@/lib/web3auth');
       
       setWalletAddress(address);
 
-      const res = await fetch(`${API_URL}/customer/autosign-status/${address}`);
+      const res = await fetch(`${NFC_API_URL}/customer/autosign-status/${address}`);
       const data = await res.json();
       
       if (data.auto_sign_enabled) {

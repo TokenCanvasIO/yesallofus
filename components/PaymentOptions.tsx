@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import InstantPay from './InstantPay';
 
-const API_URL = 'https://api.dltpays.com/nfc/api/v1';
+const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1';
+const PLUGINS_API_URL = 'https://api.dltpays.com/plugins/api/v1';
 
 interface PaymentOptionsProps {
   amount: number;
@@ -17,6 +18,7 @@ interface PaymentOptionsProps {
   onError: (error: string) => void;
   showSplitBill?: boolean;
   onSplitBill?: () => void;
+  isCheckoutSession?: boolean;  // NEW: Flag to indicate this is a checkout session
 }
 
 export default function PaymentOptions({
@@ -30,7 +32,8 @@ export default function PaymentOptions({
   onSuccess,
   onError,
   showSplitBill = false,
-  onSplitBill
+  onSplitBill,
+  isCheckoutSession = false  // Default to false for backwards compatibility
 }: PaymentOptionsProps) {
   // NFC state
   const [nfcSupported, setNfcSupported] = useState(false);
@@ -41,6 +44,16 @@ export default function PaymentOptions({
   // Xaman state
   const [xamanQR, setXamanQR] = useState<string | null>(null);
   const [xamanPaymentId, setXamanPaymentId] = useState<string | null>(null);
+
+  // Helper function to get the correct pay endpoint
+  const getPayEndpoint = () => {
+    if (isCheckoutSession) {
+      // For checkout sessions, use the plugins API with session ID (storeId contains session_id)
+      return `${PLUGINS_API_URL}/checkout/session/${storeId}/pay`;
+    }
+    // For regular payment links, use NFC API
+    return `${NFC_API_URL}/payment-link/${paymentId}/pay`;
+  };
 
   // Check NFC support on mount
   useEffect(() => {
@@ -64,7 +77,7 @@ export default function PaymentOptions({
           setXamanPaymentId(null);
           
           // Mark payment as paid in our system
-          const payRes = await fetch(`${API_URL}/payment-link/${paymentId}/pay`, {
+          const payRes = await fetch(getPayEndpoint(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ payer_wallet: 'xaman_payment', tx_hash: data.tx_hash })
@@ -79,7 +92,7 @@ export default function PaymentOptions({
     }, 3000);
 
     return () => clearInterval(pollInterval);
-  }, [xamanPaymentId, paymentId, onSuccess]);
+  }, [xamanPaymentId, paymentId, storeId, isCheckoutSession, onSuccess]);
 
   // Generate Xaman QR
   const generateXamanQR = async () => {
@@ -149,7 +162,7 @@ export default function PaymentOptions({
         setProcessing(true);
 
         try {
-          const res = await fetch(`${API_URL}/payment-link/${paymentId}/pay`, {
+          const res = await fetch(getPayEndpoint(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ card_uid: uid })
@@ -250,6 +263,7 @@ export default function PaymentOptions({
         paymentId={paymentId}
         onSuccess={onSuccess}
         onError={onError}
+        isCheckoutSession={isCheckoutSession}
       />
 
       {/* NFC Tap to Pay */}

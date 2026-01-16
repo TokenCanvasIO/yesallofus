@@ -337,19 +337,23 @@ export default function CheckoutPage() {
               </button>
             )}
 
-            {/* Powered by footer */}
-            <div className="mt-8 pt-6 border-t border-zinc-800 text-center">
-              <p className="text-zinc-600 text-xs mb-1">POWERED BY</p>
-              <p className="text-sm font-bold tracking-wider">
+            {/* YAOFUS Pioneers Badge - Footer */}
+            <footer className="py-6 flex flex-col items-center gap-1 mt-6 border-t border-zinc-800">
+              <span className="text-zinc-500 text-[10px] font-medium tracking-wider">CATALOG</span>
+              <span className="text-base font-extrabold tracking-widest">
                 <span className="text-emerald-500">Y</span>
                 <span className="text-green-500">A</span>
                 <span className="text-blue-500">O</span>
                 <span className="text-indigo-500">F</span>
                 <span className="text-violet-500">U</span>
                 <span className="text-purple-500">S</span>
-              </p>
-              <p className="text-zinc-600 text-xs mt-1">Secure payments on XRPL</p>
-            </div>
+              </span>
+              <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">PRODUCTS</span>
+              <div className="flex items-center gap-2 mt-2 text-zinc-600 text-sm">
+                <img src="https://yesallofus.com/dltpayslogo1.png" alt="" className="w-5 h-5 rounded opacity-60" />
+                <span>Powered by YesAllOfUs</span>
+              </div>
+            </footer>
           </div>
         </div>
       </>
@@ -455,6 +459,7 @@ export default function CheckoutPage() {
                 onError={(err) => setError(err)}
                 showSplitBill={!splits && session.status === 'pending'}
                 onSplitBill={() => setShowSplitModal(true)}
+                isCheckoutSession={true}
               />
             )}
 
@@ -481,18 +486,23 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="bg-zinc-900/50 p-4 text-center border-t border-zinc-800">
-            <p className="text-zinc-600 text-xs mb-1">POWERED BY</p>
-            <p className="text-sm font-bold tracking-wider">
+          {/* YAOFUS Pioneers Badge - Footer */}
+          <footer className="py-6 flex flex-col items-center gap-1 border-t border-zinc-800">
+            <span className="text-zinc-500 text-[10px] font-medium tracking-wider">CATALOG</span>
+            <span className="text-base font-extrabold tracking-widest">
               <span className="text-emerald-500">Y</span>
               <span className="text-green-500">A</span>
               <span className="text-blue-500">O</span>
               <span className="text-indigo-500">F</span>
               <span className="text-violet-500">U</span>
               <span className="text-purple-500">S</span>
-            </p>
-          </div>
+            </span>
+            <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">PRODUCTS</span>
+            <div className="flex items-center gap-2 mt-2 text-zinc-600 text-sm">
+              <img src="https://yesallofus.com/dltpayslogo1.png" alt="" className="w-5 h-5 rounded opacity-60" />
+              <span>Powered by YesAllOfUs</span>
+            </div>
+          </footer>
         </div>
       </div>
 
