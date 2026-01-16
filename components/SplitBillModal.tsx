@@ -27,61 +27,71 @@ export default function SplitBillModal({ amount, isOpen, onClose, onSplit }: Spl
   const eachPays = amount / splitCount;
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-            <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+      <div className="bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800 rounded-3xl p-8 w-full max-w-sm shadow-2xl shadow-black/50">
+        
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-sky-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold">Split Bill</h2>
+          <h2 className="text-2xl font-bold text-white">Split the Bill</h2>
+          <p className="text-zinc-500 text-sm mt-1">Divide payment between friends</p>
         </div>
-        
-        <p className="text-zinc-400 mb-4">How many people?</p>
-        
-        <div className="flex items-center justify-center gap-6 mb-6">
+
+        {/* Counter */}
+        <div className="flex items-center justify-center gap-8 mb-8">
           <button
             onClick={() => setSplitCount(Math.max(2, splitCount - 1))}
-            className="w-14 h-14 rounded-full bg-zinc-800 hover:bg-zinc-700 text-2xl font-bold transition flex items-center justify-center"
+            className="w-16 h-16 rounded-2xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 transition flex items-center justify-center group"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-zinc-400 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 12H4" />
             </svg>
           </button>
-          <span className="text-5xl font-bold w-20 text-center">{splitCount}</span>
+          
+          <div className="text-center">
+            <span className="text-6xl font-bold text-white">{splitCount}</span>
+            <p className="text-zinc-500 text-sm mt-1">people</p>
+          </div>
+          
           <button
             onClick={() => setSplitCount(Math.min(10, splitCount + 1))}
-            className="w-14 h-14 rounded-full bg-zinc-800 hover:bg-zinc-700 text-2xl font-bold transition flex items-center justify-center"
+            className="w-16 h-16 rounded-2xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 transition flex items-center justify-center group"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-zinc-400 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
             </svg>
           </button>
         </div>
 
-        <div className="bg-zinc-800 rounded-xl p-4 mb-6">
-          <div className="flex justify-between text-zinc-400 mb-2">
-            <span>Total</span>
-            <span>£{amount.toFixed(2)}</span>
+        {/* Summary Card */}
+        <div className="bg-zinc-800/50 border border-zinc-700/50 rounded-2xl p-5 mb-8">
+          <div className="flex justify-between items-center text-zinc-400 mb-3">
+            <span>Total bill</span>
+            <span className="font-medium">£{amount.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between font-bold text-lg">
-            <span>Each pays</span>
-            <span className="text-emerald-400">£{eachPays.toFixed(2)}</span>
+          <div className="h-px bg-gradient-to-r from-transparent via-zinc-600 to-transparent mb-3" />
+          <div className="flex justify-between items-center">
+            <span className="text-white font-medium">Each person pays</span>
+            <span className="text-2xl font-bold text-emerald-400">£{eachPays.toFixed(2)}</span>
           </div>
         </div>
 
+        {/* Actions */}
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-4 rounded-xl font-medium transition"
+            className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 py-4 rounded-xl font-medium transition text-zinc-300"
           >
             Cancel
           </button>
           <button
             onClick={handleSplit}
             disabled={splitting}
-            className="flex-1 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black py-4 rounded-xl font-bold transition disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-black py-4 rounded-xl font-bold transition disabled:opacity-50 shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
           >
             {splitting ? (
               <>
@@ -89,7 +99,12 @@ export default function SplitBillModal({ amount, isOpen, onClose, onSplit }: Spl
                 Splitting...
               </>
             ) : (
-              'Split'
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                Split Bill
+              </>
             )}
           </button>
         </div>

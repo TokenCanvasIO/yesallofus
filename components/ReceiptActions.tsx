@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import EmailReceiptModal from './EmailReceiptModal';
 
 interface ReceiptActionsProps {
   receiptId?: string;
@@ -34,63 +35,6 @@ export default function ReceiptActions({
   storeLogo
 }: ReceiptActionsProps) {
   const [showEmailModal, setShowEmailModal] = useState(false);
-  const [emailAddress, setEmailAddress] = useState('');
-  const [sendingEmail, setSendingEmail] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
-
-  const sendEmail = async () => {
-    if (!emailAddress || !emailAddress.includes('@')) return;
-    
-    setSendingEmail(true);
-    try {
-      let payload: any = {
-        email: emailAddress,
-        store_name: storeName,
-        store_id: storeId,
-        amount,
-        tx_hash: txHash
-      };
-
-      if (receiptId) {
-        const res = await fetch(`${API_URL}/receipts/${receiptId}`);
-        const data = await res.json();
-        if (data.success && data.receipt) {
-          const r = data.receipt;
-          payload = {
-            email: emailAddress,
-            store_name: r.store_name || storeName,
-            store_id: r.store_id || storeId,
-            amount: r.total,
-            rlusd_amount: r.amount_rlusd,
-            items: r.items,
-            tip_amount: r.tip_amount,
-            tx_hash: r.payment_tx_hash || txHash,
-            receipt_number: r.receipt_number,
-            conversion_rate: r.conversion_rate,
-            rate_source: r.conversion_rate?.source,
-            rate_timestamp: r.conversion_rate?.captured_at
-          };
-        }
-      }
-
-      await fetch(`${API_URL}/receipt/email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      setEmailSent(true);
-      setTimeout(() => {
-        setShowEmailModal(false);
-        setEmailAddress('');
-        setEmailSent(false);
-      }, 2000);
-    } catch (err) {
-      console.error('Failed to send email:', err);
-    } finally {
-      setSendingEmail(false);
-    }
-  };
 
   const printReceipt = async () => {
     let receiptData: any = null;
@@ -219,7 +163,7 @@ export default function ReceiptActions({
       <div className="flex justify-center gap-3">
         <button
           onClick={() => setShowEmailModal(true)}
-          className="bg-zinc-800 hover:bg-zinc-700 px-5 py-3 rounded-xl text-sm transition flex items-center gap-2"
+          className="bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 px-5 py-3 rounded-xl text-sm transition flex items-center gap-2"
         >
           <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -228,7 +172,7 @@ export default function ReceiptActions({
         </button>
         <button 
           onClick={printReceipt}
-          className="bg-zinc-800 hover:bg-zinc-700 px-5 py-3 rounded-xl text-sm transition flex items-center gap-2"
+          className="bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 px-5 py-3 rounded-xl text-sm transition flex items-center gap-2"
         >
           <svg className="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -237,68 +181,18 @@ export default function ReceiptActions({
         </button>
       </div>
 
-      {/* Email Modal */}
-      {showEmailModal && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold">Send Receipt</h3>
-            </div>
-
-            {emailSent ? (
-              <div className="text-center py-6">
-                <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-emerald-400 font-medium">Receipt sent!</p>
-              </div>
-            ) : (
-              <>
-                <input
-                  type="email"
-                  placeholder="Your email address"
-                  value={emailAddress}
-                  onChange={(e) => setEmailAddress(e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 mb-4 transition"
-                  autoFocus
-                />
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setShowEmailModal(false);
-                      setEmailAddress('');
-                    }}
-                    className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={sendEmail}
-                    disabled={sendingEmail || !emailAddress.includes('@')}
-                    className="flex-1 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-bold py-3 rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {sendingEmail ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      'Send'
-                    )}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      <EmailReceiptModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        receiptId={receiptId}
+        txHash={txHash}
+        storeName={storeName}
+        storeId={storeId}
+        amount={amount}
+        rlusdAmount={rlusdAmount}
+        items={items}
+        tipAmount={tipAmount}
+      />
     </>
   );
 }
