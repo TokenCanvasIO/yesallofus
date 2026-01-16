@@ -23,6 +23,8 @@ interface CheckoutSession {
   receipt_id: string | null;
   expires_at: string | null;
   paid_at: string | null;
+  success_url: string | null;
+  cancel_url: string | null;
 }
 
 export default function CheckoutPage() {
@@ -195,7 +197,7 @@ export default function CheckoutPage() {
             {/* Transaction link */}
             {txHash && (
               
-                href={`https://livenet.xrpl.org/transactions/${txHash}`}
+               <a href={`https://livenet.xrpl.org/transactions/${txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block text-center text-sky-400 text-sm hover:text-sky-300 transition mb-6"
@@ -207,7 +209,7 @@ export default function CheckoutPage() {
             {/* Close / Return button */}
             {session.success_url ? (
               
-                href={session.success_url}
+              <a href={session.success_url}
                 className="block w-full bg-emerald-500 hover:bg-emerald-400 text-black font-semibold py-4 rounded-xl text-center transition"
               >
                 Return to Store
