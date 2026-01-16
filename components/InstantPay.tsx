@@ -102,7 +102,7 @@ const { getWeb3Auth } = await import('@/lib/web3auth');
         Amount: {
           currency: '524C555344000000000000000000000000000000',
           issuer: 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
-          value: rlusdAmount.toString()
+          value: parseFloat(rlusdAmount.toFixed(6)).toString()
         },
         Memos: [{
           Memo: {

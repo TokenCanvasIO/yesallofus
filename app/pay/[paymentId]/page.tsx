@@ -912,36 +912,51 @@ if (allPaid || payment?.status === 'paid') {
         {/* Payment Options */}
 {!xamanQR ? (
   <>
-    {/* Instant Pay with Web3Auth/Biometrics */}
-    <div className="mb-4">
-      <InstantPay
-  amount={currentAmount}
-  rlusdAmount={rlusdAmount || currentAmount * 1.35}
-  vendorWallet={payment?.vendor_wallet || ''}
-  storeName={payment?.store_name || ''}
-  storeId={payment?.store_id || ''}
-  paymentId={getCurrentPaymentId()}
-  onSuccess={(txHash, receiptId) => {
-  console.log('DEBUG onSuccess:', { txHash, receiptId });
-  setTxHash(txHash);
-  if (receiptId) setReceiptId(receiptId);
-  setShowToast(true);
-  setTimeout(() => setShowToast(false), 3000); // Hide after 3 seconds
-  
-  if (splits && currentSplitIndex < splits.length - 1) {
-    setCurrentSplitIndex(prev => prev + 1);
-  } else {
-    setAllPaid(true);
-  }
-}}
-  onError={(error) => setError(error)}
-/>
-    </div>
+    {/* Already Paid Message */}
+    {payment && payment.status !== 'pending' && !allPaid && (
+      <div className="bg-emerald-500/20 border border-emerald-500/50 rounded-2xl p-6 text-center mb-4">
+        <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h3 className="text-xl font-bold text-emerald-400 mb-2">Payment Already Complete</h3>
+        <p className="text-zinc-400">This payment has already been processed.</p>
+      </div>
+    )}
 
-    {/* NFC Tap Zone */}
-            {nfcSupported && (
-              <button
-                onClick={startNFCScan}
+    {/* Instant Pay with Web3Auth/Biometrics - Only show if pending */}
+    {payment?.status === 'pending' && (
+      <div className="mb-4">
+        <InstantPay
+          amount={currentAmount}
+          rlusdAmount={rlusdAmount || currentAmount * 1.35}
+          vendorWallet={payment?.vendor_wallet || ''}
+          storeName={payment?.store_name || ''}
+          storeId={payment?.store_id || ''}
+          paymentId={getCurrentPaymentId()}
+          onSuccess={(txHash, receiptId) => {
+            console.log('DEBUG onSuccess:', { txHash, receiptId });
+            setTxHash(txHash);
+            if (receiptId) setReceiptId(receiptId);
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 3000);
+            
+            if (splits && currentSplitIndex < splits.length - 1) {
+              setCurrentSplitIndex(prev => prev + 1);
+            } else {
+              setAllPaid(true);
+            }
+          }}
+          onError={(error) => setError(error)}
+        />
+      </div>
+    )}
+
+    {/* NFC Tap Zone - Only show if pending */}
+{payment?.status === 'pending' && nfcSupported && (
+<button
+onClick={startNFCScan}
                 disabled={nfcScanning || processing}
                 className="w-full mb-4"
               >
@@ -965,16 +980,19 @@ if (allPaid || payment?.status === 'paid') {
               </button>
             )}
 
-            <div className="text-center text-zinc-500 my-4">or</div>
-
-            {/* Xaman button */}
-            <button 
-              onClick={generateXamanQR}
-              className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-2xl p-5 flex items-center justify-center gap-3 transition mb-6"
-            >
-              <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded-lg" />
-              <span className="font-medium">Pay with Xaman</span>
-            </button>
+            {payment?.status === 'pending' && (
+  <>
+    <div className="text-center text-zinc-500 my-4">or</div>
+    {/* Xaman button */}
+    <button 
+      onClick={generateXamanQR}
+      className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-2xl p-5 flex items-center justify-center gap-3 transition mb-6"
+    >
+      <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded-lg" />
+      <span className="font-medium">Pay with Xaman</span>
+    </button>
+  </>
+)}
 
             {/* Split bill button (only if not already split) */}
 {!payment?.split_index && !splits && payment?.status === 'pending' && (

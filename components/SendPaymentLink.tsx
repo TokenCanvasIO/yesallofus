@@ -234,6 +234,11 @@ useEffect(() => {
         <div className="text-center mb-6">
           <p className="text-zinc-400 text-sm mb-1">Amount</p>
           <p className="text-4xl font-bold text-emerald-400">£{amount.toFixed(2)}</p>
+          {tip > 0 && (
+            <p className="text-emerald-400/70 text-sm mt-1">
+              (includes £{tip.toFixed(2)} tip)
+            </p>
+          )}
           <p className="text-zinc-500 text-sm mt-1">{storeName}</p>
         </div>
 
