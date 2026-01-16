@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import NebulaBackground from '@/components/NebulaBackground';
 import PaymentOptions from '@/components/PaymentOptions';
+import TipSelector from '@/components/TipSelector';
+import SplitBillModal from '@/components/SplitBillModal';
+import ReceiptActions from '@/components/ReceiptActions';
 
 const API_URL = 'https://api.dltpays.com/plugins/api/v1';
 
@@ -27,6 +30,13 @@ interface CheckoutSession {
   cancel_url: string | null;
 }
 
+interface SplitData {
+  payment_id: string;
+  amount: number;
+  split_index: number;
+  status: string;
+}
+
 export default function CheckoutPage() {
   const params = useParams();
   const sessionId = params.sessionId as string;
@@ -38,6 +48,14 @@ export default function CheckoutPage() {
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [rlusdAmount, setRlusdAmount] = useState<number | null>(null);
+  
+  // Tip state
+  const [tipAmount, setTipAmount] = useState(0);
+  
+  // Split bill state
+  const [showSplitModal, setShowSplitModal] = useState(false);
+  const [splits, setSplits] = useState<SplitData[] | null>(null);
+  const [currentSplitIndex, setCurrentSplitIndex] = useState(0);
 
   // Fetch session data
   useEffect(() => {
@@ -90,6 +108,70 @@ export default function CheckoutPage() {
     fetchSession();
   }, [sessionId]);
 
+  // Update RLUSD when tip changes
+  useEffect(() => {
+    if (!session) return;
+    const totalAmount = session.amount + tipAmount;
+    const fetchRate = async () => {
+      try {
+        const rateRes = await fetch(`https://api.dltpays.com/convert/gbp-to-rlusd?amount=${totalAmount}`);
+        const rateData = await rateRes.json();
+        if (rateData.success) {
+          setRlusdAmount(rateData.rlusd);
+        }
+      } catch (e) {
+        setRlusdAmount(totalAmount * 1.27);
+      }
+    };
+    fetchRate();
+  }, [tipAmount, session]);
+
+  // Get current amount (with tip, or split amount)
+  const getCurrentAmount = () => {
+    if (splits && splits.length > 0) {
+      return splits[currentSplitIndex].amount;
+    }
+    return (session?.amount || 0) + tipAmount;
+  };
+
+  // Get current payment ID
+  const getCurrentPaymentId = () => {
+    if (splits && splits.length > 0) {
+      return splits[currentSplitIndex].payment_id;
+    }
+    return sessionId;
+  };
+
+  // Handle split bill
+  const handleSplitBill = async (numSplits: number) => {
+    if (!session) return;
+    
+    try {
+      const res = await fetch(`${API_URL}/checkout/session/${sessionId}/split`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ num_splits: numSplits })
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        setSplits(result.splits.map((s: any) => ({
+          payment_id: s.payment_id,
+          amount: s.amount,
+          split_index: s.split_index,
+          status: 'pending'
+        })));
+        setShowSplitModal(false);
+        setCurrentSplitIndex(0);
+      } else {
+        setError(result.error || 'Failed to split bill');
+      }
+    } catch (err) {
+      setError('Failed to split bill');
+    }
+  };
+
   // Handle successful payment
   const handlePaymentSuccess = async (hash: string, receipt?: string) => {
     setTxHash(hash);
@@ -103,14 +185,24 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           tx_hash: hash,
           payer_wallet: sessionStorage.getItem('walletAddress'),
-          payment_method: 'web3auth'
+          payment_method: 'web3auth',
+          tip_amount: tipAmount
         })
       });
     } catch (e) {
       console.error('Failed to mark session paid:', e);
     }
 
-    setPaymentComplete(true);
+    // Handle splits
+    if (splits && currentSplitIndex < splits.length - 1) {
+      // Move to next split
+      const updatedSplits = [...splits];
+      updatedSplits[currentSplitIndex].status = 'paid';
+      setSplits(updatedSplits);
+      setCurrentSplitIndex(prev => prev + 1);
+    } else {
+      setPaymentComplete(true);
+    }
 
     // Vibration feedback
     if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
@@ -184,8 +276,14 @@ export default function CheckoutPage() {
             <div className="bg-zinc-800/50 rounded-xl p-4 mb-6">
               <div className="flex justify-between items-center">
                 <span className="text-zinc-400">Amount paid</span>
-                <span className="text-2xl font-bold text-white">£{session.amount.toFixed(2)}</span>
+                <span className="text-2xl font-bold text-white">£{(session.amount + tipAmount).toFixed(2)}</span>
               </div>
+              {tipAmount > 0 && (
+                <div className="flex justify-between items-center mt-2 pt-2 border-t border-zinc-700">
+                  <span className="text-zinc-500 text-sm">Includes tip</span>
+                  <span className="text-emerald-400 text-sm">£{tipAmount.toFixed(2)}</span>
+                </div>
+              )}
               {session.order_reference && (
                 <div className="flex justify-between items-center mt-2 pt-2 border-t border-zinc-700">
                   <span className="text-zinc-500 text-sm">Order</span>
@@ -196,8 +294,8 @@ export default function CheckoutPage() {
 
             {/* Transaction link */}
             {txHash && (
-              
-               <a href={`https://livenet.xrpl.org/transactions/${txHash}`}
+              <a 
+                href={`https://livenet.xrpl.org/transactions/${txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block text-center text-sky-400 text-sm hover:text-sky-300 transition mb-6"
@@ -206,10 +304,25 @@ export default function CheckoutPage() {
               </a>
             )}
 
+            {/* Receipt Actions */}
+            <div className="mb-6">
+              <ReceiptActions
+                receiptId={receiptId || undefined}
+                txHash={txHash || undefined}
+                storeName={session.store_name}
+                storeId={session.session_id}
+                amount={session.amount + tipAmount}
+                rlusdAmount={rlusdAmount || undefined}
+                items={session.items}
+                tipAmount={tipAmount}
+                storeLogo={session.store_logo || undefined}
+              />
+            </div>
+
             {/* Close / Return button */}
             {session.success_url ? (
-              
-              <a href={session.success_url}
+              <a 
+                href={session.success_url}
                 className="block w-full bg-emerald-500 hover:bg-emerald-400 text-black font-semibold py-4 rounded-xl text-center transition"
               >
                 Return to Store
@@ -242,6 +355,10 @@ export default function CheckoutPage() {
     );
   }
 
+  const currentAmount = getCurrentAmount();
+  const totalSplits = splits?.length || null;
+  const currentIndex = splits ? currentSplitIndex + 1 : null;
+
   // Main checkout view
   return (
     <>
@@ -261,7 +378,9 @@ export default function CheckoutPage() {
               )}
               <div>
                 <h1 className="text-lg font-bold text-white">{session?.store_name}</h1>
-                <p className="text-zinc-400 text-sm">Secure checkout</p>
+                <p className="text-zinc-400 text-sm">
+                  {totalSplits ? `Payment ${currentIndex} of ${totalSplits}` : 'Secure checkout'}
+                </p>
               </div>
             </div>
           </div>
@@ -290,11 +409,19 @@ export default function CheckoutPage() {
               </div>
             )}
 
+            {/* Tip display if added */}
+            {tipAmount > 0 && (
+              <div className="flex justify-between items-center py-2 text-emerald-400">
+                <span>Tip</span>
+                <span>£{tipAmount.toFixed(2)}</span>
+              </div>
+            )}
+
             {/* Total */}
             <div className="flex justify-between items-center pt-4 border-t border-zinc-800">
               <span className="text-zinc-400 font-medium">Total</span>
               <div className="text-right">
-                <p className="text-3xl font-bold text-emerald-400">£{session?.amount.toFixed(2)}</p>
+                <p className="text-3xl font-bold text-emerald-400">£{currentAmount.toFixed(2)}</p>
                 {rlusdAmount && (
                   <p className="text-zinc-500 text-sm">≈ {rlusdAmount.toFixed(2)} RLUSD</p>
                 )}
@@ -304,19 +431,29 @@ export default function CheckoutPage() {
 
           {/* Payment options */}
           <div className="p-6">
+            {/* Tip Selector - only show if not split */}
+            {!splits && session?.status === 'pending' && (
+              <TipSelector
+                amount={session.amount}
+                onTipChange={setTipAmount}
+              />
+            )}
+
             <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4">Pay with</h2>
 
             {session && rlusdAmount && (
               <PaymentOptions
-                amount={session.amount}
+                amount={currentAmount}
                 rlusdAmount={rlusdAmount}
                 vendorWallet={session.vendor_wallet}
                 storeName={session.store_name}
                 storeId={session.session_id}
-                paymentId={session.session_id}
+                paymentId={getCurrentPaymentId()}
                 status={session.status as 'pending' | 'paid' | 'expired' | 'processing'}
                 onSuccess={handlePaymentSuccess}
                 onError={(err) => setError(err)}
+                showSplitBill={!splits && session.status === 'pending'}
+                onSplitBill={() => setShowSplitModal(true)}
               />
             )}
 
@@ -357,6 +494,16 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      {/* Split Bill Modal */}
+      {session && (
+        <SplitBillModal
+          amount={session.amount + tipAmount}
+          isOpen={showSplitModal}
+          onClose={() => setShowSplitModal(false)}
+          onSplit={handleSplitBill}
+        />
+      )}
     </>
   );
 }
