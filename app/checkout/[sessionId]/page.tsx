@@ -460,6 +460,7 @@ export default function CheckoutPage() {
                 showSplitBill={!splits && session.status === 'pending'}
                 onSplitBill={() => setShowSplitModal(true)}
                 isCheckoutSession={true}
+                tipAmount={tipAmount}
               />
             )}
 

@@ -13,7 +13,8 @@ interface InstantPayProps {
   paymentId: string;
   onSuccess: (txHash: string, receiptId?: string) => void;
   onError: (error: string) => void;
-  isCheckoutSession?: boolean;  // NEW: Flag to indicate this is a checkout session
+  isCheckoutSession?: boolean;
+  tipAmount?: number;
 }
 
 export default function InstantPay({
@@ -25,7 +26,8 @@ export default function InstantPay({
   paymentId,
   onSuccess,
   onError,
-  isCheckoutSession = false  // Default to false for backwards compatibility
+  isCheckoutSession = false,
+  tipAmount = 0
 }: InstantPayProps) {
   const [step, setStep] = useState<'login' | 'setup' | 'reauth' | 'ready'>('login');
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -170,7 +172,9 @@ export default function InstantPay({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             payer_wallet: wallet,
-            tx_hash: txHash
+            tx_hash: txHash,
+            tip_amount: tipAmount,
+            split_payment_id: paymentId
           })
         });
         const payData = await payRes.json();

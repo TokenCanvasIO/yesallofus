@@ -18,7 +18,8 @@ interface PaymentOptionsProps {
   onError: (error: string) => void;
   showSplitBill?: boolean;
   onSplitBill?: () => void;
-  isCheckoutSession?: boolean;  // NEW: Flag to indicate this is a checkout session
+  isCheckoutSession?: boolean;
+  tipAmount?: number;
 }
 
 export default function PaymentOptions({
@@ -33,7 +34,8 @@ export default function PaymentOptions({
   onError,
   showSplitBill = false,
   onSplitBill,
-  isCheckoutSession = false  // Default to false for backwards compatibility
+  isCheckoutSession = false,
+  tipAmount = 0
 }: PaymentOptionsProps) {
   // NFC state
   const [nfcSupported, setNfcSupported] = useState(false);
@@ -80,7 +82,7 @@ export default function PaymentOptions({
           const payRes = await fetch(getPayEndpoint(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ payer_wallet: 'xaman_payment', tx_hash: data.tx_hash })
+            body: JSON.stringify({ payer_wallet: 'xaman_payment', tx_hash: data.tx_hash, tip_amount: tipAmount, split_payment_id: paymentId })
           });
           const payData = await payRes.json();
           
@@ -165,7 +167,7 @@ export default function PaymentOptions({
           const res = await fetch(getPayEndpoint(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ card_uid: uid })
+            body: JSON.stringify({ card_uid: uid, tip_amount: tipAmount, split_payment_id: paymentId })
           });
 
           const result = await res.json();
@@ -264,6 +266,7 @@ export default function PaymentOptions({
         onSuccess={onSuccess}
         onError={onError}
         isCheckoutSession={isCheckoutSession}
+        tipAmount={tipAmount}
       />
 
       {/* NFC Tap to Pay */}

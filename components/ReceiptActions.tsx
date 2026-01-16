@@ -53,7 +53,7 @@ export default function ReceiptActions({
 
     const tip = receiptData?.tip_amount || tipAmount || 0;
     const finalItems = receiptData?.items || items || [{ name: 'Payment', quantity: 1, unit_price: amount }];
-    const finalAmount = receiptData?.total || amount;
+    const finalAmount = receiptData?.total || (amount + (tipAmount || 0));
     const finalRlusd = receiptData?.amount_rlusd || rlusdAmount;
     const finalRate = receiptData?.conversion_rate || conversionRate;
 
