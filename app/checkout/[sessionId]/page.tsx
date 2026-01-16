@@ -24,6 +24,7 @@ interface CheckoutSession {
   status: string;
   tx_hash: string | null;
   receipt_id: string | null;
+  payment_link_id: string | null;
   expires_at: string | null;
   paid_at: string | null;
   success_url: string | null;
@@ -139,7 +140,7 @@ export default function CheckoutPage() {
     if (splits && splits.length > 0) {
       return splits[currentSplitIndex].payment_id;
     }
-    return sessionId;
+    return session?.payment_link_id || sessionId;
   };
 
   // Handle split bill
