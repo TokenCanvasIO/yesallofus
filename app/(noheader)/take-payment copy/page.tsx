@@ -8,7 +8,6 @@ import SendPaymentLink from '@/components/SendPaymentLink';
 import PendingPayments from '@/components/PendingPayments';
 import LiveConversionWidget from '@/components/LiveConversionWidget';
 import TakePaymentTour from '@/components/TakePaymentTour';
-import ReceiptActions from '../../../components/ReceiptActions';
 interface Product {
 product_id: string;
 name: string;
@@ -177,6 +176,10 @@ const [xamanPaymentId, setXamanPaymentId] = useState<string | null>(null);
 // Search & Filter
 const [searchQuery, setSearchQuery] = useState('');
 const [activeCategory, setActiveCategory] = useState<string | null>(null);
+// Email modal
+const [showEmailModal, setShowEmailModal] = useState(false);
+const [emailAddress, setEmailAddress] = useState('');
+const [sendingEmail, setSendingEmail] = useState(false);
 // Logo
 const [storeLogo, setStoreLogo] = useState<string | null>(null);
 const [showLogoUpload, setShowLogoUpload] = useState(false);
@@ -852,6 +855,347 @@ const setupWalletForPayments = async () => {
   setSettingUpWallet(false);
 };
 
+const sendReceiptEmail = async () => {
+  if (!emailAddress || !emailAddress.includes('@')) {
+    setError('Please enter a valid email');
+    return;
+  }
+  setSendingEmail(true);
+  console.log('DEBUG: receiptId =', receiptId);
+  
+  try {
+    // If we have a receipt_id, fetch the complete receipt from backend
+    if (receiptId) {
+      const receiptRes = await fetch(`https://api.dltpays.com/nfc/api/v1/receipts/${receiptId}`);
+      const receiptData = await receiptRes.json();
+      
+      if (receiptData.success && receiptData.receipt) {
+        const receipt = receiptData.receipt;
+        
+        // Send email with complete receipt data
+        const res = await fetch('https://api.dltpays.com/nfc/api/v1/receipt/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailAddress,
+            store_name: storeName,
+            store_id: storeId,
+            amount: receipt.total,
+            rlusd_amount: receipt.amount_rlusd,
+            items: receipt.items,
+            tip_amount: receipt.tip_amount,
+            tx_hash: receipt.payment_tx_hash,
+            receipt_number: receipt.receipt_number,
+            conversion_rate: receipt.conversion_rate,
+            rate_source: receipt.conversion_rate?.source,
+            rate_timestamp: receipt.conversion_rate?.captured_at,
+            price_age_ms: receipt.conversion_rate?.price_age_ms
+          })
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+          setShowEmailModal(false);
+          setEmailAddress('');
+        } else {
+          setError('Failed to send email');
+        }
+      } else {
+        setError('Receipt not found');
+      }
+    } else {
+      // Fallback: use local data (shouldn't happen with new backend)
+      const orderItems = cart.length > 0
+        ? [
+            ...cart.map(item => ({
+              name: item.name,
+              quantity: item.quantity,
+              unit_price: item.price
+            })),
+            ...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, unit_price: tipAmount }] : [])
+          ]
+        : lastOrder
+        ? [
+            ...lastOrder.map(item => ({
+              name: item.name,
+              quantity: item.quantity,
+              unit_price: item.price
+            })),
+            ...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, unit_price: tipAmount }] : [])
+          ]
+        : [];
+      
+      const res = await fetch('https://api.dltpays.com/nfc/api/v1/receipt/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailAddress,
+          store_name: storeName,
+          store_id: storeId,
+          amount: getPaymentAmount(),
+          items: orderItems,
+          tx_hash: txHash
+        })
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        setShowEmailModal(false);
+        setEmailAddress('');
+      } else {
+        setError('Failed to send email');
+      }
+    }
+  } catch (err) {
+    setError('Failed to send email');
+  }
+  setSendingEmail(false);
+};
+
+const printReceipt = async () => {
+  const items = [
+    ...(lastOrder || cart),
+    ...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, price: tipAmount }] : [])
+  ];
+  const amount = getPaymentAmount();
+
+  // Fetch receipt data if available
+  let receiptData = null;
+  if (receiptId) {
+    try {
+      const res = await fetch(`https://api.dltpays.com/nfc/api/v1/receipts/${receiptId}`);
+      const data = await res.json();
+      if (data.success && data.receipt) {
+        receiptData = data.receipt;
+      }
+    } catch (e) {
+      console.error('Failed to fetch receipt for print:', e);
+    }
+  }
+
+  // Build settlement details HTML
+  const settlementHtml = (receiptData?.amount_rlusd && receiptData?.conversion_rate) ? `
+    <div style="margin-top: 20px; padding: 15px; background: #f0fdf4; border-radius: 8px; border-left: 3px solid #10b981;">
+      <div style="font-size: 12px; color: #166534; font-weight: 600; margin-bottom: 8px;">💱 SETTLEMENT DETAILS</div>
+      <div style="font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: #666;">Amount Quoted:</span>
+          <span>£${amount.toFixed(2)} GBP</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: #666;">Amount Settled:</span>
+          <span style="font-weight: 600;">${receiptData.amount_rlusd.toFixed(6)} RLUSD</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: #666;">Exchange Rate:</span>
+          <span>£1 = ${receiptData.conversion_rate.gbp_to_rlusd?.toFixed(6) || 'N/A'} RLUSD</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: #666;">Rate Source:</span>
+          <span>${receiptData.conversion_rate.source || 'CoinGecko Pro API'}</span>
+        </div>
+        ${receiptData.conversion_rate.captured_at ? `
+        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+          <span style="color: #666;">Rate Timestamp:</span>
+          <span style="font-size: 11px; color: #888;">${new Date(receiptData.conversion_rate.captured_at).toISOString()}</span>
+        </div>
+        ` : ''}
+      </div>
+    </div>
+  ` : '';
+
+  const receiptHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Receipt - ${storeName}</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          max-width: 400px;
+          margin: 0 auto;
+          padding: 30px 20px;
+          color: #1a1a1a;
+        }
+        .header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 20px;
+          padding-bottom: 20px;
+          border-bottom: 2px solid #e5e5e5;
+        }
+        .store-logo {
+          width: 50px;
+          height: 50px;
+          border-radius: 10px;
+          object-fit: cover;
+        }
+        .store-info {
+          flex: 1;
+        }
+        .store-name {
+          font-size: 20px;
+          font-weight: 700;
+        }
+        .receipt-label {
+          font-size: 12px;
+          color: #666;
+        }
+        .date {
+          font-size: 12px;
+          color: #666;
+          margin-bottom: 20px;
+        }
+        .items {
+          margin: 20px 0;
+        }
+        .item {
+          display: flex;
+          justify-content: space-between;
+          padding: 10px 0;
+          border-bottom: 1px solid #eee;
+        }
+        .item-name {
+          font-weight: 500;
+        }
+        .item-qty {
+          color: #666;
+          font-size: 14px;
+        }
+        .item-price {
+          font-weight: 600;
+        }
+        .total-section {
+          margin-top: 20px;
+          padding-top: 20px;
+          border-top: 2px solid #1a1a1a;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .total-label {
+          font-size: 16px;
+          font-weight: 600;
+        }
+        .total-amount {
+          font-size: 24px;
+          font-weight: 700;
+          color: #10b981;
+        }
+        .tx-section {
+          margin-top: 20px;
+          padding: 12px;
+          background: #f5f5f5;
+          border-radius: 8px;
+        }
+        .tx-label {
+          font-size: 10px;
+          color: #666;
+          margin-bottom: 4px;
+        }
+        .tx-hash {
+          font-size: 9px;
+          font-family: monospace;
+          word-break: break-all;
+          color: #333;
+        }
+        .footer {
+          margin-top: 30px;
+          padding-top: 20px;
+          border-top: 1px solid #eee;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+        .footer-logo {
+          width: 20px;
+          height: 20px;
+          border-radius: 4px;
+          opacity: 0.6;
+        }
+        .footer-text {
+          color: #999;
+          font-size: 11px;
+        }
+        @media print {
+          body { padding: 0; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+${storeLogo
+    ? `
+      <img src="${storeLogo}" alt="${storeName}" class="store-logo">
+      <div class="store-info">
+        <div class="store-name">${storeName}</div>
+        <div class="receipt-label">Receipt</div>
+      </div>
+    `
+    : `
+      <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="store-logo">
+      <div class="store-info">
+        <div class="store-name">YesAllOfUs</div>
+      </div>
+      <div style="text-align: right; margin-left: auto;">
+        <div class="store-name">${storeName}</div>
+        <div class="receipt-label">Receipt</div>
+      </div>
+    `
+}
+</div>
+      <div class="date">${new Date().toLocaleDateString('en-GB', {
+weekday: 'long',
+year: 'numeric',
+month: 'long',
+day: 'numeric',
+hour: '2-digit',
+minute: '2-digit'
+      })}</div>
+      <div class="items">
+${items.map(item => `
+          <div class="item">
+            <div>
+              <div class="item-name">${item.name}</div>
+              <div class="item-qty">Qty: ${item.quantity} × £${item.price.toFixed(2)}</div>
+            </div>
+            <div class="item-price">£${(item.price * item.quantity).toFixed(2)}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="total-section">
+        <span class="total-label">Total</span>
+        <span class="total-amount">£${amount.toFixed(2)}</span>
+      </div>
+      ${settlementHtml}
+${txHash ? `
+        <div class="tx-section">
+          <div class="tx-label">Transaction ID (XRPL)</div>
+          <div class="tx-hash">${txHash}</div>
+        </div>
+      ` : ''}
+      <div class="footer" style="flex-direction: column; gap: 4px;">
+        <span style="color: #71717a; font-size: 9px; font-weight: 500; letter-spacing: 1px;">RECEIPT</span>
+        <span style="font-size: 16px; font-weight: 800; letter-spacing: 2px;"><span style="color: #10b981;">Y</span><span style="color: #22c55e;">A</span><span style="color: #3b82f6;">O</span><span style="color: #6366f1;">F</span><span style="color: #8b5cf6;">U</span><span style="color: #a855f7;">S</span></span>
+        <span style="color: #52525b; font-size: 10px; font-weight: 600; letter-spacing: 1.5px;">INSTANT</span>
+        <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
+          <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="footer-logo">
+          <span class="footer-text">Powered by YesAllOfUs</span>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(receiptHtml);
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 500);
+  }
+};
 // Group products by category
 const groupedProducts = products.reduce((acc, product) => {
 const category = product.category || 'Other';
@@ -1610,8 +1954,8 @@ className="block mx-auto text-zinc-500 hover:text-white transition"
 </div>
 <p className="text-4xl font-bold mb-2">£{getPaymentAmount().toFixed(2)}</p>
 <p className="text-emerald-400 text-2xl font-semibold mb-4">Payment Complete!</p>
-{txHash && ( 
-<a href={`https://livenet.xrpl.org/transactions/${txHash}`}
+{txHash && ( <a
+href={`https://livenet.xrpl.org/transactions/${txHash}`}
 target="_blank"
 rel="noopener noreferrer"
 className="text-zinc-500 hover:text-emerald-400 text-sm mb-8 font-mono block"
@@ -1619,30 +1963,23 @@ className="text-zinc-500 hover:text-emerald-400 text-sm mb-8 font-mono block"
     TX: {txHash.slice(0, 8)}...{txHash.slice(-8)} ↗
 </a>
 )}
-
-<ReceiptActions
-  receiptId={receiptId || undefined}
-  txHash={txHash || undefined}
-  storeName={storeName}
-  storeId={storeId || undefined}
-  amount={getPaymentAmount()}
-  rlusdAmount={rlusdAmount || undefined}
-  items={[
-    ...(lastOrder || cart).map(item => ({ 
-      name: item.name, 
-      quantity: item.quantity, 
-      unit_price: item.price 
-    })),
-    ...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, unit_price: tipAmount }] : [])
-  ]}
-  tipAmount={tipAmount}
-  conversionRate={undefined}
-  storeLogo={storeLogo || undefined}
-/>
-
+<div className="flex justify-center gap-3 mb-8">
+<button 
+onClick={() => setShowEmailModal(true)}
+className="bg-zinc-800 hover:bg-zinc-700 px-5 py-3 rounded-xl text-sm transition flex items-center gap-2"
+>
+<span>📧</span> Email
+</button>
+<button 
+onClick={printReceipt}
+className="bg-zinc-800 hover:bg-zinc-700 px-5 py-3 rounded-xl text-sm transition flex items-center gap-2"
+>
+<span>🖨️</span> Print
+</button>
+</div>
 <button
 onClick={resetPayment}
-className="w-full max-w-xs mx-auto bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-lg py-4 rounded-2xl transition mt-8"
+className="w-full max-w-xs mx-auto bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-lg py-4 rounded-2xl transition"
 >
               New Payment
 </button>
@@ -1709,6 +2046,40 @@ setCustomTipInput('');
 className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 rounded-xl transition"
 >
           Add Tip
+</button>
+</div>
+</div>
+</div>
+)}
+{/* Email Modal */}
+{showEmailModal && (
+<div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+<div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm">
+<h3 className="text-lg font-bold mb-4">Send Receipt</h3>
+<input
+type="email"
+placeholder="Customer email"
+value={emailAddress}
+onChange={(e) => setEmailAddress(e.target.value)}
+className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 mb-4"
+autoFocus
+/>
+<div className="flex gap-3">
+<button
+onClick={() => {
+setShowEmailModal(false);
+setEmailAddress('');
+          }}
+className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
+>
+          Cancel
+</button>
+<button
+onClick={sendReceiptEmail}
+disabled={sendingEmail}
+className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 rounded-xl transition disabled:opacity-50"
+>
+{sendingEmail ? 'Sending...' : 'Send'}
 </button>
 </div>
 </div>

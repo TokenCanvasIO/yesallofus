@@ -32,7 +32,7 @@ export default function ReceiptActions({
   items,
   tipAmount,
   conversionRate,
-  storeLogo
+  storeLogo,
 }: ReceiptActionsProps) {
   const [showEmailModal, setShowEmailModal] = useState(false);
 
@@ -118,17 +118,17 @@ export default function ReceiptActions({
         ${finalItems.length > 0 ? `
           <div class="items">
             ${finalItems.map((item: any) => `
-              <div class="item">
-                <span class="item-name">${item.quantity}x ${item.name}</span>
-                <span class="item-price">£${(item.unit_price * item.quantity).toFixed(2)}</span>
-              </div>
-            `).join('')}
-            ${tip > 0 ? `
-              <div class="tip-row">
-                <span>Tip</span>
-                <span>£${tip.toFixed(2)}</span>
-              </div>
-            ` : ''}
+  <div class="item">
+    <span class="item-name">${item.quantity}x ${item.name}</span>
+    <span class="item-price">£${(item.unit_price * item.quantity).toFixed(2)}</span>
+  </div>
+`).join('')}
+${tip > 0 ? `
+  <div class="tip-row">
+    <span>Tip</span>
+    <span>£${tip.toFixed(2)}</span>
+  </div>
+` : ''}
           </div>
         ` : ''}
         <div class="total-section">
