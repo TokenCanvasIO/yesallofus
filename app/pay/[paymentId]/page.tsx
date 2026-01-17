@@ -642,7 +642,30 @@ if (allPaid || payment?.status === 'paid') {
         </div>
         <h1 className="text-3xl font-bold text-emerald-400 mb-2">Payment Complete!</h1>
         <p className="text-xl text-zinc-400 mb-2">Thank you for shopping at</p>
-        <p className="text-2xl font-bold mb-6">{payment?.store_name}</p>
+        <p className="text-2xl font-bold mb-4">{payment?.store_name}</p>
+
+{/* Payment Summary */}
+<div className="bg-zinc-900/50 rounded-xl p-4 mb-6">
+  {splits && splits.length > 0 ? (
+    <>
+      <div className="text-zinc-400 text-sm mb-2">Your payment:</div>
+      <div className="text-2xl font-bold text-emerald-400">£{getCurrentAmount().toFixed(2)}</div>
+      {payment?.tip && (
+        <div className="text-zinc-500 text-sm mt-1">
+          (£{((payment.amount || 0) / splits.length).toFixed(2)} + £{((payment.tip || 0) / splits.length).toFixed(2)} tip)
+        </div>
+      )}
+    </>
+  ) : (
+    <>
+      <div className="text-zinc-400 text-sm mb-2">Amount paid:</div>
+      <div className="text-2xl font-bold text-emerald-400">£{(payment?.amount || 0).toFixed(2)}</div>
+      {payment?.tip && (
+        <div className="text-zinc-500 text-sm mt-1">Includes £{payment.tip.toFixed(2)} tip</div>
+      )}
+    </>
+  )}
+</div>
         
         {txHash && (
           <a 
