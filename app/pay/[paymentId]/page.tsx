@@ -29,6 +29,7 @@ interface SplitData {
   amount: number;
   split_index: number;
   status: string;
+  tip: number;  // Add this line
 }
 
 export default function PayPage() {
@@ -1324,7 +1325,8 @@ onClick={startNFCScan}
                         email: splitEmailAddress,
                         payment_url: `https://yesallofus.com/pay/${splitEmailTarget.payment_id}`,
                         store_name: payment?.store_name,
-                        amount: splitEmailTarget.amount
+                        amount: splitEmailTarget.amount,
+                        tip: splitEmailTarget.tip 
                       })
                     });
                     setShowSplitEmailModal(false);
