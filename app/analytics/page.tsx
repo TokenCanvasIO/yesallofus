@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
+import NebulaBackground from '@/components/NebulaBackground';
 
 interface ReceiptItem {
   name: string;
@@ -166,21 +167,26 @@ function AnalyticsPage() {
   const nfcPayments = filteredReceipts.filter(r => r.payment_method !== 'qr_xaman').length;
 
   // Top products
-  const productSales: Record<string, { quantity: number; revenue: number }> = {};
-  filteredReceipts.forEach(r => {
-    r.items.forEach(item => {
-      if (item.name.toLowerCase() !== 'tip' && item.name.toLowerCase() !== 'payment') {
-        if (!productSales[item.name]) {
-          productSales[item.name] = { quantity: 0, revenue: 0 };
-        }
-        productSales[item.name].quantity += item.quantity;
-        productSales[item.name].revenue += item.line_total;
+const productSales: Record<string, { quantity: number; revenue: number }> = {};
+filteredReceipts.forEach(r => {
+  r.items.forEach(item => {
+    if (item.name.toLowerCase() !== 'tip' && item.name.toLowerCase() !== 'payment') {
+      if (!productSales[item.name]) {
+        productSales[item.name] = { quantity: 0, revenue: 0 };
       }
-    });
+      const qty = Number(item.quantity) || 0;
+      const lineTotal = Number(item.line_total) || (Number(item.unit_price) * qty) || 0;
+      productSales[item.name].quantity += qty;
+      productSales[item.name].revenue += lineTotal;
+    }
   });
+});
   const topProducts = Object.entries(productSales)
     .sort((a, b) => b[1].revenue - a[1].revenue)
     .slice(0, 5);
+
+console.log('🛒 Product sales data:', productSales);
+console.log('🏆 Top products:', topProducts);
 
   // Sales by day - responds to period
 const getSalesByDay = () => {
@@ -269,10 +275,12 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans overflow-x-hidden">
+    <>
+      <NebulaBackground opacity={0.3} />
+      <div className="min-h-screen bg-transparent text-white font-sans overflow-x-hidden">
       
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-zinc-800">
+        {/* Header */}
+      <header className="sticky top-0 z-40 bg-gradient-to-r from-zinc-600/20 via-zinc-400/15 via-zinc-500/10 to-zinc-800/20 backdrop-blur border-b border-zinc-500/30">
         <div className="max-w-4xl lg:max-w-none mx-auto px-4 lg:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-1">
   <button
@@ -315,9 +323,10 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
 
       <main className="max-w-4xl lg:max-w-none mx-auto px-4 lg:px-6 pb-8">
         
-        {/* Period Selector */}
-        <div className="flex gap-2 py-6 overflow-x-auto max-w-full">
-          {(['today', 'week', 'month', 'all'] as const).map((p) => (
+        {/* Period Selector + Fee Info */}
+<div className="flex flex-wrap items-center justify-between gap-4 py-6">
+  <div className="flex gap-2 overflow-x-auto">
+    {(['today', 'week', 'month', 'all'] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
@@ -330,8 +339,22 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
               {p === 'today' ? 'Today' : p === 'week' ? 'This Week' : p === 'month' ? 'This Month' : 'All Time'}
             </button>
           ))}
-        </div>
-
+  </div>
+  
+ {/* Fee Info - Two compact badges */}
+  <div className="grid grid-cols-2 gap-2 text-xs w-full sm:w-auto sm:flex">
+    <div className="flex items-center justify-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2">
+      <span className="text-zinc-500">Platform:</span>
+      <span className="text-amber-400 font-mono font-medium">0.5%</span>
+      <span className="text-zinc-600">(£{(totalRevenue * 0.005).toFixed(2)})</span>
+    </div>
+    <div className="flex items-center justify-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2">
+      <span className="text-zinc-500">Commission:</span>
+      <span className="text-emerald-400 font-mono font-medium">2.9%</span>
+      <span className="text-zinc-600 hidden sm:inline">(Free tier)</span>
+    </div>
+  </div>
+</div>
         {/* Loading */}
         {loading && (
           <div className="text-center py-20">
@@ -504,17 +527,17 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
                 {topProducts.length > 0 ? (
                   <div className="space-y-3">
                     {topProducts.map(([name, data], i) => (
-                      <div key={name} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="text-zinc-600 text-sm font-medium w-5">{i + 1}</span>
-                          <span className="text-sm truncate max-w-[120px]">{name}</span>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-emerald-400">£{data.revenue.toFixed(2)}</p>
-                          <p className="text-zinc-600 text-xs">{data.quantity} sold</p>
-                        </div>
-                      </div>
-                    ))}
+  <div key={name} className="flex items-center justify-between">
+    <div className="flex items-center gap-3">
+      <span className="text-zinc-600 text-sm font-medium w-5">{i + 1}</span>
+      <span className="text-sm truncate max-w-[120px]">{name}</span>
+    </div>
+    <div className="text-right">
+      <p className="text-sm font-medium text-emerald-400">£{(data?.revenue || 0).toFixed(2)}</p>
+      <p className="text-zinc-600 text-xs">{data?.quantity || 0} sold</p>
+    </div>
+  </div>
+))}
                   </div>
                 ) : (
                   <p className="text-zinc-500 text-sm">No product sales yet</p>
@@ -573,6 +596,7 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
         )}
       </main>
     </div>
+    </>
   );
 }
 

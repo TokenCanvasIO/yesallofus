@@ -9,6 +9,8 @@ import PendingPayments from '@/components/PendingPayments';
 import LiveConversionWidget from '@/components/LiveConversionWidget';
 import TakePaymentTour from '@/components/TakePaymentTour';
 import ReceiptActions from '../../../components/ReceiptActions';
+import NebulaBackground from '@/components/NebulaBackground'; 
+import TakePaymentHeader from '@/components/TakePaymentHeader';
 interface Product {
 product_id: string;
 name: string;
@@ -204,6 +206,11 @@ const [walletReady, setWalletReady] = useState<boolean | null>(null);
 const [settingUpWallet, setSettingUpWallet] = useState(false);
 // State
 const [runTour, setRunTour] = useState(false);
+// Mobile products collapse
+const [productsExpanded, setProductsExpanded] = useState(false);
+
+// Stats data
+const [stats, setStats] = useState({ totalRevenue: 0, totalSales: 0 });
 
 // Convert GBP to RLUSD - Live price from CoinGecko Pro with audit trail
 const convertGBPtoRLUSD = async (gbpAmount: number): Promise<number> => {
@@ -291,6 +298,27 @@ console.error('Failed to fetch products:', err);
     }
 setLoadingProducts(false);
   };
+  // Fetch sales stats
+useEffect(() => {
+  if (storeId && walletAddress) {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(
+          `${API_URL}/store/${storeId}/receipts?wallet_address=${walletAddress}&limit=500`
+        );
+        const data = await res.json();
+        if (data.success) {
+          const totalRevenue = data.receipts.reduce((sum: number, r: any) => sum + r.total, 0);
+          const totalSales = data.receipts.length;
+          setStats({ totalRevenue, totalSales });
+        }
+      } catch (err) {
+        console.error('Failed to fetch stats');
+      }
+    };
+    fetchStats();
+  }
+}, [storeId, walletAddress]);
 // Poll for Xaman payment status
 useEffect(() => {
 if (status !== 'qr' || !xamanPaymentId) return;
@@ -336,10 +364,9 @@ useEffect(() => {
 useEffect(() => {
   const fetchRate = async () => {
     const amount = getPaymentAmount();
-    if (amount <= 0) return;
     
     try {
-      const res = await fetch(`https://api.dltpays.com/convert/gbp-to-rlusd?amount=${amount}&capture=true`);
+      const res = await fetch(`https://api.dltpays.com/convert/gbp-to-rlusd?amount=${Math.max(amount, 1)}&capture=true`);
       if (!res.ok) throw new Error('API error');
       const data = await res.json();
       if (data.success) {
@@ -350,7 +377,7 @@ useEffect(() => {
     } catch (err) {
       // Fallback: estimate rate
       setLiveRate(1.35);
-      setRlusdAmount(amount * 1.35);
+      setRlusdAmount(Math.max(amount, 1) * 1.35);
       setPriceAge(0);
     }
   };
@@ -871,169 +898,26 @@ const filteredProducts = searchQuery
 // RENDER
 // =========================================================================
 return (
-<div className="min-h-screen bg-[#0a0a0a] text-white font-sans overflow-x-hidden flex flex-col">
+  <>
+    <NebulaBackground opacity={0.3} />
+    <div className="min-h-screen bg-transparent text-white font-sans overflow-x-hidden flex flex-col">
 {/* Header */}
-<header className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-zinc-800">
-<div className="max-w-lg mx-auto sm:max-w-none sm:mx-0 w-full px-4 py-3 flex items-center justify-between">
-{/* Left - Home and Tour buttons */}
-<div className="flex items-center">
-  <button
-    id="tp-home-btn"
-    onClick={() => router.push('/dashboard')}
-    className="text-zinc-400 hover:text-white transition p-2 active:scale-95 cursor-pointer"
-    title="Dashboard"
-  >
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-    </svg>
-  </button>
-  <button
-    onClick={() => {
-      setRunTour(false);
-      setTimeout(() => setRunTour(true), 100);
-    }}
-    className="text-zinc-400 hover:text-emerald-400 transition p-2 active:scale-95 cursor-pointer"
-    title="Take Tour"
-  >
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-    </svg>
-  </button>
-</div>
-{/* Center - Logo and Store Name */}
-<div className="flex items-center gap-2 landscape:ml-0 md:absolute md:left-1/2 md:-translate-x-1/2">
-<button
-id="tp-store-logo"
-  onClick={() => setShowLogoUpload(true)}
-  className={`relative w-8 h-8 rounded-lg overflow-hidden transition flex-shrink-0 cursor-pointer ${
-    storeLogo ? 'hover:opacity-80' : 'border border-zinc-700 hover:border-emerald-500'
-  }`}
-  title="Store logo"
->
-    {storeLogo ? (
-      <img src={storeLogo} alt="Logo" className="w-full h-full object-cover" />
-    ) : (
-      <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-        <svg className="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-      </div>
-    )}
-  </button>
-  <h1 className="text-lg font-bold truncate max-w-[120px] hidden landscape:block sm:block">{storeName}</h1>
-</div>
-
-{/* Right - Staff selector and icons */}
-<div id="tp-toolbar" className="flex items-center gap-1">
-{/* Staff Selector - Icon only on mobile, full on desktop */}
-{storeId && walletAddress && (
-  <div id="tp-staff-selector" className="hidden sm:block">
-    <StaffSelector
-      storeId={storeId}
-      walletAddress={walletAddress}
-      onStaffChange={(staff) => setActiveStaff(staff)}
-    />
-  </div>
-)}
-{storeId && walletAddress && (
-  <button
-    onClick={() => setShowStaffModal(true)}
-    className="sm:hidden text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
-    title={activeStaff?.name || 'Staff'}
-  >
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
-  </button>
-)}
-
-{/* Analytics */}
-<div className="relative group">
-  <button
-  id="tp-analytics-btn"
-  onClick={() => router.push('/analytics')}
-  className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
->
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-    </svg>
-  </button>
-  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
-    Analytics
-  </span>
-</div>
-
-{/* Pending Payments */}
-<div className="relative group">
-  <button
-  id="tp-pending-btn"
-  onClick={() => setShowPendingPayments(true)}
-  className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
->
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  </button>
-  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
-    Pending Payments
-  </span>
-</div>
-
-{/* Customer Display */}
-<div className="relative group">
-<button
-id="tp-display-btn"
-onClick={() => {
-  const isPWA = window.matchMedia('(display-mode: standalone)').matches;
-  if (isPWA) {
-    window.location.href = `/display?store=${storeId}`;
-  } else {
-    window.open(`/display?store=${storeId}`, '_blank');
-  }
-}}
-className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
->
-<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-</svg>
-</button>
-<span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
-      Customer Display
-</span>
-</div>
-{/* Receipts */}
-<div className="relative group">
-<button
-id="tp-receipts-btn"
-onClick={() => router.push('/receipts?from=take-payment')}
-className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
->
-<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-</svg>
-</button>
-<span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
-      Receipts
-</span>
-</div>
-{/* Add Products */}
-<div className="relative group">
-<button
-id="tp-products-btn"
-onClick={() => setShowProductsManager(true)}
-className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
->
-<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-</svg>
-</button>
-<span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
-      Add Products
-</span>
-</div>
-</div>
-</div>
-</header>
+<TakePaymentHeader
+  storeId={storeId}
+  walletAddress={walletAddress}
+  storeName={storeName}
+  storeLogo={storeLogo}
+  activeStaff={activeStaff}
+  onStartTour={() => {
+    setRunTour(false);
+    setTimeout(() => setRunTour(true), 100);
+  }}
+  onShowLogoUpload={() => setShowLogoUpload(true)}
+  onShowStaffModal={() => setShowStaffModal(true)}
+  onShowPendingPayments={() => setShowPendingPayments(true)}
+  onShowProductsManager={() => setShowProductsManager(true)}
+  onStaffChange={(staff) => setActiveStaff(staff)}
+/>
 
 <TakePaymentTour 
   run={runTour} 
@@ -1167,313 +1051,368 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
 </div>
 </div>
       )}
-<main className="w-full sm:max-w-lg mx-auto px-2 sm:px-4 pb-8 flex-1">
+<main className="w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 lg:py-8 flex-1">
 {/* ============================================================= */}
-{/* IDLE STATE - Product Selection */}
+{/* IDLE STATE - Three Column Layout (Desktop) / Stacked (Mobile) */}
 {/* ============================================================= */}
 {status === 'idle' && (
-<>
-{/* Amount Display */}
-<div id="tp-amount-display" className="py-8 text-center">
-<p className="text-zinc-500 text-sm mb-1">
-{cartCount > 0 ? `${cartCount} item${cartCount > 1 ? 's' : ''}` : 'Total'}
-</p>
-<div className="text-5xl font-bold tracking-tight">
-                £{showManualEntry ? (manualAmount || '0.00') : cartTotal.toFixed(2)}
-</div>
-</div>
-{/* Error */}
-{error && (
-<div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
-<p className="text-red-400 text-sm">{error}</p>
-</div>
-            )}
-{/* Products Grid or Manual Entry */}
-{!showManualEntry ? (
-<>
-{/* Products */}
-<div id="tp-products-area">
-{loadingProducts ? (
-<div className="text-center py-12">
-<div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-<p className="text-zinc-500">Loading products...</p>
-</div>
-) : products.length === 0 ? (
-<div className="text-center py-12">
-<div className="text-6xl mb-4">📦</div>
-<p className="text-zinc-400 mb-2">No products yet</p>
-<button
-onClick={() => setShowProductsManager(true)}
-className="text-emerald-400 hover:text-emerald-300 font-medium"
->
-      + Add your first product
-</button>
-</div>
-) : (
-<div className="mb-6">
-{/* Search Bar */}
-<div className="mb-4">
-<input
-id="tp-search-bar"
-type="text"
-placeholder="Search products..."
-value={searchQuery}
-onChange={(e) => {
-setSearchQuery(e.target.value);
-setActiveCategory(null);
-        }}
-className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
-/>
-</div>
-{/* Repeat Last Order */}
-{lastOrder && lastOrder.length > 0 && cart.length === 0 && (
-<button
-onClick={() => setCart(lastOrder.map(item => ({ ...item })))}
-className="w-full mb-4 bg-zinc-900 border border-zinc-800 hover:border-emerald-500 rounded-xl p-3 flex items-center justify-between transition"
->
-<div className="flex items-center gap-3">
-<span className="text-xl">🔄</span>
-<div className="text-left">
-<p className="text-sm font-medium">Repeat last order</p>
-<p className="text-zinc-500 text-xs">
-{lastOrder.length} item{lastOrder.length > 1 ? 's' : ''} · £{lastOrder.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
-</p>
-</div>
-</div>
-<svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-</svg>
-</button>
-)}
-{/* Category Tabs */}
-{!searchQuery && categories.length > 1 && (
-<div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
-<button
-onClick={() => setActiveCategory(null)}
-className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition active:scale-95 cursor-pointer ${
-activeCategory === null
-              ? 'bg-emerald-500 text-black'
-              : 'bg-zinc-800 text-zinc-400 hover:text-white'
-}`}
->
-          All
-</button>
-{categories.map((cat) => (
-<button
-key={cat}
-onClick={() => setActiveCategory(cat)}
-className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition active:scale-95 cursor-pointer ${
-activeCategory === cat
-                ? 'bg-emerald-500 text-black'
-                : 'bg-zinc-800 text-zinc-400 hover:text-white'
-}`}
->
-{cat}
-</button>
-        ))}
-</div>
-    )}
-{/* Products Grid */}
-<div id="tp-products-grid" className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-{filteredProducts.map((product) => {
-const inCart = cart.find(item => item.product_id === product.product_id);
-return (
-<button
-key={product.product_id}
-onClick={() => addToCart(product)}
-className={`relative bg-zinc-900 hover:bg-zinc-800 border rounded-2xl p-3 text-center transition-all active:scale-95 cursor-pointer ${
-inCart ? 'border-emerald-500 bg-emerald-500/10' : 'border-zinc-800'
-}`}
->
-{inCart && (
-<div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-xs font-bold text-black">
-{inCart.quantity}
-</div>
-            )}
-<div className="text-2xl mb-1">{getProductEmoji(product)}</div>
-<p className="text-xs font-medium truncate mb-1">{product.name}</p>
-<p className="text-emerald-400 text-sm font-semibold">£{product.price.toFixed(2)}</p>
-</button>
-        );
-      })}
-</div>
-{/* No results */}
-{filteredProducts.length === 0 && searchQuery && (
-<div className="text-center py-8">
-<p className="text-zinc-500">No products match "{searchQuery}"</p>
-</div>
-    )}
-</div>
-)}
-</div>
+<div className="flex flex-col lg:flex-row gap-6 lg:gap-6">
+  
+  {/* LEFT COLUMN - Products (Desktop: 33.333%, Mobile: Full width) */}
+  <div className="lg:w-1/3">
+    
+    {/* Mobile Amount Display - Only show on mobile */}
+    <div className="lg:hidden py-8 text-center">
+      <p className="text-zinc-500 text-sm mb-1">
+        {cartCount > 0 ? `${cartCount} item${cartCount > 1 ? 's' : ''}` : 'Total'}
+      </p>
+      <div className="text-5xl font-bold tracking-tight">
+        £{showManualEntry ? (manualAmount || '0.00') : cartTotal.toFixed(2)}
+      </div>
+    </div>
 
-{/* Cart */}
-{cart.length > 0 && (
-<div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-6">
-<div className="flex items-center justify-between mb-3">
-<h3 className="font-semibold">Cart</h3>
-<button
-onClick={clearCart}
-className="text-zinc-500 hover:text-red-400 text-sm transition"
->
-                        Clear
-</button>
-</div>
-<div className="space-y-2">
-{cart.map((item) => (
-<div key={item.product_id} className="flex items-center justify-between py-2 border-b border-zinc-800 last:border-0">
-<div className="flex items-center gap-3">
-<div className="flex items-center gap-1">
-<button
-onClick={() => decreaseQuantity(item.product_id)}
-className="w-6 h-6 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-sm transition"
->
-                                −
-</button>
-<span className="w-6 text-center text-sm">{item.quantity}</span>
-<button
-onClick={() => addToCart(item)}
-className="w-6 h-6 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-sm transition"
->
-                                +
-</button>
-</div>
-<span className="text-zinc-300">{item.name}</span>
-</div>
-<span className="text-zinc-400">£{(item.price * item.quantity).toFixed(2)}</span>
-</div>
-                      ))}
-</div>
-<div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-700">
-<span className="font-semibold">Total</span>
-<span className="text-xl font-bold text-emerald-400">£{cartTotal.toFixed(2)}</span>
-</div>
-</div>
-                )}
-</>
-            ) : (
-/* Manual Amount Entry */
-<div className="mb-6">
-<div className="grid grid-cols-3 gap-3 mb-4">
-{['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'back'].map((num) => (
-<button
-key={num}
-onClick={() => handleNumberInput(num)}
-className="bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 border border-zinc-800 text-white text-2xl font-semibold py-5 rounded-2xl transition active:scale-95 cursor-pointer"
->
-{num === 'back' ? '⌫' : num}
-</button>
-                  ))}
-</div>
-<button
-onClick={() => {
-setShowManualEntry(false);
-setManualAmount('');
+    {/* Error */}
+    {error && (
+      <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
+        <p className="text-red-400 text-sm">{error}</p>
+      </div>
+    )}
+
+    {/* Products Grid or Manual Entry */}
+    {!showManualEntry ? (
+      <>
+        {/* Products */}
+        <div id="tp-products-area">
+          {loadingProducts ? (
+            <div className="text-center py-12">
+              <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+              <p className="text-zinc-500">Loading products...</p>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">📦</div>
+              <p className="text-zinc-400 mb-2">No products yet</p>
+              <button
+                onClick={() => setShowProductsManager(true)}
+                className="text-emerald-400 hover:text-emerald-300 font-medium"
+              >
+                + Add your first product
+              </button>
+            </div>
+          ) : (
+            <div className="mb-6">
+              {/* Search Bar */}
+              <div className="mb-4">
+                <input
+                  id="tp-search-bar"
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setActiveCategory(null);
                   }}
-className="w-full text-zinc-500 hover:text-white text-sm py-2 transition"
->
-                  ← Back to products
-</button>
-</div>
-            )}
-{/* Tip Section */}
-<div id="tp-tips-section" className="mb-4">
-{/* Tips Toggle */}
-<div className="flex items-center justify-between mb-3">
-<p className="text-zinc-500 text-sm">Tips</p>
-<button
-type="button"
-onClick={() => {
-setTipsEnabled(!tipsEnabled);
-if (tipsEnabled) setTipAmount(0);
-  }}
-className={`relative w-11 h-6 rounded-full transition-colors active:scale-95 cursor-pointer ${
-tipsEnabled ? 'bg-emerald-500' : 'bg-zinc-700'
-}`}
->
-<span
-className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-tipsEnabled ? 'translate-x-5' : 'translate-x-0'
-}`}
-/>
-</button>
-</div>
-{/* Tip Buttons - only show when enabled */}
-{tipsEnabled && (
-<>
-<div className="flex gap-2 flex-wrap">
-{[0, 10, 15, 20].map((percent) => {
-const base = cart.length > 0 ? cartTotal : customAmount;
-const tipValue = percent === 0 ? 0 : base * percent / 100;
-const label = percent === 0 ? 'No Tip' : `${percent}% · £${tipValue.toFixed(2)}`;
-return (
-<div
-key={percent}
-onClick={() => setTipAmount(tipValue)}
-className={`flex-1 py-2 rounded-xl text-sm font-medium cursor-pointer text-center ${
-tipAmount === tipValue
-                    ? 'bg-emerald-500 text-black'
-                    : 'bg-zinc-800 text-white active:bg-zinc-700'
-}`}
->
-{label}
-</div>
-            );
-          })}
-<div
-onClick={() => setShowCustomTipModal(true)}
-className="flex-1 py-2 rounded-xl text-sm font-medium cursor-pointer text-center bg-zinc-800 text-white active:bg-zinc-700"
->
-            Custom
-</div>
-</div>
-{tipAmount > 0 && (
-<p className="text-emerald-400 text-sm mt-2 text-center">
-            Tip: £{tipAmount.toFixed(2)} • Total: £{getPaymentAmount().toFixed(2)}
-</p>
-        )}
-</>
-   )}
-</div>
-{/* Payment Buttons */}
-<div className="space-y-3">
-<button
-id="tp-pay-btn"
-onClick={() => showQRPayment()}
-disabled={getPaymentAmount() <= 0}
-className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-bold text-xl py-6 rounded-2xl transition flex items-center justify-center gap-3 cursor-pointer disabled:cursor-not-allowed"
->
-<svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-</svg>
-  Pay £{getPaymentAmount().toFixed(2)}
-</button>
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
 
-{getPaymentAmount() > 0 && (
-<button
-id="tp-send-link-btn"
-onClick={() => setShowSendPaymentLink(true)}
-className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white font-medium py-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
->
-<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-</svg>
-    Send Payment Link
-</button>
-)}
+              {/* Repeat Last Order */}
+              {lastOrder && lastOrder.length > 0 && cart.length === 0 && (
+                <button
+                  onClick={() => setCart(lastOrder.map(item => ({ ...item })))}
+                  className="w-full mb-4 bg-zinc-900 border border-zinc-800 hover:border-emerald-500 rounded-xl p-3 flex items-center justify-between transition"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">🔄</span>
+                    <div className="text-left">
+                      <p className="text-sm font-medium">Repeat last order</p>
+                      <p className="text-zinc-500 text-xs">
+                        {lastOrder.length} item{lastOrder.length > 1 ? 's' : ''} · £{lastOrder.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                  <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              )}
 
-{!showManualEntry && (
-<button
-id="tp-manual-btn"
-onClick={() => setShowManualEntry(true)}
-className="w-full bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 active:scale-95 border border-zinc-800 text-zinc-400 font-medium py-3 rounded-xl transition cursor-pointer"
->
-  Enter amount manually
-</button>
-)}
+              {/* Category Tabs */}
+              {!searchQuery && categories.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
+                  <button
+                    onClick={() => setActiveCategory(null)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition active:scale-95 cursor-pointer ${
+                      activeCategory === null
+                        ? 'bg-emerald-500 text-black'
+                        : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    All
+                  </button>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setActiveCategory(cat)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition active:scale-95 cursor-pointer ${
+                        activeCategory === cat
+                          ? 'bg-emerald-500 text-black'
+                          : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Products Grid - Responsive columns */}
+              <div id="tp-products-grid" className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-3 gap-3 items-end">
+                {filteredProducts.map((product) => {
+                  const inCart = cart.find(item => item.product_id === product.product_id);
+                  return (
+                    <button
+                      key={product.product_id}
+                      onClick={() => addToCart(product)}
+                      className={`relative bg-zinc-900 hover:bg-zinc-800 border rounded-2xl p-3 text-center transition-all active:scale-95 cursor-pointer flex flex-col justify-between min-h-[120px] ${
+                        inCart ? 'border-emerald-500 bg-emerald-500/10' : 'border-zinc-800'
+                      }`}
+                    >
+                      {inCart && (
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-xs font-bold text-black">
+                          {inCart.quantity}
+                        </div>
+                      )}
+                      <div className="text-2xl mb-2">{getProductEmoji(product)}</div>
+                      <div className="flex-1 flex flex-col justify-between">
+                        <p className="text-xs font-medium truncate mb-1">{product.name}</p>
+                        <p className="text-emerald-400 text-sm font-semibold">£{product.price.toFixed(2)}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* No results */}
+              {filteredProducts.length === 0 && searchQuery && (
+                <div className="text-center py-8">
+                  <p className="text-zinc-500">No products match "{searchQuery}"</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </>
+    ) : (
+      /* Manual Amount Entry */
+      <div className="mb-6">
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'back'].map((num) => (
+            <button
+              key={num}
+              onClick={() => handleNumberInput(num)}
+              className="bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 border border-zinc-800 text-white text-2xl font-semibold py-5 rounded-2xl transition active:scale-95 cursor-pointer"
+            >
+              {num === 'back' ? '⌫' : num}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => {
+            setShowManualEntry(false);
+            setManualAmount('');
+          }}
+          className="w-full text-zinc-500 hover:text-white text-sm py-2 transition"
+        >
+          ← Back to products
+        </button>
+      </div>
+    )}
+  </div>
+
+  {/* MIDDLE COLUMN - Checkout & Payment (Desktop: 33.333%, Mobile: Below products) */}
+  <div className="lg:w-1/3 lg:sticky lg:top-20 lg:self-start">
+    
+    {/* Desktop Amount Display */}
+    <div id="tp-amount-display" className="hidden lg:block bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 mb-4">
+      <p className="text-zinc-500 text-sm mb-2 text-center">
+        {cartCount > 0 ? `${cartCount} item${cartCount > 1 ? 's' : ''}` : 'Total'}
+      </p>
+      <div className="text-5xl font-bold tracking-tight text-center">
+        £{showManualEntry ? (manualAmount || '0.00') : cartTotal.toFixed(2)}
+      </div>
+    </div>
+
+    {/* Tip Section */}
+    <div id="tp-tips-section" className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-4">
+      {/* Tips Toggle */}
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-zinc-400 text-sm font-medium">Add Tip</p>
+        <button
+          type="button"
+          onClick={() => {
+            setTipsEnabled(!tipsEnabled);
+            if (tipsEnabled) setTipAmount(0);
+          }}
+          className={`relative w-11 h-6 rounded-full transition-colors active:scale-95 cursor-pointer ${
+            tipsEnabled ? 'bg-emerald-500' : 'bg-zinc-700'
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+              tipsEnabled ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </button>
+      </div>
+      
+      {/* Tip Buttons - only show when enabled */}
+      {tipsEnabled && (
+        <>
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            {[0, 10, 15, 20].map((percent) => {
+              const base = cart.length > 0 ? cartTotal : customAmount;
+              const tipValue = percent === 0 ? 0 : base * percent / 100;
+              const label = percent === 0 ? 'No Tip' : `${percent}%`;
+              return (
+                <button
+                  key={percent}
+                  onClick={() => setTipAmount(tipValue)}
+                  className={`py-2.5 rounded-xl text-sm font-medium cursor-pointer text-center transition ${
+                    tipAmount === tipValue
+                      ? 'bg-emerald-500 text-black'
+                      : 'bg-zinc-800 text-white hover:bg-zinc-700'
+                  }`}
+                >
+                  {label}
+                  {percent > 0 && <span className="block text-xs opacity-80">£{tipValue.toFixed(2)}</span>}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            onClick={() => setShowCustomTipModal(true)}
+            className="w-full py-2.5 rounded-xl text-sm font-medium cursor-pointer text-center bg-zinc-800 text-white hover:bg-zinc-700 transition"
+          >
+            Custom Amount
+          </button>
+          {tipAmount > 0 && (
+            <div className="mt-3 pt-3 border-t border-zinc-800 flex justify-between items-center">
+              <span className="text-zinc-400 text-sm">Tip</span>
+              <span className="text-emerald-400 font-bold">£{tipAmount.toFixed(2)}</span>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+
+    {/* Total */}
+    {(cart.length > 0 || customAmount > 0 || tipAmount > 0) && (
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-bold">Total</span>
+          <span className="text-3xl font-bold text-emerald-400">£{getPaymentAmount().toFixed(2)}</span>
+        </div>
+      </div>
+    )}
+
+    {/* Payment Buttons */}
+    <div className="space-y-3">
+      <button
+        id="tp-pay-btn"
+        onClick={() => showQRPayment()}
+        disabled={getPaymentAmount() <= 0}
+        className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-bold text-lg py-5 rounded-2xl transition flex items-center justify-center gap-3 cursor-pointer disabled:cursor-not-allowed shadow-lg shadow-emerald-500/25"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        Pay £{getPaymentAmount().toFixed(2)}
+      </button>
+
+      {getPaymentAmount() > 0 && (
+        <button
+          id="tp-send-link-btn"
+          onClick={() => setShowSendPaymentLink(true)}
+          className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white font-medium py-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+          Send Payment Link
+        </button>
+      )}
+
+      {!showManualEntry && (
+        <button
+          id="tp-manual-btn"
+          onClick={() => setShowManualEntry(true)}
+          className="w-full bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-700 border border-zinc-800 text-zinc-400 hover:text-white font-medium py-3 rounded-xl transition cursor-pointer"
+        >
+          Enter amount manually
+        </button>
+      )}
+    </div>
+  </div>
+
+  {/* RIGHT COLUMN - Cart (Desktop: 33.333%, Mobile: Below checkout) */}
+  <div className="lg:w-1/3 lg:sticky lg:top-20 lg:self-start">
+    {/* Cart */}
+    {cart.length > 0 && (
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold">Cart</h3>
+          <button
+            onClick={clearCart}
+            className="text-zinc-500 hover:text-red-400 text-sm transition"
+          >
+            Clear
+          </button>
+        </div>
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+          {cart.map((item) => (
+            <div key={item.product_id} className="flex items-center justify-between py-2 border-b border-zinc-800 last:border-0">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => decreaseQuantity(item.product_id)}
+                    className="w-6 h-6 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-sm transition"
+                  >
+                    −
+                  </button>
+                  <span className="w-6 text-center text-sm">{item.quantity}</span>
+                  <button
+                    onClick={() => addToCart(item)}
+                    className="w-6 h-6 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-sm transition"
+                  >
+                    +
+                  </button>
+                </div>
+                <span className="text-zinc-300 text-sm">{item.name}</span>
+              </div>
+              <span className="text-zinc-400 text-sm">£{(item.price * item.quantity).toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-700">
+          <span className="font-semibold">Subtotal</span>
+          <span className="text-xl font-bold text-emerald-400">£{cartTotal.toFixed(2)}</span>
+        </div>
+      </div>
+    )}
+    
+    {/* Empty cart placeholder on desktop */}
+    {cart.length === 0 && (
+      <div className="hidden lg:block bg-zinc-900/30 border border-zinc-800 border-dashed rounded-2xl p-8 text-center">
+        <div className="text-4xl mb-3">🛒</div>
+        <p className="text-zinc-500 text-sm">Your cart is empty</p>
+        <p className="text-zinc-600 text-xs mt-1">Add products to see them here</p>
+      </div>
+    )}
+  </div>
+
 </div>
-</>
-        )}
+)}
 {/* ============================================================= */}
 {/* QR CODE STATE - Show both QR and Tap options */}
 {/* ============================================================= */}
@@ -1815,44 +1754,90 @@ className="block w-full text-center text-sm text-zinc-400 hover:text-white py-4 
 )}
 </main>
 
-{/* Live Conversion Widget - Always visible */}
-{liveRate && (
-  <div className="w-full sm:max-w-lg mx-auto px-2 sm:px-4 pb-4">
-    <div id="tp-live-rate" className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <img 
-            src="https://static.coingecko.com/s/coingecko-logo-8903d34ce19ca4be1c81f0db30e924154750d208683fad7ae6f2ce06c76d0a56.png" 
-            alt="CoinGecko" 
-            className="h-5 w-auto object-contain"
-          />
-          <span className="text-xs text-zinc-500">Live rate from CoinGecko Pro</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-          <span className="text-xs text-emerald-500 font-medium">LIVE</span>
+{/* Statistics Cards - At Footer Level, OUTSIDE main */}
+<div className="w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 pb-8">
+  <div className="flex flex-col lg:flex-row gap-6 lg:gap-6">
+    
+    {/* Revenue Card - 33.333% width */}
+    <div className="lg:w-1/3">
+      <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 flex items-center justify-center h-full">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-zinc-500 text-sm">Revenue</p>
+            <p className="text-2xl font-bold text-emerald-400">£{stats.totalRevenue.toFixed(2)}</p>
+          </div>
         </div>
       </div>
-      <div className="flex items-baseline justify-between">
-        <span className="text-zinc-400 text-sm">Settlement amount</span>
-        <div className="text-right">
-          <span className="text-2xl font-bold text-white font-mono">
-            {rlusdAmount?.toFixed(4)} <span className="text-emerald-400 text-lg">RLUSD</span>
-          </span>
-          <p className="text-xs text-zinc-500 mt-1">
-            £1 = {liveRate?.toFixed(4)} RLUSD
+    </div>
+
+    {/* Live Conversion Card - 33.333% width - DESKTOP ONLY */}
+    <div className="hidden lg:block lg:w-1/3">
+      <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 h-full">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <img
+              src="https://static.coingecko.com/s/coingecko-logo-8903d34ce19ca4be1c81f0db30e924154750d208683fad7ae6f2ce06c76d0a56.png"
+              alt="CoinGecko"
+              className="h-5 w-auto object-contain"
+            />
+            <span className="text-xs text-zinc-500">Live rate from CoinGecko Pro</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+            <span className="text-xs text-emerald-500 font-medium">LIVE</span>
+          </div>
+        </div>
+        
+        <div className="flex items-baseline justify-between">
+          <span className="text-zinc-400 text-sm">Settlement amount</span>
+          <div className="text-right">
+            <span className="text-2xl font-bold text-white font-mono">
+              {rlusdAmount ? rlusdAmount.toFixed(4) : '...'} <span className="text-emerald-400 text-lg">RLUSD</span>
+            </span>
+            {liveRate && (
+              <p className="text-xs text-zinc-500 mt-1">
+                £1 = {liveRate.toFixed(4)} RLUSD
+              </p>
+            )}
+          </div>
+        </div>
+        
+        <div className="mt-3 pt-3 border-t border-zinc-800 flex items-start gap-2">
+          <svg className="w-4 h-4 text-amber-400/80 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4M12 8h.01" />
+          </svg>
+          <p className="text-[11px] text-zinc-500 leading-relaxed">
+            <span className="text-zinc-400 font-medium">Live price.</span> Updated every 10s via CoinGecko Pro (600+ exchanges). Settlement variance &lt;0.1%.
           </p>
         </div>
       </div>
-      <div className="mt-3 pt-3 border-t border-zinc-800">
-        <p className="text-[11px] text-zinc-500 leading-relaxed">
-          <span className="text-zinc-400 font-medium">Live price.</span> Updated every 10s via CoinGecko Pro (600+ exchanges). Settlement variance &lt;0.1%.
-        </p>
+    </div>
+
+    {/* Sales Card - 33.333% width */}
+    <div className="lg:w-1/3">
+      <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 flex items-center justify-center h-full">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-sky-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg className="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-zinc-500 text-sm">Sales</p>
+            <p className="text-2xl font-bold">{stats.totalSales}</p>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-)}
 
+  </div>
+</div>
 {/* YAOFUS Pioneers Badge - Footer */}
 <footer id="tp-footer" className="py-6 flex flex-col items-center gap-1">
   <span className="text-zinc-500 text-[10px] font-medium tracking-wider">INSTANT</span>
@@ -1871,5 +1856,6 @@ className="block w-full text-center text-sm text-zinc-400 hover:text-white py-4 
   </div>
 </footer>
 </div>
+  </>
   );
 }

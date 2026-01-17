@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import InstantPay from '@/components/InstantPay';
 import { QRCodeSVG } from 'qrcode.react';
 import ReceiptActions from '@/components/ReceiptActions';
+import TipSelector from '@/components/TipSelector';
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
@@ -75,6 +76,8 @@ export default function PayPage() {
   const [splitEmailTarget, setSplitEmailTarget] = useState<SplitData | null>(null);
   const [splitEmailAddress, setSplitEmailAddress] = useState('');
   const [sendingSplitEmail, setSendingSplitEmail] = useState(false);
+  // Tip selector
+  const [tipAmount, setTipAmount] = useState(0);
 
   // Fetch live conversion rate
   useEffect(() => {
@@ -514,7 +517,7 @@ if (allPaid || payment?.status === 'paid') {
   amount={payment?.amount || 0}
   rlusdAmount={rlusdAmount || undefined}
   items={payment?.items || []}
-  tipAmount={payment?.tip}
+  tipAmount={tipAmount || payment?.tip || 0}
   conversionRate={undefined}
   storeLogo={payment?.store_logo || undefined}
 />
@@ -702,14 +705,19 @@ if (allPaid || payment?.status === 'paid') {
     {/* Instant Pay with Web3Auth/Biometrics - Only show if pending */}
     {payment?.status === 'pending' && (
       <div className="mb-4">
-        <InstantPay
+        <TipSelector 
           amount={currentAmount}
-          rlusdAmount={rlusdAmount || currentAmount * 1.35}
-          vendorWallet={payment?.vendor_wallet || ''}
-          storeName={payment?.store_name || ''}
-          storeId={payment?.store_id || ''}
-          paymentId={getCurrentPaymentId()}
-          onSuccess={(txHash, receiptId) => {
+          onTipChange={setTipAmount} 
+        />
+        <InstantPay
+  amount={currentAmount + tipAmount}
+  rlusdAmount={rlusdAmount || currentAmount * 1.35}
+  vendorWallet={payment?.vendor_wallet || ''}
+  storeName={payment?.store_name || ''}
+  storeId={payment?.store_id || ''}
+  paymentId={getCurrentPaymentId()}
+  tipAmount={tipAmount}
+  onSuccess={(txHash, receiptId) => {
             console.log('DEBUG onSuccess:', { txHash, receiptId });
             setTxHash(txHash);
             if (receiptId) setReceiptId(receiptId);
