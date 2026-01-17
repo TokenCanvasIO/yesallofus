@@ -729,7 +729,7 @@ if (allPaid || payment?.status === 'paid') {
       amount: splits.reduce((sum, split) => sum + split.amount, 0),
       rlusd_amount: null,
       items: payment?.items || [],
-      tip_amount: splits.reduce((sum, split) => sum + (split.tip || 0), 0),
+      tip_amount: payment?.tip || 0,
       tx_hash: txHash
     }
   : receiptId
