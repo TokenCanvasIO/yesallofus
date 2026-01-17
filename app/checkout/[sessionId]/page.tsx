@@ -53,6 +53,8 @@ export default function CheckoutPage() {
   
   // Tip state
   const [tipAmount, setTipAmount] = useState(0);
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
+  const [instaPayMessage, setInstaPayMessage] = useState<string | null>(null);
   
   // Split bill state
   const [showSplitModal, setShowSplitModal] = useState(false);
@@ -421,7 +423,7 @@ useEffect(() => {
       <NebulaBackground opacity={0.3} />
       
       {/* Desktop Conversion Rate - Fixed top right */}
-      <div className="hidden md:block fixed top-4 right-4 w-80 z-10">
+      <div className="hidden md:block fixed top-4 right-4 w-96 z-10">
         <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -526,40 +528,56 @@ useEffect(() => {
             )}
 
             {/* New User Signup Prompt */}
-            {userStatus === 'new' && (
-              <div className="bg-gradient-to-br from-emerald-900/20 to-blue-900/20 border border-emerald-500/30 rounded-xl p-6 text-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
-                  </svg>
+            {userStatus === 'new' && !showPaymentOptions && (
+              <div className="bg-gradient-to-br from-emerald-900/20 to-blue-900/20 border border-emerald-500/30 rounded-xl p-3 text-center mb-3">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2">
+                  <img 
+                    src="https://yesallofus.com/dltpayslogo1.png" 
+                    alt="YesAllOfUs" 
+                    className="w-12 h-12 rounded-xl object-cover"
+                  />
                 </div>
                 
-                <h3 className="text-xl font-bold text-white mb-2">Welcome to YesAllOfUs!</h3>
-                <p className="text-emerald-300 mb-4">Join to pay with RLUSD or USDC and join {session?.store_name}&apos;s affiliate program</p>
+                <h3 className="text-lg font-bold text-white mb-1">Welcome to YesAllOfUs!</h3>
+                <p className="text-emerald-300 text-sm mb-2">Join to pay with RLUSD or USDC and join {session?.store_name}&apos;s affiliate program</p>
                 
-                <div className="grid grid-cols-3 gap-3 mb-6 text-xs">
-                  <div className="text-center">
-                    <div className="text-emerald-400 font-semibold">Earn Commissions</div>
-                    <div className="text-zinc-400">Vendor rewards</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-blue-400 font-semibold">Tap & Pay</div>
-                    <div className="text-zinc-400">Web3Auth</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-purple-400 font-semibold">Secure</div>
-                    <div className="text-zinc-400">XRPL</div>
-                  </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={redirectToSignup}
+                    className="flex-1 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-semibold py-3 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                  >
+                    Sign Up Here
+                  </button>
+                  <button
+                    onClick={() => {
+                      const wallet = localStorage.getItem('wallet_address') || 
+                                     localStorage.getItem('affiliate_wallet_address') ||
+                                     localStorage.getItem('web3auth_wallet_address');
+                      if (wallet) {
+                        setShowPaymentOptions(true);
+                      } else {
+                        setInstaPayMessage('Please Join First');
+                        setTimeout(() => setInstaPayMessage(null), 2500);
+                      }
+                    }}
+                    className={`flex-1 font-semibold py-3 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl ${
+                      instaPayMessage 
+                        ? 'bg-amber-500 text-black' 
+                        : 'bg-emerald-500 hover:bg-emerald-400 text-white'
+                    }`}
+                  >
+                    {instaPayMessage || 'Pay Now'}
+                  </button>
                 </div>
+                
+                <p className="text-zinc-500 text-xs mt-2">Free to join • Pay instantly, no waiting</p>
                 
                 <button
-                  onClick={redirectToSignup}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-semibold py-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                  onClick={() => setShowPaymentOptions(true)}
+                  className="text-emerald-400 hover:text-emerald-300 text-sm mt-3 underline"
                 >
-                  Sign Up Here - Takes 2 Minutes
+                  Already have an account? Sign in
                 </button>
-                
-                <p className="text-zinc-500 text-xs mt-3">Free to join • Pay instantly, no waiting</p>
               </div>
             )}
 
@@ -593,10 +611,20 @@ useEffect(() => {
             )}
           </div>
 
+          {/* Terms and Privacy - between sections */}
+          <div className="px-6 py-4 border-t border-zinc-800">
+            <p className="text-center text-xs text-zinc-500">
+              By completing this payment, you agree to our{' '}
+              <a href="/pos-terms" className="text-zinc-400 underline hover:text-white">Terms</a>
+              {' '}and{' '}
+              <a href="/pos-privacy" className="text-zinc-400 underline hover:text-white">Privacy Policy</a>
+            </p>
+          </div>
+
           {/* Payment options */}
-          <div className="p-6">
+          <div className="p-6 border-t border-zinc-800">
             {/* Payment Methods - Only show for registered users */}
-            {userStatus === 'registered' && (
+            {(userStatus === 'registered' || showPaymentOptions) && (
               <>
                 {/* Tip Selector - only show if not split */}
                 {!splits && session?.status === 'pending' && (
@@ -606,6 +634,17 @@ useEffect(() => {
                   />
                 )}
 
+                {showPaymentOptions && userStatus === 'new' && (
+                  <button
+                    onClick={() => setShowPaymentOptions(false)}
+                    className="flex items-center gap-2 text-zinc-500 hover:text-zinc-300 text-sm mb-4 transition"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Back
+                  </button>
+                )}
                 <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4">Pay with</h2>
 
                 {session && rlusdAmount && (
@@ -669,14 +708,6 @@ useEffect(() => {
                 </p>
               </div>
             </div>
-
-            {/* Terms and Privacy */}
-            <p className="text-center text-xs text-zinc-500 pt-6 border-t border-zinc-800 mt-6">
-              By completing this payment, you agree to our{' '}
-              <a href="/pos-terms" className="text-zinc-400 underline hover:text-white">Terms</a>
-              {' '}and{' '}
-              <a href="/pos-privacy" className="text-zinc-400 underline hover:text-white">Privacy Policy</a>
-            </p>
 
             {/* Security badges */}
             <div className="flex justify-center gap-4 mt-4">
