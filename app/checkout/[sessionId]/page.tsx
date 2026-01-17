@@ -7,6 +7,7 @@ import PaymentOptions from '@/components/PaymentOptions';
 import TipSelector from '@/components/TipSelector';
 import SplitBillModal from '@/components/SplitBillModal';
 import ReceiptActions from '@/components/ReceiptActions';
+import NFCTapPay from '@/components/NFCTapPay';
 
 const API_URL = 'https://api.dltpays.com/plugins/api/v1';
 
@@ -53,8 +54,9 @@ export default function CheckoutPage() {
   
   // Tip state
   const [tipAmount, setTipAmount] = useState(0);
-  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
-  const [instaPayMessage, setInstaPayMessage] = useState<string | null>(null);
+const [isAndroid, setIsAndroid] = useState(false);
+const [nfcSupported, setNfcSupported] = useState(false);
+const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   
   // Split bill state
   const [showSplitModal, setShowSplitModal] = useState(false);
@@ -62,6 +64,11 @@ export default function CheckoutPage() {
   const [currentSplitIndex, setCurrentSplitIndex] = useState(0);
   // User status detection
 const [userStatus, setUserStatus] = useState<'checking' | 'registered' | 'new'>('checking');
+
+useEffect(() => {
+  setIsAndroid(/android/i.test(navigator.userAgent));
+  setNfcSupported('NDEFReader' in window);
+}, []);
 
 // Check user registration status
 useEffect(() => {
@@ -548,26 +555,18 @@ useEffect(() => {
                   >
                     Sign Up Here
                   </button>
-                  <button
-                    onClick={() => {
-                      const wallet = localStorage.getItem('wallet_address') || 
-                                     localStorage.getItem('affiliate_wallet_address') ||
-                                     localStorage.getItem('web3auth_wallet_address');
-                      if (wallet) {
-                        setShowPaymentOptions(true);
-                      } else {
-                        setInstaPayMessage('Please Join First');
-                        setTimeout(() => setInstaPayMessage(null), 2500);
-                      }
-                    }}
-                    className={`flex-1 font-semibold py-3 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl ${
-                      instaPayMessage 
-                        ? 'bg-amber-500 text-black' 
-                        : 'bg-emerald-500 hover:bg-emerald-400 text-white'
-                    }`}
-                  >
-                    {instaPayMessage || 'Pay Now'}
-                  </button>
+                  {isAndroid && nfcSupported && session && rlusdAmount && (
+                    <NFCTapPay
+                      amount={currentAmount}
+                      storeId={session.session_id}
+                      paymentId={getCurrentPaymentId()}
+                      onSuccess={handlePaymentSuccess}
+                      onError={(err) => setError(err)}
+                      onNotRegistered={redirectToSignup}
+                      isCheckoutSession={true}
+                      tipAmount={tipAmount}
+                    />
+                  )}
                 </div>
                 
                 <p className="text-zinc-500 text-xs mt-2">Free to join • Pay instantly, no waiting</p>

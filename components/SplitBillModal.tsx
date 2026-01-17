@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import NebulaBackground from '@/components/NebulaBackground';
 
 interface SplitBillModalProps {
   amount: number;
@@ -27,8 +28,10 @@ export default function SplitBillModal({ amount, isOpen, onClose, onSplit }: Spl
   const eachPays = amount / splitCount;
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-      <div className="bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800 rounded-3xl p-8 w-full max-w-sm shadow-2xl shadow-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+      <NebulaBackground opacity={0.5} />
+      <div className="absolute inset-0 bg-black/70" />
+      <div className="relative bg-gradient-to-b from-zinc-900/95 to-zinc-950/95 border border-zinc-800 rounded-3xl p-8 w-full max-w-sm shadow-2xl shadow-black/50">
         
         {/* Header */}
         <div className="text-center mb-8">
