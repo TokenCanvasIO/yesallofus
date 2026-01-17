@@ -91,7 +91,7 @@ const [showLogoUpload, setShowLogoUpload] = useState(false);
 const [uploadingLogo, setUploadingLogo] = useState(false);
 
 // Collapsed sidebar
-const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
 // Store tracking
 const [celebrateMilestone, setCelebrateMilestone] = useState<string | null>(null);

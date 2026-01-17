@@ -182,7 +182,7 @@ export default function AffiliateDashboard() {
   const [showAutoSignPrompt, setShowAutoSignPrompt] = useState(false);
 
   // NEW: VendorDashboard-style state
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [progressHidden, setProgressHidden] = useState(false);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [celebrateMilestone, setCelebrateMilestone] = useState<string | null>(null);
