@@ -419,53 +419,53 @@ useEffect(() => {
   return (
     <>
       <NebulaBackground opacity={0.3} />
-      <div className="min-h-screen bg-transparent text-white flex items-center justify-center p-4">
-        <div className="relative md:flex md:gap-6 md:items-start md:max-w-4xl w-full">
-          {/* Desktop Conversion Rate - Right side */}
-          <div className="hidden md:block md:w-80 md:sticky md:top-4">
-            <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <img
-                    src="https://static.coingecko.com/s/coingecko-logo-8903d34ce19ca4be1c81f0db30e924154750d208683fad7ae6f2ce06c76d0a56.png"
-                    alt="CoinGecko"
-                    className="h-5 w-auto object-contain"
-                  />
-                  <span className="text-xs text-zinc-500">Live rate from CoinGecko Pro</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                  <span className="text-xs text-emerald-500 font-medium">LIVE</span>
-                </div>
-              </div>
-              
-              <div className="flex items-baseline justify-between">
-                <span className="text-zinc-400 text-sm">Settlement amount</span>
-                <div className="text-right">
-                  <span className="text-2xl font-bold text-white font-mono">
-                    {rlusdAmount ? rlusdAmount.toFixed(4) : '...'} <span className="text-emerald-400 text-lg">RLUSD</span>
-                  </span>
-                  {liveRate && (
-                    <p className="text-xs text-zinc-500 mt-1">
-                      £1 = {liveRate.toFixed(4)} RLUSD
-                    </p>
-                  )}
-                </div>
-              </div>
-              
-              <div className="mt-3 pt-3 border-t border-zinc-800 flex items-start gap-2">
-                <svg className="w-4 h-4 text-amber-400/80 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 16v-4M12 8h.01" />
-                </svg>
-                <p className="text-[11px] text-zinc-500 leading-relaxed">
-                  <span className="text-zinc-400 font-medium">Live price.</span> Updated every 10s via CoinGecko Pro (600+ exchanges). Settlement variance &lt;0.1%.
-                </p>
-              </div>
+      
+      {/* Desktop Conversion Rate - Fixed top right */}
+      <div className="hidden md:block fixed top-4 right-4 w-80 z-10">
+        <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <img
+                src="https://static.coingecko.com/s/coingecko-logo-8903d34ce19ca4be1c81f0db30e924154750d208683fad7ae6f2ce06c76d0a56.png"
+                alt="CoinGecko"
+                className="h-5 w-auto object-contain"
+              />
+              <span className="text-xs text-zinc-500">Live rate from CoinGecko Pro</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+              <span className="text-xs text-emerald-500 font-medium">LIVE</span>
             </div>
           </div>
+          
+          <div className="flex items-baseline justify-between">
+            <span className="text-zinc-400 text-sm">Settlement amount</span>
+            <div className="text-right">
+              <span className="text-2xl font-bold text-white font-mono">
+                {rlusdAmount ? rlusdAmount.toFixed(4) : '...'} <span className="text-emerald-400 text-lg">RLUSD</span>
+              </span>
+              {liveRate && (
+                <p className="text-xs text-zinc-500 mt-1">
+                  £1 = {liveRate.toFixed(4)} RLUSD
+                </p>
+              )}
+            </div>
+          </div>
+          
+          <div className="mt-3 pt-3 border-t border-zinc-800 flex items-start gap-2">
+            <svg className="w-4 h-4 text-amber-400/80 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4M12 8h.01" />
+            </svg>
+            <p className="text-[11px] text-zinc-500 leading-relaxed">
+              <span className="text-zinc-400 font-medium">Live price.</span> Updated every 10s via CoinGecko Pro (600+ exchanges). Settlement variance &lt;0.1%.
+            </p>
+          </div>
+        </div>
+      </div>
 
-          <div className="bg-zinc-900/70 border border-zinc-800 rounded-2xl w-full max-w-md overflow-hidden">
+      <div className="min-h-screen bg-transparent text-white flex items-center justify-center p-4">
+        <div className="bg-zinc-900/70 border border-zinc-800 rounded-2xl w-full max-w-md overflow-hidden">
           
           {/* Header with store branding */}
           <div className="bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 p-6 border-b border-zinc-800">
@@ -498,7 +498,6 @@ useEffect(() => {
             )}
 
             {session?.items && session.items.length > 0 ? (
-            
               <div className="space-y-3 mb-4">
                 {session.items.map((item, idx) => (
                   <div key={idx} className="flex justify-between items-center">
@@ -517,51 +516,52 @@ useEffect(() => {
                 <p className="text-zinc-400">Payment to {session?.store_name}</p>
               </div>
             )}
-            {/* User Status Check */}
-{userStatus === 'checking' && (
-  <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-6 text-center mb-6">
-    <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-    <p className="text-zinc-400">Checking your account status...</p>
-  </div>
-)}
 
-{/* New User Signup Prompt */}
-{userStatus === 'new' && (
-  <div className="bg-gradient-to-br from-emerald-900/20 to-blue-900/20 border border-emerald-500/30 rounded-xl p-6 text-center mb-6">
-    <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-xl flex items-center justify-center mx-auto mb-4">
-      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
-      </svg>
-    </div>
-    
-    <h3 className="text-xl font-bold text-white mb-2">Welcome to YesAllOfUs!</h3>
-    <p className="text-emerald-300 mb-4">Join to pay with RLUSD or USDC and join {session?.store_name}'s affiliate program</p>
-    
-    <div className="grid grid-cols-3 gap-3 mb-6 text-xs">
-      <div className="text-center">
-        <div className="text-emerald-400 font-semibold">Earn Commissions</div>
-        <div className="text-zinc-400">Vendor rewards</div>
-      </div>
-      <div className="text-center">
-        <div className="text-blue-400 font-semibold">Tap & Pay</div>
-        <div className="text-zinc-400">Web3Auth</div>
-      </div>
-      <div className="text-center">
-        <div className="text-purple-400 font-semibold">Secure</div>
-        <div className="text-zinc-400">XRPL</div>
-      </div>
-    </div>
-    
-    <button
-      onClick={redirectToSignup}
-      className="w-full bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-semibold py-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-    >
-      Sign Up Here - Takes 2 Minutes
-    </button>
-    
-    <p className="text-zinc-500 text-xs mt-3">Free to join • Pay instantly, no waiting</p>
-  </div>
-)}
+            {/* User Status Check */}
+            {userStatus === 'checking' && (
+              <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-6 text-center mb-6">
+                <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                <p className="text-zinc-400">Checking your account status...</p>
+              </div>
+            )}
+
+            {/* New User Signup Prompt */}
+            {userStatus === 'new' && (
+              <div className="bg-gradient-to-br from-emerald-900/20 to-blue-900/20 border border-emerald-500/30 rounded-xl p-6 text-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+                  </svg>
+                </div>
+                
+                <h3 className="text-xl font-bold text-white mb-2">Welcome to YesAllOfUs!</h3>
+                <p className="text-emerald-300 mb-4">Join to pay with RLUSD or USDC and join {session?.store_name}&apos;s affiliate program</p>
+                
+                <div className="grid grid-cols-3 gap-3 mb-6 text-xs">
+                  <div className="text-center">
+                    <div className="text-emerald-400 font-semibold">Earn Commissions</div>
+                    <div className="text-zinc-400">Vendor rewards</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-blue-400 font-semibold">Tap & Pay</div>
+                    <div className="text-zinc-400">Web3Auth</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-purple-400 font-semibold">Secure</div>
+                    <div className="text-zinc-400">XRPL</div>
+                  </div>
+                </div>
+                
+                <button
+                  onClick={redirectToSignup}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-semibold py-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                >
+                  Sign Up Here - Takes 2 Minutes
+                </button>
+                
+                <p className="text-zinc-500 text-xs mt-3">Free to join • Pay instantly, no waiting</p>
+              </div>
+            )}
 
             {/* Tip display if added */}
             {tipAmount > 0 && (
@@ -582,18 +582,10 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Terms and Privacy */}
-            <p className="text-center text-xs text-zinc-500 mt-4">
-              By completing this payment, you agree to our{' '}
-              <a href="/pos-terms" className="text-zinc-400 underline hover:text-white">Terms</a>
-              {' '}and{' '}
-              <a href="/pos-privacy" className="text-zinc-400 underline hover:text-white">Privacy Policy</a>
-            </p>
-
             {/* Cancel/Back button */}
             {session?.cancel_url && (
-              
-              <a href={session.cancel_url}
+              <a 
+                href={session.cancel_url}
                 className="block text-center text-zinc-500 hover:text-zinc-300 text-sm mt-4 transition"
               >
                 ← Return to store
@@ -604,38 +596,39 @@ useEffect(() => {
           {/* Payment options */}
           <div className="p-6">
             {/* Payment Methods - Only show for registered users */}
-{userStatus === 'registered' && (
-  <>
-    {/* Tip Selector - only show if not split */}
-    {!splits && session?.status === 'pending' && (
-      <TipSelector
-        amount={session.amount}
-        onTipChange={setTipAmount}
-      />
-    )}
+            {userStatus === 'registered' && (
+              <>
+                {/* Tip Selector - only show if not split */}
+                {!splits && session?.status === 'pending' && (
+                  <TipSelector
+                    amount={session.amount}
+                    onTipChange={setTipAmount}
+                  />
+                )}
 
-    <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4">Pay with</h2>
+                <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4">Pay with</h2>
 
-    {session && rlusdAmount && (
-      <PaymentOptions
-        amount={currentAmount}
-        rlusdAmount={rlusdAmount}
-        vendorWallet={session.vendor_wallet}
-        storeName={session.store_name}
-        storeId={session.session_id}
-        paymentId={getCurrentPaymentId()}
-        status={session.status as 'pending' | 'paid' | 'expired' | 'processing'}
-        onSuccess={handlePaymentSuccess}
-        onError={(err) => setError(err)}
-        showSplitBill={!splits && session.status === 'pending'}
-        onSplitBill={() => setShowSplitModal(true)}
-        isCheckoutSession={true}
-        tipAmount={tipAmount}
-      />
-    )}
-  </>
-)}
-{/* Live Conversion Rate - Mobile only */}
+                {session && rlusdAmount && (
+                  <PaymentOptions
+                    amount={currentAmount}
+                    rlusdAmount={rlusdAmount}
+                    vendorWallet={session.vendor_wallet}
+                    storeName={session.store_name}
+                    storeId={session.session_id}
+                    paymentId={getCurrentPaymentId()}
+                    status={session.status as 'pending' | 'paid' | 'expired' | 'processing'}
+                    onSuccess={handlePaymentSuccess}
+                    onError={(err) => setError(err)}
+                    showSplitBill={!splits && session.status === 'pending'}
+                    onSplitBill={() => setShowSplitModal(true)}
+                    isCheckoutSession={true}
+                    tipAmount={tipAmount}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Live Conversion Rate - Mobile only */}
             <div className="md:hidden bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 mt-6">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -677,8 +670,16 @@ useEffect(() => {
               </div>
             </div>
 
+            {/* Terms and Privacy */}
+            <p className="text-center text-xs text-zinc-500 pt-6 border-t border-zinc-800 mt-6">
+              By completing this payment, you agree to our{' '}
+              <a href="/pos-terms" className="text-zinc-400 underline hover:text-white">Terms</a>
+              {' '}and{' '}
+              <a href="/pos-privacy" className="text-zinc-400 underline hover:text-white">Privacy Policy</a>
+            </p>
+
             {/* Security badges */}
-            <div className="flex justify-center gap-4 mt-6 pt-6 border-t border-zinc-800">
+            <div className="flex justify-center gap-4 mt-4">
               <div className="flex items-center gap-2 text-zinc-500 text-xs">
                 <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -719,7 +720,6 @@ useEffect(() => {
           </footer>
         </div>
       </div>
-    </div>
 
       {/* Split Bill Modal */}
       {session && (
