@@ -6,6 +6,7 @@ import InstantPay from '@/components/InstantPay';
 import { QRCodeSVG } from 'qrcode.react';
 import ReceiptActions from '@/components/ReceiptActions';
 import TipSelector from '@/components/TipSelector';
+import NebulaBackground from '@/components/NebulaBackground';
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
@@ -549,12 +550,8 @@ if (allPaid || payment?.status === 'paid') {
   const totalSplits = splits?.length || payment?.total_splits || null;
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Ambient gradient */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[150px]" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-[150px]" />
-      </div>
+    <div className="min-h-screen bg-transparent text-white">
+      <NebulaBackground opacity={0.3} />
 
       <div className="relative z-10 max-w-md mx-auto p-6">
         {/* Store header */}
