@@ -47,12 +47,15 @@ export default function EmailReceiptModal({
 
     try {
       let payload: any = {
-        email: emailAddress,
-        store_name: storeName,
-        store_id: storeId,
-        amount,
-        tx_hash: txHash
-      };
+  email: emailAddress,
+  store_name: storeName,
+  store_id: storeId,
+  amount,
+  rlusd_amount: rlusdAmount,
+  items: items || [],
+  tip_amount: tipAmount || 0,
+  tx_hash: txHash
+};
 
       if (receiptId) {
         const res = await fetch(`${API_URL}/receipts/${receiptId}`);
