@@ -57,6 +57,42 @@ export default function CheckoutPage() {
   const [showSplitModal, setShowSplitModal] = useState(false);
   const [splits, setSplits] = useState<SplitData[] | null>(null);
   const [currentSplitIndex, setCurrentSplitIndex] = useState(0);
+  // User status detection
+const [userStatus, setUserStatus] = useState<'checking' | 'registered' | 'new'>('checking');
+
+// Check user registration status
+useEffect(() => {
+  const checkUserRegistration = async () => {
+    if (!session) return;
+    
+    try {
+      // Check if user has a connected wallet
+      const walletAddress = localStorage.getItem('yesallofus_wallet') || 
+                           sessionStorage.getItem('walletAddress');
+      
+      if (!walletAddress) {
+        setUserStatus('new');
+        return;
+      }
+
+      // Extract store ID from session
+      const storeId = session.session_id.replace('sess_', 'store_');
+      
+      // Check if registered with the store
+      const response = await fetch(`https://api.dltpays.com/api/v1/customer/status?wallet=${walletAddress}&store=${storeId}`);
+      const data = await response.json();
+      
+      setUserStatus(data.isRegistered ? 'registered' : 'new');
+    } catch (error) {
+      console.error('User status check failed:', error);
+      setUserStatus('new'); // Default to signup flow
+    }
+  };
+
+  if (session) {
+    checkUserRegistration();
+  }
+}, [session]);
 
   // Fetch session data
   useEffect(() => {
@@ -207,6 +243,16 @@ export default function CheckoutPage() {
 
     // Vibration feedback
     if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+  };
+
+  // Redirect to signup function
+  const redirectToSignup = () => {
+    if (!session) return;
+    
+    const currentCheckoutUrl = window.location.href;
+    const storeId = session.session_id.replace('sess_', 'store_');
+    const signupUrl = `/customer-signup?store=${storeId}&referrer=checkout&redirect=${encodeURIComponent(currentCheckoutUrl)}`;
+    window.location.href = signupUrl;
   };
 
   // Loading state
@@ -413,6 +459,51 @@ export default function CheckoutPage() {
                 <p className="text-zinc-400">Payment to {session?.store_name}</p>
               </div>
             )}
+            {/* User Status Check */}
+{userStatus === 'checking' && (
+  <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-6 text-center mb-6">
+    <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+    <p className="text-zinc-400">Checking your account status...</p>
+  </div>
+)}
+
+{/* New User Signup Prompt */}
+{userStatus === 'new' && (
+  <div className="bg-gradient-to-br from-emerald-900/20 to-blue-900/20 border border-emerald-500/30 rounded-xl p-6 text-center mb-6">
+    <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+      </svg>
+    </div>
+    
+    <h3 className="text-xl font-bold text-white mb-2">Welcome to YesAllOfUs!</h3>
+    <p className="text-emerald-300 mb-4">You need to create a rewards account to complete this payment</p>
+    
+    <div className="grid grid-cols-3 gap-3 mb-6 text-xs">
+      <div className="text-center">
+        <div className="text-emerald-400 font-semibold">Earn Rewards</div>
+        <div className="text-zinc-400">Up to 25%</div>
+      </div>
+      <div className="text-center">
+        <div className="text-blue-400 font-semibold">NFC Payments</div>
+        <div className="text-zinc-400">Tap to pay</div>
+      </div>
+      <div className="text-center">
+        <div className="text-purple-400 font-semibold">Secure</div>
+        <div className="text-zinc-400">Blockchain</div>
+      </div>
+    </div>
+    
+    <button
+      onClick={redirectToSignup}
+      className="w-full bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-semibold py-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+    >
+      Sign Up Here - Takes 2 Minutes
+    </button>
+    
+    <p className="text-zinc-500 text-xs mt-3">Free to join • Start earning immediately</p>
+  </div>
+)}
 
             {/* Tip display if added */}
             {tipAmount > 0 && (
@@ -436,33 +527,38 @@ export default function CheckoutPage() {
 
           {/* Payment options */}
           <div className="p-6">
-            {/* Tip Selector - only show if not split */}
-            {!splits && session?.status === 'pending' && (
-              <TipSelector
-                amount={session.amount}
-                onTipChange={setTipAmount}
-              />
-            )}
+            {/* Payment Methods - Only show for registered users */}
+{userStatus === 'registered' && (
+  <>
+    {/* Tip Selector - only show if not split */}
+    {!splits && session?.status === 'pending' && (
+      <TipSelector
+        amount={session.amount}
+        onTipChange={setTipAmount}
+      />
+    )}
 
-            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4">Pay with</h2>
+    <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4">Pay with</h2>
 
-            {session && rlusdAmount && (
-              <PaymentOptions
-                amount={currentAmount}
-                rlusdAmount={rlusdAmount}
-                vendorWallet={session.vendor_wallet}
-                storeName={session.store_name}
-                storeId={session.session_id}
-                paymentId={getCurrentPaymentId()}
-                status={session.status as 'pending' | 'paid' | 'expired' | 'processing'}
-                onSuccess={handlePaymentSuccess}
-                onError={(err) => setError(err)}
-                showSplitBill={!splits && session.status === 'pending'}
-                onSplitBill={() => setShowSplitModal(true)}
-                isCheckoutSession={true}
-                tipAmount={tipAmount}
-              />
-            )}
+    {session && rlusdAmount && (
+      <PaymentOptions
+        amount={currentAmount}
+        rlusdAmount={rlusdAmount}
+        vendorWallet={session.vendor_wallet}
+        storeName={session.store_name}
+        storeId={session.session_id}
+        paymentId={getCurrentPaymentId()}
+        status={session.status as 'pending' | 'paid' | 'expired' | 'processing'}
+        onSuccess={handlePaymentSuccess}
+        onError={(err) => setError(err)}
+        showSplitBill={!splits && session.status === 'pending'}
+        onSplitBill={() => setShowSplitModal(true)}
+        isCheckoutSession={true}
+        tipAmount={tipAmount}
+      />
+    )}
+  </>
+)}
 
             {/* Security badges */}
             <div className="flex justify-center gap-4 mt-6 pt-6 border-t border-zinc-800">
