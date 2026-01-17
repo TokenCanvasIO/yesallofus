@@ -179,6 +179,7 @@ const [xamanPaymentId, setXamanPaymentId] = useState<string | null>(null);
 // Search & Filter
 const [searchQuery, setSearchQuery] = useState('');
 const [activeCategory, setActiveCategory] = useState<string | null>(null);
+const [showProductsMobile, setShowProductsMobile] = useState(true);
 // Logo
 const [storeLogo, setStoreLogo] = useState<string | null>(null);
 const [showLogoUpload, setShowLogoUpload] = useState(false);
@@ -211,6 +212,8 @@ const [productsExpanded, setProductsExpanded] = useState(false);
 
 // Stats data
 const [stats, setStats] = useState({ totalRevenue: 0, totalSales: 0 });
+// Hide prodcuts on mobile
+const [showProducts, setShowProducts] = useState(true);
 
 // Convert GBP to RLUSD - Live price from CoinGecko Pro with audit trail
 const convertGBPtoRLUSD = async (gbpAmount: number): Promise<number> => {
@@ -1139,7 +1142,7 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
 
               {/* Category Tabs */}
               {!searchQuery && categories.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
+                <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide items-center">
                   <button
                     onClick={() => setActiveCategory(null)}
                     className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition active:scale-95 cursor-pointer ${
@@ -1163,11 +1166,28 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
                       {cat}
                     </button>
                   ))}
+                  {/* Mobile toggle button */}
+                  <button
+                    onClick={() => setShowProductsMobile(!showProductsMobile)}
+                    className="lg:hidden ml-auto p-2 bg-zinc-800 border border-zinc-700 rounded-xl flex-shrink-0"
+                  >
+                    <svg 
+                      className={`w-5 h-5 text-zinc-400 transition-transform ${showProductsMobile ? '' : 'rotate-180'}`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      {showProductsMobile ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      )}
+                    </svg>
+                  </button>
                 </div>
               )}
-
               {/* Products Grid - Responsive columns */}
-              <div id="tp-products-grid" className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-3 gap-3 items-end">
+              <div id="tp-products-grid" className={`grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-3 gap-3 items-end ${!showProductsMobile ? 'hidden lg:grid' : ''}`}>
                 {filteredProducts.map((product) => {
                   const inCart = cart.find(item => item.product_id === product.product_id);
                   return (
@@ -1775,8 +1795,8 @@ className="block w-full text-center text-sm text-zinc-400 hover:text-white py-4 
       </div>
     </div>
 
-    {/* Live Conversion Card - 33.333% width - DESKTOP ONLY */}
-    <div className="hidden lg:block lg:w-1/3">
+    {/* Live Conversion Card - 33.333% width - First on mobile, middle on desktop */}
+<div className="order-first lg:order-none lg:w-1/3">
       <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 h-full">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">

@@ -3,7 +3,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-
+import NebulaBackground from '@/components/NebulaBackground'; // adjust path as needed
 interface ReceiptItem {
 name: string;
 quantity: number;
@@ -445,36 +445,39 @@ const exportPDF = () => {
 };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans">
-      
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-zinc-800">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button
-  onClick={() => router.push(from === 'take-payment' ? '/take-payment' : '/dashboard')}
-  className="text-zinc-400 hover:text-white transition flex items-center gap-1"
->
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-  </svg>
-  Back
-</button>
-          
-          <h1 className="text-lg font-bold">Receipts</h1>
-          
-          <button
-            onClick={fetchReceipts}
-            className="text-zinc-400 hover:text-white transition p-2"
-            title="Refresh"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
-        </div>
-      </header>
+  <div className="min-h-screen bg-[#0a0a0a] text-white font-sans relative">
+    {/* Nebula Background */}
+    <NebulaBackground opacity={0.3} blur={0} />
+    
+    {/* Header with orange to black gradient */}
+    <header className="sticky top-0 z-40 bg-gradient-to-r from-orange-600/30 via-orange-900/20 via-amber-950/15 to-zinc-900/20 backdrop-blur border-b border-orange-500/30">
+      <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+        <button
+          onClick={() => router.push(from === 'take-payment' ? '/take-payment' : '/dashboard')}
+          className="text-zinc-200 hover:text-white transition flex items-center gap-1"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back
+        </button>
+        
+        <h1 className="text-lg font-bold">Receipts</h1>
+        
+        <button
+          onClick={fetchReceipts}
+          className="text-zinc-200 hover:text-white transition p-2"
+          title="Refresh"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+      </div>
+    </header>
 
-      <main className="max-w-2xl mx-auto px-4 pb-8">
+    {/* Add relative z-10 to main to ensure content appears above nebula */}
+    <main className="max-w-2xl mx-auto px-4 pb-8 relative z-10">
         
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 py-6">
@@ -534,21 +537,28 @@ const exportPDF = () => {
   </select>
   
   <div className="flex gap-2 ml-auto">
-    <button
-      onClick={exportCSV}
-      disabled={filteredReceipts.length === 0}
-      className="bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 px-4 py-2 rounded-xl text-sm transition flex items-center gap-2"
-    >
-      <span>📊</span> CSV
-    </button>
-    <button
-      onClick={exportPDF}
-      disabled={filteredReceipts.length === 0}
-      className="bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 px-4 py-2 rounded-xl text-sm transition flex items-center gap-2"
-    >
-      <span>📄</span> PDF
-    </button>
-  </div>
+  <button
+    onClick={exportCSV}
+    disabled={filteredReceipts.length === 0}
+    className="bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 px-4 py-2 rounded-xl text-sm transition flex items-center gap-2"
+  >
+    <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+    CSV
+  </button>
+  <button
+    onClick={exportPDF}
+    disabled={filteredReceipts.length === 0}
+    className="bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 px-4 py-2 rounded-xl text-sm transition flex items-center gap-2"
+  >
+    <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-6 4h4" />
+    </svg>
+    PDF
+  </button>
+</div>
 </div>
 
         {/* Loading */}
