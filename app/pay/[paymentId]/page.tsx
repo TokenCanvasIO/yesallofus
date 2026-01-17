@@ -721,30 +721,41 @@ if (allPaid || payment?.status === 'paid') {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify(
-                        receiptId
-                          ? await (async () => {
-                              const receiptRes = await fetch(`https://api.dltpays.com/nfc/api/v1/receipts/${receiptId}`);
-                              const receiptData = await receiptRes.json();
-                              if (receiptData.success && receiptData.receipt) {
-                                const r = receiptData.receipt;
-                                return {
-                                  email: emailAddress,
-                                  store_name: r.store_name || payment?.store_name,
-                                  store_id: r.store_id || payment?.store_id,
-                                  amount: r.total,
-                                  rlusd_amount: r.amount_rlusd,
-                                  items: r.items,
-                                  tip_amount: r.tip_amount,
-                                  tx_hash: r.payment_tx_hash || txHash,
-                                  receipt_number: r.receipt_number,
-                                  conversion_rate: r.conversion_rate,
-                                  rate_source: r.conversion_rate?.source,
-                                  rate_timestamp: r.conversion_rate?.captured_at
-                                };
-                              }
-                              return { email: emailAddress, store_name: payment?.store_name, store_id: payment?.store_id, amount: payment?.amount, tx_hash: txHash };
-                            })()
-                          : { email: emailAddress, store_name: payment?.store_name, store_id: payment?.store_id, amount: payment?.amount, tx_hash: txHash }
+                        splits && splits.length > 0
+  ? {
+      email: emailAddress,
+      store_name: payment?.store_name,
+      store_id: payment?.store_id,
+      amount: splits.reduce((sum, split) => sum + split.amount, 0),
+      rlusd_amount: null,
+      items: payment?.items || [],
+      tip_amount: splits.reduce((sum, split) => sum + (split.tip || 0), 0),
+      tx_hash: txHash
+    }
+  : receiptId
+    ? await (async () => {
+        const receiptRes = await fetch(`https://api.dltpays.com/nfc/api/v1/receipts/${receiptId}`);
+        const receiptData = await receiptRes.json();
+        if (receiptData.success && receiptData.receipt) {
+          const r = receiptData.receipt;
+          return {
+            email: emailAddress,
+            store_name: r.store_name || payment?.store_name,
+            store_id: r.store_id || payment?.store_id,
+            amount: r.total,
+            rlusd_amount: r.amount_rlusd,
+            items: r.items,
+            tip_amount: r.tip_amount,
+            tx_hash: r.payment_tx_hash || txHash,
+            receipt_number: r.receipt_number,
+            conversion_rate: r.conversion_rate,
+            rate_source: r.conversion_rate?.source,
+            rate_timestamp: r.conversion_rate?.captured_at
+          };
+        }
+        return { email: emailAddress, store_name: payment?.store_name, store_id: payment?.store_id, amount: payment?.amount, tx_hash: txHash };
+      })()
+    : { email: emailAddress, store_name: payment?.store_name, store_id: payment?.store_id, amount: payment?.amount, tx_hash: txHash }
                       )
                     });
                     setShowEmailModal(false);
@@ -1217,30 +1228,7 @@ onClick={startNFCScan}
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify(
-  receiptId
-    ? await (async () => {
-        const receiptRes = await fetch(`https://api.dltpays.com/nfc/api/v1/receipts/${receiptId}`);
-        const receiptData = await receiptRes.json();
-        if (receiptData.success && receiptData.receipt) {
-          const r = receiptData.receipt;
-          return {
-            email: emailAddress,
-            store_name: r.store_name || payment?.store_name,
-            store_id: r.store_id || payment?.store_id,
-            amount: r.total,
-            rlusd_amount: r.amount_rlusd,
-            items: r.items,
-            tip_amount: r.tip_amount,
-            tx_hash: r.payment_tx_hash || txHash,
-            receipt_number: r.receipt_number,
-            conversion_rate: r.conversion_rate,
-            rate_source: r.conversion_rate?.source,
-            rate_timestamp: r.conversion_rate?.captured_at
-          };
-        }
-        return { email: emailAddress, store_name: payment?.store_name, store_id: payment?.store_id, amount: payment?.amount, tx_hash: txHash };
-      })()
-    : { email: emailAddress, store_name: payment?.store_name, store_id: payment?.store_id, amount: payment?.amount, tx_hash: txHash }
+  31 
 )
                     });
                     setShowEmailModal(false);
