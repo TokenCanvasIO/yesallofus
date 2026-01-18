@@ -22,6 +22,18 @@ import CollapsibleSection from '@/components/CollapsibleSection';
 import SignUpCustomerCard from '@/components/SignUpCustomerCard';
 import NebulaBackground from '@/components/NebulaBackground';
 import VendorDashboardTour from '@/components/VendorDashboardTour';
+import OnboardingSetup from '@/components/OnboardingSetup';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
+
+interface WalletStatus {
+  funded: boolean;
+  xrp_balance: number;
+  rlusd_trustline: boolean;
+  rlusd_balance: number;
+  usdc_trustline?: boolean;
+  usdc_balance?: number;
+  auto_signing_enabled?: boolean;
+}
 
 export default function StoreDashboard() {
   const [step, setStep] = useState<'login' | 'xaman' | 'dashboard'>('login');
@@ -97,11 +109,17 @@ const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 const [celebrateMilestone, setCelebrateMilestone] = useState<string | null>(null);
 // Info modal
 const { activeInfo, openInfo, closeInfo, getContent } = useInfoModal();
+// Wallet status for OnboardingSetup
+const [walletStatus, setWalletStatus] = useState<WalletStatus | null>(null);
+const [allMilestonesComplete, setAllMilestonesComplete] = useState(false);
+const [setupComplete, setSetupComplete] = useState(false);
 // Collapsed section
 const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 // Progress bar on button
-// Progress bar on button
 const [progressHidden, setProgressHidden] = useState(false);
+// Delete Modal
+const [showDeleteModal, setShowDeleteModal] = useState(false);
+const [deleting, setDeleting] = useState(false);
 
 // Effect (add with other effects)
 useEffect(() => {
@@ -112,6 +130,23 @@ useEffect(() => {
     }
   }
 }, [store?.store_id, loading]);
+
+// Check if all milestones complete on login
+useEffect(() => {
+  const checkMilestones = async () => {
+    if (!store?.store_id) return;
+    try {
+      const res = await fetch(`${API_URL}/store/${store.store_id}/milestones`);
+      const data = await res.json();
+      if (data.success) {
+        setAllMilestonesComplete(data.all_complete || false);
+      }
+    } catch (err) {
+      console.error('Failed to check milestones:', err);
+    }
+  };
+  checkMilestones();
+}, [store?.store_id]);
 
 useEffect(() => {
   const handleToggle = () => setSidebarOpen(prev => !prev);
@@ -141,6 +176,17 @@ const toggleSection = (id: string) => {
       setWalletNeedsFunding(!data.funded);
       setWalletNeedsTrustline(!data.rlusd_trustline);
       
+      // Set walletStatus for OnboardingSetup
+      setWalletStatus({
+        funded: data.funded,
+        xrp_balance: data.xrp_balance || 0,
+        rlusd_trustline: data.rlusd_trustline || false,
+        rlusd_balance: data.rlusd_balance || 0,
+        usdc_trustline: data.usdc_trustline || false,
+        usdc_balance: data.usdc_balance || 0,
+        auto_signing_enabled: data.auto_signing_enabled || false
+      });
+      
       // Check milestones
       if (data.funded) {
         setMilestone('wallet_funded');
@@ -148,9 +194,6 @@ const toggleSection = (id: string) => {
       if (data.rlusd_trustline) {
         setMilestone('trustline_set');
       }
-      // *** REMOVED: Don't use balance to detect first payment ***
-      // Balance check is unreliable - first_payment_received should be
-      // triggered by the backend when actual payment is processed
     }
   } catch (err) {
     console.error('Failed to refresh wallet status:', err);
@@ -294,7 +337,7 @@ const setMilestone = async (milestoneId: string) => {
 
 // Check wallet status and set milestones on dashboard load
 useEffect(() => {
-  if (walletAddress && store?.store_id && (walletType === 'web3auth' || walletType === 'crossmark')) {
+  if (walletAddress && store?.store_id) {
     refreshWalletStatus();
   }
 }, [walletAddress, store?.store_id, walletType]);
@@ -404,7 +447,6 @@ useEffect(() => {
         } else if (data.status === 'expired' || data.status === 'cancelled') {
           setPolling(false);
           setError('Connection ' + data.status + '. Please try again.');
-          setStep('login');
         }
       } catch (err) {
         console.error('Poll error:', err);
@@ -417,7 +459,7 @@ useEffect(() => {
   // Check wallet status on load (Web3Auth and Xaman)
 useEffect(() => {
   console.log('Wallet useEffect triggered:', { walletType, walletAddress, store: !!store });
-  if ((walletType === 'web3auth' || walletType === 'xaman') && walletAddress && store) {
+  if (walletAddress && store) {
     // Check wallet funding status
     fetch(`${API_URL}/wallet/status/${walletAddress}`)
       .then(res => res.json())
@@ -428,6 +470,16 @@ useEffect(() => {
     console.log('Setting RLUSD balance:', data.rlusd_balance);
     setWalletXrpBalance(data.xrp_balance || 0);
     setWalletRlusdBalance(data.rlusd_balance || 0);
+
+    setWalletStatus({
+      funded: data.funded,
+      xrp_balance: data.xrp_balance || 0,
+      rlusd_trustline: data.rlusd_trustline || false,
+      rlusd_balance: data.rlusd_balance || 0,
+      usdc_trustline: data.usdc_trustline || false,
+      usdc_balance: data.usdc_balance || 0,
+      auto_signing_enabled: data.auto_signing_enabled || false
+    });
           
           if (!data.funded) {
             setWalletNeedsFunding(true);
@@ -811,10 +863,15 @@ setStep('dashboard');
 
       const data = await res.json();
       if (data.success) {
-        setStore({ ...store, wallet_address: null, xaman_connected: false, crossmark_connected: false, web3auth_connected: false, payout_mode: 'manual', auto_signing_enabled: false });
-      } else {
-        setError(data.error || 'Failed to disconnect');
-      }
+  setStore({ ...store, wallet_address: null, xaman_connected: false, crossmark_connected: false, web3auth_connected: false, payout_mode: 'manual', auto_signing_enabled: false });
+  setWalletAddress(null);
+  setWalletType(null);
+  setWalletStatus(null);
+  sessionStorage.removeItem('vendorWalletAddress');
+  sessionStorage.removeItem('vendorLoginMethod');
+} else {
+  setError(data.error || 'Failed to disconnect');
+}
     } catch (err) {
       setError('Failed to disconnect wallet');
     }
@@ -1240,37 +1297,34 @@ setSetupProgress(null);
   // PERMANENTLY DELETE STORE
   // =========================================================================
   const deleteStore = async () => {
-    if (!confirm('⚠️ WARNING: This will permanently delete your store, all affiliates, and all payout history. This action cannot be undone.')) return;
-    const confirmation = prompt('Type "PERMANENTLY DELETE" to confirm:');
-    if (confirmation !== 'PERMANENTLY DELETE') return;
+  setDeleting(true);
+  try {
+    const res = await fetch(`${API_URL}/store/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        store_id: store.store_id,
+        wallet_address: walletAddress,
+        confirm: 'PERMANENTLY DELETE'
+      })
+    });
 
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/store/delete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          store_id: store.store_id,
-          wallet_address: walletAddress,
-          confirm: 'PERMANENTLY DELETE'
-        })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-  sessionStorage.removeItem('vendorWalletAddress');
-  sessionStorage.removeItem('vendorLoginMethod');
-  sessionStorage.removeItem('socialProvider');
-  alert('Store permanently deleted.');
-  window.location.href = '/dashboard';
-} else {
-        setError(data.error || 'Failed to delete');
-      }
-    } catch (err) {
-      setError('Failed to delete store');
+    const data = await res.json();
+    if (data.success) {
+      sessionStorage.removeItem('vendorWalletAddress');
+      sessionStorage.removeItem('vendorLoginMethod');
+      sessionStorage.removeItem('socialProvider');
+      window.location.href = '/dashboard';
+    } else {
+      setError(data.error || 'Failed to delete');
+      setShowDeleteModal(false);
     }
-    setLoading(false);
-  };
+  } catch (err) {
+    setError('Failed to delete store');
+    setShowDeleteModal(false);
+  }
+  setDeleting(false);
+};
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -1565,19 +1619,21 @@ return (
     )
   },
 ].filter(item => item.show !== false);
- // =========================================================================
+// =========================================================================
 // DASHBOARD
 // =========================================================================
 return (
 <>
 <NebulaBackground opacity={0.2} />
 <DashboardHeader
-dashboardType="vendor"
-walletAddress={walletAddress || undefined}
-storeId={store?.store_id}
-onSignOut={signOut}
+  dashboardType="vendor"
+  walletAddress={walletAddress || undefined}
+  storeId={store?.store_id}
+  onSignOut={signOut}
+  allMilestonesComplete={allMilestonesComplete}
+  setupComplete={setupComplete}
 />
-<VendorDashboardTour 
+<VendorDashboardTour
   run={runTour} 
   onComplete={() => {
     setRunTour(false);
@@ -1692,6 +1748,20 @@ onSignOut={signOut}
       {/* Main Content */}
 <main className={`min-h-screen pt-2 lg:pt-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-0' : 'lg:ml-64'}`}>
         <div className="max-w-3xl lg:max-w-none mx-auto px-3 sm:px-6 lg:px-4 pt-20 pb-4">
+
+          {/* Onboarding Setup Wizard */}
+{(walletStatus || !walletAddress) && (
+  <OnboardingSetup
+  walletAddress={walletAddress}
+  walletStatus={walletStatus}
+  autoSignEnabled={store?.auto_signing_enabled || false}
+  loginMethod={walletType}
+  onSetupComplete={() => setSetupComplete(true)}
+  onRefreshWallet={refreshWalletStatus}
+  onSetupStatusChange={(isComplete) => setSetupComplete(isComplete)}
+  storagePrefix="vendor"
+/>
+)}
 
         {error && (
   error.includes('beta') || error.includes('full') || error.includes('waitlist') ? (
@@ -2768,7 +2838,7 @@ onClick={async () => {
         Permanently delete your account and all associated data. This action cannot be undone.
       </p>
       <button
-        onClick={deleteStore}
+        onClick={() => setShowDeleteModal(true)}
         disabled={loading}
         className="bg-zinc-900/95 border-2 border-red-500 text-red-400 hover:bg-red-500 hover:text-white px-6 py-2 rounded-lg font-semibold transition disabled:opacity-50 flex items-center gap-2"
       >
@@ -2873,6 +2943,16 @@ onClick={async () => {
   url={`https://yesallofus.com/affiliate-dashboard?store=${store?.store_id}`}
   title="Share Affiliate Link"
   subtitle={store?.store_name}
+/>
+{/* Delete Store Modal */}
+<DeleteConfirmModal
+  isOpen={showDeleteModal}
+  onClose={() => setShowDeleteModal(false)}
+  onConfirm={deleteStore}
+  title="Delete Store"
+  description="This will permanently delete your store, all affiliates, and all payout history. This action cannot be undone."
+  confirmText="PERMANENTLY DELETE"
+  loading={deleting}
 />
 {/* Disconnect Wallet Modal */}
 {showDisconnectModal && (

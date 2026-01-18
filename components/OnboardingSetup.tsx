@@ -17,7 +17,8 @@ interface OnboardingSetupProps {
   loginMethod: 'xaman' | 'crossmark' | 'web3auth' | null;
   onSetupComplete: () => void;
   onRefreshWallet: () => void;
-onSetupStatusChange?: (isComplete: boolean) => void;
+  onSetupStatusChange?: (isComplete: boolean) => void;
+  storagePrefix?: 'vendor' | 'affiliate';
 }
 
 // USDC on XRPL
@@ -35,7 +36,8 @@ export default function OnboardingSetup({
   loginMethod,
   onSetupComplete,
   onRefreshWallet,
-onSetupStatusChange
+onSetupStatusChange,
+storagePrefix = 'affiliate'
 }: OnboardingSetupProps) {
   const [settingUp, setSettingUp] = useState(false);
   const [setupProgress, setSetupProgress] = useState<string | null>(null);
@@ -53,8 +55,8 @@ const [connectingXaman, setConnectingXaman] = useState(false);
   const getOnboardingStep = () => {
   if (!walletAddress) return 'connect_wallet';
   if (!walletStatus) return 'loading';
-  if (!walletStatus.funded || walletStatus.xrp_balance < 1.5) return 'fund_wallet';
-    if (!walletStatus.rlusd_trustline || !walletStatus.usdc_trustline) return 'add_trustlines';
+  if (!walletStatus?.funded || walletStatus?.xrp_balance < 1.5) return 'fund_wallet';
+    if (!walletStatus?.rlusd_trustline || !walletStatus?.usdc_trustline) return 'add_trustlines';
     if (!autoSignEnabled && loginMethod === 'web3auth') return 'enable_autopay';
     return 'complete';
   };
@@ -89,8 +91,10 @@ useEffect(() => {
       if (data.status === 'signed' && data.wallet_address) {
         clearInterval(interval);
         
-        sessionStorage.setItem('walletAddress', data.wallet_address);
-        sessionStorage.setItem('loginMethod', 'xaman');
+        const walletKey = storagePrefix === 'vendor' ? 'vendorWalletAddress' : 'walletAddress';
+const methodKey = storagePrefix === 'vendor' ? 'vendorLoginMethod' : 'loginMethod';
+sessionStorage.setItem(walletKey, data.wallet_address);
+sessionStorage.setItem(methodKey, 'xaman');
         
         setConnectingXaman(false);
         setXamanQR(null);
@@ -387,7 +391,7 @@ if (currentStep === 'complete') {
 }
 
   // Loading state
-  if (currentStep === 'loading' || !walletStatus) {
+  if (currentStep === 'loading') {
     return (
       <div className="bg-zinc-900/80 backdrop-blur border border-zinc-800 rounded-2xl p-6 mb-6">
         <div className="flex items-center gap-3">
@@ -409,15 +413,15 @@ if (currentStep === 'complete') {
   { 
     id: 1, 
     name: 'Fund Wallet', 
-    complete: walletAddress && walletStatus ? walletStatus.funded && walletStatus.xrp_balance >= 1.5 : false,
+    complete: walletAddress && walletStatus ? walletStatus?.funded && (walletStatus?.xrp_balance || 0) >= 1.5 : false,
     active: currentStep === 'fund_wallet'
   },
     { 
-      id: 2, 
-      name: 'Add Trustlines', 
-      complete: walletStatus.rlusd_trustline && walletStatus.usdc_trustline,
-      active: currentStep === 'add_trustlines'
-    },
+  id: 2, 
+  name: 'Add Trustlines', 
+  complete: walletStatus?.rlusd_trustline && walletStatus?.usdc_trustline,
+  active: currentStep === 'add_trustlines'
+},
     { 
       id: 3, 
       name: loginMethod === 'web3auth' ? 'Enable Tap-to-Pay' : 'Ready!', 
@@ -547,8 +551,10 @@ if (currentStep === 'complete') {
               if (!sdk) { window.open('https://crossmark.io', '_blank'); return; }
               const response = await sdk.methods.signInAndWait();
               if (response?.response?.data?.address) {
-                sessionStorage.setItem('walletAddress', response.response.data.address);
-                sessionStorage.setItem('loginMethod', 'crossmark');
+                const walletKey = storagePrefix === 'vendor' ? 'vendorWalletAddress' : 'walletAddress';
+const methodKey = storagePrefix === 'vendor' ? 'vendorLoginMethod' : 'loginMethod';
+sessionStorage.setItem(walletKey, response.response.data.address);
+sessionStorage.setItem(methodKey, 'crossmark');
                 window.location.reload();
               }
             } catch (err) { console.error('Crossmark error:', err); }
@@ -582,9 +588,11 @@ if (currentStep === 'complete') {
             if (result) {
               const address = typeof result === 'string' ? result : result.address;
               const provider = typeof result === 'string' ? 'google' : (result.provider || 'google');
-              sessionStorage.setItem('walletAddress', address);
-              sessionStorage.setItem('loginMethod', 'web3auth');
-              sessionStorage.setItem('socialProvider', provider);
+              const walletKey = storagePrefix === 'vendor' ? 'vendorWalletAddress' : 'walletAddress';
+const methodKey = storagePrefix === 'vendor' ? 'vendorLoginMethod' : 'loginMethod';
+sessionStorage.setItem(walletKey, address);
+sessionStorage.setItem(methodKey, 'web3auth');
+sessionStorage.setItem('socialProvider', provider);
               window.location.reload();
             }
           } catch (err) { console.error('Social login error:', err); }
@@ -638,14 +646,14 @@ if (currentStep === 'complete') {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-zinc-500 text-xs uppercase tracking-wider">Current Balance</p>
-                  <p className="text-2xl font-bold text-white mt-1">{walletStatus.xrp_balance.toFixed(4)} <span className="text-zinc-400 text-lg">XRP</span></p>
+                  <p className="text-2xl font-bold text-white mt-1">{walletStatus?.xrp_balance?.toFixed(4) || '0.0000'} <span className="text-zinc-400 text-lg">XRP</span></p>
                 </div>
                 <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-                  walletStatus.xrp_balance >= 1.5 
+                  (walletStatus?.xrp_balance || 0) >= 1.5 
                     ? 'bg-emerald-500/20 text-emerald-400' 
                     : 'bg-amber-500/20 text-amber-400'
                 }`}>
-                  {walletStatus.xrp_balance >= 1.5 ? 'Funded' : `Need ${(1.5 - walletStatus.xrp_balance).toFixed(2)} more`}
+                  {(walletStatus?.xrp_balance || 0) >= 1.5 ? 'Funded' : `Need ${(1.5 - (walletStatus?.xrp_balance || 0)).toFixed(2)} more`}
                 </div>
               </div>
             </div>
@@ -758,7 +766,7 @@ if (currentStep === 'complete') {
             <div className="grid grid-cols-2 gap-4">
               {/* RLUSD Card */}
               <div className={`rounded-xl p-4 border transition-all ${
-                walletStatus.rlusd_trustline 
+                walletStatus?.rlusd_trustline 
                   ? 'bg-emerald-500/10 border-emerald-500/30' 
                   : 'bg-zinc-800/50 border-zinc-700 hover:border-amber-500/30'
               }`}>
@@ -767,7 +775,7 @@ if (currentStep === 'complete') {
                     <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold">R</div>
                     <span className="font-semibold text-white">RLUSD</span>
                   </div>
-                  {walletStatus.rlusd_trustline ? (
+                  {walletStatus?.rlusd_trustline ? (
                     <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
                       <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -778,7 +786,7 @@ if (currentStep === 'complete') {
                   )}
                 </div>
                 <p className="text-zinc-400 text-xs">Ripple USD Stablecoin</p>
-                {walletStatus.rlusd_trustline ? (
+                {walletStatus?.rlusd_trustline ? (
                   <p className="text-emerald-400 text-sm mt-2 font-medium">Active</p>
                 ) : (
                   loginMethod === 'crossmark' && (
@@ -791,7 +799,7 @@ if (currentStep === 'complete') {
                     </button>
                   )
                 )}
-                {!walletStatus.rlusd_trustline && loginMethod === 'xaman' && (
+                {!walletStatus?.rlusd_trustline && loginMethod === 'xaman' && (
                   <button
                     onClick={() => setupTrustlinesXaman('rlusd')}
                     className="mt-3 w-full bg-amber-500 hover:bg-amber-400 text-black text-sm font-medium py-2 rounded-lg transition"
@@ -803,7 +811,7 @@ if (currentStep === 'complete') {
 
               {/* USDC Card */}
               <div className={`rounded-xl p-4 border transition-all ${
-                walletStatus.usdc_trustline 
+                walletStatus?.usdc_trustline 
                   ? 'bg-emerald-500/10 border-emerald-500/30' 
                   : 'bg-zinc-800/50 border-zinc-700 hover:border-amber-500/30'
               }`}>
@@ -812,7 +820,7 @@ if (currentStep === 'complete') {
                     <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">$</div>
                     <span className="font-semibold text-white">USDC</span>
                   </div>
-                  {walletStatus.usdc_trustline ? (
+                  {walletStatus?.usdc_trustline ? (
                     <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
                       <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -823,7 +831,7 @@ if (currentStep === 'complete') {
                   )}
                 </div>
                 <p className="text-zinc-400 text-xs">Circle USD Stablecoin</p>
-                {walletStatus.usdc_trustline ? (
+                {walletStatus?.usdc_trustline ? (
                   <p className="text-emerald-400 text-sm mt-2 font-medium">Active</p>
                 ) : (
                   loginMethod === 'crossmark' && (
@@ -836,7 +844,7 @@ if (currentStep === 'complete') {
                     </button>
                   )
                 )}
-                {!walletStatus.usdc_trustline && loginMethod === 'xaman' && (
+                {!walletStatus?.usdc_trustline && loginMethod === 'xaman' && (
   
    <a href="https://xumm.app"
     target="_blank"
@@ -850,7 +858,7 @@ if (currentStep === 'complete') {
             </div>
 
             {/* Web3Auth: Single button for both */}
-            {loginMethod === 'web3auth' && (!walletStatus.rlusd_trustline || !walletStatus.usdc_trustline) && (
+            {loginMethod === 'web3auth' && (!walletStatus?.rlusd_trustline || !walletStatus?.usdc_trustline) && (
               <button
                 onClick={setupTrustlinesWeb3Auth}
                 disabled={settingUp}
@@ -873,7 +881,7 @@ if (currentStep === 'complete') {
             )}
 
             {/* Skip option for Xaman users - USDC only */}
-{loginMethod === 'xaman' && walletStatus.rlusd_trustline && !walletStatus.usdc_trustline && (
+{loginMethod === 'xaman' && walletStatus?.rlusd_trustline && !walletStatus?.usdc_trustline && (
   <div className="mt-4 pt-4 border-t border-zinc-800">
     <p className="text-zinc-500 text-sm text-center mb-3">
       Add trustlines manually in your Xaman wallet, or skip for now

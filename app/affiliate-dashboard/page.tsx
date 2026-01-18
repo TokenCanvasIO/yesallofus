@@ -212,6 +212,24 @@ useEffect(() => {
   }
 }, [walletAddress, loading]);
 
+// Check if all milestones complete on login
+useEffect(() => {
+  const checkMilestones = async () => {
+    if (!walletAddress) return;
+    try {
+      const res = await fetch(`${API_URL}/customer/milestones/${walletAddress}`);
+      const data = await res.json();
+      if (data.success && data.milestones) {
+        const allComplete = Object.values(data.milestones).every(v => v !== null);
+        setAllMilestonesComplete(allComplete);
+      }
+    } catch (err) {
+      console.error('Failed to check milestones:', err);
+    }
+  };
+  checkMilestones();
+}, [walletAddress]);
+
   useEffect(() => {
   const handleToggle = () => setSidebarOpen(prev => !prev);
   window.addEventListener('toggleSidebar', handleToggle);
@@ -717,7 +735,7 @@ return <LoginScreen onLogin={handleLogin} />;
   return (
     <>
       <NebulaBackground opacity={0.3} />
-      <DashboardHeader dashboardType="affiliate" walletAddress={walletAddress} onSignOut={handleSignOut} showBalances={showBalances} onToggleBalances={() => setShowBalances(!showBalances)} allMilestonesComplete={allMilestonesComplete} />
+      <DashboardHeader dashboardType="affiliate" walletAddress={walletAddress} onSignOut={handleSignOut} showBalances={showBalances} onToggleBalances={() => setShowBalances(!showBalances)} allMilestonesComplete={allMilestonesComplete} setupComplete={setupComplete} />
       <AffiliateDashboardTour 
   run={runTour} 
   onComplete={() => {

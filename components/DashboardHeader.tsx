@@ -11,6 +11,7 @@ interface DashboardHeaderProps {
   onToggleBalances?: () => void;
   dashboardType?: 'vendor' | 'affiliate';
   allMilestonesComplete?: boolean;
+  setupComplete?: boolean;
 }
 
 // Eye icon component
@@ -29,7 +30,7 @@ const EyeIcon = ({ open }: { open: boolean }) => (
   </svg>
 );
 
-export default function DashboardHeader({ walletAddress, storeId, onSignOut, showBalances = false, onToggleBalances, dashboardType = 'vendor', allMilestonesComplete = false }: DashboardHeaderProps) {
+export default function DashboardHeader({ walletAddress, storeId, onSignOut, showBalances = false, onToggleBalances, dashboardType = 'vendor', allMilestonesComplete = false, setupComplete = false }: DashboardHeaderProps) {
   const router = useRouter();
   const shortWallet = walletAddress 
     ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
@@ -78,6 +79,12 @@ export default function DashboardHeader({ walletAddress, storeId, onSignOut, sho
     <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllofUs" className="w-8 h-8 rounded-lg" />
   )}
   <span className={`font-bold text-white text-xl ${isConnected ? 'hidden md:block' : 'block'}`}>YesAllofUs</span>
+{setupComplete && (
+  <span className="hidden md:inline-flex landscape:inline-flex items-center gap-1 bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 text-xs font-semibold px-2 py-0.5 rounded-full ml-2">
+    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+    Live
+  </span>
+)}
 </Link>
 
 {/* Logo flush top-left - desktop/tablet only, logged in only */}
