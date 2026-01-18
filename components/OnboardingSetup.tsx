@@ -1004,7 +1004,21 @@ sessionStorage.setItem(methodKey, 'crossmark');
             </div>
 
             <button
-              onClick={onVendorEnableAutoPay || enableAutoPay}
+              onClick={async () => {
+                setSettingUp(true);
+                setSetupProgress('Setting up Tap-to-Pay...');
+                try {
+                  if (onVendorEnableAutoPay) {
+                    await onVendorEnableAutoPay();
+                    onSetupComplete();
+                  } else {
+                    await enableAutoPay();
+                  }
+                } finally {
+                  setSettingUp(false);
+                  setSetupProgress(null);
+                }
+              }}
               disabled={settingUp}
               className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-semibold py-4 rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-amber-500/20"
             >

@@ -855,6 +855,7 @@ return <LoginScreen onLogin={handleLogin} />;
     onRefreshWallet={() => fetchWalletStatus(walletAddress)}
     onSetupStatusChange={(isComplete) => setSetupComplete(isComplete)}
     storagePrefix="affiliate"
+    onVendorEnableAutoPay={walletAddress ? setupAutoSignWeb3Auth : undefined}
   />
 )}
 
