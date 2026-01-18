@@ -1927,7 +1927,7 @@ return (
   <h2 className="text-lg font-bold mb-4">Payout Method</h2>
 
   {/* Auto-sign enabled (works same for Web3Auth and Crossmark) */}
-  {store.auto_signing_enabled ? (
+  {(store.auto_signing_enabled || customerAutoSignEnabled) ? (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-zinc-800/90 rounded-lg">
         <div className="flex items-center gap-3">
@@ -2019,7 +2019,7 @@ return (
         </div>
       </div>
     </div>
-  ) : walletType === 'web3auth' ? (
+  ) : (walletType === 'web3auth' && !customerAutoSignEnabled) ? (
     /* Web3Auth connected but auto-sign not enabled yet */
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
