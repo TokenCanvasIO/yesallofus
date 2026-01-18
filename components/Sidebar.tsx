@@ -103,7 +103,7 @@ onClick={onLogoClick}
 className={`relative w-10 h-10 landscape:w-7 landscape:h-7 rounded-lg overflow-hidden transition flex-shrink-0 cursor-pointer ${
                 storeLogo ? 'hover:opacity-80' : 'border border-zinc-700 hover:border-emerald-500'
               }`}
-              title="Store logo"
+              title={dashboardType === 'affiliate' ? 'Member logo' : 'Partner logo'}
             >
               {storeLogo ? (
                 <img src={storeLogo} alt="Logo" className="w-full h-full object-cover" />

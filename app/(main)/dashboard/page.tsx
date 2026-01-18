@@ -132,23 +132,6 @@ useEffect(() => {
   }
 }, [store?.store_id, loading]);
 
-// Check if all milestones complete on login
-useEffect(() => {
-  const checkMilestones = async () => {
-    if (!store?.store_id) return;
-    try {
-      const res = await fetch(`${API_URL}/store/${store.store_id}/milestones`);
-      const data = await res.json();
-      if (data.success) {
-        setAllMilestonesComplete(data.all_complete || false);
-      }
-    } catch (err) {
-      console.error('Failed to check milestones:', err);
-    }
-  };
-  checkMilestones();
-}, [store?.store_id]);
-
 useEffect(() => {
   const handleToggle = () => setSidebarOpen(prev => !prev);
   window.addEventListener('toggleSidebar', handleToggle);
@@ -1285,6 +1268,11 @@ await refreshWalletStatus();
     if (data.already_revoked) {
       setStore({ ...store, payout_mode: 'manual', auto_signing_enabled: false });
 setCustomerAutoSignEnabled(false);
+      // Clear success flag so wizard can show success again when re-enabled
+      if (walletAddress) {
+        localStorage.removeItem(`onboarding_success_shown_vendor_${walletAddress}`);
+        sessionStorage.setItem(`onboarding_active_vendor_${walletAddress}`, 'true');
+      }
       setLoading(false);
       return;
     }
@@ -1337,6 +1325,11 @@ setCustomerAutoSignEnabled(false);
 
     setStore({ ...store, payout_mode: 'manual', auto_signing_enabled: false });
 setCustomerAutoSignEnabled(false);
+    // Clear success flag so wizard can show success again when re-enabled
+    if (walletAddress) {
+      localStorage.removeItem(`onboarding_success_shown_vendor_${walletAddress}`);
+      sessionStorage.setItem(`onboarding_active_vendor_${walletAddress}`, 'true');
+    }
     
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to revoke auto-sign';
@@ -1801,20 +1794,6 @@ return (
 <main className={`min-h-screen pt-2 lg:pt-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-0' : 'lg:ml-64'}`}>
         <div className="max-w-3xl lg:max-w-none mx-auto px-3 sm:px-6 lg:px-4 pt-20 pb-4">
 
-          {/* Onboarding Setup Wizard */}
-{(walletStatus || !walletAddress) && (
-  <OnboardingSetup
-  walletAddress={walletAddress}
-  walletStatus={walletStatus}
-  autoSignEnabled={store?.auto_signing_enabled || customerAutoSignEnabled}
-  loginMethod={walletType}
-  onSetupComplete={() => { setCustomerAutoSignEnabled(true); setSetupComplete(true); }}
-  onRefreshWallet={refreshWalletStatus}
-  onSetupStatusChange={(isComplete) => setSetupComplete(isComplete)}
-  storagePrefix="vendor"
-/>
-)}
-
         {error && (
   error.includes('beta') || error.includes('full') || error.includes('waitlist') ? (
     <div className="bg-gradient-to-b from-sky-900/50 to-slate-900/50 border border-sky-500/30 rounded-xl p-6 mb-6">
@@ -1978,6 +1957,20 @@ return (
     onMilestoneAchieved={(milestone) => setCelebrateMilestone(milestone)}
     onInfoClick={openInfo}
     onDismiss={() => setProgressHidden(true)}
+  />
+)}
+
+{/* Onboarding Setup Wizard - Below Progress Bar */}
+{(walletStatus || !walletAddress) && (
+  <OnboardingSetup
+    walletAddress={walletAddress}
+    walletStatus={walletStatus}
+    autoSignEnabled={store?.auto_signing_enabled || customerAutoSignEnabled}
+    loginMethod={walletType}
+    onSetupComplete={() => { setCustomerAutoSignEnabled(true); setSetupComplete(true); }}
+    onRefreshWallet={refreshWalletStatus}
+    onSetupStatusChange={(isComplete) => setSetupComplete(isComplete)}
+    storagePrefix="vendor"
   />
 )}
 

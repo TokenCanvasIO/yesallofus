@@ -30,16 +30,17 @@ const RLUSD_CURRENCY = '524C555344000000000000000000000000000000';
 const RLUSD_ISSUER = 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De';
 
 export default function OnboardingSetup({
-  walletAddress,
-  walletStatus,
-  autoSignEnabled,
-  loginMethod,
-  onSetupComplete,
-  onRefreshWallet,
+walletAddress,
+walletStatus,
+autoSignEnabled,
+loginMethod,
+onSetupComplete,
+onRefreshWallet,
 onSetupStatusChange,
 storagePrefix = 'affiliate'
 }: OnboardingSetupProps) {
-  const [settingUp, setSettingUp] = useState(false);
+const [showSuccess, setShowSuccess] = useState(false);
+const [settingUp, setSettingUp] = useState(false);
   const [setupProgress, setSetupProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -57,7 +58,7 @@ const [connectingXaman, setConnectingXaman] = useState(false);
   if (!walletStatus) return 'loading';
   if (!walletStatus?.funded || walletStatus?.xrp_balance < 1.5) return 'fund_wallet';
     if (!walletStatus?.rlusd_trustline || !walletStatus?.usdc_trustline) return 'add_trustlines';
-    if (!autoSignEnabled && loginMethod === 'web3auth') return 'enable_autopay';
+    if (!autoSignEnabled && (loginMethod === 'web3auth' || storagePrefix === 'vendor')) return 'enable_autopay';
     return 'complete';
   };
 
@@ -67,6 +68,15 @@ const [connectingXaman, setConnectingXaman] = useState(false);
 useEffect(() => {
   onSetupStatusChange?.(currentStep === 'complete');
 }, [currentStep, onSetupStatusChange]);
+
+// Mark wizard as active when showing steps
+useEffect(() => {
+  if (currentStep && currentStep !== 'complete' && currentStep !== 'loading') {
+    const sessionKey = `onboarding_active_${storagePrefix}_${walletAddress}`;
+    console.log('WIZARD ACTIVE - setting key:', sessionKey, 'step:', currentStep);
+    sessionStorage.setItem(sessionKey, 'true');
+  }
+}, [currentStep, storagePrefix, walletAddress]);
 
 // Auto-refresh wallet status
 useEffect(() => {
@@ -78,6 +88,26 @@ useEffect(() => {
   
   return () => clearInterval(interval);
 }, [currentStep, onRefreshWallet]);
+
+// Show success once when all steps complete AND wizard was actively used
+useEffect(() => {
+  if (currentStep === 'complete' && walletAddress) {
+    const sessionKey = `onboarding_active_${storagePrefix}_${walletAddress}`;
+    const wizardWasActive = typeof window !== 'undefined' && sessionStorage.getItem(sessionKey);
+    
+    // Only show success if wizard was actively used this session
+    if (wizardWasActive) {
+      const shownKey = `onboarding_success_shown_${storagePrefix}_${walletAddress}`;
+      const alreadyShown = typeof window !== 'undefined' && localStorage.getItem(shownKey);
+      if (!alreadyShown) {
+        setShowSuccess(true);
+        localStorage.setItem(shownKey, 'true');
+      }
+      // Clear the active flag after showing success
+      sessionStorage.removeItem(sessionKey);
+    }
+  }
+}, [currentStep, storagePrefix, walletAddress]);
 
 // Xaman polling
 useEffect(() => {
@@ -408,14 +438,17 @@ if (response?.response?.data?.resp?.result?.validated) {
     setSetupProgress(null);
   };
 
-  // Show success message when complete
+  // Show success message when complete (only once per session)
 if (currentStep === 'complete') {
-  return (
-    <SuccessMessage 
-      walletAddress={walletAddress || undefined} 
-      loginMethod={loginMethod} 
-    />
-  );
+  if (showSuccess) {
+    return (
+      <SuccessMessage
+        walletAddress={walletAddress || undefined}
+        loginMethod={loginMethod}
+      />
+    );
+  }
+  return null;
 }
 
   // Loading state
@@ -464,10 +497,8 @@ if (currentStep === 'complete') {
       <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-b border-amber-500/20 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
-              <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20 overflow-hidden">
+              <img src="/dltpayslogo1.png" alt="YesAllOfUs" className="w-10 h-10 object-cover" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">Complete Your Setup</h2>
@@ -488,12 +519,12 @@ if (currentStep === 'complete') {
       </div>
 
       {/* Progress Steps */}
-      <div className="px-6 py-4 border-b border-zinc-800/50">
-        <div className="flex items-center justify-between">
+      <div className="px-6 py-4 border-b border-zinc-800/50 landscape:mt-8">
+        <div className="flex items-center justify-around lg:justify-start">
           {steps.map((step, index) => (
-            <div key={step.id} className="flex items-center flex-1">
-              <div className="flex flex-col items-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+            <div key={step.id} className={`flex items-start lg:items-center flex-none lg:flex-1 ${index === steps.length - 1 ? 'lg:flex-none' : ''}`}>
+              <div className="flex flex-col items-center w-16 lg:w-auto">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${index < steps.length - 1 ? 'mt-4 lg:mt-0' : ''} ${
                   step.complete 
                     ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/30' 
                     : step.active 
@@ -506,18 +537,32 @@ if (currentStep === 'complete') {
                     </svg>
                   ) : step.id}
                 </div>
-                <span className={`text-xs mt-2 ${step.active ? 'text-amber-400 font-medium' : step.complete ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                <span className={`text-xs mt-2 text-center ${step.active ? 'text-amber-400 font-medium' : step.complete ? 'text-emerald-400' : 'text-zinc-500'}`}>
                   {step.name}
                 </span>
               </div>
               {index < steps.length - 1 && (
-                <div className={`flex-1 h-1 mx-3 rounded-full transition-all duration-500 ${
+                <div className={`hidden lg:block flex-1 h-1 mx-3 rounded-full transition-all duration-500 ${
                   step.complete ? 'bg-emerald-500' : 'bg-zinc-800'
                 }`}></div>
               )}
             </div>
           ))}
+          
+          {/* Message for Crossmark/Xaman vendors */}
+          {storagePrefix === 'vendor' && (loginMethod === 'crossmark' || loginMethod === 'xaman') && !autoSignEnabled && (
+            <p className="hidden lg:block text-amber-400 text-xs pl-4 max-w-[220px] flex-shrink-0">
+              Complete Auto-Sign Below
+            </p>
+          )}
         </div>
+        
+        {/* Mobile message for Crossmark/Xaman vendors */}
+        {storagePrefix === 'vendor' && (loginMethod === 'crossmark' || loginMethod === 'xaman') && !autoSignEnabled && (
+          <p className="lg:hidden text-amber-400 text-xs text-center px-6 pt-6 pb-2">
+            Complete Auto-Sign Below
+          </p>
+        )}
       </div>
 
       {/* Error Display */}
@@ -541,14 +586,12 @@ if (currentStep === 'complete') {
 {currentStep === 'connect_wallet' && (
   <div className="space-y-5">
     <div className="flex items-center gap-4">
-      <div className="w-14 h-14 bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-2xl flex items-center justify-center">
-        <svg className="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-        </svg>
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden">
+        <img src="/XRP-logo.webp" alt="XRP" className="w-14 h-14 object-cover" />
       </div>
       <div>
         <h3 className="text-xl font-bold text-white">Connect Your Wallet</h3>
-        <p className="text-zinc-400">Link an XRP wallet to receive payments</p>
+        <p className="text-zinc-400">Link an XRPL wallet to receive payments</p>
       </div>
     </div>
 
@@ -572,42 +615,7 @@ if (currentStep === 'complete') {
       </div>
     ) : (
       <div className="grid gap-3">
-        <button
-          onClick={async () => {
-            try {
-              const sdk = (window as any).xrpl?.crossmark;
-              if (!sdk) { window.open('https://crossmark.io', '_blank'); return; }
-              const response = await sdk.methods.signInAndWait();
-              if (response?.response?.data?.address) {
-                const walletKey = storagePrefix === 'vendor' ? 'vendorWalletAddress' : 'walletAddress';
-const methodKey = storagePrefix === 'vendor' ? 'vendorLoginMethod' : 'loginMethod';
-sessionStorage.setItem(walletKey, response.response.data.address);
-sessionStorage.setItem(methodKey, 'crossmark');
-                window.location.reload();
-              }
-            } catch (err) { console.error('Crossmark error:', err); }
-          }}
-          className="flex items-center gap-4 bg-zinc-800 hover:bg-zinc-700 p-4 rounded-xl transition"
-        >
-          <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-10 h-10 rounded-lg" />
-          <div className="text-left">
-            <p className="text-white font-medium">Crossmark</p>
-            <p className="text-zinc-500 text-sm">Browser extension</p>
-          </div>
-        </button>
-
-        <button
-        onClick={connectXaman}
-        disabled={connectingXaman}
-        className="flex items-center gap-4 bg-zinc-800 hover:bg-zinc-700 p-4 rounded-xl transition w-full"
-      >
-        <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-10 h-10 rounded-lg" />
-        <div className="text-left">
-          <p className="text-white font-medium">Xaman (Xumm)</p>
-          <p className="text-zinc-500 text-sm">Mobile wallet</p>
-        </div>
-      </button>
-
+      {/* Social Login - TOP */}
       <button
         onClick={async () => {
           try {
@@ -648,6 +656,44 @@ sessionStorage.setItem('socialProvider', provider);
         <div className="text-left">
           <p className="text-white font-medium">Social Login</p>
           <p className="text-zinc-500 text-sm">Tap and Pay with Google, Apple & more</p>
+        </div>
+      </button>
+
+      {/* Crossmark */}
+        <button
+          onClick={async () => {
+            try {
+              const sdk = (window as any).xrpl?.crossmark;
+              if (!sdk) { window.open('https://crossmark.io', '_blank'); return; }
+              const response = await sdk.methods.signInAndWait();
+              if (response?.response?.data?.address) {
+                const walletKey = storagePrefix === 'vendor' ? 'vendorWalletAddress' : 'walletAddress';
+const methodKey = storagePrefix === 'vendor' ? 'vendorLoginMethod' : 'loginMethod';
+sessionStorage.setItem(walletKey, response.response.data.address);
+sessionStorage.setItem(methodKey, 'crossmark');
+                window.location.reload();
+              }
+            } catch (err) { console.error('Crossmark error:', err); }
+          }}
+          className="flex items-center gap-4 bg-zinc-800 hover:bg-zinc-700 p-4 rounded-xl transition"
+        >
+          <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-10 h-10 rounded-lg" />
+          <div className="text-left">
+            <p className="text-white font-medium">Crossmark</p>
+            <p className="text-zinc-500 text-sm">Browser extension</p>
+          </div>
+        </button>
+
+        {/* Xaman */}
+        <button
+        onClick={connectXaman}
+        disabled={connectingXaman}
+        className="flex items-center gap-4 bg-zinc-800 hover:bg-zinc-700 p-4 rounded-xl transition w-full"
+      >
+        <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-10 h-10 rounded-lg" />
+        <div className="text-left">
+          <p className="text-white font-medium">Xaman (Xumm)</p>
+          <p className="text-zinc-500 text-sm">Mobile wallet</p>
         </div>
       </button>
     </div>
