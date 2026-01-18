@@ -17,11 +17,11 @@ export default function SuccessMessage({ walletAddress, loginMethod }: SuccessMe
     return () => clearTimeout(timer);
   }, []);
 
-  // Auto-hide after 10 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => setDismissed(true), 10000);
-    return () => clearTimeout(timer);
-  }, []);
+ // Auto-hide after 5 seconds
+useEffect(() => {
+  const timer = setTimeout(() => setDismissed(true), 5000);
+  return () => clearTimeout(timer);
+}, []);
 
   if (dismissed) return null;
 
