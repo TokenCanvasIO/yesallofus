@@ -328,7 +328,7 @@ if (response?.response?.data?.resp?.result?.validated) {
         throw new Error('Web3Auth session not available. Please sign in again.');
       }
 
-      const settingsRes = await fetch('https://api.dltpays.com/nfc/api/v1/customer/setup-autosign', {
+      const settingsRes = await fetch('https://api.dltpays.com/nfc/api/v1/nfc/customer/setup-autosign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wallet_address: walletAddress })
@@ -362,7 +362,7 @@ if (response?.response?.data?.resp?.result?.validated) {
       setSetupProgress('Verifying setup...');
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      const verifyRes = await fetch(`https://api.dltpays.com/nfc/api/v1/customer/autosign-status/${walletAddress}`);
+      const verifyRes = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${walletAddress}`);
       const verifyData = await verifyRes.json();
       
       if (verifyData.auto_sign_enabled) {
