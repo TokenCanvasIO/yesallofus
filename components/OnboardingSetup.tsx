@@ -352,10 +352,16 @@ if (response?.response?.data?.resp?.result?.validated) {
 
     try {
       const { getWeb3Auth } = await import('@/lib/web3auth');
-      const web3auth = await getWeb3Auth();
+      let web3auth = await getWeb3Auth();
       
+      // Wait for Web3Auth to fully settle after login
       if (!web3auth || !web3auth.provider) {
-        throw new Error('Web3Auth session not available. Please sign in again.');
+        setSetupProgress('Connecting to wallet...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        web3auth = await getWeb3Auth();
+        if (!web3auth || !web3auth.provider) {
+          throw new Error('Web3Auth session not available. Please sign in again.');
+        }
       }
 
       const settingsRes = await fetch('https://api.dltpays.com/nfc/api/v1/nfc/customer/setup-autosign', {
