@@ -338,6 +338,7 @@ if (response?.response?.data?.resp?.result?.validated) {
       if (settingsData.error) throw new Error(settingsData.error);
       
       if (settingsData.signer_exists || settingsData.auto_sign_enabled) {
+        onRefreshWallet();
         onSetupComplete();
         return;
       }
@@ -366,8 +367,9 @@ if (response?.response?.data?.resp?.result?.validated) {
       const verifyData = await verifyRes.json();
       
       if (verifyData.auto_sign_enabled) {
-        onSetupComplete();
-      } else {
+  onRefreshWallet();
+  onSetupComplete();
+} else {
         throw new Error('Auto-sign setup failed. Please try again.');
       }
       
