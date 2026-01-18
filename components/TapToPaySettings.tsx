@@ -9,7 +9,7 @@ interface TapToPaySettingsProps {
   onAutoSignEnabled?: () => void;
 }
 
-const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1';
+const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1/nfc';
 
 export default function TapToPaySettings({ 
   walletAddress, 
