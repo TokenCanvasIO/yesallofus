@@ -10,6 +10,7 @@ interface DashboardHeaderProps {
   showBalances?: boolean;
   onToggleBalances?: () => void;
   dashboardType?: 'vendor' | 'affiliate';
+  allMilestonesComplete?: boolean;
 }
 
 // Eye icon component
@@ -28,7 +29,7 @@ const EyeIcon = ({ open }: { open: boolean }) => (
   </svg>
 );
 
-export default function DashboardHeader({ walletAddress, storeId, onSignOut, showBalances = false, onToggleBalances, dashboardType = 'vendor' }: DashboardHeaderProps) {
+export default function DashboardHeader({ walletAddress, storeId, onSignOut, showBalances = false, onToggleBalances, dashboardType = 'vendor', allMilestonesComplete = false }: DashboardHeaderProps) {
   const router = useRouter();
   const shortWallet = walletAddress 
     ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
@@ -36,11 +37,26 @@ export default function DashboardHeader({ walletAddress, storeId, onSignOut, sho
   const isConnected = !!walletAddress;
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-40 backdrop-blur-sm w-full ${
-  dashboardType === 'vendor' 
-    ? 'bg-gradient-to-r from-emerald-300/55 via-emerald-500/50 via-green-600/45 to-green-900/50 border-b border-emerald-400/50'
-    : 'bg-gradient-to-r from-lime-300/50 via-teal-400/50 via-cyan-400/55 via-blue-500/55 to-violet-500/60 border-b border-cyan-400/50'
+    <header className={`fixed top-0 left-0 right-0 z-40 backdrop-blur-sm w-full overflow-hidden ${
+  allMilestonesComplete
+    ? 'border-b border-purple-500/50'
+    : dashboardType === 'vendor' 
+      ? 'bg-gradient-to-r from-emerald-300/55 via-emerald-500/50 via-green-600/45 to-green-900/50 border-b border-emerald-400/50'
+      : 'bg-gradient-to-r from-lime-300/50 via-teal-400/50 via-cyan-400/55 via-blue-500/55 to-violet-500/60 border-b border-cyan-400/50'
 }`}>
+      {/* Video background when all milestones complete */}
+{allMilestonesComplete && (
+  <video
+    autoPlay
+    loop
+    muted
+    playsInline
+    className="absolute inset-0 w-full h-full object-cover -z-10"
+    style={{ filter: 'brightness(0.6)' }}
+  >
+    <source src="/nebula-bgActivityButton.webm" type="video/webm" />
+  </video>
+)}
       <div className="px-6 py-3 flex items-center justify-between w-full max-w-full">
 <div className="flex items-center gap-3">
   {/* Mobile hamburger - only show when logged in */}

@@ -10,6 +10,7 @@ interface Milestone {
 
 interface MilestoneChecklistProps {
   type?: 'vendor' | 'customer';
+  forceCollapsed?: boolean;
   storeId: string;
   walletAddress: string;
   autoSignEnabled?: boolean;
@@ -22,12 +23,14 @@ interface MilestoneChecklistProps {
   onMilestoneAchieved?: (milestone: string) => void;
   onInfoClick?: (milestoneId: string) => void;
   onDismiss?: () => void;
+onAllComplete?: (isComplete: boolean) => void;
 }
 
 const API_URL = 'https://api.dltpays.com/api/v1';
 
 export default function MilestoneChecklist({ 
   type = 'vendor',
+  forceCollapsed = false,
   storeId, 
   walletAddress,
   autoSignEnabled,
@@ -38,29 +41,29 @@ export default function MilestoneChecklist({
   joinedAffiliate,
   onMilestoneAchieved,
   onInfoClick,
-  onDismiss
+  onDismiss,
+onAllComplete
 }: MilestoneChecklistProps) {
   const [milestones, setMilestones] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
+  
+  // Force collapsed when prop is set
+  useEffect(() => {
+    if (forceCollapsed) {
+      setIsExpanded(false);
+    }
+  }, [forceCollapsed]);
 
   // Color scheme based on type - matches dashboard header gradients
-  // Vendor: emerald -> green gradient
-  // Customer/Affiliate: lime -> teal -> cyan -> blue -> violet gradient
   const colors = type === 'customer' ? {
-    // Affiliate/Customer colors - matching header gradient (green -> teal -> cyan -> blue -> violet)
     progressBg: 'from-lime-300 via-teal-400 via-cyan-400 via-blue-500 to-violet-500',
-    // Card backgrounds - exact header gradient colors on dark base
     completeBg: 'bg-gradient-to-r from-lime-300/15 via-teal-400/15 via-cyan-400/18 via-blue-500/18 to-violet-500/20',
     completeBorder: 'border-cyan-400/20',
-    // Text with gradient matching header
     completeTextClass: 'bg-gradient-to-r from-emerald-400 via-teal-400 via-cyan-400 via-blue-400 to-violet-400 bg-clip-text text-transparent',
-    // For SVG icons - solid emerald for ticks
     iconComplete: 'text-emerald-500',
     iconIncomplete: 'text-zinc-600',
-    // Hover states
     completeHover: 'hover:text-emerald-400',
-    // Tick - solid emerald (not gradient)
     tickGradientId: 'customerTickGradient',
     tickGradient: (
       <linearGradient id="customerTickGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -69,19 +72,13 @@ export default function MilestoneChecklist({
       </linearGradient>
     ),
   } : {
-    // Vendor colors - matching header gradient
     progressBg: 'from-emerald-300 via-emerald-500 via-green-600 to-green-900',
-    // Card backgrounds with gradient tint
     completeBg: 'bg-gradient-to-r from-emerald-500/10 via-green-500/10 to-green-700/10',
     completeBorder: 'border-emerald-500/30',
-    // Text with gradient
     completeTextClass: 'bg-gradient-to-r from-emerald-300 via-emerald-400 to-green-500 bg-clip-text text-transparent',
-    // For SVG icons
     iconComplete: 'text-emerald-400',
     iconIncomplete: 'text-zinc-600',
-    // Hover states
     completeHover: 'hover:text-emerald-400',
-    // Tick/check gradient
     tickGradientId: 'vendorTickGradient',
     tickGradient: (
       <linearGradient id="vendorTickGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -166,11 +163,11 @@ export default function MilestoneChecklist({
     }
   ];
 
-  // Customer/Affiliate milestones
+  // Customer/Affiliate milestones - UPDATED with trustlines_set
   const customerMilestoneConfig: Milestone[] = [
     {
       id: 'wallet_funded',
-      label: 'Wallet funded',
+      label: 'Wallet funded (1.5 XRP)',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -179,8 +176,8 @@ export default function MilestoneChecklist({
       timestamp: null
     },
     {
-      id: 'trustline_set',
-      label: 'Trustline set',
+      id: 'trustlines_set',
+      label: 'RLUSD & USDC added',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
@@ -190,7 +187,7 @@ export default function MilestoneChecklist({
     },
     {
       id: 'tap_pay_enabled',
-      label: 'Tap to pay enabled',
+      label: 'Tap-to-Pay enabled',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -226,21 +223,18 @@ export default function MilestoneChecklist({
 
   // Fetch milestones from API with polling
   useEffect(() => {
-    // Check if collapsed preference
     const collapsed = localStorage.getItem(storageKey);
     if (collapsed === 'true') {
       setIsExpanded(false);
     }
 
     if (type === 'customer') {
-      // Fetch customer milestones from API with polling
       fetchCustomerMilestones();
       const pollInterval = setInterval(() => {
         fetchCustomerMilestones();
       }, 5000);
       return () => clearInterval(pollInterval);
     } else {
-      // Vendor - fetch from API with polling
       fetchMilestones();
       const pollInterval = setInterval(() => {
         fetchMilestones();
@@ -264,7 +258,8 @@ export default function MilestoneChecklist({
       setLoading(false);
     }
   };
-const fetchCustomerMilestones = async () => {
+
+  const fetchCustomerMilestones = async () => {
     try {
       const endpoint = `${API_URL}/customer/milestones/${walletAddress}`;
       const res = await fetch(endpoint);
@@ -279,7 +274,7 @@ const fetchCustomerMilestones = async () => {
       setLoading(false);
     }
   };
-  // Calculate completed count
+
   const completed = Object.values(milestones).filter(v => v !== null).length;
   const total = milestoneConfig.length;
 
@@ -297,7 +292,11 @@ const fetchCustomerMilestones = async () => {
   const progressPercent = Math.round((completed / total) * 100);
   const isComplete = completed === total;
 
-  // Gradient tick icon component
+  // Notify parent of completion status
+useEffect(() => {
+  onAllComplete?.(isComplete);
+}, [isComplete, onAllComplete]);
+
   const GradientTick = () => (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24">
       <defs>
@@ -324,7 +323,7 @@ const fetchCustomerMilestones = async () => {
     );
   }
 
-  // Complete and collapsed - minimal bar
+  // Complete and collapsed
   if (isComplete && !isExpanded) {
     return (
       <div className={`${colors.completeBg} border ${colors.completeBorder} rounded-xl p-4 mb-6 flex items-center justify-between`}>
@@ -414,7 +413,6 @@ const fetchCustomerMilestones = async () => {
   // Expanded state
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
-      {/* SVG Defs for gradients - must be in DOM */}
       <svg width="0" height="0" className="absolute">
         <defs>
           {colors.tickGradient}

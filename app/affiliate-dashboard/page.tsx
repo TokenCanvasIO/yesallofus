@@ -17,6 +17,7 @@ import NebulaBackground from '@/components/NebulaBackground';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import { InfoModal, useInfoModal } from '@/components/InfoModal';
 import AffiliateDashboardTour from '@/components/AffiliateDashboardTour';
+import OnboardingSetup from '@/components/OnboardingSetup';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
 
@@ -51,7 +52,9 @@ interface WalletStatus {
   funded: boolean;
   xrp_balance: number;
   rlusd_trustline: boolean;
+  usdc_trustline: boolean;
   rlusd_balance: number;
+  usdc_balance: number;
   pending_commissions: {
     total: number;
     threshold: number;
@@ -166,6 +169,8 @@ export default function AffiliateDashboard() {
   const [joiningStore, setJoiningStore] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showBalances, setShowBalances] = useState(false);
+  const [allMilestonesComplete, setAllMilestonesComplete] = useState(false);
+  const [setupComplete, setSetupComplete] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [refreshingWallet, setRefreshingWallet] = useState(false);
   
@@ -677,7 +682,7 @@ return <LoginScreen onLogin={handleLogin} />;
   return (
     <>
       <NebulaBackground opacity={0.3} />
-      <DashboardHeader dashboardType="affiliate" walletAddress={walletAddress} onSignOut={handleSignOut} showBalances={showBalances} onToggleBalances={() => setShowBalances(!showBalances)} />
+      <DashboardHeader dashboardType="affiliate" walletAddress={walletAddress} onSignOut={handleSignOut} showBalances={showBalances} onToggleBalances={() => setShowBalances(!showBalances)} allMilestonesComplete={allMilestonesComplete} />
       <AffiliateDashboardTour 
   run={runTour} 
   onComplete={() => {
@@ -738,9 +743,11 @@ return <LoginScreen onLogin={handleLogin} />;
 
             {/* MILESTONE CHECKLIST */}
             {!progressHidden && walletAddress && (
-              <MilestoneChecklist 
-                type="customer"
-                storeId={walletAddress}
+              <MilestoneChecklist
+  type="customer"
+  forceCollapsed={setupComplete}
+  onAllComplete={(complete) => setAllMilestonesComplete(complete)}
+  storeId={walletAddress}
                 walletAddress={walletAddress}
                 autoSignEnabled={autoSignEnabled}
                 walletFunded={walletStatus?.funded || false}
@@ -761,21 +768,22 @@ return <LoginScreen onLogin={handleLogin} />;
             <MyPendingStatus walletAddress={walletAddress} email={new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('email') || undefined} />
 
             {/* AUTO-SIGN SETUP PROMPT */}
-            {loginMethod === 'web3auth' && showAutoSignPrompt && !autoSignEnabled && (
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6 mb-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="text-2xl">⚡</div>
-                  <div>
-                    <h3 className="text-lg font-bold text-amber-400">Enable Tap-to-Pay</h3>
-                    <p className="text-zinc-400 text-sm">One more step to enable instant NFC payments</p>
-                  </div>
-                </div>
-                <p className="text-zinc-300 text-sm mb-4">Sign once to enable automatic payments when you tap your NFC card.</p>
-                <button onClick={setupAutoSignWeb3Auth} disabled={settingUpAutoSign} className="w-full bg-amber-500 hover:bg-amber-400 text-black font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2">
-                  {settingUpAutoSign ? (<><span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>{setupProgress || 'Setting up...'}</>) : '🔐 Enable Tap-to-Pay Now'}
-                </button>
-              </div>
-            )}
+            {/* AUTO-SIGN SETUP PROMPT */}
+            {isLoggedIn && (
+  <OnboardingSetup
+    walletAddress={walletAddress}
+    walletStatus={walletStatus}
+    autoSignEnabled={autoSignEnabled}
+    loginMethod={loginMethod as 'xaman' | 'crossmark' | 'web3auth' | null}
+    onSetupComplete={() => {
+      setAutoSignEnabled(true);
+      setShowAutoSignPrompt(false);
+      fetchWalletStatus(walletAddress);
+    }}
+    onRefreshWallet={() => fetchWalletStatus(walletAddress)}
+onSetupStatusChange={(isComplete) => setSetupComplete(isComplete)}
+  />
+)}
 
             {/* ============================================================= */}
             {/* EARNINGS GROUP */}
@@ -1029,7 +1037,7 @@ return <LoginScreen onLogin={handleLogin} />;
                         <TopUpRLUSD walletAddress={walletAddress} xrpBalance={walletStatus.xrp_balance} rlusdBalance={walletStatus.rlusd_balance} showAmounts={showBalances} onToggleAmounts={() => setShowBalances(!showBalances)} onRefresh={() => fetchWalletStatus(walletAddress)} />
                       </CollapsibleSection>
                       <CollapsibleSection dashboardType="affiliate" id="withdraw" title="Withdraw" size="tall" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>} isOpen={openSections['withdraw']} onToggle={() => toggleSection('withdraw')}>
-                        <WithdrawRLUSD walletAddress={walletAddress} rlusdBalance={walletStatus.rlusd_balance} showAmounts={showBalances} onToggleAmounts={() => setShowBalances(!showBalances)} onRefresh={() => fetchWalletStatus(walletAddress)} />
+                        <WithdrawRLUSD walletAddress={walletAddress} rlusdBalance={walletStatus.rlusd_balance} loginMethod={loginMethod as 'xaman' | 'crossmark' | 'web3auth' | null} showAmounts={showBalances} onToggleAmounts={() => setShowBalances(!showBalances)} onRefresh={() => fetchWalletStatus(walletAddress)} />
                       </CollapsibleSection>
                       </div>
                     </div>

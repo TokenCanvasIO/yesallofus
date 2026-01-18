@@ -325,8 +325,8 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
         
         {/* Period Selector + Fee Info */}
 <div className="flex flex-wrap items-center justify-between gap-4 py-6">
-  <div className="flex gap-2 overflow-x-auto">
-    {(['today', 'week', 'month', 'all'] as const).map((p) => (
+  <div className="flex gap-2 overflow-x-auto pb-2 -mb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+  {(['today', 'week', 'month', 'all'] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}

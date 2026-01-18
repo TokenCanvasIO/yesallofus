@@ -8,6 +8,7 @@ const RLUSD_ISSUER = 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De';
 interface WithdrawRLUSDProps {
   walletAddress: string;
   rlusdBalance: number;
+  loginMethod?: 'xaman' | 'crossmark' | 'web3auth' | null;
   showAmounts: boolean;
   onToggleAmounts: () => void;
   onRefresh: () => Promise<void>;
@@ -17,6 +18,7 @@ interface WithdrawRLUSDProps {
 export default function WithdrawRLUSD({ 
   walletAddress, 
   rlusdBalance, 
+  loginMethod,
   showAmounts,
   onToggleAmounts,
   onRefresh,
@@ -123,6 +125,16 @@ export default function WithdrawRLUSD({
 
   return (
   <div>
+    {/* Xaman Not Available Badge */}
+    {loginMethod === 'xaman' && (
+      <div className="flex items-center justify-center gap-2 mb-4 py-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+        <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span className="text-amber-400 text-sm font-medium">Not available for Xaman</span>
+      </div>
+    )}
+    <div className={loginMethod === 'xaman' ? 'opacity-40 pointer-events-none' : ''}>
     <div className="flex items-center justify-end gap-2 mb-4">
       <div className="text-right">
         <p className="text-zinc-500 text-xs">Available</p>
@@ -240,6 +252,7 @@ export default function WithdrawRLUSD({
             'Withdraw RLUSD'
         )}
       </button>
+    </div>
     </div>
   </div>
 );
