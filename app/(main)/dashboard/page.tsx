@@ -113,6 +113,7 @@ const { activeInfo, openInfo, closeInfo, getContent } = useInfoModal();
 const [walletStatus, setWalletStatus] = useState<WalletStatus | null>(null);
 const [allMilestonesComplete, setAllMilestonesComplete] = useState(false);
 const [setupComplete, setSetupComplete] = useState(false);
+const [customerAutoSignEnabled, setCustomerAutoSignEnabled] = useState(false);
 // Collapsed section
 const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 // Progress bar on button
@@ -1754,9 +1755,9 @@ return (
   <OnboardingSetup
   walletAddress={walletAddress}
   walletStatus={walletStatus}
-  autoSignEnabled={store?.auto_signing_enabled || false}
+  autoSignEnabled={store?.auto_signing_enabled || customerAutoSignEnabled}
   loginMethod={walletType}
-  onSetupComplete={() => setSetupComplete(true)}
+  onSetupComplete={() => { setCustomerAutoSignEnabled(true); setSetupComplete(true); }}
   onRefreshWallet={refreshWalletStatus}
   onSetupStatusChange={(isComplete) => setSetupComplete(isComplete)}
   storagePrefix="vendor"
