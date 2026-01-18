@@ -117,7 +117,7 @@ export default function TopUpRLUSD({
 
         <div className="flex flex-wrap items-center gap-2">
           <code className="text-emerald-400 text-sm font-mono flex-1 min-w-0 truncate">
-            {walletAddress.substring(0, 8)}...{walletAddress.slice(-6)}
+            {walletAddress?.substring(0, 8)}...{walletAddress?.slice(-6)}
           </code>
 
           <button

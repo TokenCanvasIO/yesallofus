@@ -879,6 +879,7 @@ setStep('dashboard');
   setWalletAddress(null);
   setWalletType(null);
   setWalletStatus(null);
+  setCustomerAutoSignEnabled(false);
   sessionStorage.removeItem('vendorWalletAddress');
   sessionStorage.removeItem('vendorLoginMethod');
 } else {
@@ -973,6 +974,29 @@ await new Promise(resolve => setTimeout(resolve, 2000));
         throw new Error(settingsData.error);
       }
 
+      // If signer already exists, go straight to verification
+      if (settingsData.signer_exists) {
+        const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`);
+        const verifyData = await verifyRes.json();
+        
+        if (verifyData.auto_signing_enabled) {
+          setStore({
+            ...store,
+            payout_mode: 'auto',
+            auto_signing_enabled: true,
+            crossmark_connected: true,
+            daily_limit: dailyLimit,
+            auto_sign_max_single_payout: maxSinglePayout
+          });
+          setMilestone('auto_sign_enabled');
+          setAutoSignTermsAccepted(false);
+          setSettingUpAutoSign(false);
+          // Refresh wallet status to update UI
+          await refreshWalletStatus();
+          return;
+        }
+      }
+
       const platformSignerAddress = settingsData.platform_signer_address;
       if (!platformSignerAddress) {
         throw new Error('Platform signer not configured');
@@ -1047,6 +1071,7 @@ try {
   auto_sign_max_single_payout: maxSinglePayout
 });
 setMilestone('auto_sign_enabled');
+await refreshWalletStatus();
       setWalletAddress(address);
       setWalletType('crossmark');
       sessionStorage.setItem('vendorWalletAddress', address);
@@ -1141,6 +1166,7 @@ await new Promise(resolve => setTimeout(resolve, 2000));
         setAutoSignTermsAccepted(false);
         setSettingUpAutoSign(false);
         setSetupProgress(null);
+        await refreshWalletStatus();
         return;
       }
     }
@@ -1219,6 +1245,7 @@ setStore({
 setMilestone('auto_sign_enabled');
 setAutoSignTermsAccepted(false);
 setSetupProgress(null);
+await refreshWalletStatus();
 
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to enable auto-sign';
@@ -2098,6 +2125,13 @@ return (
         </p>
       </div>
     </div>
+    <button
+      onClick={disconnectWallet}
+      disabled={loading}
+      className="text-zinc-400 hover:text-red-400 text-sm transition-colors whitespace-nowrap"
+    >
+      Disconnect
+    </button>
   </div>
   <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
     <p className="text-orange-400 font-medium">Enable Auto-Sign to process payouts</p>
@@ -2288,7 +2322,7 @@ onClick={async () => {
 )}
 
 {/* Show Top-Up and Withdraw components when wallet is ready */}
-{!walletNeedsFunding && !walletNeedsTrustline && walletAddress && (
+{(
   <div className="space-y-4">
     {/* TAKE PAYMENT BUTTON */}
     <button
@@ -2314,7 +2348,7 @@ onClick={async () => {
       onToggle={() => toggleSection('wallet-funding')}
     >
       <TopUpRLUSD
-  walletAddress={walletAddress}
+  walletAddress={walletAddress || ''}
   xrpBalance={walletXrpBalance}
   rlusdBalance={walletRlusdBalance}
   showAmounts={showAmounts}
@@ -2336,7 +2370,7 @@ onClick={async () => {
       onToggle={() => toggleSection('withdraw')}
     >
       <WithdrawRLUSD
-        walletAddress={walletAddress}
+        walletAddress={walletAddress || ''}
         rlusdBalance={walletRlusdBalance}
         showAmounts={showAmounts}
         onToggleAmounts={() => setShowAmounts(!showAmounts)}
