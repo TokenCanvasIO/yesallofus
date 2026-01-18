@@ -350,7 +350,7 @@ useEffect(() => {
       const claim = params.get('claim');
       if (claim) {
         setClaimToken(claim);
-        fetch(`${API_URL}/store/by-claim/${claim}`)
+        fetch(`${API_URL}/store/by-claim/${claim}?_t=${Date.now()}`, { cache: 'no-store' })
           .then(res => res.json())
           .then(data => {
             if (data.success && data.store) {
@@ -377,7 +377,7 @@ if (wpReturn) {
         if (cachedReferrer) {
           setReferringStore(JSON.parse(cachedReferrer));
         }
-        fetch(`${API_URL}/store/lookup-referral/${ref}`)
+       fetch(`${API_URL}/store/lookup-referral/${ref}?_t=${Date.now()}`, { cache: 'no-store' })
           .then(res => res.json())
           .then(data => {
             if (data.success && data.store) {
