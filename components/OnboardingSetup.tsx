@@ -18,7 +18,6 @@ interface OnboardingSetupProps {
   onSetupComplete: () => void;
   onRefreshWallet: () => void;
 onSetupStatusChange?: (isComplete: boolean) => void;
-onAllMilestonesComplete?: (isComplete: boolean) => void;
 }
 
 // USDC on XRPL
@@ -36,8 +35,7 @@ export default function OnboardingSetup({
   loginMethod,
   onSetupComplete,
   onRefreshWallet,
-onSetupStatusChange,
-onAllMilestonesComplete
+onSetupStatusChange
 }: OnboardingSetupProps) {
   const [settingUp, setSettingUp] = useState(false);
   const [setupProgress, setSetupProgress] = useState<string | null>(null);
@@ -65,12 +63,8 @@ const [connectingXaman, setConnectingXaman] = useState(false);
 
 // Notify parent of setup status
 useEffect(() => {
-  const isComplete = currentStep === 'complete';
-  onSetupStatusChange?.(isComplete);
-  if (isComplete) {
-    onAllMilestonesComplete?.(true);
-  }
-}, [currentStep, onSetupStatusChange, onAllMilestonesComplete]);
+  onSetupStatusChange?.(currentStep === 'complete');
+}, [currentStep, onSetupStatusChange]);
 
 // Auto-refresh wallet status
 useEffect(() => {
