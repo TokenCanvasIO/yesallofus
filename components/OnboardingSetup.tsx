@@ -19,6 +19,7 @@ interface OnboardingSetupProps {
   onRefreshWallet: () => void;
   onSetupStatusChange?: (isComplete: boolean) => void;
   storagePrefix?: 'vendor' | 'affiliate';
+  storeId?: string;
 }
 
 // USDC on XRPL
@@ -37,7 +38,8 @@ loginMethod,
 onSetupComplete,
 onRefreshWallet,
 onSetupStatusChange,
-storagePrefix = 'affiliate'
+storagePrefix = 'affiliate',
+storeId
 }: OnboardingSetupProps) {
 const [showSuccess, setShowSuccess] = useState(false);
 const [settingUp, setSettingUp] = useState(false);
@@ -348,47 +350,75 @@ if (response?.response?.data?.resp?.result?.validated) {
     
     setSettingUp(true);
     setError(null);
-    setSetupProgress('Preparing Tap-to-Pay...');
+    setSetupProgress('Preparing...');
 
     try {
       const { getWeb3Auth } = await import('@/lib/web3auth');
-      let web3auth = await getWeb3Auth();
       
-      // Wait for Web3Auth to fully settle after login
-      if (!web3auth || !web3auth.provider) {
-        setSetupProgress('Connecting to wallet...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait for Web3Auth to fully settle, retry up to 3 times
+      let web3auth = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
         web3auth = await getWeb3Auth();
-        if (!web3auth || !web3auth.provider) {
-          throw new Error('Web3Auth session not available. Please sign in again.');
-        }
+        if (web3auth?.provider) break;
+        setSetupProgress(`Connecting to wallet... (attempt ${attempt}/3)`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      
+      if (!web3auth || !web3auth.provider) {
+        throw new Error('WALLET_NOT_READY');
       }
 
-      const settingsRes = await fetch('https://api.dltpays.com/nfc/api/v1/nfc/customer/setup-autosign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet_address: walletAddress })
-      });
+      // Check if wallet needs RLUSD trustline
+      const walletStatusRes = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${walletAddress}`);
+      const walletStatusData = await walletStatusRes.json();
+      
+      if (walletStatusData.success && walletStatusData.funded && !walletStatusData.rlusd_trustline) {
+        setSetupProgress('Setting up RLUSD trustline...');
+        
+        const trustlineTx = {
+          TransactionType: 'TrustSet',
+          Account: walletAddress,
+          LimitAmount: {
+            currency: '524C555344000000000000000000000000000000',
+            issuer: 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
+            value: '1000000',
+          },
+        };
+        
+        await web3auth.provider.request({
+          method: 'xrpl_submitTransaction',
+          params: { transaction: trustlineTx },
+        });
+        
+        setSetupProgress('RLUSD enabled ✓');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
+      // Use different endpoints for vendor vs customer
+      const isVendor = storagePrefix === 'vendor' && storeId;
+      
+      const settingsRes = isVendor
+        ? await fetch('https://api.dltpays.com/api/v1/xaman/setup-autosign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ store_id: storeId })
+          })
+        : await fetch('https://api.dltpays.com/nfc/api/v1/nfc/customer/setup-autosign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ wallet_address: walletAddress })
+          });
+      
       const settingsData = await settingsRes.json();
       
       if (settingsData.error) throw new Error(settingsData.error);
       
+      // If signer already exists, verify and complete
       if (settingsData.signer_exists || settingsData.auto_sign_enabled) {
-        // Update milestone in Firebase via enable-autosign endpoint
-        try {
-          await fetch('https://api.dltpays.com/nfc/api/v1/nfc/customer/enable-autosign', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              wallet_address: walletAddress,
-              max_transaction: 25
-            })
-          });
-        } catch (e) {
-          console.error('Failed to update milestone:', e);
-        }
         onRefreshWallet();
         onSetupComplete();
+        setSettingUp(false);
+        setSetupProgress(null);
         return;
       }
 
@@ -410,34 +440,44 @@ if (response?.response?.data?.resp?.result?.validated) {
       });
 
       setSetupProgress('Verifying setup...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      const verifyRes = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${walletAddress}`);
-      const verifyData = await verifyRes.json();
       
-      if (verifyData.auto_sign_enabled) {
-        // Update milestone in Firebase
-        try {
-          await fetch('https://api.dltpays.com/api/v1/store/update-milestone', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              wallet_address: walletAddress,
-              milestone: 'auto_sign_enabled'
-            })
-          });
-        } catch (e) {
-          console.error('Failed to update milestone:', e);
+      // Retry verification up to 5 times
+      let verified = false;
+      for (let attempt = 1; attempt <= 5; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const verifyRes = isVendor
+          ? await fetch(`https://api.dltpays.com/api/v1/xaman/verify-autosign?store_id=${storeId}`)
+          : await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${walletAddress}`);
+        
+        const verifyData = await verifyRes.json();
+        
+        if (verifyData.auto_signing_enabled || verifyData.auto_sign_enabled) {
+          verified = true;
+          break;
         }
-        onRefreshWallet();
-        onSetupComplete();
-      } else {
-        throw new Error('Auto-sign setup failed. Please try again.');
+        
+        if (attempt < 5) {
+          setSetupProgress(`Confirming... (${attempt}/5)`);
+        }
       }
+
+      if (!verified) {
+        throw new Error('Setup verification failed. Please try again.');
+      }
+
+      onRefreshWallet();
+      onSetupComplete();
       
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to enable Tap-to-Pay';
-      setError(message);
+      const message = err instanceof Error ? err.message : 'Failed to enable auto-pay';
+      
+      if (message === 'WALLET_NOT_READY') {
+        // Show friendly message with link to retry button
+        setError('WALLET_NOT_READY');
+      } else {
+        setError(message);
+      }
     }
     
     setSettingUp(false);
@@ -573,14 +613,42 @@ if (currentStep === 'complete') {
 
       {/* Error Display */}
       {error && (
-        <div className="mx-6 mt-4 bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+        <div className={`mx-6 mt-4 rounded-xl p-4 ${
+          error === 'WALLET_NOT_READY' 
+            ? 'bg-emerald-500/10 border border-emerald-500/30' 
+            : 'bg-red-500/10 border border-red-500/30'
+        }`}>
           <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 text-red-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-5 h-5 mt-0.5 ${error === 'WALLET_NOT_READY' ? 'text-emerald-400' : 'text-red-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div className="flex-1">
-              <p className="text-red-400 text-sm">{error}</p>
-              <button onClick={() => setError(null)} className="text-red-400/70 text-xs mt-1 hover:text-red-400 transition">Dismiss</button>
+              {error === 'WALLET_NOT_READY' ? (
+                <>
+                  <p className="text-emerald-400 text-sm font-medium">Almost there!</p>
+                  <p className="text-emerald-300/80 text-sm mt-1">
+                    Please refresh the page and try again, or use the{' '}
+                    <button 
+                      onClick={() => {
+                        setError(null);
+                        const retrySection = document.getElementById('payout-method');
+                        if (retrySection) {
+                          retrySection.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }}
+                      className="text-emerald-400 underline hover:text-emerald-300"
+                    >
+                      Retry Auto-Sign Setup
+                    </button>
+                    {' '}button below.
+                  </p>
+                </>
+              ) : (
+                <p className="text-red-400 text-sm">{error}</p>
+              )}
+              <button onClick={() => setError(null)} className={`text-xs mt-2 transition ${error === 'WALLET_NOT_READY' ? 'text-emerald-400/70 hover:text-emerald-400' : 'text-red-400/70 hover:text-red-400'}`}>
+                Dismiss
+              </button>
             </div>
           </div>
         </div>

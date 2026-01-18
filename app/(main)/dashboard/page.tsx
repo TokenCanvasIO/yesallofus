@@ -2211,6 +2211,7 @@ return (
     onRefreshWallet={refreshWalletStatus}
     onSetupStatusChange={(isComplete) => setSetupComplete(isComplete)}
     storagePrefix="vendor"
+    storeId={store?.store_id}
   />
 )}
 
