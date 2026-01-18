@@ -698,7 +698,7 @@ useEffect(() => {
           wallet_address: walletAddress,
           wallet_type: walletType,
           xaman_user_token: xamanUserToken,
-          referred_by_store: referredBy
+          referral_code: referredBy
         })
       });
 
@@ -1888,11 +1888,17 @@ return (
                 }
               }
 
+              // Get referral code from URL, sessionStorage, or manual input
+              const refCode = new URLSearchParams(window.location.search).get('ref') 
+                || sessionStorage.getItem('vendorReferralCode')
+                || (form.elements.namedItem('referralCode') as HTMLInputElement)?.value?.trim()
+                || null;
+              
               createStore(
                 (form.elements.namedItem('storeName') as HTMLInputElement).value,
                 (form.elements.namedItem('storeUrl') as HTMLInputElement).value,
                 (form.elements.namedItem('email') as HTMLInputElement).value,
-                finalReferrer?.store_id || null
+                refCode
               );
             }}>
               <div className="space-y-4">
