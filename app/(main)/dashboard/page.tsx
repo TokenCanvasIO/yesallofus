@@ -1877,7 +1877,7 @@ return (
               const manualRef = (form.elements.namedItem('referralCode') as HTMLInputElement)?.value?.trim();
               if (manualRef && !finalReferrer) {
                 try {
-                  const res = await fetch(`${API_URL}/store/lookup-referral/${manualRef}`);
+                  const res = await fetch(`${API_URL}/store/lookup-referral/${manualRef}?_t=${Date.now()}`, { cache: 'no-store' });
                   const data = await res.json();
                   if (data.success && data.store) {
                     finalReferrer = data.store;
