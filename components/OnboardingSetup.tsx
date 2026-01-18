@@ -18,6 +18,7 @@ interface OnboardingSetupProps {
   onSetupComplete: () => void;
   onRefreshWallet: () => void;
 onSetupStatusChange?: (isComplete: boolean) => void;
+onAllMilestonesComplete?: (isComplete: boolean) => void;
 }
 
 // USDC on XRPL
@@ -35,7 +36,8 @@ export default function OnboardingSetup({
   loginMethod,
   onSetupComplete,
   onRefreshWallet,
-onSetupStatusChange
+onSetupStatusChange,
+onAllMilestonesComplete
 }: OnboardingSetupProps) {
   const [settingUp, setSettingUp] = useState(false);
   const [setupProgress, setSetupProgress] = useState<string | null>(null);
@@ -63,8 +65,12 @@ const [connectingXaman, setConnectingXaman] = useState(false);
 
 // Notify parent of setup status
 useEffect(() => {
-  onSetupStatusChange?.(currentStep === 'complete');
-}, [currentStep, onSetupStatusChange]);
+  const isComplete = currentStep === 'complete';
+  onSetupStatusChange?.(isComplete);
+  if (isComplete) {
+    onAllMilestonesComplete?.(true);
+  }
+}, [currentStep, onSetupStatusChange, onAllMilestonesComplete]);
 
 // Auto-refresh wallet status
 useEffect(() => {
@@ -226,10 +232,12 @@ const cancelXamanLogin = () => {
           method: 'xrpl_submitTransaction',
           params: { transaction: usdcTrustlineTx },
         });
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        setSetupProgress('Confirming...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
       }
 
       setSetupProgress('Trustlines added ✓');
+      await new Promise(resolve => setTimeout(resolve, 1000));
       onRefreshWallet();
       
     } catch (err: unknown) {

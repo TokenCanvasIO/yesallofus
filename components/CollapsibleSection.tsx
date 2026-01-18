@@ -72,7 +72,7 @@ export default function CollapsibleSection({
       >
         <source src={videoBg} type="video/webm" />
       </video>
-      <div className="absolute inset-0 bg-black/60 z-[1]"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-pink-900/60 via-purple-900/50 to-black/60 z-[1]"></div>
     </>
   )}
         <div className="flex items-center gap-3 relative z-[2]">

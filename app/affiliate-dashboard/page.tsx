@@ -781,7 +781,7 @@ return <LoginScreen onLogin={handleLogin} />;
       fetchWalletStatus(walletAddress);
     }}
     onRefreshWallet={() => fetchWalletStatus(walletAddress)}
-onSetupStatusChange={(isComplete) => setSetupComplete(isComplete)}
+onAllMilestonesComplete={(complete) => setAllMilestonesComplete(complete)}
   />
 )}
 
