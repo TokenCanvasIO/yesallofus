@@ -19,6 +19,7 @@ interface OnboardingSetupProps {
   onRefreshWallet: () => void;
   onSetupStatusChange?: (isComplete: boolean) => void;
   storagePrefix?: 'vendor' | 'affiliate';
+  onVendorEnableAutoPay?: () => Promise<void>;
 }
 
 // USDC on XRPL
@@ -37,7 +38,8 @@ loginMethod,
 onSetupComplete,
 onRefreshWallet,
 onSetupStatusChange,
-storagePrefix = 'affiliate'
+storagePrefix = 'affiliate',
+onVendorEnableAutoPay
 }: OnboardingSetupProps) {
 const [showSuccess, setShowSuccess] = useState(false);
 const [settingUp, setSettingUp] = useState(false);
@@ -1002,7 +1004,7 @@ sessionStorage.setItem(methodKey, 'crossmark');
             </div>
 
             <button
-              onClick={enableAutoPay}
+              onClick={onVendorEnableAutoPay || enableAutoPay}
               disabled={settingUp}
               className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-semibold py-4 rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-amber-500/20"
             >

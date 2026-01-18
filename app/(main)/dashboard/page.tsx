@@ -1971,6 +1971,7 @@ return (
     onRefreshWallet={refreshWalletStatus}
     onSetupStatusChange={(isComplete) => setSetupComplete(isComplete)}
     storagePrefix="vendor"
+    onVendorEnableAutoPay={store && walletAddress ? setupAutoSignWeb3Auth : undefined}
   />
 )}
 
