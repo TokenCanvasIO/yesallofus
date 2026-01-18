@@ -1235,6 +1235,7 @@ setSetupProgress(null);
     // Already revoked
     if (data.already_revoked) {
       setStore({ ...store, payout_mode: 'manual', auto_signing_enabled: false });
+setCustomerAutoSignEnabled(false);
       setLoading(false);
       return;
     }
@@ -1286,6 +1287,7 @@ setSetupProgress(null);
     }
 
     setStore({ ...store, payout_mode: 'manual', auto_signing_enabled: false });
+setCustomerAutoSignEnabled(false);
     
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to revoke auto-sign';
