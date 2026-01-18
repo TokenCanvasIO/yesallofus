@@ -11,6 +11,7 @@ import TakePaymentTour from '@/components/TakePaymentTour';
 import ReceiptActions from '../../../components/ReceiptActions';
 import NebulaBackground from '@/components/NebulaBackground'; 
 import TakePaymentHeader from '@/components/TakePaymentHeader';
+import { getIconById } from '@/lib/foodIcons';
 interface Product {
 product_id: string;
 name: string;
@@ -18,6 +19,8 @@ price: number;
 sku: string;
 category: string | null;
 emoji?: string;
+icon_id?: string | null;
+image_url?: string | null;
 }
 interface CartItem extends Product {
 quantity: number;
@@ -179,7 +182,7 @@ const [xamanPaymentId, setXamanPaymentId] = useState<string | null>(null);
 // Search & Filter
 const [searchQuery, setSearchQuery] = useState('');
 const [activeCategory, setActiveCategory] = useState<string | null>(null);
-const [showProductsMobile, setShowProductsMobile] = useState(true);
+const [showProductsGrid, setShowProductsGrid] = useState(true);
 // Logo
 const [storeLogo, setStoreLogo] = useState<string | null>(null);
 const [showLogoUpload, setShowLogoUpload] = useState(false);
@@ -1105,7 +1108,7 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
           ) : (
             <div className="mb-6">
               {/* Search Bar */}
-              <div className="mb-4">
+              <div className="mb-4 relative">
                 <input
                   id="tp-search-bar"
                   type="text"
@@ -1115,8 +1118,22 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
                     setSearchQuery(e.target.value);
                     setActiveCategory(null);
                   }}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 pr-12 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
                 />
+                <button
+                  onClick={() => setShowProductsGrid(!showProductsGrid)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition"
+                  title={showProductsGrid ? 'Collapse products' : 'Expand products'}
+                >
+                  <svg
+                    className={`w-4 h-4 text-zinc-400 transition-transform ${showProductsGrid ? '' : 'rotate-180'}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={showProductsGrid ? "M19 9l-7 7-7-7" : "M5 15l7-7 7 7"} />
+                  </svg>
+                </button>
               </div>
 
               {/* Repeat Last Order */}
@@ -1168,26 +1185,27 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
                   ))}
                   {/* Mobile toggle button */}
                   <button
-                    onClick={() => setShowProductsMobile(!showProductsMobile)}
-                    className="lg:hidden ml-auto p-2 bg-zinc-800 border border-zinc-700 rounded-xl flex-shrink-0"
+                  onClick={() => setShowProductsGrid(!showProductsGrid)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition"
+                  title={showProductsGrid ? 'Collapse products' : 'Expand products'}
+                >
+                  <svg
+                    className="w-4 h-4 text-zinc-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <svg 
-                      className={`w-5 h-5 text-zinc-400 transition-transform ${showProductsMobile ? '' : 'rotate-180'}`}
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      {showProductsMobile ? (
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      ) : (
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                      )}
-                    </svg>
-                  </button>
-                </div>
+                    {showProductsGrid ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    )}
+                  </svg>
+                </button>
+              </div>
               )}
               {/* Products Grid - Responsive columns */}
-              <div id="tp-products-grid" className={`grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-3 gap-3 items-end ${!showProductsMobile ? 'hidden lg:grid' : ''}`}>
+              <div id="tp-products-grid" className={`grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-3 gap-3 items-end ${!showProductsGrid ? 'hidden' : ''}`}>
                 {filteredProducts.map((product) => {
                   const inCart = cart.find(item => item.product_id === product.product_id);
                   return (
@@ -1203,7 +1221,17 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
                           {inCart.quantity}
                         </div>
                       )}
-                      <div className="text-2xl mb-2">{getProductEmoji(product)}</div>
+                      <div className="w-full flex justify-center mb-2">
+  <div className="w-10 h-10 flex items-center justify-center">
+    {product.image_url ? (
+      <img src={product.image_url} alt={product.name} className="w-10 h-10 rounded-lg object-cover" />
+    ) : product.icon_id && getIconById(product.icon_id) ? (
+      <div className="w-8 h-8 text-emerald-400" dangerouslySetInnerHTML={{ __html: getIconById(product.icon_id)!.svg }} />
+    ) : (
+      <span className="text-2xl">{getProductEmoji(product)}</span>
+    )}
+  </div>
+</div>
                       <div className="flex-1 flex flex-col justify-between">
                         <p className="text-xs font-medium truncate mb-1">{product.name}</p>
                         <p className="text-emerald-400 text-sm font-semibold">£{product.price.toFixed(2)}</p>
