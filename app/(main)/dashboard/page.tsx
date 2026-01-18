@@ -542,6 +542,8 @@ useEffect(() => {
 
   const loadOrCreateStore = async (wallet: string, type: 'xaman' | 'crossmark' | 'web3auth', xamanUserToken?: string | null) => {
   setLoading(true);
+  let loadedStore = null;
+  
   try {
     // If we have a claim token, attach wallet to that store
     if (claimToken && claimStore) {
@@ -558,15 +560,24 @@ useEffect(() => {
       const data = await res.json();
 
       if (data.success && data.store) {
-  setStore(data.store);
-  setStoreLogo(data.store.logo_url || null);
-  console.log('🔍 Normal flow - Logo URL:', data.store.logo_url);
-  sessionStorage.setItem('storeData', JSON.stringify(data.store));
-  setNewSecret(null);
-  if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
+        setStore(data.store);
+        setStoreLogo(data.store.logo_url || null);
+        console.log('🔍 Normal flow - Logo URL:', data.store.logo_url);
+        sessionStorage.setItem('storeData', JSON.stringify(data.store));
+        setNewSecret(null);
+        if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
         setStep('dashboard');
         setClaimToken(null);
         setClaimStore(null);
+        loadedStore = data.store;
+        
+        // Auto-setup for Web3Auth if not already enabled
+        if (type === 'web3auth' && !data.store.auto_signing_enabled) {
+          setLoading(false);
+          await triggerWeb3AuthAutoSign(data.store, wallet);
+          return;
+        }
+        
         setLoading(false);
         return;
       } else {
@@ -579,13 +590,14 @@ useEffect(() => {
     const data = await res.json();
 
     if (data.success && data.store) {
-  setStore(data.store);
-  setStoreLogo(data.store.logo_url || null);
-  sessionStorage.setItem('storeData', JSON.stringify(data.store));
-  setNewSecret(null);
+      setStore(data.store);
+      setStoreLogo(data.store.logo_url || null);
+      sessionStorage.setItem('storeData', JSON.stringify(data.store));
+      setNewSecret(null);
       if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
       if (data.store.daily_limit) setDailyLimit(data.store.daily_limit);
       if (data.store.auto_sign_max_single_payout) setMaxSinglePayout(data.store.auto_sign_max_single_payout);
+      loadedStore = data.store;
 
       // If we have a wordpress_return in URL/session, save it to Firebase
       const wpReturn = new URLSearchParams(window.location.search).get('wordpress_return') 
@@ -606,6 +618,7 @@ useEffect(() => {
         data.store.platform_type = 'wordpress';
         setStore({ ...data.store, platform_return_url: wpReturn, platform_type: 'wordpress' });
         setStoreLogo(data.store.logo_url || null);
+        loadedStore = { ...data.store, platform_return_url: wpReturn, platform_type: 'wordpress' };
       }
 
       // Save Xaman connection for existing store
@@ -624,8 +637,15 @@ useEffect(() => {
       }
 
       setStep('dashboard');
+      
+      // Auto-setup for Web3Auth if not already enabled
+      if (type === 'web3auth' && !data.store.auto_signing_enabled) {
+        setLoading(false);
+        await triggerWeb3AuthAutoSign(loadedStore, wallet);
+        return;
+      }
     } else {
-      // ========== NEW: Try to link wallet to unclaimed store ==========
+      // ========== Try to link wallet to unclaimed store ==========
       const linkRes = await fetch(`${API_URL}/store/link-wallet`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -642,14 +662,20 @@ useEffect(() => {
         setStore(linkData.store);
         setStoreLogo(linkData.store.logo_url || null);
         if (linkData.api_secret) {
-          setNewSecret(linkData.api_secret); // Show the new secret to user
+          setNewSecret(linkData.api_secret);
         }
         if (linkData.store.commission_rates) setCommissionRates(linkData.store.commission_rates);
         if (linkData.store.daily_limit) setDailyLimit(linkData.store.daily_limit);
         setStep('dashboard');
+        loadedStore = linkData.store;
+        
+        // Auto-setup for Web3Auth if not already enabled
+        if (type === 'web3auth' && !linkData.store.auto_signing_enabled) {
+          setLoading(false);
+          await triggerWeb3AuthAutoSign(linkData.store, wallet);
+          return;
+        }
       } else if (linkData.unclaimed_stores && linkData.unclaimed_stores.length > 0) {
-        // Multiple unclaimed stores - for now just show the first one
-        // TODO: Could add a store selector UI here
         console.log('Multiple unclaimed stores found:', linkData.unclaimed_stores);
         setStore(null);
         setStep('dashboard');
@@ -658,12 +684,173 @@ useEffect(() => {
         setStore(null);
         setStep('dashboard');
       }
-      // ========== END NEW ==========
     }
   } catch (err) {
     setError('Failed to load store');
   }
   setLoading(false);
+};
+
+// Auto-trigger Web3Auth auto-sign setup after login
+const triggerWeb3AuthAutoSign = async (storeData: any, wallet: string) => {
+  setSettingUpAutoSign(true);
+  setError(null);
+
+  try {
+    const { getWeb3Auth } = await import('@/lib/web3auth');
+    const web3auth = await getWeb3Auth();
+    
+    if (!web3auth || !web3auth.provider) {
+      throw new Error('Web3Auth session not available. Please sign in again.');
+    }
+
+    // Check if wallet needs RLUSD setup
+    const walletStatusRes = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${wallet}`);
+    const walletStatusData = await walletStatusRes.json();
+    
+    if (walletStatusData.success && walletStatusData.funded && !walletStatusData.rlusd_trustline) {
+      setSetupProgress('Setting up RLUSD trustline... (1/2)');
+      
+      const trustlineTx = {
+        TransactionType: 'TrustSet',
+        Account: wallet,
+        LimitAmount: {
+          currency: '524C555344000000000000000000000000000000',
+          issuer: 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
+          value: '1000000',
+        },
+      };
+      
+      await web3auth.provider.request({
+        method: 'xrpl_submitTransaction',
+        params: { transaction: trustlineTx },
+      });
+      
+      setSetupProgress('RLUSD enabled ✓ Now confirm Auto-Pay... (2/2)');
+      setMilestone('trustline_set');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
+    // Get platform signer address from API
+    const settingsRes = await fetch(`${API_URL}/xaman/setup-autosign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ store_id: storeData.store_id })
+    });
+    const settingsData = await settingsRes.json();
+    
+    if (settingsData.error) {
+      throw new Error(settingsData.error);
+    }
+
+    // Handle unfunded wallet
+    if (settingsData.needs_funding) {
+      setWalletNeedsFunding(true);
+      setSettingUpAutoSign(false);
+      setSetupProgress(null);
+      return;
+    }
+
+    // If signer already exists, just verify
+    if (settingsData.signer_exists) {
+      const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${storeData.store_id}`);
+      const verifyData = await verifyRes.json();
+      
+      if (verifyData.auto_signing_enabled) {
+        setStore({
+          ...storeData,
+          payout_mode: 'auto',
+          auto_signing_enabled: true,
+          daily_limit: dailyLimit,
+          auto_sign_max_single_payout: maxSinglePayout
+        });
+        setSettingUpAutoSign(false);
+        setSetupProgress(null);
+        await refreshWalletStatus();
+        return;
+      }
+    }
+
+    const platformSignerAddress = settingsData.platform_signer_address;
+    if (!platformSignerAddress) {
+      throw new Error('Platform signer not configured');
+    }
+
+    setSetupProgress('Confirm Auto-Pay in your wallet...');
+
+    const signerListSetTx = {
+      TransactionType: 'SignerListSet',
+      Account: wallet,
+      SignerQuorum: 1,
+      SignerEntries: [
+        {
+          SignerEntry: {
+            Account: platformSignerAddress,
+            SignerWeight: 1
+          }
+        }
+      ]
+    };
+
+    await web3auth.provider.request({
+      method: 'xrpl_submitTransaction',
+      params: { transaction: signerListSetTx }
+    });
+
+    setSetupProgress('Verifying setup...');
+
+    // Retry verification up to 5 times with increasing delays
+    let verified = false;
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+      
+      const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${storeData.store_id}`);
+      const verifyData = await verifyRes.json();
+      
+      if (verifyData.auto_signing_enabled) {
+        verified = true;
+        break;
+      }
+      
+      if (attempt < 5) {
+        setSetupProgress(`Confirming on XRPL... (attempt ${attempt + 1}/5)`);
+      }
+    }
+
+    if (!verified) {
+      throw new Error('Signer setup failed. Please try again.');
+    }
+
+    // Update store settings
+    await fetch(`${API_URL}/store/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        store_id: storeData.store_id,
+        wallet_address: wallet,
+        daily_limit: dailyLimit,
+        auto_sign_max_single_payout: maxSinglePayout
+      })
+    });
+
+    // SUCCESS
+    setStore({
+      ...storeData,
+      payout_mode: 'auto',
+      auto_signing_enabled: true,
+      daily_limit: dailyLimit,
+      auto_sign_max_single_payout: maxSinglePayout
+    });
+    setMilestone('auto_sign_enabled');
+    setSetupProgress(null);
+    await refreshWalletStatus();
+
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to enable auto-sign';
+    setError(message);
+    setSetupProgress(null);
+  }
+  setSettingUpAutoSign(false);
 };
 
   const createStore = async (storeName: string, storeUrl: string, email: string, referredBy: string | null = null) => {
@@ -873,6 +1060,59 @@ setStep('dashboard');
     }
     setLoading(false);
   };
+
+  // Disconnect Web3Auth wallet only (stay on dashboard, show wallet options)
+const disconnectWeb3AuthWallet = async () => {
+  setLoading(true);
+  try {
+    // Logout from Web3Auth
+    try {
+      const { logoutWeb3Auth } = await import('@/lib/web3auth');
+      await logoutWeb3Auth();
+    } catch (e) {
+      console.error('Web3Auth logout error:', e);
+    }
+
+    // Update store to remove wallet connection but keep store data
+    if (store) {
+      const res = await fetch(`${API_URL}/store/disconnect-wallet`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          store_id: store.store_id,
+          wallet_address: walletAddress
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setStore({ 
+          ...store, 
+          wallet_address: null, 
+          xaman_connected: false, 
+          crossmark_connected: false, 
+          web3auth_connected: false, 
+          payout_mode: 'manual', 
+          auto_signing_enabled: false 
+        });
+      }
+    }
+
+    // Clear wallet state but stay on dashboard
+    setWalletAddress(null);
+    setWalletType(null);
+    setWalletStatus(null);
+    setSocialProvider(null);
+    setCustomerAutoSignEnabled(false);
+    sessionStorage.removeItem('vendorWalletAddress');
+    sessionStorage.removeItem('vendorLoginMethod');
+    sessionStorage.removeItem('socialProvider');
+    
+  } catch (err) {
+    setError('Failed to disconnect wallet');
+  }
+  setLoading(false);
+};
 
   // =========================================================================
   // SIGN OUT (full logout)
@@ -2002,13 +2242,24 @@ return (
             </p>
           </div>
         </div>
-        <button
-          onClick={revokeAutoSign}
-          disabled={loading}
-          className="text-zinc-400 hover:text-red-400 text-sm transition-colors whitespace-nowrap"
-        >
-          Revoke Auto-Sign
-        </button>
+        <div className="flex items-center gap-2">
+          {walletType === 'web3auth' && (
+            <button
+              onClick={disconnectWeb3AuthWallet}
+              disabled={loading}
+              className="text-zinc-400 hover:text-blue-400 text-sm transition-colors whitespace-nowrap"
+            >
+              Switch Wallet
+            </button>
+          )}
+          <button
+            onClick={revokeAutoSign}
+            disabled={loading}
+            className="text-zinc-400 hover:text-red-400 text-sm transition-colors whitespace-nowrap"
+          >
+            Revoke Auto-Sign
+          </button>
+        </div>
       </div>
 
       {/* Editable Limits */}
@@ -2075,32 +2326,55 @@ return (
         </div>
       </div>
     </div>
-  ) : (walletType === 'web3auth' && !customerAutoSignEnabled) ? (
-    /* Web3Auth connected but auto-sign not enabled yet */
+  ) : (walletType === 'web3auth' && !customerAutoSignEnabled && !store.auto_signing_enabled) ? (
+    /* Web3Auth connected but auto-sign not enabled yet - show setup in progress or retry */
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
         <div className="flex items-center gap-3">
           <SocialIcon provider={socialProvider} />
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-yellow-500 text-sm" style={{ textShadow: '0 0 8px rgba(234,179,8,0.9)' }}>
-                ●
-              </span>
-              <span className="text-yellow-500 text-sm font-medium">Connected - Setup Required</span>
+              {settingUpAutoSign ? (
+                <>
+                  <span className="w-3 h-3 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></span>
+                  <span className="text-yellow-500 text-sm font-medium">{setupProgress || 'Setting up...'}</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-yellow-500 text-sm" style={{ textShadow: '0 0 8px rgba(234,179,8,0.9)' }}>●</span>
+                  <span className="text-yellow-500 text-sm font-medium">Setup Incomplete</span>
+                </>
+              )}
             </div>
             <p className="text-zinc-500 text-sm font-mono">
               {store.wallet_address?.substring(0, 8)}...{store.wallet_address?.slice(-6)}
             </p>
           </div>
         </div>
+        <button
+          onClick={disconnectWeb3AuthWallet}
+          disabled={loading || settingUpAutoSign}
+          className="text-zinc-400 hover:text-red-400 text-sm transition-colors whitespace-nowrap"
+        >
+          Switch Wallet
+        </button>
       </div>
 
-      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-        <p className="text-yellow-400 font-medium">Enable Auto-Sign to process payouts</p>
-        <p className="text-zinc-400 text-sm">
-          Complete the auto-sign setup below to start paying affiliates automatically.
-        </p>
-      </div>
+      {!settingUpAutoSign && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+          <p className="text-yellow-400 font-medium">Auto-Sign setup incomplete</p>
+          <p className="text-zinc-400 text-sm mb-3">
+            The auto-sign setup didn't complete. You can retry or switch to a different wallet.
+          </p>
+          <button
+            onClick={() => triggerWeb3AuthAutoSign(store, walletAddress!)}
+            disabled={settingUpAutoSign}
+            className="bg-yellow-500 hover:bg-yellow-400 text-black font-semibold px-4 py-2 rounded-lg transition"
+          >
+            Retry Auto-Sign Setup
+          </button>
+        </div>
+      )}
     </div>
   ) : store.crossmark_connected && !store.auto_signing_enabled ? (
 /* Crossmark connected but auto-sign not enabled */
@@ -2439,7 +2713,7 @@ onClick={async () => {
             {/* ============================================================= */}
 {/* AUTO-SIGN SETUP (show if auto-sign not enabled yet - NOT for Xaman) */}
 {/* ============================================================= */}
-{!store.auto_signing_enabled && walletType !== 'xaman' && (
+{!store.auto_signing_enabled && walletType !== 'xaman' && walletType !== 'web3auth' && (
   <div id="auto-sign" className="bg-zinc-900/95 border border-zinc-800 rounded-xl p-6">
     <h2 className="text-lg font-bold mb-4">Enable Auto-Sign</h2>
                 <p className="text-zinc-400 text-sm mb-4">
@@ -2505,46 +2779,25 @@ onClick={async () => {
                   </span>
                 </label>
 
-                {/* Setup Button - Web3Auth */}
-{walletType === 'web3auth' ? (
-  <button
-    onClick={setupAutoSignWeb3Auth}
-    disabled={!autoSignTermsAccepted || settingUpAutoSign}
-    className={`w-full py-3 rounded-lg font-semibold transition ${
-      autoSignTermsAccepted
-        ? 'bg-blue-500 hover:bg-blue-400 text-white'
-        : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
-    }`}
-  >
-    {settingUpAutoSign ? (
-  <span className="flex items-center justify-center gap-2">
-    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-    {setupProgress || 'Setting up...'}
-  </span>
-) : (
-      '🔐 Sign to Enable Auto-Sign'
-    )}
-  </button>
-) : (
-                  <button
-                    onClick={setupAutoSign}
-                    disabled={!autoSignTermsAccepted || settingUpAutoSign}
-                    className={`w-full py-3 rounded-lg font-semibold transition ${
-                      autoSignTermsAccepted
-                        ? 'bg-blue-500 hover:bg-blue-400 text-white'
-                        : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
-                    }`}
-                  >
-                    {settingUpAutoSign ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                        Setting up...
-                      </span>
-                    ) : (
-                      '🔐 Sign with Crossmark to Enable Auto-Sign'
-                    )}
-                  </button>
-                )}
+                {/* Setup Button - Crossmark only (Web3Auth auto-signs on connect) */}
+                <button
+                  onClick={setupAutoSign}
+                  disabled={!autoSignTermsAccepted || settingUpAutoSign}
+                  className={`w-full py-3 rounded-lg font-semibold transition ${
+                    autoSignTermsAccepted
+                      ? 'bg-blue-500 hover:bg-blue-400 text-white'
+                      : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
+                  }`}
+                >
+                  {settingUpAutoSign ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                      Setting up...
+                    </span>
+                  ) : (
+                    '🔐 Sign with Crossmark to Enable Auto-Sign'
+                  )}
+                </button>
               </div>
             )}
 

@@ -14,6 +14,26 @@ const API_URL = 'https://api.dltpays.com/api/v1';
 import LoginScreen from '@/components/LoginScreen';
 import PendingCustomers from '@/components/PendingCustomers';
 import EarnInterest from '@/components/EarnInterest';
+import Sidebar from '@/components/Sidebar';
+import MilestoneChecklist from '@/components/MilestoneChecklist';
+import CelebrationToast from '@/components/CelebrationToast';
+import { InfoButton, InfoModal, useInfoModal } from '@/components/InfoModal';
+import CollapsibleSection from '@/components/CollapsibleSection';
+import SignUpCustomerCard from '@/components/SignUpCustomerCard';
+import NebulaBackground from '@/components/NebulaBackground';
+import VendorDashboardTour from '@/components/VendorDashboardTour';
+import OnboardingSetup from '@/components/OnboardingSetup';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
+
+interface WalletStatus {
+  funded: boolean;
+  xrp_balance: number;
+  rlusd_trustline: boolean;
+  rlusd_balance: number;
+  usdc_trustline?: boolean;
+  usdc_balance?: number;
+  auto_signing_enabled?: boolean;
+}
 
 export default function StoreDashboard() {
   const [step, setStep] = useState<'login' | 'xaman' | 'dashboard'>('login');
@@ -38,6 +58,8 @@ const router = useRouter();
 // Disconnect modal state
 const [showDisconnectModal, setShowDisconnectModal] = useState(false);
 const [setupProgress, setSetupProgress] = useState<string | null>(null);
+// State (add with other state)
+const [runTour, setRunTour] = useState(false);
 
   // Settings state
   const [commissionRates, setCommissionRates] = useState([25, 5, 3, 2, 1]);
@@ -80,21 +102,87 @@ const [storeLogo, setStoreLogo] = useState<string | null>(null);
 const [showLogoUpload, setShowLogoUpload] = useState(false);
 const [uploadingLogo, setUploadingLogo] = useState(false);
 
-  const refreshWalletStatus = async () => {
-    if (!walletAddress) return;
-    try {
-      const res = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${walletAddress}`);
-      const data = await res.json();
-      if (data.success) {
-        setWalletXrpBalance(data.xrp_balance || 0);
-        setWalletRlusdBalance(data.rlusd_balance || 0);
-        setWalletNeedsFunding(!data.funded);
-        setWalletNeedsTrustline(!data.rlusd_trustline);
-      }
-    } catch (err) {
-      console.error('Failed to refresh wallet status:', err);
+// Collapsed sidebar
+const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+// Store tracking
+const [celebrateMilestone, setCelebrateMilestone] = useState<string | null>(null);
+// Info modal
+const { activeInfo, openInfo, closeInfo, getContent } = useInfoModal();
+// Wallet status for OnboardingSetup
+const [walletStatus, setWalletStatus] = useState<WalletStatus | null>(null);
+const [allMilestonesComplete, setAllMilestonesComplete] = useState(false);
+const [setupComplete, setSetupComplete] = useState(false);
+const [customerAutoSignEnabled, setCustomerAutoSignEnabled] = useState(false);
+// Collapsed section
+const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+// Progress bar on button
+const [progressHidden, setProgressHidden] = useState(false);
+// Delete Modal
+const [showDeleteModal, setShowDeleteModal] = useState(false);
+const [deleting, setDeleting] = useState(false);
+
+// Effect (add with other effects)
+useEffect(() => {
+  if (store?.store_id && !loading) {
+    const hasSeenTour = localStorage.getItem(`vendor_tour_completed_${store.store_id}`);
+    if (!hasSeenTour) {
+      setTimeout(() => setRunTour(true), 1000);
     }
-  };
+  }
+}, [store?.store_id, loading]);
+
+useEffect(() => {
+  const handleToggle = () => setSidebarOpen(prev => !prev);
+  window.addEventListener('toggleSidebar', handleToggle);
+  return () => window.removeEventListener('toggleSidebar', handleToggle);
+}, []);
+
+useEffect(() => {
+  if (store?.store_id) {
+    const dismissed = localStorage.getItem(`milestones_dismissed_${store.store_id}`);
+    setProgressHidden(dismissed === 'true');
+  }
+}, [store?.store_id]);
+
+const toggleSection = (id: string) => {
+  setOpenSections(prev => ({ ...prev, [id]: !prev[id] }));
+};
+
+  const refreshWalletStatus = async () => {
+  if (!walletAddress) return;
+  try {
+    const res = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${walletAddress}`);
+    const data = await res.json();
+    if (data.success) {
+      setWalletXrpBalance(data.xrp_balance || 0);
+      setWalletRlusdBalance(data.rlusd_balance || 0);
+      setWalletNeedsFunding(!data.funded);
+      setWalletNeedsTrustline(!data.rlusd_trustline);
+      
+      // Set walletStatus for OnboardingSetup
+      setWalletStatus({
+        funded: data.funded,
+        xrp_balance: data.xrp_balance || 0,
+        rlusd_trustline: data.rlusd_trustline || false,
+        rlusd_balance: data.rlusd_balance || 0,
+        usdc_trustline: data.usdc_trustline || false,
+        usdc_balance: data.usdc_balance || 0,
+        auto_signing_enabled: data.auto_signing_enabled || false
+      });
+      
+      // Check milestones
+      if (data.funded) {
+        setMilestone('wallet_funded');
+      }
+      if (data.rlusd_trustline) {
+        setMilestone('trustline_set');
+      }
+    }
+  } catch (err) {
+    console.error('Failed to refresh wallet status:', err);
+  }
+};
 
   // Upload store logo
 const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,6 +286,46 @@ const removeLogo = async () => {
   setSidebarOpen(false);
 };
 
+const handleNavClick = (id: string, onClick?: () => void) => {
+  if (onClick) {
+    onClick();
+  } else {
+    setOpenSections(prev => ({ ...prev, [id]: true }));
+    scrollToSection(id);
+  }
+  setSidebarOpen(false);
+  setSidebarCollapsed(true);
+};
+
+const setMilestone = async (milestoneId: string) => {
+  if (!store?.store_id || !walletAddress) return;
+  
+  try {
+    const res = await fetch(`${API_URL}/store/${store.store_id}/milestone`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        milestone: milestoneId,
+        wallet_address: walletAddress
+      })
+    });
+    const data = await res.json();
+    
+    if (data.success && data.new) {
+      setCelebrateMilestone(milestoneId);
+    }
+  } catch (err) {
+    console.error('Failed to set milestone:', err);
+  }
+};
+
+// Check wallet status and set milestones on dashboard load
+useEffect(() => {
+  if (walletAddress && store?.store_id) {
+    refreshWalletStatus();
+  }
+}, [walletAddress, store?.store_id, walletType]);
+
   // Check URL for claim token on load
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -205,7 +333,7 @@ const removeLogo = async () => {
       const claim = params.get('claim');
       if (claim) {
         setClaimToken(claim);
-        fetch(`${API_URL}/store/by-claim/${claim}`)
+        fetch(`${API_URL}/store/by-claim/${claim}?_t=${Date.now()}`, { cache: 'no-store' })
           .then(res => res.json())
           .then(data => {
             if (data.success && data.store) {
@@ -223,14 +351,21 @@ if (wpReturn) {
 }
 
       // Check for referral code (from store referral link)
-      const ref = params.get('ref');
+      const ref = params.get('ref') || sessionStorage.getItem('vendorReferralCode');
       if (ref) {
         setReferralCode(ref);
-        fetch(`${API_URL}/store/lookup-referral/${ref}`)
+        sessionStorage.setItem('vendorReferralCode', ref);
+        // Check if we already have the referring store cached
+        const cachedReferrer = sessionStorage.getItem('vendorReferringStore');
+        if (cachedReferrer) {
+          setReferringStore(JSON.parse(cachedReferrer));
+        }
+       fetch(`${API_URL}/store/lookup-referral/${ref}?_t=${Date.now()}`, { cache: 'no-store' })
           .then(res => res.json())
           .then(data => {
             if (data.success && data.store) {
               setReferringStore(data.store);
+              sessionStorage.setItem('vendorReferringStore', JSON.stringify(data.store));
             }
           })
           .catch(console.error);
@@ -248,6 +383,40 @@ if (savedWallet && savedType) {
 }
     }
   }, []);
+
+  // Check milestones on dashboard load
+useEffect(() => {
+  if (!store?.store_id || !walletAddress) return;
+
+  const checkMilestones = async () => {
+    try {
+      // Check for first affiliate and payouts
+      const countRes = await fetch(`${API_URL}/store/${store.store_id}/affiliate-count?wallet_address=${walletAddress}`);
+      const countData = await countRes.json();
+      
+      if (countData.success) {
+        if (countData.affiliates_count > 0) {
+          setMilestone('first_affiliate');
+        }
+        
+        if (countData.has_payouts) {
+          setMilestone('first_payout_sent');
+        }
+      }
+
+      // Check for first referred vendor
+      const vendorRes = await fetch(`${API_URL}/store/${store.store_id}/referred-vendors`);
+      const vendorData = await vendorRes.json();
+      if (vendorData.success && vendorData.count > 0) {
+        setMilestone('first_partner_signed');
+      }
+    } catch (err) {
+      console.error('Failed to check milestones:', err);
+    }
+  };
+
+  checkMilestones();
+}, [store?.store_id, walletAddress]);
 
   // Poll for Xaman login
   useEffect(() => {
@@ -269,7 +438,6 @@ if (savedWallet && savedType) {
         } else if (data.status === 'expired' || data.status === 'cancelled') {
           setPolling(false);
           setError('Connection ' + data.status + '. Please try again.');
-          setStep('login');
         }
       } catch (err) {
         console.error('Poll error:', err);
@@ -282,7 +450,7 @@ if (savedWallet && savedType) {
   // Check wallet status on load (Web3Auth and Xaman)
 useEffect(() => {
   console.log('Wallet useEffect triggered:', { walletType, walletAddress, store: !!store });
-  if ((walletType === 'web3auth' || walletType === 'xaman') && walletAddress && store) {
+  if (walletAddress && store) {
     // Check wallet funding status
     fetch(`${API_URL}/wallet/status/${walletAddress}`)
       .then(res => res.json())
@@ -293,6 +461,16 @@ useEffect(() => {
     console.log('Setting RLUSD balance:', data.rlusd_balance);
     setWalletXrpBalance(data.xrp_balance || 0);
     setWalletRlusdBalance(data.rlusd_balance || 0);
+
+    setWalletStatus({
+      funded: data.funded,
+      xrp_balance: data.xrp_balance || 0,
+      rlusd_trustline: data.rlusd_trustline || false,
+      rlusd_balance: data.rlusd_balance || 0,
+      usdc_trustline: data.usdc_trustline || false,
+      usdc_balance: data.usdc_balance || 0,
+      auto_signing_enabled: data.auto_signing_enabled || false
+    });
           
           if (!data.funded) {
             setWalletNeedsFunding(true);
@@ -503,7 +681,7 @@ useEffect(() => {
           wallet_address: walletAddress,
           wallet_type: walletType,
           xaman_user_token: xamanUserToken,
-          referred_by_store: referredBy
+          referral_code: referredBy
         })
       });
 
@@ -516,6 +694,10 @@ useEffect(() => {
       }
 
       setNewSecret(data.api_secret);
+      
+      // Clear referral sessionStorage after successful signup
+      sessionStorage.removeItem('vendorReferralCode');
+      sessionStorage.removeItem('vendorReferringStore');
 
 // Save platform return URL if we came from WordPress
 const wpReturn = new URLSearchParams(window.location.search).get('wordpress_return') 
@@ -676,10 +858,16 @@ setStep('dashboard');
 
       const data = await res.json();
       if (data.success) {
-        setStore({ ...store, wallet_address: null, xaman_connected: false, crossmark_connected: false, web3auth_connected: false, payout_mode: 'manual', auto_signing_enabled: false });
-      } else {
-        setError(data.error || 'Failed to disconnect');
-      }
+  setStore({ ...store, wallet_address: null, xaman_connected: false, crossmark_connected: false, web3auth_connected: false, payout_mode: 'manual', auto_signing_enabled: false });
+  setWalletAddress(null);
+  setWalletType(null);
+  setWalletStatus(null);
+  setCustomerAutoSignEnabled(false);
+  sessionStorage.removeItem('vendorWalletAddress');
+  sessionStorage.removeItem('vendorLoginMethod');
+} else {
+  setError(data.error || 'Failed to disconnect');
+}
     } catch (err) {
       setError('Failed to disconnect wallet');
     }
@@ -751,8 +939,9 @@ setStep('dashboard');
         });
         
         console.log('RLUSD enabled successfully via Crossmark');
-        // Wait for ledger
-        await new Promise(resolve => setTimeout(resolve, 2000));
+setMilestone('trustline_set');
+// Wait for ledger
+await new Promise(resolve => setTimeout(resolve, 2000));
       }
 
       // Get platform signer address from API
@@ -766,6 +955,29 @@ setStep('dashboard');
 
       if (settingsData.error) {
         throw new Error(settingsData.error);
+      }
+
+      // If signer already exists, go straight to verification
+      if (settingsData.signer_exists) {
+        const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`);
+        const verifyData = await verifyRes.json();
+        
+        if (verifyData.auto_signing_enabled) {
+          setStore({
+            ...store,
+            payout_mode: 'auto',
+            auto_signing_enabled: true,
+            crossmark_connected: true,
+            daily_limit: dailyLimit,
+            auto_sign_max_single_payout: maxSinglePayout
+          });
+          setMilestone('auto_sign_enabled');
+          setAutoSignTermsAccepted(false);
+          setSettingUpAutoSign(false);
+          // Refresh wallet status to update UI
+          await refreshWalletStatus();
+          return;
+        }
       }
 
       const platformSignerAddress = settingsData.platform_signer_address;
@@ -831,16 +1043,18 @@ try {
       });
 
       setStore({
-        ...store,
-        payout_mode: 'auto',
-        auto_signing_enabled: true,
-        wallet_address: address,
-        crossmark_connected: true,
-        xaman_connected: false,
-        web3auth_connected: false,
-        daily_limit: dailyLimit,
-        auto_sign_max_single_payout: maxSinglePayout
-      });
+  ...store,
+  payout_mode: 'auto',
+  auto_signing_enabled: true,
+  wallet_address: address,
+  crossmark_connected: true,
+  xaman_connected: false,
+  web3auth_connected: false,
+  daily_limit: dailyLimit,
+  auto_sign_max_single_payout: maxSinglePayout
+});
+setMilestone('auto_sign_enabled');
+await refreshWalletStatus();
       setWalletAddress(address);
       setWalletType('crossmark');
       sessionStorage.setItem('vendorWalletAddress', address);
@@ -895,7 +1109,8 @@ try {
       });
       
       setSetupProgress('RLUSD enabled ✓ Now confirm Auto-Pay... (2/2)');
-      await new Promise(resolve => setTimeout(resolve, 2000));
+setMilestone('trustline_set');
+await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
     // Get platform signer address from API
@@ -934,6 +1149,7 @@ try {
         setAutoSignTermsAccepted(false);
         setSettingUpAutoSign(false);
         setSetupProgress(null);
+        await refreshWalletStatus();
         return;
       }
     }
@@ -967,14 +1183,25 @@ try {
 
     setSetupProgress('Verifying setup...');
 
-    // Wait a moment for XRPL to confirm
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Retry verification up to 5 times with increasing delays
+    let verified = false;
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+      
+      const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`);
+      const verifyData = await verifyRes.json();
+      
+      if (verifyData.auto_signing_enabled) {
+        verified = true;
+        break;
+      }
+      
+      if (attempt < 5) {
+        setSetupProgress(`Confirming on XRPL... (attempt ${attempt + 1}/5)`);
+      }
+    }
 
-    // Verify the setup
-    const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`);
-    const verifyData = await verifyRes.json();
-
-    if (!verifyData.auto_signing_enabled) {
+    if (!verified) {
       throw new Error('Signer setup failed. Please try again.');
     }
 
@@ -991,15 +1218,17 @@ try {
     });
 
     // SUCCESS - update state immediately (no manual refresh needed)
-    setStore({
-      ...store,
-      payout_mode: 'auto',
-      auto_signing_enabled: true,
-      daily_limit: dailyLimit,
-      auto_sign_max_single_payout: maxSinglePayout
-    });
-    setAutoSignTermsAccepted(false);
-    setSetupProgress(null);
+setStore({
+  ...store,
+  payout_mode: 'auto',
+  auto_signing_enabled: true,
+  daily_limit: dailyLimit,
+  auto_sign_max_single_payout: maxSinglePayout
+});
+setMilestone('auto_sign_enabled');
+setAutoSignTermsAccepted(false);
+setSetupProgress(null);
+await refreshWalletStatus();
 
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to enable auto-sign';
@@ -1038,6 +1267,12 @@ try {
     // Already revoked
     if (data.already_revoked) {
       setStore({ ...store, payout_mode: 'manual', auto_signing_enabled: false });
+setCustomerAutoSignEnabled(false);
+      // Clear success flag so wizard can show success again when re-enabled
+      if (walletAddress) {
+        localStorage.removeItem(`onboarding_success_shown_vendor_${walletAddress}`);
+        sessionStorage.setItem(`onboarding_active_vendor_${walletAddress}`, 'true');
+      }
       setLoading(false);
       return;
     }
@@ -1089,6 +1324,12 @@ try {
     }
 
     setStore({ ...store, payout_mode: 'manual', auto_signing_enabled: false });
+setCustomerAutoSignEnabled(false);
+    // Clear success flag so wizard can show success again when re-enabled
+    if (walletAddress) {
+      localStorage.removeItem(`onboarding_success_shown_vendor_${walletAddress}`);
+      sessionStorage.setItem(`onboarding_active_vendor_${walletAddress}`, 'true');
+    }
     
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to revoke auto-sign';
@@ -1101,37 +1342,34 @@ try {
   // PERMANENTLY DELETE STORE
   // =========================================================================
   const deleteStore = async () => {
-    if (!confirm('⚠️ WARNING: This will permanently delete your store, all affiliates, and all payout history. This action cannot be undone.')) return;
-    const confirmation = prompt('Type "PERMANENTLY DELETE" to confirm:');
-    if (confirmation !== 'PERMANENTLY DELETE') return;
+  setDeleting(true);
+  try {
+    const res = await fetch(`${API_URL}/store/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        store_id: store.store_id,
+        wallet_address: walletAddress,
+        confirm: 'PERMANENTLY DELETE'
+      })
+    });
 
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/store/delete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          store_id: store.store_id,
-          wallet_address: walletAddress,
-          confirm: 'PERMANENTLY DELETE'
-        })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-  sessionStorage.removeItem('vendorWalletAddress');
-  sessionStorage.removeItem('vendorLoginMethod');
-  sessionStorage.removeItem('socialProvider');
-  alert('Store permanently deleted.');
-  window.location.href = '/dashboard';
-} else {
-        setError(data.error || 'Failed to delete');
-      }
-    } catch (err) {
-      setError('Failed to delete store');
+    const data = await res.json();
+    if (data.success) {
+      sessionStorage.removeItem('vendorWalletAddress');
+      sessionStorage.removeItem('vendorLoginMethod');
+      sessionStorage.removeItem('socialProvider');
+      window.location.href = '/dashboard';
+    } else {
+      setError(data.error || 'Failed to delete');
+      setShowDeleteModal(false);
     }
-    setLoading(false);
-  };
+  } catch (err) {
+    setError('Failed to delete store');
+    setShowDeleteModal(false);
+  }
+  setDeleting(false);
+};
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -1202,25 +1440,25 @@ try {
   if (step === 'login') {
     return (
       <>
-        <DashboardHeader />
         <LoginScreen 
           onLogin={(wallet, method, extras) => {
-            setWalletAddress(wallet);
-            setWalletType(method);
-            if (extras?.xamanUserToken) setXamanUserToken(extras.xamanUserToken);
-            if (extras?.socialProvider) setSocialProvider(extras.socialProvider);
-            sessionStorage.setItem('vendorWalletAddress', wallet);
-            sessionStorage.setItem('vendorLoginMethod', method);
-            if (extras?.socialProvider) sessionStorage.setItem('socialProvider', extras.socialProvider);
-            loadOrCreateStore(wallet, method, extras?.xamanUserToken);
+setWalletAddress(wallet);
+setWalletType(method);
+if (extras?.xamanUserToken) setXamanUserToken(extras.xamanUserToken);
+if (extras?.socialProvider) setSocialProvider(extras.socialProvider);
+sessionStorage.setItem('vendorWalletAddress', wallet);
+sessionStorage.setItem('vendorLoginMethod', method);
+if (extras?.socialProvider) sessionStorage.setItem('socialProvider', extras.socialProvider);
+loadOrCreateStore(wallet, method, extras?.xamanUserToken);
           }}
-          requireTrustline={true}
-          claimStore={claimStore}
-          referringStore={referringStore}
-          storagePrefix="vendor"
-          title="Partners Dashboard"
-          subtitle="Sign in to manage your affiliate commissions"
-        />
+requireTrustline={true}
+claimStore={claimStore}
+referringStore={referringStore}
+storagePrefix="vendor"
+title="Partners Dashboard"
+subtitle="Sign in to manage your affiliate commissions"
+showLogo={true}
+/>
       </>
     );
   }
@@ -1230,7 +1468,7 @@ try {
   // =========================================================================
   if (step === 'xaman') {
 return (
-<div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
+<div className="min-h-screen bg-transparent text-white font-sans relative z-10">
 <main className="max-w-xl mx-auto px-6 py-16">
 <button onClick={() => {
   setPolling(false);
@@ -1247,7 +1485,7 @@ return (
           <p className="text-zinc-400 mb-8">Open your Xaman app and scan the QR code</p>
 
           <div className="text-center">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 mb-6">
+            <div className="bg-zinc-900/95 border border-zinc-800 rounded-xl p-8 mb-6">
               {xamanQR ? (
                 <>
                   <img src={xamanQR} alt="Xaman QR" className="mx-auto mb-4 rounded-lg" />
@@ -1311,7 +1549,7 @@ return (
   },
   { 
     id: 'withdraw', 
-    label: 'Withdraw', 
+    label: 'Balance/Withdraw', 
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
@@ -1426,119 +1664,80 @@ return (
     )
   },
 ].filter(item => item.show !== false);
- // =========================================================================
+// =========================================================================
 // DASHBOARD
 // =========================================================================
 return (
-  <>
-    <DashboardHeader 
+<>
+<NebulaBackground opacity={0.2} />
+<DashboardHeader
+  dashboardType="vendor"
   walletAddress={walletAddress || undefined}
   storeId={store?.store_id}
   onSignOut={signOut}
+  allMilestonesComplete={allMilestonesComplete}
+  setupComplete={setupComplete}
 />
-    <div className="min-h-screen bg-[#0d0d0d] text-white font-sans">
+<VendorDashboardTour
+  run={runTour} 
+  onComplete={() => {
+    setRunTour(false);
+    if (store?.store_id) {
+      localStorage.setItem(`vendor_tour_completed_${store.store_id}`, 'true');
+    }
+  }}
+/>
+    <div className="min-h-screen bg-transparent text-white font-sans relative z-0 overflow-x-hidden">
       <Script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" />
 
-      {/* Mobile Menu Button - NOT a full header, just the hamburger */}
-      <button 
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="lg:hidden fixed top-3 left-4 z-50 text-zinc-400 hover:text-white p-2 bg-zinc-900/80 rounded-lg backdrop-blur"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
+      {/* Celebration Toast */}
+  {celebrateMilestone && (
+    <CelebrationToast
+      milestone={celebrateMilestone}
+      onClose={() => setCelebrateMilestone(null)}
+    />
+  )}
 
-      {/* Mobile Overlay */}
-      {sidebarOpen && <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />}
+  {/* Info Modal */}
+{activeInfo && getContent() && (
+  <InfoModal
+    content={getContent()!}
+    isOpen={!!activeInfo}
+    onClose={closeInfo}
+  />
+)}
 
-      {/* Sidebar - remove the duplicate logo/branding since DashboardHeader has it */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full w-64 bg-zinc-900 border-r border-zinc-800 z-50 transform transition-transform duration-300
-          lg:translate-x-0 lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:rounded-tr-2xl lg:rounded-br-2xl ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        `}
-      >
-  <div className="p-6 border-b border-zinc-800">
-  <div className="flex items-center gap-3 mb-2">
-    <button
-      onClick={() => setShowLogoUpload(true)}
-      className={`relative w-10 h-10 rounded-lg overflow-hidden transition flex-shrink-0 cursor-pointer ${
-        storeLogo ? 'hover:opacity-80' : 'border border-zinc-700 hover:border-emerald-500'
-      }`}
-      title="Store logo"
-    >
-      {storeLogo ? (
-        <img src={storeLogo} alt="Logo" className="w-full h-full object-cover" />
-      ) : (
-        <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-          <svg className="w-5 h-5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-        </div>
-      )}
-    </button>
-  </div>
-  <p className="font-medium text-zinc-300 truncate">
-    {store?.store_name || 'Get Started'}
-  </p>
-  <p className="text-zinc-500 text-xs font-mono mt-1">
-    {walletAddress?.substring(0, 8)}...{walletAddress?.slice(-6)}
-  </p>
-</div>
-
-  <nav className="p-4 space-y-1 overflow-y-auto pb-4" style={{ maxHeight: 'calc(100vh - 280px)' }}>
-    {store &&
-  navItems.map((item: any) => (
-    <button
-      key={item.id}
-      onClick={() => item.onClick ? item.onClick() : scrollToSection(item.id)}
-      className="w-full flex items-center gap-3 px-3 py-2 text-left text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition"
-    >
-      <span className="text-zinc-500">{item.icon}</span>
-      <span className="text-sm">{item.label}</span>
-    </button>
-  ))}
-  </nav>
-
-  <div className="absolute bottom-0 left-0 right-0 p-4 pt-6 border-t border-zinc-800 bg-zinc-900">
-    {/* YAOFU Dashboard SVG */}
-    <div className="mb-3 mt-2 flex justify-center">
-      <svg viewBox="0 0 140 48" className="w-32 h-12">
-        <defs>
-          <linearGradient id="yaofuGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#10b981" />
-            <stop offset="40%" stopColor="#3b82f6" />
-            <stop offset="100%" stopColor="#8b5cf6" />
-          </linearGradient>
-        </defs>
-        <text x="70" y="12" textAnchor="middle" fill="#71717a" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="500" fontSize="9" letterSpacing="1">
-          PARTNER
-        </text>
-        <text x="70" y="28" textAnchor="middle" fill="url(#yaofuGradient)" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="14" letterSpacing="3">
-          YAOFUS
-        </text>
-        <text x="70" y="43" textAnchor="middle" fill="#52525b" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="600" fontSize="10" letterSpacing="1.5">
-          DASHBOARD
-        </text>
-      </svg>
-    </div>
-    <button
-      onClick={signOut}
-      className="w-full flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition"
-    >
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-      </svg>
-      <span className="text-sm">Sign out</span>
-    </button>
-  </div>
-</aside>
+      <Sidebar
+  isOpen={sidebarOpen}
+  isCollapsed={sidebarCollapsed}
+  onToggleOpen={() => setSidebarOpen(!sidebarOpen)}
+  onToggleCollapsed={() => setSidebarCollapsed(!sidebarCollapsed)}
+  storeName={store?.store_name}
+  storeLogo={storeLogo}
+  walletAddress={walletAddress}
+  navItems={navItems}
+  onNavClick={handleNavClick}
+  onLogoClick={() => setShowLogoUpload(true)}
+  onSignOut={signOut}
+  onTakeTour={() => {
+  setSidebarOpen(false);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setRunTour(false);
+  setTimeout(() => setRunTour(true), 100);
+}}
+  onInfoClick={openInfo}
+  onShowProgress={() => {
+    if (store?.store_id) {
+      localStorage.removeItem(`milestones_dismissed_${store.store_id}`);
+      setProgressHidden(false);
+    }
+  }}
+/>
 
 {/* Logo Upload Modal */}
 {showLogoUpload && (
   <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-    <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm">
+    <div className="bg-zinc-900/95 rounded-2xl p-6 w-full max-w-sm">
       <h3 className="text-lg font-bold mb-4">Store Logo</h3>
       {storeLogo && (
         <div className="mb-4 flex justify-center">
@@ -1546,7 +1745,7 @@ return (
         </div>
       )}
       <label className="block mb-4">
-        <div className="bg-zinc-800 border-2 border-dashed border-zinc-700 hover:border-emerald-500 rounded-xl p-6 text-center cursor-pointer transition">
+        <div className="bg-zinc-800/90 border-2 border-dashed border-zinc-700 hover:border-emerald-500 rounded-xl p-6 text-center cursor-pointer transition">
           {uploadingLogo ? (
             <div className="flex flex-col items-center">
               <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-2"></div>
@@ -1582,7 +1781,7 @@ return (
         )}
         <button
           onClick={() => setShowLogoUpload(false)}
-          className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl transition"
+          className="flex-1 bg-zinc-800/90 hover:bg-zinc-700 py-3 rounded-xl transition"
         >
           {storeLogo ? 'Done' : 'Cancel'}
         </button>
@@ -1592,8 +1791,8 @@ return (
 )}
 
       {/* Main Content */}
-<main className="lg:ml-64 min-h-screen pt-2 lg:pt-0">
-        <div className="max-w-3xl lg:max-w-none mx-auto px-6 lg:px-4 pt-0 pb-2">
+<main className={`min-h-screen pt-2 lg:pt-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-0' : 'lg:ml-64'}`}>
+        <div className="max-w-3xl lg:max-w-none mx-auto px-3 sm:px-6 lg:px-4 pt-20 pb-4">
 
         {error && (
   error.includes('beta') || error.includes('full') || error.includes('waitlist') ? (
@@ -1653,7 +1852,7 @@ return (
 
         {/* No store yet - show create form */}
         {!store && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
+          <div className="bg-zinc-900/95 border border-zinc-800 rounded-xl p-8">
             <h2 className="text-xl font-bold mb-6">Sign Up</h2>
 
             {/* Show referral banner in registration form */}
@@ -1671,14 +1870,20 @@ return (
               e.preventDefault();
               const form = e.target as HTMLFormElement;
 
-              // Determine the referring store - either from state or manual input
+              // Determine the referring store - either from state, sessionStorage, or manual input
               let finalReferrer = referringStore;
+              if (!finalReferrer) {
+                const cachedReferrer = sessionStorage.getItem('vendorReferringStore');
+                if (cachedReferrer) {
+                  finalReferrer = JSON.parse(cachedReferrer);
+                }
+              }
 
               // If user entered a referral code manually, look it up first
               const manualRef = (form.elements.namedItem('referralCode') as HTMLInputElement)?.value?.trim();
               if (manualRef && !finalReferrer) {
                 try {
-                  const res = await fetch(`${API_URL}/store/lookup-referral/${manualRef}`);
+                  const res = await fetch(`${API_URL}/store/lookup-referral/${manualRef}?_t=${Date.now()}`, { cache: 'no-store' });
                   const data = await res.json();
                   if (data.success && data.store) {
                     finalReferrer = data.store;
@@ -1689,25 +1894,31 @@ return (
                 }
               }
 
+              // Get referral code from URL, sessionStorage, or manual input
+              const refCode = new URLSearchParams(window.location.search).get('ref') 
+                || sessionStorage.getItem('vendorReferralCode')
+                || (form.elements.namedItem('referralCode') as HTMLInputElement)?.value?.trim()
+                || null;
+              
               createStore(
                 (form.elements.namedItem('storeName') as HTMLInputElement).value,
                 (form.elements.namedItem('storeUrl') as HTMLInputElement).value,
                 (form.elements.namedItem('email') as HTMLInputElement).value,
-                finalReferrer?.store_id || null
+                refCode
               );
             }}>
               <div className="space-y-4">
                 <div>
                   <label className="text-zinc-400 text-sm block mb-2">Name</label>
-                  <input name="storeName" required className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white" placeholder="My Store" />
+                  <input name="storeName" required className="w-full bg-zinc-800/90 border border-zinc-700 rounded-lg px-4 py-3 text-white" placeholder="My Store" />
                 </div>
                 <div>
                   <label className="text-zinc-400 text-sm block mb-2">Website URL</label>
-                  <input name="storeUrl" type="url" required className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white" placeholder="https://mystore.com" />
+                  <input name="storeUrl" type="url" required className="w-full bg-zinc-800/90 border border-zinc-700 rounded-lg px-4 py-3 text-white" placeholder="https://mystore.com" />
                 </div>
                 <div>
                   <label className="text-zinc-400 text-sm block mb-2">Email</label>
-                  <input name="email" type="email" required className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white" placeholder="you@example.com" />
+                  <input name="email" type="email" required className="w-full bg-zinc-800/90 border border-zinc-700 rounded-lg px-4 py-3 text-white" placeholder="you@example.com" />
                 </div>
 
                 {/* Referral code input - only show if not already referred */}
@@ -1716,7 +1927,7 @@ return (
                     <label className="text-zinc-400 text-sm block mb-2">Referral Code <span className="text-zinc-600">(optional)</span></label>
                     <input
                       name="referralCode"
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white"
+                      className="w-full bg-zinc-800/90 border border-zinc-700 rounded-lg px-4 py-3 text-white"
                       placeholder="E.g. E73E22E4"
                       defaultValue={referralCode || ''}
                     />
@@ -1736,16 +1947,45 @@ return (
         {store && (
           <div className="space-y-6">
 
+           {/* MILESTONE CHECKLIST */}
+{!progressHidden && (
+  <MilestoneChecklist 
+    key={`${celebrateMilestone}-${progressHidden}`}
+    storeId={store.store_id} 
+    walletAddress={walletAddress || ''}
+    autoSignEnabled={store.auto_signing_enabled}
+    onMilestoneAchieved={(milestone) => setCelebrateMilestone(milestone)}
+    onInfoClick={openInfo}
+    onDismiss={() => setProgressHidden(true)}
+  />
+)}
+
+{/* Onboarding Setup Wizard - Below Progress Bar */}
+{(walletStatus || !walletAddress) && (
+  <OnboardingSetup
+    walletAddress={walletAddress}
+    walletStatus={walletStatus}
+    autoSignEnabled={store?.auto_signing_enabled || customerAutoSignEnabled}
+    loginMethod={walletType}
+    onSetupComplete={() => { setCustomerAutoSignEnabled(true); setSetupComplete(true); }}
+    onRefreshWallet={refreshWalletStatus}
+    onSetupStatusChange={(isComplete) => setSetupComplete(isComplete)}
+    storagePrefix="vendor"
+  />
+)}
+
             {/* ============================================================= */}
 {/* PAYOUT METHOD STATUS */}
 {/* ============================================================= */}
-<div id="payout-method" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
+<h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Wallet</h3>
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+<div id="payout-method" className="bg-zinc-900/95 border border-zinc-800 rounded-xl p-6 flex flex-col">
   <h2 className="text-lg font-bold mb-4">Payout Method</h2>
 
   {/* Auto-sign enabled (works same for Web3Auth and Crossmark) */}
-  {store.auto_signing_enabled ? (
+  {(store.auto_signing_enabled || customerAutoSignEnabled) ? (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-zinc-800/50 rounded-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-zinc-800/90 rounded-lg">
         <div className="flex items-center gap-3">
           {walletType === 'web3auth' ? (
             <SocialIcon provider={socialProvider} />
@@ -1784,7 +2024,7 @@ return (
               setMaxSinglePayout(parseInt(e.target.value) || 100);
               setSettingsSaved(false);
             }}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
+            className="w-full bg-zinc-800/90 border border-zinc-700 rounded-lg px-3 py-2 text-white"
           />
         </div>
         <div className="flex-1 min-w-0">
@@ -1798,13 +2038,44 @@ return (
               setDailyLimit(parseInt(e.target.value) || 1000);
               setSettingsSaved(false);
             }}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
+            className="w-full bg-zinc-800/90 border border-zinc-700 rounded-lg px-3 py-2 text-white"
           />
         </div>
       </div>
       {/* End of Editable Limits */}
+
+      {/* Feature Badges */}
+      <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t border-zinc-800">
+        <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2 flex-1 min-w-[100px]">
+          <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+          </svg>
+          <div>
+            <p className="text-emerald-400 text-xs font-semibold">Instant</p>
+            <p className="text-zinc-500 text-[10px]">Sub-second payouts</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 bg-sky-500/10 border border-sky-500/20 rounded-lg px-3 py-2 flex-1 min-w-[100px]">
+          <svg className="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+          </svg>
+          <div>
+            <p className="text-sky-400 text-xs font-semibold">Secure</p>
+            <p className="text-zinc-500 text-[10px]">XRPL validated</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 rounded-lg px-3 py-2 flex-1 min-w-[100px]">
+          <svg className="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="text-violet-400 text-xs font-semibold">24/7</p>
+            <p className="text-zinc-500 text-[10px]">Always available</p>
+          </div>
+        </div>
+      </div>
     </div>
-  ) : walletType === 'web3auth' ? (
+  ) : (walletType === 'web3auth' && !customerAutoSignEnabled) ? (
     /* Web3Auth connected but auto-sign not enabled yet */
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
@@ -1847,6 +2118,13 @@ return (
         </p>
       </div>
     </div>
+    <button
+      onClick={disconnectWallet}
+      disabled={loading}
+      className="text-zinc-400 hover:text-red-400 text-sm transition-colors whitespace-nowrap"
+    >
+      Disconnect
+    </button>
   </div>
   <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
     <p className="text-orange-400 font-medium">Enable Auto-Sign to process payouts</p>
@@ -1914,7 +2192,7 @@ return (
       </div>
 
       {/* Option 1: Social Login (Web3Auth) */}
-      <div className="bg-zinc-800 border border-zinc-700 hover:border-emerald-500 rounded-xl p-4 transition">
+      <div className="bg-zinc-800/90 border border-zinc-700 hover:border-emerald-500 rounded-xl p-4 transition">
         <div className="flex items-center gap-3 mb-3">
           <div className="flex -space-x-1">
             <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center border border-zinc-600">
@@ -1966,7 +2244,7 @@ return (
       {/* Option 2: Connect Xaman for manual */}
       <button
         onClick={loginXaman}
-        className="w-full bg-zinc-800 border border-zinc-700 hover:border-emerald-500 rounded-xl p-4 text-left transition"
+        className="w-full bg-zinc-800/90 border border-zinc-700 hover:border-emerald-500 rounded-xl p-4 text-left transition"
       >
         <div className="flex items-center gap-3 mb-2">
           <img src="/XamanWalletlogo.jpeg" alt="Xaman" className="w-8 h-8 rounded" />
@@ -2000,7 +2278,7 @@ onClick={async () => {
             console.error('Crossmark error:', err);
           }
         }}
-        className="w-full bg-zinc-800 border border-zinc-700 hover:border-emerald-500 rounded-xl p-4 text-left transition"
+        className="w-full bg-zinc-800/90 border border-zinc-700 hover:border-emerald-500 rounded-xl p-4 text-left transition"
       >
         <div className="flex items-center gap-3 mb-2">
           <img src="/CrossmarkWalletlogo.jpeg" alt="Crossmark" className="w-8 h-8 rounded" />
@@ -2016,240 +2294,14 @@ onClick={async () => {
 </div>
 
 {/* ============================================================= */}
-{/* WALLET BALANCE (for Xaman users) */}
-{/* ============================================================= */}
-{walletType === 'xaman' && walletAddress && store && (
-  <div id="wallet-balance" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="text-lg font-bold">Wallet Balance</h2>
-      <button
-        onClick={() => setShowAmounts(!showAmounts)}
-        className="text-zinc-400 hover:text-white transition"
-      >
-        {showAmounts ? (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-        ) : (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-          </svg>
-        )}
-      </button>
-    </div>
-
-    {/* State 1: Wallet not funded (no XRP) */}
-{walletXrpBalance < 1 && (
-  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center">
-    <div className="text-4xl mb-3">⚠️</div>
-    <h3 className="text-xl font-bold text-red-400 mb-2">Wallet Not Activated</h3>
-    <p className="text-zinc-400 mb-4">
-      Your wallet needs at least <strong className="text-white">1 XRP</strong> to activate and set up the RLUSD trustline.
-    </p>
-    <div className="bg-zinc-800 rounded-lg p-4 mb-4">
-      <p className="text-zinc-500 text-sm mb-2">Send XRP to:</p>
-      <div className="flex items-center gap-2">
-        <code className="flex-1 bg-zinc-900 px-3 py-2 rounded text-xs font-mono text-emerald-400 overflow-x-auto">
-          {walletAddress}
-        </code>
-        <button
-          onClick={() => copyToClipboard(walletAddress || '', 'wallet_address')}
-          className="bg-zinc-700 hover:bg-zinc-600 px-3 py-2 rounded text-sm transition"
-        >
-          {copied === 'wallet_address' ? '✓' : 'Copy'}
-        </button>
-      </div>
-    </div>
-    <button
-      onClick={() => setShowQR(!showQR)}
-      className="text-blue-400 hover:text-blue-300 text-sm transition"
-    >
-      {showQR ? '▼ Hide QR Code' : '▶ Show QR Code to Scan'}
-    </button>
-    {showQR && (
-      <div className="mt-4 flex justify-center">
-        <img 
-          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${walletAddress}`}
-          alt="Wallet QR Code"
-          className="rounded-lg"
-        />
-      </div>
-    )}
-    <button
-      onClick={refreshWalletStatus}
-      className="mt-4 block w-full text-zinc-500 hover:text-zinc-300 text-sm transition"
-    >
-      ↻ Refresh Balance
-    </button>
-  </div>
-)}
-
-    {/* State 2: Funded but no RLUSD trustline */}
-{walletXrpBalance >= 1 && walletNeedsTrustline && (
-  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6 text-center">
-    <div className="text-4xl mb-3">🔗</div>
-    <h3 className="text-xl font-bold text-yellow-400 mb-2">Add RLUSD Trustline</h3>
-    <p className="text-zinc-400 mb-4">
-      Your wallet is activated! Now add the <strong className="text-white">RLUSD trustline</strong> in Xaman to receive payments.
-    </p>
-    <div className="bg-zinc-800 rounded-lg p-4">
-      <p className="text-zinc-300 text-sm mb-2"><strong>In Xaman app:</strong></p>
-      <ol className="text-zinc-400 text-sm text-left space-y-1">
-        <li>1. Go to Settings → Advanced → Add Trustline</li>
-        <li>2. Search for <strong className="text-white">RLUSD</strong></li>
-        <li>3. Confirm the trustline transaction</li>
-      </ol>
-    </div>
-    
-      <a href="/trustline"
-      target="_blank"
-      className="mt-4 inline-block text-blue-400 hover:text-blue-300 text-sm transition"
-    >
-      📖 View Full Trustline Setup Guide
-    </a>
-    <button
-      onClick={refreshWalletStatus}
-      className="mt-4 block w-full bg-yellow-500 hover:bg-yellow-400 text-black font-semibold px-6 py-2 rounded-lg transition"
-    >
-      I've Added the Trustline → Check Status
-    </button>
-  </div>
-)}
-    {/* State 3: Ready but no RLUSD balance */}
-{walletXrpBalance >= 1 && !walletNeedsTrustline && walletRlusdBalance === 0 && (
-  <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6">
-    <div className="grid grid-cols-2 gap-4 mb-4">
-      <div className="bg-zinc-800/50 rounded-lg p-4">
-        <p className="text-zinc-400 text-sm mb-1">RLUSD</p>
-        <p className="text-xl font-bold text-yellow-400">
-          {showAmounts ? '$0.00' : '••••••'}
-        </p>
-      </div>
-      <div className="bg-zinc-800/50 rounded-lg p-4">
-        <p className="text-zinc-400 text-sm mb-1">XRP</p>
-        <p className="text-xl font-bold">
-          {showAmounts ? walletXrpBalance.toFixed(2) : '••••••'}
-        </p>
-      </div>
-    </div>
-
-    <div className="text-center">
-      <div className="text-4xl mb-3">💰</div>
-      <h3 className="text-xl font-bold text-blue-400 mb-2">Top Up RLUSD</h3>
-      <p className="text-zinc-400 mb-4">
-        Your wallet is ready! Add <strong className="text-white">RLUSD</strong> to start paying affiliate commissions.
-      </p>
-    </div>
-
-    <div className="bg-zinc-800 rounded-lg p-4 mb-4">
-      <p className="text-zinc-500 text-sm mb-2">Send RLUSD to:</p>
-      <div className="flex items-center gap-2">
-        <code className="flex-1 bg-zinc-900 px-3 py-2 rounded text-xs font-mono text-emerald-400 overflow-x-auto">
-          {walletAddress}
-        </code>
-        <button
-          onClick={() => copyToClipboard(walletAddress || '', 'wallet_address')}
-          className="bg-zinc-700 hover:bg-zinc-600 px-3 py-2 rounded text-sm transition"
-        >
-          {copied === 'wallet_address' ? '✓' : 'Copy'}
-        </button>
-      </div>
-    </div>
-    <button
-      onClick={() => setShowQR(!showQR)}
-      className="text-blue-400 hover:text-blue-300 text-sm transition"
-    >
-      {showQR ? '▼ Hide QR Code' : '▶ Show QR Code to Scan'}
-    </button>
-    {showQR && (
-      <div className="mt-4 flex justify-center">
-        <img 
-          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${walletAddress}`}
-          alt="Wallet QR Code"
-          className="rounded-lg"
-        />
-      </div>
-    )}
-    <button
-      onClick={refreshWalletStatus}
-      className="mt-4 block w-full text-zinc-500 hover:text-zinc-300 text-sm transition"
-    >
-      ↻ Refresh Balance
-    </button>
-  </div>
-)}
-
-    {/* State 4: Wallet ready with RLUSD */}
-    {walletXrpBalance >= 1 && !walletNeedsTrustline && walletRlusdBalance > 0 && (
-      <>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-zinc-800/50 rounded-lg p-4">
-            <p className="text-zinc-400 text-sm mb-1">RLUSD</p>
-            <p className="text-xl font-bold text-emerald-400">
-              {showAmounts ? `$${walletRlusdBalance.toFixed(2)}` : '••••••'}
-            </p>
-          </div>
-          <div className="bg-zinc-800/50 rounded-lg p-4">
-            <p className="text-zinc-400 text-sm mb-1">XRP</p>
-            <p className="text-xl font-bold">
-              {showAmounts ? walletXrpBalance.toFixed(2) : '••••••'}
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mt-4">
-          <p className="text-blue-400 text-sm font-medium mb-2">💡 Top up in Xaman</p>
-          <p className="text-zinc-400 text-sm mb-3">
-            Send RLUSD to your wallet address to pay affiliate commissions.
-          </p>
-          <div className="flex items-center gap-2 mb-3">
-            <code className="flex-1 bg-zinc-800 px-3 py-2 rounded text-xs font-mono text-emerald-400 overflow-x-auto">
-              {walletAddress}
-            </code>
-            <button
-              onClick={() => copyToClipboard(walletAddress || '', 'wallet_address')}
-              className="bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded text-sm transition"
-            >
-              {copied === 'wallet_address' ? '✓' : 'Copy'}
-            </button>
-          </div>
-          <button
-            onClick={() => setShowQR(!showQR)}
-            className="text-blue-400 hover:text-blue-300 text-sm transition flex items-center gap-2"
-          >
-            {showQR ? '▼ Hide QR Code' : '▶ Show QR Code'}
-          </button>
-          {showQR && (
-            <div className="mt-3 flex justify-center">
-              <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${walletAddress}`}
-                alt="Wallet QR Code"
-                className="rounded-lg"
-              />
-            </div>
-          )}
-        </div>
-
-        <button
-          onClick={refreshWalletStatus}
-          className="mt-4 w-full text-zinc-500 hover:text-zinc-300 text-sm transition"
-        >
-          ↻ Refresh Balance
-        </button>
-      </>
-    )}
-  </div>
-)}
-
-{/* ============================================================= */}
 {/* WALLET FUNDING (show for Web3Auth wallets that need funding or trustline) */}
 {/* ============================================================= */}
-{(walletNeedsFunding || walletNeedsTrustline) && walletType === 'web3auth' && walletAddress && (
+{(walletNeedsFunding || walletNeedsTrustline) && walletAddress && (
   <div id="wallet-funding">
   <WalletFunding
-    walletAddress={walletAddress}
-    onFunded={() => {
+  walletAddress={walletAddress}
+  walletType={walletType}
+  onFunded={() => {
       console.log('Wallet funded!');
       setWalletNeedsFunding(false);
     }}
@@ -2263,19 +2315,55 @@ onClick={async () => {
 )}
 
 {/* Show Top-Up and Withdraw components when wallet is ready */}
-{!walletNeedsFunding && !walletNeedsTrustline && walletAddress && (
-  <div id="wallet-funding">
-    <TopUpRLUSD
-      walletAddress={walletAddress}
-      xrpBalance={walletXrpBalance}
-      rlusdBalance={walletRlusdBalance}
-      showAmounts={showAmounts}
-      onToggleAmounts={() => setShowAmounts(!showAmounts)} 
-      onRefresh={refreshWalletStatus} 
-    />
-    <div id="withdraw">
+{(
+  <div className="space-y-4">
+    {/* TAKE PAYMENT BUTTON */}
+    <button
+  id="take-payment-btn"
+  onClick={() => router.push('/take-payment')}
+  className="w-full bg-white hover:bg-zinc-100 text-black font-semibold text-lg py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-lg"
+>
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+      </svg>
+      Take Payment
+    </button>
+
+    <CollapsibleSection dashboardType="vendor"
+      id="wallet-funding"
+      title="Top Up Wallet"
+      icon={
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m6-6H6" />
+        </svg>
+      }
+      isOpen={openSections['wallet-funding']}
+      onToggle={() => toggleSection('wallet-funding')}
+    >
+      <TopUpRLUSD
+  walletAddress={walletAddress || ''}
+  xrpBalance={walletXrpBalance}
+  rlusdBalance={walletRlusdBalance}
+  showAmounts={showAmounts}
+  onToggleAmounts={() => setShowAmounts(!showAmounts)} 
+  onRefresh={refreshWalletStatus}
+  walletType={walletType}
+/>
+    </CollapsibleSection>
+
+    <CollapsibleSection dashboardType="vendor"
+      id="withdraw"
+      title="Balance | Withdraw"
+      icon={
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+        </svg>
+      }
+      isOpen={openSections['withdraw']}
+      onToggle={() => toggleSection('withdraw')}
+    >
       <WithdrawRLUSD
-        walletAddress={walletAddress}
+        walletAddress={walletAddress || ''}
         rlusdBalance={walletRlusdBalance}
         showAmounts={showAmounts}
         onToggleAmounts={() => setShowAmounts(!showAmounts)}
@@ -2291,15 +2379,68 @@ onClick={async () => {
             });
         }}
       />
-    </div>
+    </CollapsibleSection>
+
+    {/* QUICK LINKS POS */}
+<div className="bg-zinc-900/95 border border-zinc-800 rounded-xl p-4">
+  <p className="text-zinc-500 text-xs uppercase tracking-wider mb-3">Quick Links</p>
+  <div className="grid grid-cols-5 gap-2">
+    <button
+      onClick={() => router.push('/take-payment')}
+      className="group flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
+    >
+      <svg className="w-5 h-5 text-zinc-400 group-hover:text-emerald-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+      </svg>
+      <span className="text-zinc-500 text-xs group-hover:text-emerald-400 transition">Payment</span>
+    </button>
+    <button
+      onClick={() => router.push('/analytics')}
+      className="group flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
+    >
+      <svg className="w-5 h-5 text-zinc-400 group-hover:text-emerald-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+      <span className="text-zinc-500 text-xs group-hover:text-emerald-400 transition">Analytics</span>
+    </button>
+    <button
+      onClick={() => router.push('/receipts')}
+      className="group flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
+    >
+      <svg className="w-5 h-5 text-zinc-400 group-hover:text-emerald-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <span className="text-zinc-500 text-xs group-hover:text-emerald-400 transition">Receipts</span>
+    </button>
+    <button
+      onClick={() => window.open(`/display?store=${store.store_id}`, '_blank')}
+      className="group flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
+    >
+      <svg className="w-5 h-5 text-zinc-400 group-hover:text-emerald-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+      <span className="text-zinc-500 text-xs group-hover:text-emerald-400 transition">Display</span>
+    </button>
+    <button
+      onClick={() => router.push('/staff')}
+      className="group flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
+    >
+      <svg className="w-5 h-5 text-zinc-400 group-hover:text-emerald-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+      <span className="text-zinc-500 text-xs group-hover:text-emerald-400 transition">Staff</span>
+    </button>
+  </div>
+</div>
   </div>
 )}
+</div>
 
             {/* ============================================================= */}
 {/* AUTO-SIGN SETUP (show if auto-sign not enabled yet - NOT for Xaman) */}
 {/* ============================================================= */}
 {!store.auto_signing_enabled && walletType !== 'xaman' && (
-  <div id="auto-sign" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+  <div id="auto-sign" className="bg-zinc-900/95 border border-zinc-800 rounded-xl p-6">
     <h2 className="text-lg font-bold mb-4">Enable Auto-Sign</h2>
                 <p className="text-zinc-400 text-sm mb-4">
                   Process affiliate payouts automatically without manual approval for each transaction.
@@ -2333,7 +2474,7 @@ onClick={async () => {
                       max="10000"
                       value={maxSinglePayout}
                       onChange={(e) => setMaxSinglePayout(parseInt(e.target.value) || 100)}
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
+                      className="w-full bg-zinc-800/90 border border-zinc-700 rounded-lg px-3 py-2 text-white"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -2344,13 +2485,13 @@ onClick={async () => {
                       max="50000"
                       value={dailyLimit}
                       onChange={(e) => setDailyLimit(parseInt(e.target.value) || 1000)}
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
+                      className="w-full bg-zinc-800/90 border border-zinc-700 rounded-lg px-3 py-2 text-white"
                     />
                   </div>
                 </div>
 
                 {/* Terms Checkbox */}
-                <label className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg cursor-pointer mb-4">
+                <label className="flex items-start gap-3 p-3 bg-zinc-800/90 rounded-lg cursor-pointer mb-4">
                   <input
                     type="checkbox"
                     checked={autoSignTermsAccepted}
@@ -2407,25 +2548,11 @@ onClick={async () => {
               </div>
             )}
 
-            {/* TAKE PAYMENT BUTTON */}
-<div className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl p-6">
-  <button
-    onClick={() => router.push('/take-payment')}
-    className="w-full bg-white hover:bg-zinc-100 text-black font-semibold text-lg py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-lg"
-  >
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-    </svg>
-    Take Payment
-  </button>
-  <p className="text-zinc-500 text-sm text-center mt-3">Accept contactless payments from customers</p>
-</div>
-
-{/* SIGN UP CUSTOMER BUTTON */}
-<div id="signup-customer" className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl p-6">
-  <button
-  onClick={async () => {
-    // Set display to signup mode
+{/* CUSTOMERS - SIGN UP + PENDING */}
+<h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Customers</h3>
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+  {/* SIGN UP CUSTOMER BUTTON */}
+  <SignUpCustomerCard storeId={store.store_id} walletAddress={walletAddress} onSignUp={async () => {
     try {
       await fetch(`${API_URL}/display/${store.store_id}/status`, {
         method: 'POST',
@@ -2436,250 +2563,361 @@ onClick={async () => {
       console.error('Failed to set display status:', err);
     }
     router.push(`/signup-customer?store=${store.store_id}`);
-  }}
-  className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white font-semibold text-lg py-4 rounded-xl transition flex items-center justify-center gap-3"
->
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-    </svg>
-    Sign Up New Customer
-  </button>
-  <p className="text-zinc-500 text-sm text-center mt-3">Register customers with NFC card to earn rewards</p>
-</div>
+  }} />
 
-{/* PENDING CUSTOMERS */}
-<div id="pending-customers">
-  <PendingCustomers storeId={store.store_id} walletAddress={walletAddress} />
+  {/* PENDING CUSTOMERS */}
+  <div id="pending-customers">
+    <PendingCustomers storeId={store.store_id} walletAddress={walletAddress} />
+  </div>
 </div>
 
 {/* EARN INTEREST */}
 <div id="earn-interest">
-  <EarnInterest />
+  <EarnInterest dashboardType="vendor" />
 </div>
-            {/* ============================================================= */}
-{/* COMMISSION RATES */}
+
 {/* ============================================================= */}
-<div id="commission-rates" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-  <h2 className="text-lg font-bold mb-4">Commission Rates</h2>
-  <p className="text-zinc-500 text-sm mb-6">Set the percentage affiliates earn on each level.</p>
-  <div className="space-y-4">
-    {[
-      { level: 1, label: 'Direct referral', bgColor: 'bg-emerald-500/20', textColor: 'text-emerald-400', borderColor: 'border-emerald-500/30' },
-      { level: 2, label: 'Level 2', bgColor: 'bg-blue-500/20', textColor: 'text-blue-400', borderColor: 'border-blue-500/30' },
-      { level: 3, label: 'Level 3', bgColor: 'bg-purple-500/20', textColor: 'text-purple-400', borderColor: 'border-purple-500/30' },
-      { level: 4, label: 'Level 4', bgColor: 'bg-orange-500/20', textColor: 'text-orange-400', borderColor: 'border-orange-500/30' },
-      { level: 5, label: 'Level 5', bgColor: 'bg-pink-500/20', textColor: 'text-pink-400', borderColor: 'border-pink-500/30' }
-    ].map((tier, i) => (
-      <div key={tier.level} className="flex items-center gap-4">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${tier.bgColor} ${tier.borderColor} border`}>
-          <svg className={`w-6 h-6 ${tier.textColor}`} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            {tier.level === 1 && (
-              <>
-                <circle cx="12" cy="8" r="4" strokeWidth={1.5} />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" />
-              </>
-            )}
-            {tier.level === 2 && (
-              <>
-                <circle cx="9" cy="7" r="3" strokeWidth={1.5} />
-                <circle cx="15" cy="7" r="3" strokeWidth={1.5} />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 21v-1a4 4 0 014-4h2m12 5v-1a4 4 0 00-4-4h-2" />
-              </>
-            )}
-            {tier.level === 3 && (
-              <>
-                <circle cx="12" cy="5" r="2.5" strokeWidth={1.5} />
-                <circle cx="6" cy="10" r="2.5" strokeWidth={1.5} />
-                <circle cx="18" cy="10" r="2.5" strokeWidth={1.5} />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v4m-6 0v4m12-4v4" />
-              </>
-            )}
-            {tier.level === 4 && (
-              <>
-                <circle cx="6" cy="6" r="2.5" strokeWidth={1.5} />
-                <circle cx="18" cy="6" r="2.5" strokeWidth={1.5} />
-                <circle cx="6" cy="14" r="2.5" strokeWidth={1.5} />
-                <circle cx="18" cy="14" r="2.5" strokeWidth={1.5} />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 8.5v3m12-3v3M8.5 6h7M8.5 14h7" />
-              </>
-            )}
-            {tier.level === 5 && (
-              <>
-                <circle cx="12" cy="4" r="2" strokeWidth={1.5} />
-                <circle cx="5" cy="9" r="2" strokeWidth={1.5} />
-                <circle cx="19" cy="9" r="2" strokeWidth={1.5} />
-                <circle cx="7" cy="17" r="2" strokeWidth={1.5} />
-                <circle cx="17" cy="17" r="2" strokeWidth={1.5} />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v2m-5.5 2.5l2 3m7-3l-2 3" />
-              </>
-            )}
-          </svg>
-        </div>
-        <span className="text-zinc-400 text-sm w-28">{tier.label}</span>
-        <input
-          type="number"
-          min="0"
-          max="100"
-          value={commissionRates[i]}
-          onChange={(e) => {
-            const newRates = [...commissionRates];
-            newRates[i] = Math.max(0, Math.min(100, parseInt(e.target.value) || 0));
-            setCommissionRates(newRates);
-            setSettingsSaved(false);
-          }}
-                      className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-center"
-                    />
-                    <span className="text-zinc-500">%</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-between mt-6 pt-4 border-t border-zinc-800">
-                <div className="text-sm">
-                  <span className="text-zinc-500">Total: </span>
-                  <span className={commissionRates.reduce((a, b) => a + b, 0) > 100 ? 'text-red-400' : 'text-white'}>
-                    {commissionRates.reduce((a, b) => a + b, 0)}%
-                  </span>
-                  {commissionRates.reduce((a, b) => a + b, 0) > 100 && (
-                    <span className="text-red-400 text-xs ml-2">Cannot exceed 100%</span>
-                  )}
-                </div>
-              </div>
+{/* SETTINGS GROUP */}
+{/* ============================================================= */}
+<div className="space-y-4">
+  <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-1">Settings</h3>
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <CollapsibleSection dashboardType="vendor"
+      id="commission-rates"
+      title="Commission Rates"
+      icon={
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+        </svg>
+      }
+      isOpen={openSections['commission-rates']}
+      onToggle={() => toggleSection('commission-rates')}
+    >
+      <p className="text-zinc-500 text-sm mb-6">Set the percentage affiliates earn on each level.</p>
+      <div className="space-y-4">
+        {[
+          { level: 1, label: 'Direct referral', bgColor: 'bg-emerald-500/20', textColor: 'text-emerald-400', borderColor: 'border-emerald-500/30' },
+          { level: 2, label: 'Level 2', bgColor: 'bg-blue-500/20', textColor: 'text-blue-400', borderColor: 'border-blue-500/30' },
+          { level: 3, label: 'Level 3', bgColor: 'bg-purple-500/20', textColor: 'text-purple-400', borderColor: 'border-purple-500/30' },
+          { level: 4, label: 'Level 4', bgColor: 'bg-orange-500/20', textColor: 'text-orange-400', borderColor: 'border-orange-500/30' },
+          { level: 5, label: 'Level 5', bgColor: 'bg-pink-500/20', textColor: 'text-pink-400', borderColor: 'border-pink-500/30' }
+        ].map((tier, i) => (
+          <div key={tier.level} className="flex items-center gap-4">
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${tier.bgColor} ${tier.borderColor} border`}>
+              <svg className={`w-6 h-6 ${tier.textColor}`} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                {tier.level === 1 && (
+                  <>
+                    <circle cx="12" cy="8" r="4" strokeWidth={1.5} />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" />
+                  </>
+                )}
+                {tier.level === 2 && (
+                  <>
+                    <circle cx="9" cy="7" r="3" strokeWidth={1.5} />
+                    <circle cx="15" cy="7" r="3" strokeWidth={1.5} />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 21v-1a4 4 0 014-4h2m12 5v-1a4 4 0 00-4-4h-2" />
+                  </>
+                )}
+                {tier.level === 3 && (
+                  <>
+                    <circle cx="12" cy="5" r="2.5" strokeWidth={1.5} />
+                    <circle cx="6" cy="10" r="2.5" strokeWidth={1.5} />
+                    <circle cx="18" cy="10" r="2.5" strokeWidth={1.5} />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v4m-6 0v4m12-4v4" />
+                  </>
+                )}
+                {tier.level === 4 && (
+                  <>
+                    <circle cx="6" cy="6" r="2.5" strokeWidth={1.5} />
+                    <circle cx="18" cy="6" r="2.5" strokeWidth={1.5} />
+                    <circle cx="6" cy="14" r="2.5" strokeWidth={1.5} />
+                    <circle cx="18" cy="14" r="2.5" strokeWidth={1.5} />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 8.5v3m12-3v3M8.5 6h7M8.5 14h7" />
+                  </>
+                )}
+                {tier.level === 5 && (
+                  <>
+                    <circle cx="12" cy="4" r="2" strokeWidth={1.5} />
+                    <circle cx="5" cy="9" r="2" strokeWidth={1.5} />
+                    <circle cx="19" cy="9" r="2" strokeWidth={1.5} />
+                    <circle cx="7" cy="17" r="2" strokeWidth={1.5} />
+                    <circle cx="17" cy="17" r="2" strokeWidth={1.5} />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v2m-5.5 2.5l2 3m7-3l-2 3" />
+                  </>
+                )}
+              </svg>
             </div>
+            <span className="text-zinc-400 text-sm w-28">{tier.label}</span>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={commissionRates[i]}
+              onChange={(e) => {
+                const newRates = [...commissionRates];
+                newRates[i] = Math.max(0, Math.min(100, parseInt(e.target.value) || 0));
+                setCommissionRates(newRates);
+                setSettingsSaved(false);
+              }}
+              className="w-20 bg-zinc-800/90 border border-zinc-700 rounded-lg px-3 py-2 text-white text-center"
+            />
+            <span className="text-zinc-500">%</span>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center justify-between mt-6 pt-4 border-t border-zinc-800">
+        <div className="text-sm">
+          <span className="text-zinc-500">Total: </span>
+          <span className={commissionRates.reduce((a, b) => a + b, 0) > 100 ? 'text-red-400' : 'text-white'}>
+            {commissionRates.reduce((a, b) => a + b, 0)}%
+          </span>
+          {commissionRates.reduce((a, b) => a + b, 0) > 100 && (
+            <span className="text-red-400 text-xs ml-2">Cannot exceed 100%</span>
+          )}
+        </div>
+      </div>
+      {!settingsSaved && (
+        <button
+          onClick={saveSettings}
+          disabled={savingSettings || commissionRates.reduce((a, b) => a + b, 0) > 100}
+          className="w-full mt-4 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold py-3 rounded-xl transition"
+        >
+          {savingSettings ? 'Saving...' : 'Save Settings'}
+        </button>
+      )}
+    </CollapsibleSection>
 
-            {/* Save Settings Button */}
-            {!settingsSaved && (
+    <CollapsibleSection dashboardType="vendor"
+      id="quick-links"
+      title="Quick Links"
+      icon={
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+        </svg>
+      }
+      isOpen={openSections['quick-links']}
+      onToggle={() => toggleSection('quick-links')}
+    >
+      <div className="grid grid-cols-2 gap-4">
+        <a href="/docs" className="bg-zinc-800/90 hover:bg-zinc-700 rounded-lg p-4 text-center transition group">
+          <div className="flex justify-center mb-2">
+            <svg className="w-8 h-8 text-sky-400 group-hover:text-sky-300 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium">Documentation</p>
+        </a>
+        <a href="/terms" target="_blank" className="bg-zinc-800/90 hover:bg-zinc-700 rounded-lg p-4 text-center transition group">
+          <div className="flex justify-center mb-2">
+            <svg className="w-8 h-8 text-amber-400 group-hover:text-amber-300 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium">Terms</p>
+        </a>
+        <a href={`/affiliate-dashboard?store=${store.store_id}`} target="_blank" className="bg-zinc-800/90 hover:bg-zinc-700 rounded-lg p-4 text-center transition group">
+          <div className="flex justify-center mb-2">
+            <svg className="w-8 h-8 text-emerald-400 group-hover:text-emerald-300 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium">Affiliate Dashboard</p>
+        </a>
+        <a href="https://github.com/TokenCanvasIO/YesAllofUs-wordpress/releases/download/v1.0.2/yesallofus.zip" className="bg-zinc-800/90 hover:bg-zinc-700 rounded-lg p-4 text-center transition group">
+          <div className="flex justify-center mb-2">
+            <svg className="w-8 h-8 text-violet-400 group-hover:text-violet-300 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 7.5l-2.25-1.313M21 7.5v2.25m0-2.25l-2.25 1.313M3 7.5l2.25-1.313M3 7.5l2.25 1.313M3 7.5v2.25m9 3l2.25-1.313M12 12.75l-2.25-1.313M12 12.75V15m0 6.75l2.25-1.313M12 21.75V19.5m0 2.25l-2.25-1.313m0-16.875L12 2.25l2.25 1.313M21 14.25v2.25l-2.25 1.313m-13.5 0L3 16.5v-2.25" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium">WordPress Plugin</p>
+        </a>
+      </div>
+    </CollapsibleSection>
+  </div>
+</div>
+
+{/* ============================================================= */}
+{/* MARKETING GROUP */}
+{/* ============================================================= */}
+<div className="space-y-4">
+  <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-1">Marketing</h3>
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <CollapsibleSection dashboardType="vendor"
+      id="affiliate-link"
+      title="Affiliate Link"
+      icon={
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+        </svg>
+      }
+      isOpen={openSections['affiliate-link']}
+      onToggle={() => toggleSection('affiliate-link')}
+    >
+      <p className="text-zinc-500 text-sm mb-4">Share this link or add it to your website.</p>
+      <div className="flex flex-col gap-2">
+        <code className="bg-zinc-800/90 px-4 py-3 rounded-lg font-mono text-sm text-emerald-400 overflow-x-auto">
+          {`https://yesallofus.com/affiliate-dashboard?store=${store.store_id}`}
+        </code>
+        <div className="flex gap-2">
+          <button
+            onClick={() => copyToClipboard(`https://yesallofus.com/affiliate-dashboard?store=${store.store_id}`, 'affiliate_link')}
+            className="flex-1 bg-zinc-800/90 hover:bg-zinc-700 px-4 py-2 rounded-lg text-sm transition"
+          >
+            {copied === 'affiliate_link' ? '✓ Copied' : 'Copy'}
+          </button>
+          <button
+            onClick={() => setShowQRModal(true)}
+            className="flex-1 bg-zinc-800/90 hover:bg-zinc-700 px-4 py-2 rounded-lg text-sm transition"
+          >
+            QR Code
+          </button>
+        </div>
+      </div>
+    </CollapsibleSection>
+
+    {store && walletAddress && (
+      <CollapsibleSection dashboardType="vendor"
+        id="activity"
+        title="Activity"
+        icon={
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+          </svg>
+        }
+        isOpen={openSections['activity']}
+        onToggle={() => toggleSection('activity')}
+      >
+        <StoreActivity storeId={store.store_id} walletAddress={walletAddress} showAmounts={showAmounts} />
+      </CollapsibleSection>
+    )}
+  </div>
+</div>
+
+{/* ============================================================= */}
+{/* DEVELOPER & ACCOUNT GROUP - 2 COLUMN */}
+{/* ============================================================= */}
+<div className="space-y-4">
+  <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-1">Developer & Account</h3>
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    {/* API Credentials */}
+    <CollapsibleSection dashboardType="vendor"
+      id="api-credentials"
+      title="API Credentials"
+      icon={
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+        </svg>
+      }
+      isOpen={openSections['api-credentials']}
+      onToggle={() => toggleSection('api-credentials')}
+    >
+      <div className="mb-4">
+        <label className="text-zinc-500 text-sm block mb-1">Store ID</label>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 bg-zinc-800/90 px-4 py-2 rounded-lg font-mono text-sm">{store.store_id}</code>
+          <button onClick={() => copyToClipboard(store.store_id, 'store_id')} className="bg-zinc-800/90 hover:bg-zinc-700 px-3 py-2 rounded-lg text-sm transition">
+            {copied === 'store_id' ? '✓' : 'Copy'}
+          </button>
+        </div>
+      </div>
+      <div className="mb-4">
+        <label className="text-zinc-500 text-sm block mb-1">API Key</label>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 bg-zinc-800/90 px-4 py-2 rounded-lg font-mono text-sm">{store.api_key}</code>
+          <button onClick={() => copyToClipboard(store.api_key, 'api_key')} className="bg-zinc-800/90 hover:bg-zinc-700 px-3 py-2 rounded-lg text-sm transition">
+            {copied === 'api_key' ? '✓' : 'Copy'}
+          </button>
+        </div>
+      </div>
+      <div className="mb-4">
+        <label className="text-zinc-500 text-sm block mb-1">API Secret</label>
+        {newSecret && !secretSaved ? (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <code className="flex-1 bg-zinc-800/90 px-4 py-2 rounded-lg font-mono text-sm tracking-wider">
+                ••••••••••••••••
+              </code>
               <button
-                onClick={saveSettings}
-                disabled={savingSettings || commissionRates.reduce((a, b) => a + b, 0) > 100}
-                className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold py-3 rounded-xl transition"
+                onClick={() => { copyToClipboard(newSecret, 'secret'); setSecretRevealed(true); }}
+                className="bg-emerald-500 hover:bg-emerald-400 text-black px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition whitespace-nowrap"
               >
-                {savingSettings ? 'Saving...' : 'Save Settings'}
+                {copied === 'secret' ? '✓' : 'Copy'}
+              </button>
+            </div>
+            <div className="bg-yellow-500/20 rounded-lg p-3 mb-3">
+              <p className="text-yellow-200 text-sm font-semibold mb-1">⚠️ SAVE THIS NOW</p>
+              <p className="text-yellow-200/80 text-sm">This secret will disappear when you leave this page.</p>
+            </div>
+            {secretRevealed && (
+              <button onClick={() => setSecretSaved(true)} className="w-full bg-zinc-800/90 hover:bg-zinc-700 py-2 rounded-lg text-sm transition">
+                ✓ I've saved my secret
               </button>
             )}
+          </div>
+        ) : (
+          <div className="bg-zinc-800/90 rounded-xl p-4">
+            <p className="text-zinc-400 text-sm mb-3">Your secret is not stored for security.</p>
+            <button onClick={regenerateSecret} disabled={loading} className="bg-zinc-700 hover:bg-zinc-600 px-4 py-2 rounded-lg text-sm transition disabled:opacity-50">
+              {loading ? 'Generating...' : 'Generate New Secret'}
+            </button>
+          </div>
+        )}
+      </div>
+      <div>
+        <label className="text-zinc-500 text-sm block mb-1">Your Store Referral Code</label>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 bg-zinc-800/90 px-4 py-2 rounded-lg font-mono text-sm">{store.store_referral_code}</code>
+          <button onClick={() => copyToClipboard(store.store_referral_code, 'referral')} className="bg-zinc-800/90 hover:bg-zinc-700 px-3 py-2 rounded-lg text-sm transition">
+            {copied === 'referral' ? '✓' : 'Copy'}
+          </button>
+        </div>
+        <p className="text-zinc-500 text-xs mt-2">Share with other vendors to earn from their platform fees.</p>
+        <p className="text-zinc-600 text-xs mt-1">Earn 25% L1 · 5% L2 · 3% L3 · 2% L4 · 1% L5 of their fees, paid instantly in RLUSD.</p>
+      </div>
+      <div className="mt-4 pt-4 border-t border-zinc-700">
+        <label className="text-zinc-500 text-sm block mb-1">Your Partners Referral Link</label>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 bg-zinc-800/90 px-4 py-2 rounded-lg font-mono text-sm text-blue-400 overflow-x-auto">{`https://yesallofus.com/dashboard?ref=${store.store_referral_code}`}</code>
+          <button onClick={() => copyToClipboard(`https://yesallofus.com/dashboard?ref=${store.store_referral_code}`, 'referral_link')} className="bg-zinc-800/90 hover:bg-zinc-700 px-3 py-2 rounded-lg text-sm transition">
+            {copied === 'referral_link' ? '✓' : 'Copy'}
+          </button>
+        </div>
+        <p className="text-zinc-500 text-xs mt-2">Share this link - new vendors get 50% off their first month!</p>
+      </div>
+    </CollapsibleSection>
 
-            {/* ============================================================= */}
-            {/* AFFILIATE SIGNUP LINK */}
-            {/* ============================================================= */}
-            <div id="affiliate-link" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-  <h2 className="text-lg font-bold mb-2">Your Affiliate Signup Link</h2>
-              <p className="text-zinc-500 text-sm mb-4">Share this link or add it to your website.</p>
+    {/* Danger Zone */}
+    <CollapsibleSection dashboardType="vendor"
+      id="danger-zone"
+      title="Danger Zone"
+      icon={
+        <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+      }
+      isOpen={openSections['danger-zone']}
+      onToggle={() => toggleSection('danger-zone')}
+    >
+      <p className="text-zinc-400 text-sm mb-4">
+        Permanently delete your account and all associated data. This action cannot be undone.
+      </p>
+      <button
+        onClick={() => setShowDeleteModal(true)}
+        disabled={loading}
+        className="bg-zinc-900/95 border-2 border-red-500 text-red-400 hover:bg-red-500 hover:text-white px-6 py-2 rounded-lg font-semibold transition disabled:opacity-50 flex items-center gap-2"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+        </svg>
+        Permanently Delete
+      </button>
+    </CollapsibleSection>
+  </div>
+</div>
 
-              <div className="flex items-center gap-2">
-                <code className="flex-1 bg-zinc-800 px-4 py-3 rounded-lg font-mono text-sm text-emerald-400 overflow-x-auto">
-                  {`https://yesallofus.com/affiliate-dashboard?store=${store.store_id}`}
-                </code>
-                <button
-  onClick={() => copyToClipboard(`https://yesallofus.com/affiliate-dashboard?store=${store.store_id}`, 'affiliate_link')}
-  className="bg-zinc-800 hover:bg-zinc-700 px-4 py-3 rounded-lg text-sm transition whitespace-nowrap"
->
-  {copied === 'affiliate_link' ? '✓ Copied' : 'Copy'}
-</button>
-<button
-  onClick={() => setShowQRModal(true)}
-  className="bg-zinc-800 hover:bg-zinc-700 px-4 py-3 rounded-lg text-sm transition whitespace-nowrap"
->
-  QR Code
-</button>
-              </div>
-            </div>
-
-            {/* ============================================================= */}
-            {/* API CREDENTIALS */}
-            {/* ============================================================= */}
-            <div id="api-credentials" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-  <h2 className="text-lg font-bold mb-4">API Credentials</h2>
-
-              {/* Store ID */}
-              <div className="mb-4">
-                <label className="text-zinc-500 text-sm block mb-1">Store ID</label>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 bg-zinc-800 px-4 py-2 rounded-lg font-mono text-sm">{store.store_id}</code>
-                  <button onClick={() => copyToClipboard(store.store_id, 'store_id')} className="bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg text-sm transition">
-                    {copied === 'store_id' ? '✓' : 'Copy'}
-                  </button>
-                </div>
-              </div>
-
-              {/* API Key */}
-              <div className="mb-4">
-                <label className="text-zinc-500 text-sm block mb-1">API Key</label>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 bg-zinc-800 px-4 py-2 rounded-lg font-mono text-sm">{store.api_key}</code>
-                  <button onClick={() => copyToClipboard(store.api_key, 'api_key')} className="bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg text-sm transition">
-                    {copied === 'api_key' ? '✓' : 'Copy'}
-                  </button>
-                </div>
-              </div>
-
-              {/* API Secret */}
-              <div className="mb-4">
-                <label className="text-zinc-500 text-sm block mb-1">API Secret</label>
-                {newSecret && !secretSaved ? (
-                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <code className="flex-1 bg-zinc-800 px-4 py-2 rounded-lg font-mono text-sm tracking-wider">
-                        ••••••••••••••••
-                      </code>
-                      <button
-  onClick={() => { copyToClipboard(newSecret, 'secret'); setSecretRevealed(true); }}
-  className="bg-emerald-500 hover:bg-emerald-400 text-black px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition whitespace-nowrap"
->
-  {copied === 'secret' ? '✓' : 'Copy'}
-</button>
-                    </div>
-
-                    <div className="bg-yellow-500/20 rounded-lg p-3 mb-3">
-                      <p className="text-yellow-200 text-sm font-semibold mb-1">⚠️ SAVE THIS NOW</p>
-                      <p className="text-yellow-200/80 text-sm">This secret will disappear when you leave this page.</p>
-                    </div>
-
-                    {secretRevealed && (
-                      <button onClick={() => setSecretSaved(true)} className="w-full bg-zinc-800 hover:bg-zinc-700 py-2 rounded-lg text-sm transition">
-                        ✓ I've saved my secret
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="bg-zinc-800 rounded-xl p-4">
-                    <p className="text-zinc-400 text-sm mb-3">Your secret is not stored for security.</p>
-                    <button onClick={regenerateSecret} disabled={loading} className="bg-zinc-700 hover:bg-zinc-600 px-4 py-2 rounded-lg text-sm transition disabled:opacity-50">
-                      {loading ? 'Generating...' : 'Generate New Secret'}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Referral Code */}
-              <div>
-                <label className="text-zinc-500 text-sm block mb-1">Your Store Referral Code</label>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 bg-zinc-800 px-4 py-2 rounded-lg font-mono text-sm">{store.store_referral_code}</code>
-                  <button onClick={() => copyToClipboard(store.store_referral_code, 'referral')} className="bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg text-sm transition">
-                    {copied === 'referral' ? '✓' : 'Copy'}
-                  </button>
-                </div>
-                <p className="text-zinc-500 text-xs mt-2">Share with other vendors to earn from their platform fees.</p>
-                <p className="text-zinc-600 text-xs mt-1">Earn 25% L1 · 5% L2 · 3% L3 · 2% L4 · 1% L5 of their fees, paid instantly in RLUSD.</p>
-              </div>
-
-              {/* Referral Link */}
-              <div className="mt-4 pt-4 border-t border-zinc-700">
-                <label className="text-zinc-500 text-sm block mb-1">Your Partners Referral Link</label>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 bg-zinc-800 px-4 py-2 rounded-lg font-mono text-sm text-blue-400 overflow-x-auto">{`https://yesallofus.com/dashboard?ref=${store.store_referral_code}`}</code>
-                  <button onClick={() => copyToClipboard(`https://yesallofus.com/dashboard?ref=${store.store_referral_code}`, 'referral_link')} className="bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg text-sm transition">
-                    {copied === 'referral_link' ? '✓' : 'Copy'}
-                  </button>
-                </div>
-                <p className="text-zinc-500 text-xs mt-2">Share this link - new vendors get 50% off their first month!</p>
-              </div>
-            </div>
-
-            {/* ============================================================= */}
+{/* ============================================================= */}
 {/* RETURN TO WORDPRESS */}
 {/* ============================================================= */}
-{/* RETURN TO WORDPRESS/PLATFORM */}
 {store?.platform_return_url && (
   <div
     id="return-wordpress"
@@ -2714,50 +2952,40 @@ onClick={async () => {
             ? 'Step 3: Enable auto-sign to process payouts automatically.'
             : 'Your wallet is ready to receive affiliate commissions.'}
     </p>
-
     <a
       href="#"
-  onClick={async (e) => {
-  e.preventDefault();
-  const targetUrl = store.platform_return_url;
-  
-  try {
-    // Generate fresh claim token
-    const tokenRes = await fetch(`${API_URL}/store/generate-claim-token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        store_id: store.store_id,
-        wallet_address: walletAddress,
-      }),
-    });
-    const tokenData = await tokenRes.json();
-    
-    if (!tokenData.success || !tokenData.claim_token) {
-      throw new Error('Failed to generate token');
-    }
-    
-    // Clear platform return
-    await fetch(`${API_URL}/store/clear-platform-return`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        store_id: store.store_id,
-        wallet_address: walletAddress,
-      }),
-    });
-    
-    sessionStorage.removeItem('wordpress_return');
-    
-    // Redirect with fresh token
-    const separator = targetUrl.includes('?') ? '&' : '?';
-    window.location.href = `${targetUrl}${separator}claim_token=${tokenData.claim_token}`;
-    
-  } catch (err) {
-    console.error('Failed to generate claim token:', err);
-    alert('Failed to return to WordPress. Please try again.');
-  }
-}}
+      onClick={async (e) => {
+        e.preventDefault();
+        const targetUrl = store.platform_return_url;
+        try {
+          const tokenRes = await fetch(`${API_URL}/store/generate-claim-token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              store_id: store.store_id,
+              wallet_address: walletAddress,
+            }),
+          });
+          const tokenData = await tokenRes.json();
+          if (!tokenData.success || !tokenData.claim_token) {
+            throw new Error('Failed to generate token');
+          }
+          await fetch(`${API_URL}/store/clear-platform-return`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              store_id: store.store_id,
+              wallet_address: walletAddress,
+            }),
+          });
+          sessionStorage.removeItem('wordpress_return');
+          const separator = targetUrl.includes('?') ? '&' : '?';
+          window.location.href = `${targetUrl}${separator}claim_token=${tokenData.claim_token}`;
+        } catch (err) {
+          console.error('Failed to generate claim token:', err);
+          alert('Failed to return to WordPress. Please try again.');
+        }
+      }}
       className={`inline-block ${
         !walletNeedsFunding && !walletNeedsTrustline && (walletType !== 'web3auth' || store.auto_signing_enabled)
           ? 'bg-emerald-500 hover:bg-emerald-400'
@@ -2768,79 +2996,6 @@ onClick={async () => {
     </a>
   </div>
 )}
-
-
-            {/* ============================================================= */}
-{/* QUICK LINKS */}
-{/* ============================================================= */}
-<div id="quick-links" className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-  <h2 className="text-lg font-bold mb-4">Quick Links</h2>
-  <div className="grid grid-cols-2 gap-4">
-    <a href="/docs" className="bg-zinc-800 hover:bg-zinc-700 rounded-lg p-4 text-center transition group">
-      <div className="flex justify-center mb-2">
-        <svg className="w-8 h-8 text-sky-400 group-hover:text-sky-300 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-        </svg>
-      </div>
-      <p className="text-sm font-medium">Documentation</p>
-    </a>
-    <a href="/terms" target="_blank" className="bg-zinc-800 hover:bg-zinc-700 rounded-lg p-4 text-center transition group">
-      <div className="flex justify-center mb-2">
-        <svg className="w-8 h-8 text-amber-400 group-hover:text-amber-300 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-        </svg>
-      </div>
-      <p className="text-sm font-medium">Terms</p>
-    </a>
-    <a href={`/affiliate-dashboard?store=${store.store_id}`} target="_blank" className="bg-zinc-800 hover:bg-zinc-700 rounded-lg p-4 text-center transition group">
-      <div className="flex justify-center mb-2">
-        <svg className="w-8 h-8 text-emerald-400 group-hover:text-emerald-300 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-        </svg>
-      </div>
-      <p className="text-sm font-medium">Affiliate Dashboard</p>
-    </a>
-    <a href="https://github.com/TokenCanvasIO/YesAllofUs-wordpress/releases/download/v1.0.2/yesallofus.zip" className="bg-zinc-800 hover:bg-zinc-700 rounded-lg p-4 text-center transition group">
-      <div className="flex justify-center mb-2">
-        <svg className="w-8 h-8 text-violet-400 group-hover:text-violet-300 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 7.5l-2.25-1.313M21 7.5v2.25m0-2.25l-2.25 1.313M3 7.5l2.25-1.313M3 7.5l2.25 1.313M3 7.5v2.25m9 3l2.25-1.313M12 12.75l-2.25-1.313M12 12.75V15m0 6.75l2.25-1.313M12 21.75V19.5m0 2.25l-2.25-1.313m0-16.875L12 2.25l2.25 1.313M21 14.25v2.25l-2.25 1.313m-13.5 0L3 16.5v-2.25" />
-        </svg>
-      </div>
-      <p className="text-sm font-medium">WordPress Plugin</p>
-    </a>
-  </div>
-</div>
-
-            {store && walletAddress && (
-  <div id="activity">
-    <StoreActivity storeId={store.store_id} walletAddress={walletAddress} showAmounts={showAmounts} />
-  </div>
-)}
-
-            {/* ============================================================= */}
-{/* DANGER ZONE */}
-{/* ============================================================= */}
-<div id="danger-zone" className="border-2 border-red-500/30 rounded-xl p-6 bg-red-500/5">
-  <div className="flex items-center gap-2 mb-2">
-    <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-    </svg>
-    <h2 className="text-lg font-bold text-red-400">Danger Zone</h2>
-  </div>
-  <p className="text-zinc-400 text-sm mb-4">
-    Permanently delete your account and all associated data. This action cannot be undone.
-  </p>
-  <button
-    onClick={deleteStore}
-    disabled={loading}
-    className="bg-zinc-900 border-2 border-red-500 text-red-400 hover:bg-red-500 hover:text-white px-6 py-2 rounded-lg font-semibold transition disabled:opacity-50 flex items-center gap-2"
-  >
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-    </svg>
-    Permanently Delete
-  </button>
-</div>
 </div>
 )}
      </div>
@@ -2853,10 +3008,20 @@ onClick={async () => {
   title="Share Affiliate Link"
   subtitle={store?.store_name}
 />
+{/* Delete Store Modal */}
+<DeleteConfirmModal
+  isOpen={showDeleteModal}
+  onClose={() => setShowDeleteModal(false)}
+  onConfirm={deleteStore}
+  title="Delete Store"
+  description="This will permanently delete your store, all affiliates, and all payout history. This action cannot be undone."
+  confirmText="PERMANENTLY DELETE"
+  loading={deleting}
+/>
 {/* Disconnect Wallet Modal */}
 {showDisconnectModal && (
   <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-w-sm w-full">
+    <div className="bg-zinc-900/95 border border-zinc-800 rounded-xl p-6 max-w-sm w-full">
       <h3 className="text-lg font-bold mb-2">Disconnect Wallet</h3>
       <p className="text-zinc-400 text-sm mb-6">
         Disconnect your wallet? You will need to reconnect to process payouts.
@@ -2864,7 +3029,7 @@ onClick={async () => {
       <div className="flex gap-3">
         <button
           onClick={() => setShowDisconnectModal(false)}
-          className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-lg font-medium transition"
+          className="flex-1 bg-zinc-800/90 hover:bg-zinc-700 text-white py-3 rounded-lg font-medium transition"
         >
           Cancel
         </button>
