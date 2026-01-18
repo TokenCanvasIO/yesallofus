@@ -368,14 +368,21 @@ if (wpReturn) {
 }
 
       // Check for referral code (from store referral link)
-      const ref = params.get('ref');
+      const ref = params.get('ref') || sessionStorage.getItem('vendorReferralCode');
       if (ref) {
         setReferralCode(ref);
+        sessionStorage.setItem('vendorReferralCode', ref);
+        // Check if we already have the referring store cached
+        const cachedReferrer = sessionStorage.getItem('vendorReferringStore');
+        if (cachedReferrer) {
+          setReferringStore(JSON.parse(cachedReferrer));
+        }
         fetch(`${API_URL}/store/lookup-referral/${ref}`)
           .then(res => res.json())
           .then(data => {
             if (data.success && data.store) {
               setReferringStore(data.store);
+              sessionStorage.setItem('vendorReferringStore', JSON.stringify(data.store));
             }
           })
           .catch(console.error);
@@ -704,6 +711,10 @@ useEffect(() => {
       }
 
       setNewSecret(data.api_secret);
+      
+      // Clear referral sessionStorage after successful signup
+      sessionStorage.removeItem('vendorReferralCode');
+      sessionStorage.removeItem('vendorReferringStore');
 
 // Save platform return URL if we came from WordPress
 const wpReturn = new URLSearchParams(window.location.search).get('wordpress_return') 
@@ -1163,14 +1174,25 @@ await new Promise(resolve => setTimeout(resolve, 2000));
 
     setSetupProgress('Verifying setup...');
 
-    // Wait a moment for XRPL to confirm
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Retry verification up to 5 times with increasing delays
+    let verified = false;
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+      
+      const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`);
+      const verifyData = await verifyRes.json();
+      
+      if (verifyData.auto_signing_enabled) {
+        verified = true;
+        break;
+      }
+      
+      if (attempt < 5) {
+        setSetupProgress(`Confirming on XRPL... (attempt ${attempt + 1}/5)`);
+      }
+    }
 
-    // Verify the setup
-    const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`);
-    const verifyData = await verifyRes.json();
-
-    if (!verifyData.auto_signing_enabled) {
+    if (!verified) {
       throw new Error('Signer setup failed. Please try again.');
     }
 
@@ -1842,8 +1864,14 @@ return (
               e.preventDefault();
               const form = e.target as HTMLFormElement;
 
-              // Determine the referring store - either from state or manual input
+              // Determine the referring store - either from state, sessionStorage, or manual input
               let finalReferrer = referringStore;
+              if (!finalReferrer) {
+                const cachedReferrer = sessionStorage.getItem('vendorReferringStore');
+                if (cachedReferrer) {
+                  finalReferrer = JSON.parse(cachedReferrer);
+                }
+              }
 
               // If user entered a referral code manually, look it up first
               const manualRef = (form.elements.namedItem('referralCode') as HTMLInputElement)?.value?.trim();

@@ -338,6 +338,19 @@ if (response?.response?.data?.resp?.result?.validated) {
       if (settingsData.error) throw new Error(settingsData.error);
       
       if (settingsData.signer_exists || settingsData.auto_sign_enabled) {
+        // Update milestone in Firebase via enable-autosign endpoint
+        try {
+          await fetch('https://api.dltpays.com/nfc/api/v1/nfc/customer/enable-autosign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              wallet_address: walletAddress,
+              max_transaction: 25
+            })
+          });
+        } catch (e) {
+          console.error('Failed to update milestone:', e);
+        }
         onRefreshWallet();
         onSetupComplete();
         return;
@@ -367,9 +380,22 @@ if (response?.response?.data?.resp?.result?.validated) {
       const verifyData = await verifyRes.json();
       
       if (verifyData.auto_sign_enabled) {
-  onRefreshWallet();
-  onSetupComplete();
-} else {
+        // Update milestone in Firebase
+        try {
+          await fetch('https://api.dltpays.com/api/v1/store/update-milestone', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              wallet_address: walletAddress,
+              milestone: 'auto_sign_enabled'
+            })
+          });
+        } catch (e) {
+          console.error('Failed to update milestone:', e);
+        }
+        onRefreshWallet();
+        onSetupComplete();
+      } else {
         throw new Error('Auto-sign setup failed. Please try again.');
       }
       
