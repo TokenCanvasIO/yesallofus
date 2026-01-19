@@ -355,7 +355,7 @@ useEffect(() => {
       }
 
       setSetupProgress('Preparing Tap-to-Pay...');
-      const settingsRes = await fetch('https://api.dltpays.com/nfc/api/v1/customer/setup-autosign', {
+      const settingsRes = await fetch('https://api.dltpays.com/nfc/api/v1/nfc/customer/setup-autosign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wallet_address: walletAddress })
