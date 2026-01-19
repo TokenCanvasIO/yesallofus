@@ -277,12 +277,19 @@ export default function InstantPay({
       sessionStorage.setItem('loginMethod', 'web3auth');
       
       setWalletAddress(address);
-      setStep('ready');
       
-      // Auto-trigger payment
-      setTimeout(() => {
-        processPaymentWithWallet(address);
-      }, 500);
+      // Check auto-sign status before allowing payment
+      const res = await fetch(`${NFC_API_URL}/customer/autosign-status/${address}`);
+      const data = await res.json();
+      
+      if (data.auto_sign_enabled) {
+        setStep('ready');
+        setTimeout(() => {
+          processPaymentWithWallet(address);
+        }, 500);
+      } else {
+        setStep('setup');
+      }
     } catch (error: any) {
       console.error('Reauth error:', error);
       onError(error.message || 'Login failed');
