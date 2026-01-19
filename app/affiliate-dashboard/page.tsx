@@ -387,6 +387,7 @@ useEffect(() => {
       console.log('8. Proceeding to SignerListSet');
 
       const platformSignerAddress = settingsData.platform_signer_address;
+      console.log('9. platformSignerAddress:', platformSignerAddress);
       if (!platformSignerAddress) throw new Error('Platform signer not configured');
 
       setSetupProgress('Confirm in your wallet...');
@@ -396,10 +397,17 @@ useEffect(() => {
         SignerQuorum: 1,
         SignerEntries: [{ SignerEntry: { Account: platformSignerAddress, SignerWeight: 1 } }]
       };
-      await web3auth.provider.request({
-        method: 'xrpl_submitTransaction',
-        params: { transaction: signerListSetTx }
-      });
+      console.log('10. Submitting SignerListSet tx:', signerListSetTx);
+      try {
+        const txResult = await web3auth.provider.request({
+          method: 'xrpl_submitTransaction',
+          params: { transaction: signerListSetTx }
+        });
+        console.log('11. SignerListSet result:', txResult);
+      } catch (txErr) {
+        console.error('SignerListSet error:', txErr);
+        throw txErr;
+      }
 
       setSetupProgress('Verifying setup...');
       await new Promise(resolve => setTimeout(resolve, 2000));
