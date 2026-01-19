@@ -326,10 +326,22 @@ useEffect(() => {
 
     try {
       const { getWeb3Auth } = await import('@/lib/web3auth');
-      const web3auth = await getWeb3Auth();
-      if (!web3auth || !web3auth.provider) {
+      console.log('1. Got getWeb3Auth');
+      let web3auth = await getWeb3Auth();
+      console.log('2. web3auth:', web3auth, 'connected:', web3auth?.connected);
+      if (!web3auth) {
+        throw new Error('Web3Auth not available. Please refresh and try again.');
+      }
+      if (!web3auth.connected || !web3auth.provider) {
+        console.log('3. Attempting reconnect...');
+        setSetupProgress('Reconnecting wallet...');
+        await web3auth.connect();
+        console.log('4. Reconnected, provider:', web3auth.provider);
+      }
+      if (!web3auth.provider) {
         throw new Error('Web3Auth session not available. Please sign in again.');
       }
+      console.log('5. Provider ready, continuing...');
 
       setSetupProgress('Checking wallet...');
       const walletStatusRes = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${walletAddress}`);
