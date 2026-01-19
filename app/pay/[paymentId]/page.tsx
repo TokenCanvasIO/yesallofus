@@ -332,7 +332,13 @@ useEffect(() => {
   
   if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
 } else {
+  if (result.error === 'NO_SIGNER_AUTHORITY') {
+  setError('Wallet not set up for tap-to-pay');
+} else if (result.error?.includes('not found') || result.error?.includes('not linked') || result.error?.includes('not registered')) {
+  setError('Card not linked to a wallet');
+} else {
   setError(result.error || 'Payment failed');
+}
 }
         } catch (err) {
           setError('Payment failed');

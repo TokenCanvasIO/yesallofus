@@ -422,6 +422,13 @@ if (data.tip !== undefined && data.tip !== tipAmount) {
 setTipAmount(data.tip);
       }
 
+// Check if display completed payment (NFC tap-to-pay)
+if (data.status === 'success') {
+setStatus('success');
+setTxHash(data.tx_hash || null);
+return;
+      }
+
 // Customer confirmed - trigger payment
 if (data.customer_confirmed && status === 'idle') {
 // Reset flag to prevent double-trigger

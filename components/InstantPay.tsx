@@ -299,24 +299,52 @@ export default function InstantPay({
       const web3auth = await getWeb3Auth();
       
       if (!web3auth || !web3auth.provider) {
-        // Session expired - need to re-login first
         setStep('reauth');
         setLoading(false);
         return;
       }
 
-      const res = await fetch('https://api.dltpays.com/nfc/api/v1/customer/setup-autosign', {
+      // Get platform signer address
+      const res = await fetch('https://api.dltpays.com/nfc/api/v1/nfc/customer/setup-autosign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wallet_address: walletAddress })
       });
-      
       const data = await res.json();
       
-      if (data.success) {
+      if (data.error) throw new Error(data.error);
+      
+      // If signer already exists, just proceed
+      if (data.signer_exists || data.auto_sign_enabled) {
+        setStep('ready');
+        return;
+      }
+
+      const platformSignerAddress = data.platform_signer_address;
+      if (!platformSignerAddress) throw new Error('Platform signer not configured');
+
+      // Build and sign SignerListSet transaction
+      const signerListSetTx = {
+        TransactionType: 'SignerListSet',
+        Account: walletAddress,
+        SignerQuorum: 1,
+        SignerEntries: [{ SignerEntry: { Account: platformSignerAddress, SignerWeight: 1 } }]
+      };
+      
+      await web3auth.provider.request({
+        method: 'xrpl_submitTransaction',
+        params: { transaction: signerListSetTx }
+      });
+
+      // Verify setup worked
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      const verifyRes = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${walletAddress}`);
+      const verifyData = await verifyRes.json();
+      
+      if (verifyData.auto_sign_enabled) {
         setStep('ready');
       } else {
-        throw new Error(data.error || 'Failed to enable');
+        throw new Error('Setup failed. Please try again.');
       }
     } catch (error: any) {
       console.error('Setup error:', error);
