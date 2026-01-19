@@ -412,9 +412,15 @@ useEffect(() => {
       setSetupProgress('Verifying setup...');
       await new Promise(resolve => setTimeout(resolve, 2000));
 
+      setSetupProgress('Verifying setup...');
+      console.log('12. Verifying setup...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
       const verifyRes = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${walletAddress}`);
       const verifyData = await verifyRes.json();
+      console.log('13. verifyData:', verifyData);
       if (verifyData.auto_sign_enabled) {
+        console.log('14. SUCCESS - auto_sign_enabled is true');
         setAutoSignEnabled(true);
         setShowAutoSignPrompt(false);
       } else {
