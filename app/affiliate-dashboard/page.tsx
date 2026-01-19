@@ -373,15 +373,18 @@ useEffect(() => {
         body: JSON.stringify({ wallet_address: walletAddress })
       });
       const settingsData = await settingsRes.json();
+      console.log('6. settingsData:', settingsData);
       
       if (settingsData.error) throw new Error(settingsData.error);
       if (settingsData.signer_exists || settingsData.auto_sign_enabled) {
+        console.log('7. Early return - signer exists or auto_sign enabled');
         setAutoSignEnabled(true);
         setShowAutoSignPrompt(false);
         setSettingUpAutoSign(false);
         setSetupProgress(null);
         return;
       }
+      console.log('8. Proceeding to SignerListSet');
 
       const platformSignerAddress = settingsData.platform_signer_address;
       if (!platformSignerAddress) throw new Error('Platform signer not configured');
