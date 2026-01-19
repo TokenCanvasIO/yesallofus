@@ -369,6 +369,7 @@ const exportPDF = () => {
         }
         @media print {
           body { padding: 20px; }
+          .logo { filter: invert(1) grayscale(1); }
         }
       </style>
     </head>
@@ -450,7 +451,7 @@ const exportPDF = () => {
     <NebulaBackground opacity={0.3} blur={0} />
     
     {/* Header with orange to black gradient */}
-    <header className="sticky top-0 z-40 bg-gradient-to-r from-orange-600/30 via-orange-900/20 via-amber-950/15 to-zinc-900/20 backdrop-blur border-b border-orange-500/30">
+    <header className={`sticky top-0 z-40 bg-gradient-to-r from-orange-600/30 via-orange-900/20 via-amber-950/15 to-zinc-900/20 backdrop-blur border-b border-orange-500/30 ${showPrintPreview || selectedReceipt ? 'hidden' : ''}`}>
       <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
         <button
           onClick={() => router.push(from === 'take-payment' ? '/take-payment' : '/dashboard')}
@@ -901,13 +902,13 @@ const exportPDF = () => {
                   <img 
                     src={storeLogo} 
                     alt={storeName} 
-                    className="w-16 h-16 rounded-xl object-cover mx-auto mb-3"
+                    className="w-16 h-16 rounded-xl object-cover mx-auto mb-3" style={{ filter: 'invert(1) grayscale(1)' }}
                   />
                 ) : (
                   <img 
                     src="https://yesallofus.com/dltpayslogo1.png" 
                     alt="YesAllOfUs" 
-                    className="w-16 h-16 rounded-xl object-cover mx-auto mb-3"
+                    className="w-16 h-16 rounded-xl object-cover mx-auto mb-3" style={{ filter: 'invert(1) grayscale(1)' }}
                   />
                 )}
                 <h1 className="text-2xl font-bold mb-1">{storeName}</h1>

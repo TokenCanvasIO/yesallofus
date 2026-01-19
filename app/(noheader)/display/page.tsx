@@ -198,7 +198,11 @@ const startNFCPayment = async () => {
             })
           });
         } else {
-          setNfcError(result.error || 'Payment failed');
+          if (result.error === 'NO_SIGNER_AUTHORITY') {
+  setNfcError('Customer wallet not set up for tap-to-pay.');
+} else {
+  setNfcError(result.error || 'Payment failed');
+}
         }
       } catch (err) {
         setNfcError('Payment failed');

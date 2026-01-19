@@ -57,6 +57,7 @@ export default function NebulaBackground({ opacity = 0.4, blur = 0 }: NebulaBack
         }}
       >
         <source src={VIDEOS[currentVideo]} type="video/webm" />
+<source src="/nebula-bg.mp4" type="video/mp4" />
       </video>
     </div>
   );

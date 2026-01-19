@@ -103,6 +103,8 @@ export default function NFCTapPay({
                 result.error?.includes('not registered') ||
                 result.error?.includes('Card not recognized')) {
               onNotRegistered();
+            } else if (result.error === 'NO_SIGNER_AUTHORITY') {
+              onError('NO_SIGNER_AUTHORITY');
             } else {
               onError(result.error || 'Payment failed');
             }

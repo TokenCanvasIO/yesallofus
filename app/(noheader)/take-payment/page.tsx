@@ -11,6 +11,7 @@ import TakePaymentTour from '@/components/TakePaymentTour';
 import ReceiptActions from '../../../components/ReceiptActions';
 import NebulaBackground from '@/components/NebulaBackground'; 
 import TakePaymentHeader from '@/components/TakePaymentHeader';
+import AutoSignModal from '@/components/AutoSignModal';
 import { getIconById } from '@/lib/foodIcons';
 interface Product {
 product_id: string;
@@ -203,6 +204,7 @@ const [priceAge, setPriceAge] = useState<number>(0);
 const [showSendPaymentLink, setShowSendPaymentLink] = useState(false);
 // Update share pay modal ui
 const [showPendingPayments, setShowPendingPayments] = useState(false);
+const [showAutoSignModal, setShowAutoSignModal] = useState(false);
 // Header staff UI
 const [showStaffModal, setShowStaffModal] = useState(false);
 // Wallet status for RLUSD
@@ -713,7 +715,14 @@ if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
 } else {
   // Only show error if not already successful (handles race conditions)
   if (status !== 'success') {
-    setError(data.error || 'Payment failed');
+    if (data.error === 'NO_SIGNER_AUTHORITY') {
+      setShowAutoSignModal(true);
+setStatus('idle');
+paymentInProgressRef.current = false;
+return;
+    } else {
+      setError(data.error || 'Payment failed');
+    }
     setStatus('error');
     paymentInProgressRef.current = false;
     if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'error', null, tipAmount, tipsEnabled, walletAddress || undefined);
@@ -1730,6 +1739,15 @@ className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 
     }}
   />
 )}
+{/* Auto Sign Modal */}
+<AutoSignModal
+  isOpen={showAutoSignModal}
+  onClose={() => setShowAutoSignModal(false)}
+  onSuccess={() => {
+    setShowAutoSignModal(false);
+    setError(null);
+  }}
+/>
 {/* Mobile Staff Modal */}
 {showStaffModal && (
 <div className="fixed inset-0 bg-black/80 z-50 flex items-start sm:hidden p-4 pt-20">

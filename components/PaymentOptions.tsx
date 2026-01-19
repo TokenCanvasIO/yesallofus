@@ -176,7 +176,11 @@ export default function PaymentOptions({
             onSuccess(result.tx_hash, result.receipt_id);
             if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
           } else {
-            onError(result.error || 'Payment failed');
+            if (result.error === 'NO_SIGNER_AUTHORITY') {
+              onError('NO_SIGNER_AUTHORITY');
+            } else {
+              onError(result.error || 'Payment failed');
+            }
           }
         } catch (err) {
           onError('Payment failed');

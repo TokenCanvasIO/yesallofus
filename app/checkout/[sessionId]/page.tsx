@@ -8,6 +8,7 @@ import TipSelector from '@/components/TipSelector';
 import SplitBillModal from '@/components/SplitBillModal';
 import ReceiptActions from '@/components/ReceiptActions';
 import NFCTapPay from '@/components/NFCTapPay';
+import AutoSignModal from '@/components/AutoSignModal';
 
 const API_URL = 'https://api.dltpays.com/plugins/api/v1';
 
@@ -46,6 +47,7 @@ export default function CheckoutPage() {
   const [session, setSession] = useState<CheckoutSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAutoSignModal, setShowAutoSignModal] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const [paymentComplete, setPaymentComplete] = useState(false);
@@ -561,7 +563,7 @@ useEffect(() => {
                       storeId={session.session_id}
                       paymentId={getCurrentPaymentId()}
                       onSuccess={handlePaymentSuccess}
-                      onError={(err) => setError(err)}
+                      onError={(err) => err === 'NO_SIGNER_AUTHORITY' ? setShowAutoSignModal(true) : setError(err)}
                       onNotRegistered={redirectToSignup}
                       isCheckoutSession={true}
                       tipAmount={tipAmount}
@@ -656,7 +658,7 @@ useEffect(() => {
                     paymentId={getCurrentPaymentId()}
                     status={session.status as 'pending' | 'paid' | 'expired' | 'processing'}
                     onSuccess={handlePaymentSuccess}
-                    onError={(err) => setError(err)}
+                    onError={(err) => err === 'NO_SIGNER_AUTHORITY' ? setShowAutoSignModal(true) : setError(err)}
                     showSplitBill={!splits && session.status === 'pending'}
                     onSplitBill={() => setShowSplitModal(true)}
                     isCheckoutSession={true}
@@ -750,6 +752,16 @@ useEffect(() => {
           </footer>
         </div>
       </div>
+
+      {/* Auto Sign Modal */}
+      <AutoSignModal
+        isOpen={showAutoSignModal}
+        onClose={() => setShowAutoSignModal(false)}
+        onSuccess={() => {
+          setShowAutoSignModal(false);
+          setError(null);
+        }}
+      />
 
       {/* Split Bill Modal */}
       {session && (
