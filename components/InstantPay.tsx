@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import AutoSignModal from './AutoSignModal';
 
 const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1';
 const PLUGINS_API_URL = 'https://api.dltpays.com/plugins/api/v1';
@@ -33,6 +34,7 @@ export default function InstantPay({
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [showAutoSignModal, setShowAutoSignModal] = useState(false);
 
   // Helper function to get the correct pay endpoint
   const getPayEndpoint = () => {
@@ -53,7 +55,7 @@ export default function InstantPay({
         
         if (stored && method === 'web3auth') {
           setWalletAddress(stored);
-          const res = await fetch(`${NFC_API_URL}/customer/autosign-status/${stored}`);
+          const res = await fetch(`${NFC_API_URL}/nfc/customer/autosign-status/${stored}`);
           const data = await res.json();
           
           if (data.auto_sign_enabled) {
@@ -77,7 +79,6 @@ export default function InstantPay({
       .toUpperCase();
   };
 
-  // Process payment with wallet address
   const processPaymentWithWallet = async (wallet: string) => {
     // Check for self-payment
     if (wallet.toLowerCase() === vendorWallet.toLowerCase()) {
@@ -100,90 +101,27 @@ export default function InstantPay({
 
     setPaying(true);
     try {
-      const { getWeb3Auth } = await import('@/lib/web3auth');
-      const web3auth = await getWeb3Auth();
-      
-      if (!web3auth || !web3auth.provider) {
-        // Session expired - need to re-login
-        setStep('reauth');
-        setPaying(false);
-        return;
-      }
+      // Call backend to process payment using signer list authority
+      const res = await fetch(getPayEndpoint(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          payer_wallet: wallet,
+          tip_amount: tipAmount
+        })
+      });
 
-      const tx = {
-        TransactionType: 'Payment',
-        Account: wallet,
-        Destination: vendorWallet,
-        Amount: {
-          currency: '524C555344000000000000000000000000000000',
-          issuer: 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De',
-          value: parseFloat(rlusdAmount.toFixed(6)).toString()
-        },
-        Memos: [{
-          Memo: {
-            MemoType: toHex('payment'),
-            MemoData: toHex(`Payment to ${storeName}`)
-          }
-        }]
-      };
+      const result = await res.json();
 
-      console.log('Submitting tx:', JSON.stringify(tx, null, 2));
-
-      const result = await web3auth.provider.request({
-        method: 'xrpl_submitTransaction',
-        params: { transaction: tx }
-      }) as any;
-
-      console.log('Transaction result:', JSON.stringify(result, null, 2));
-
-      const engineResult = result?.result?.engine_result || 
-        result?.engine_result || 
-        result?.meta?.TransactionResult ||
-        result?.result?.meta?.TransactionResult ||
-        result?.result?.result?.engine_result;
-
-      console.log('Engine result:', engineResult);
-
-      if (engineResult && engineResult !== 'tesSUCCESS') {
-        console.error('Transaction failed with:', engineResult);
-        if (engineResult === 'tecUNFUNDED_PAYMENT' || engineResult === 'tecPATH_DRY' || engineResult === 'tecPATH_PARTIAL') {
-          throw new Error('INSUFFICIENT_FUNDS');
+      if (!result.success) {
+        if (result.error === 'NO_SIGNER_AUTHORITY') {
+          setStep('setup');
+          return;
         }
-        throw new Error(`Transaction failed: ${engineResult}`);
+        throw new Error(result.error || 'Payment failed');
       }
 
-      const txHash = result?.hash || 
-        result?.tx_hash || 
-        result?.result?.hash ||
-        result?.result?.tx_json?.hash ||
-        result?.tx_blob?.hash ||
-        result?.response?.hash ||
-        result?.txHash;
-
-      if (!txHash) {
-        console.error('Full result object:', JSON.stringify(result, null, 2));
-        throw new Error('Transaction failed - no hash returned');
-      }
-
-      let receiptId: string | undefined;
-      try {
-        const payRes = await fetch(getPayEndpoint(), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            payer_wallet: wallet,
-            tx_hash: txHash,
-            tip_amount: tipAmount,
-            split_payment_id: paymentId
-          })
-        });
-        const payData = await payRes.json();
-        receiptId = payData.receipt_id;
-      } catch (e) {
-        console.error('Failed to mark payment:', e);
-      }
-
-      onSuccess(txHash, receiptId);
+      onSuccess(result.tx_hash, result.receipt_id);
       if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
     } catch (error: any) {
       console.error('Payment error:', error);
@@ -197,8 +135,13 @@ export default function InstantPay({
         errorMsg.includes('Insufficient') ||
         errorMsg.includes('unfunded') ||
         errorMsg.includes('balance') ||
-        errorMsg.includes('not enough')
+        errorMsg.includes('not enough') ||
+        errorMsg.includes('NO_SIGNER_AUTHORITY')
       ) {
+        if (errorMsg.includes('NO_SIGNER_AUTHORITY')) {
+          setStep('setup');
+          return;
+        }
         onError('INSUFFICIENT_FUNDS');
       } else {
         onError(errorMsg);
@@ -229,7 +172,7 @@ export default function InstantPay({
       
       setWalletAddress(address);
 
-      const res = await fetch(`${NFC_API_URL}/customer/autosign-status/${address}`);
+      const res = await fetch(`${NFC_API_URL}/nfc/customer/autosign-status/${address}`);
       const data = await res.json();
       
       if (data.auto_sign_enabled) {
@@ -279,7 +222,7 @@ export default function InstantPay({
       setWalletAddress(address);
       
       // Check auto-sign status before allowing payment
-      const res = await fetch(`${NFC_API_URL}/customer/autosign-status/${address}`);
+      const res = await fetch(`${NFC_API_URL}/nfc/customer/autosign-status/${address}`);
       const data = await res.json();
       
       if (data.auto_sign_enabled) {
@@ -389,25 +332,28 @@ export default function InstantPay({
     );
   }
 
-  // STEP 2: Logged in but needs setup
+  // STEP 2: Logged in but needs setup - show modal
   if (step === 'setup') {
     return (
-      <button
-        onClick={enableAutoSign}
-        disabled={loading}
-        className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-50 text-black font-bold py-5 rounded-2xl transition flex items-center justify-center gap-3"
-      >
-        {loading ? (
+      <>
+        <AutoSignModal
+          isOpen={true}
+          onClose={() => setStep('login')}
+          onSuccess={() => {
+            setStep('ready');
+            if (walletAddress) {
+              setTimeout(() => processPaymentWithWallet(walletAddress), 500);
+            }
+          }}
+        />
+        <button
+          disabled={true}
+          className="w-full bg-gradient-to-r from-amber-500 to-orange-500 opacity-50 text-black font-bold py-5 rounded-2xl transition flex items-center justify-center gap-3"
+        >
           <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin" />
-        ) : (
-          <>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            Enable Instant Payments (One-time)
-          </>
-        )}
-      </button>
+          Setting up wallet...
+        </button>
+      </>
     );
   }
 
