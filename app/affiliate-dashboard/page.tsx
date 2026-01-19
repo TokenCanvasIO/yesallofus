@@ -434,6 +434,54 @@ useEffect(() => {
     setSetupProgress(null);
   };
 
+  const revokeAutoSign = async () => {
+    if (!confirm('Disable auto-pay? You will need to set it up again to use Tap-to-Pay.')) return;
+    if (!walletAddress) return;
+
+    setSettingUpAutoSign(true);
+    setError(null);
+
+    try {
+      const { getWeb3Auth } = await import('@/lib/web3auth');
+      const web3auth = await getWeb3Auth();
+      
+      if (!web3auth || !web3auth.provider) {
+        throw new Error('Web3Auth session not available. Please sign in again.');
+      }
+
+      // Sign transaction to remove signer from XRPL
+      const revokeTx = {
+        TransactionType: 'SignerListSet',
+        Account: walletAddress,
+        SignerQuorum: 0,
+      };
+
+      await web3auth.provider.request({
+        method: 'xrpl_submitTransaction',
+        params: { transaction: revokeTx }
+      });
+
+      // Confirm with backend
+      await fetch('https://api.dltpays.com/nfc/api/v1/nfc/customer/revoke-autosign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet_address: walletAddress })
+      });
+
+      setAutoSignEnabled(false);
+      setShowAutoSignPrompt(true);
+      
+      // Clear success flag so wizard can show success again when re-enabled
+      localStorage.removeItem(`onboarding_success_shown_affiliate_${walletAddress}`);
+      sessionStorage.setItem(`onboarding_active_affiliate_${walletAddress}`, 'true');
+      
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to revoke auto-pay';
+      setError(message);
+    }
+    setSettingUpAutoSign(false);
+  };
+
   // Check for existing session on mount
   useEffect(() => {
     const stored = sessionStorage.getItem('walletAddress');
@@ -1032,7 +1080,12 @@ return <LoginScreen onLogin={handleLogin} />;
                           {loginMethod === 'web3auth' ? (
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2 text-emerald-400 text-sm"><span className="w-2 h-2 bg-emerald-500 rounded-full"></span>Connected via {socialProvider || 'Social'}</div>
-                              <button onClick={handleDisconnectWallet} className="text-zinc-400 hover:text-red-400 text-sm transition-colors">Disconnect</button>
+                              <div className="flex items-center gap-3">
+                                {autoSignEnabled && (
+                                  <button onClick={revokeAutoSign} className="text-zinc-400 hover:text-orange-400 text-sm transition-colors">Revoke Auto-Pay</button>
+                                )}
+                                <button onClick={handleDisconnectWallet} className="text-zinc-400 hover:text-red-400 text-sm transition-colors">Disconnect</button>
+                              </div>
                             </div>
                           ) : (
                             <button onClick={async () => {
