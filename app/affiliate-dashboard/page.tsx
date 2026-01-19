@@ -326,22 +326,17 @@ useEffect(() => {
 
     try {
       const { getWeb3Auth } = await import('@/lib/web3auth');
-      console.log('1. Got getWeb3Auth');
       let web3auth = await getWeb3Auth();
-      console.log('2. web3auth:', web3auth, 'connected:', web3auth?.connected);
       if (!web3auth) {
         throw new Error('Web3Auth not available. Please refresh and try again.');
       }
       if (!web3auth.connected || !web3auth.provider) {
-        console.log('3. Attempting reconnect...');
         setSetupProgress('Reconnecting wallet...');
         await web3auth.connect();
-        console.log('4. Reconnected, provider:', web3auth.provider);
       }
       if (!web3auth.provider) {
         throw new Error('Web3Auth session not available. Please sign in again.');
       }
-      console.log('5. Provider ready, continuing...');
 
       setSetupProgress('Checking wallet...');
       const walletStatusRes = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${walletAddress}`);
@@ -373,21 +368,17 @@ useEffect(() => {
         body: JSON.stringify({ wallet_address: walletAddress })
       });
       const settingsData = await settingsRes.json();
-      console.log('6. settingsData:', settingsData);
       
       if (settingsData.error) throw new Error(settingsData.error);
       if (settingsData.signer_exists || settingsData.auto_sign_enabled) {
-        console.log('7. Early return - signer exists or auto_sign enabled');
         setAutoSignEnabled(true);
         setShowAutoSignPrompt(false);
         setSettingUpAutoSign(false);
         setSetupProgress(null);
         return;
       }
-      console.log('8. Proceeding to SignerListSet');
 
       const platformSignerAddress = settingsData.platform_signer_address;
-      console.log('9. platformSignerAddress:', platformSignerAddress);
       if (!platformSignerAddress) throw new Error('Platform signer not configured');
 
       setSetupProgress('Confirm in your wallet...');
@@ -397,15 +388,12 @@ useEffect(() => {
         SignerQuorum: 1,
         SignerEntries: [{ SignerEntry: { Account: platformSignerAddress, SignerWeight: 1 } }]
       };
-      console.log('10. Submitting SignerListSet tx:', signerListSetTx);
       try {
         const txResult = await web3auth.provider.request({
           method: 'xrpl_submitTransaction',
           params: { transaction: signerListSetTx }
         });
-        console.log('11. SignerListSet result:', txResult);
       } catch (txErr) {
-        console.error('SignerListSet error:', txErr);
         throw txErr;
       }
 
@@ -413,14 +401,11 @@ useEffect(() => {
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       setSetupProgress('Verifying setup...');
-      console.log('12. Verifying setup...');
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       const verifyRes = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${walletAddress}`);
       const verifyData = await verifyRes.json();
-      console.log('13. verifyData:', verifyData);
       if (verifyData.auto_sign_enabled) {
-        console.log('14. SUCCESS - auto_sign_enabled is true');
         setAutoSignEnabled(true);
         setShowAutoSignPrompt(false);
       } else {
