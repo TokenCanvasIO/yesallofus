@@ -876,10 +876,10 @@ return <LoginScreen onLogin={handleLogin} />;
     walletStatus={walletStatus}
     autoSignEnabled={autoSignEnabled}
     loginMethod={loginMethod as 'xaman' | 'crossmark' | 'web3auth' | null}
-    onSetupComplete={async () => {
+    onSetupComplete={() => {
+      setAutoSignEnabled(true);
       setShowAutoSignPrompt(false);
-      await fetchWalletStatus(walletAddress);
-      if (walletAddress) checkAutoSignStatus(walletAddress, 'web3auth');
+      fetchWalletStatus(walletAddress);
     }}
     onRefreshWallet={() => fetchWalletStatus(walletAddress)}
     onSetupStatusChange={(isComplete) => setSetupComplete(isComplete)}
