@@ -307,7 +307,7 @@ useEffect(() => {
   const checkAutoSignStatus = async (wallet: string, method: string) => {
     if (method !== 'web3auth') return;
     try {
-      const res = await fetch(`https://api.dltpays.com/nfc/api/v1/customer/autosign-status/${wallet}`);
+      const res = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${wallet}`);
       const data = await res.json();
       if (data.success) {
         setAutoSignEnabled(data.auto_signing_enabled);
@@ -847,10 +847,10 @@ return <LoginScreen onLogin={handleLogin} />;
     walletStatus={walletStatus}
     autoSignEnabled={autoSignEnabled}
     loginMethod={loginMethod as 'xaman' | 'crossmark' | 'web3auth' | null}
-    onSetupComplete={() => {
-      setAutoSignEnabled(true);
+    onSetupComplete={async () => {
       setShowAutoSignPrompt(false);
-      fetchWalletStatus(walletAddress);
+      await fetchWalletStatus(walletAddress);
+      if (walletAddress) checkAutoSignStatus(walletAddress, 'web3auth');
     }}
     onRefreshWallet={() => fetchWalletStatus(walletAddress)}
     onSetupStatusChange={(isComplete) => setSetupComplete(isComplete)}
