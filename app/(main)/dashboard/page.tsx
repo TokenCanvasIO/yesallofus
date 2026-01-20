@@ -54,6 +54,8 @@ export default function StoreDashboard() {
   const [web3authTermsAccepted, setWeb3authTermsAccepted] = useState(false);
 const [connectingGoogle, setConnectingGoogle] = useState(false);
 const [sidebarOpen, setSidebarOpen] = useState(false);
+
+
 const router = useRouter();
 // Disconnect modal state
 const [showDisconnectModal, setShowDisconnectModal] = useState(false);

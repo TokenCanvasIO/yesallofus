@@ -173,6 +173,14 @@ export default function AffiliateDashboard() {
   const [allMilestonesComplete, setAllMilestonesComplete] = useState(false);
   const [setupComplete, setSetupComplete] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Set sidebar open by default on desktop/tablet only (not mobile)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      setSidebarOpen(true);
+    }
+  }, []);
+  
   const [refreshingWallet, setRefreshingWallet] = useState(false);
   
   // Modals
