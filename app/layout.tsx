@@ -22,14 +22,9 @@ export const metadata: Metadata = {
   publisher: "YesAllofUs",
   metadataBase: new URL("https://yesallofus.com"),
   icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: "/apple-touch-icon.png",
-    shortcut: "/favicon.ico",
-  },
+  icon: "/favicon.ico",
+  apple: "/apple-touch-icon.png",
+},
   openGraph: {
     type: "website",
     locale: "en_GB",
@@ -74,8 +69,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0d0d0d" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <meta name="theme-color" content="#0d0d0d" />
         <script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" async></script>
         <script src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" type="module" async></script>
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-13PHKRLJ2R"></script>

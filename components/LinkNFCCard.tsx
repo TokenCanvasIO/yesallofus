@@ -23,8 +23,14 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
   const [success, setSuccess] = useState<string | null>(null);
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [nfcSupported, setNfcSupported] = useState(true);
 
   const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1';
+
+  // Check NFC support on mount
+  useEffect(() => {
+    setNfcSupported('NDEFReader' in window);
+  }, []);
 
   // Load all linked cards
   useEffect(() => {
@@ -58,7 +64,7 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
     setSuccess(null);
 
     if (!('NDEFReader' in window)) {
-      setError('NFC is not supported on this device. Please use Chrome on Android.');
+      setError('Your browser doesn\'t support NFC. Please open this page in Chrome on Android.');
       return;
     }
 
@@ -214,6 +220,19 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
 
   return (
     <div className={noBorder ? "p-4" : "bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6 mt-6"}>
+      {/* Browser Warning - Show if NFC not supported */}
+      {!nfcSupported && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-4">
+          <div className="flex items-start gap-3">
+            <span className="text-amber-400 text-lg">⚠️</span>
+            <div>
+              <p className="text-amber-400 font-medium text-sm">Browser not supported</p>
+              <p className="text-amber-400/80 text-sm mt-1">NFC card linking requires <strong>Chrome</strong> on Android. Open this page in Chrome to add cards.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header - only show if not noBorder (since CollapsibleSection has its own header) */}
       {!noBorder && (
         <div className="flex items-center justify-between mb-6">
@@ -226,7 +245,7 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
               <p className="text-zinc-500 text-sm">{cards.length} card{cards.length !== 1 ? 's' : ''} linked</p>
             </div>
           </div>
-          {cards.length > 0 && cards.length < 5 && !scanning && (
+          {cards.length > 0 && cards.length < 5 && !scanning && nfcSupported && (
             <button
               onClick={startNFCScan}
               className="bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium py-1.5 px-3 rounded-lg transition flex items-center gap-1"
@@ -242,7 +261,7 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
       {noBorder && cards.length > 0 && (
         <div className="flex items-center justify-between mb-4">
           <p className="text-zinc-500 text-sm">{cards.length} card{cards.length !== 1 ? 's' : ''} linked</p>
-          {cards.length < 5 && !scanning && (
+          {cards.length < 5 && !scanning && nfcSupported && (
             <button
               onClick={startNFCScan}
               className="bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium py-1.5 px-3 rounded-lg transition flex items-center gap-1"
@@ -387,18 +406,29 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
           <p className="text-zinc-400 text-sm mb-4">
             Link an NFC card to pay at vendors by tapping your card. You can add up to 5 cards.
           </p>
-          <button
-            onClick={startNFCScan}
-            className="w-full bg-white hover:bg-zinc-100 text-black font-semibold py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-lg"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
-            Add NFC Card
-          </button>
-          <p className="text-zinc-500 text-sm text-center mt-3">
-            Requires Chrome on Android with NFC enabled
-          </p>
+          {nfcSupported ? (
+            <>
+              <button
+                onClick={startNFCScan}
+                className="w-full bg-white hover:bg-zinc-100 text-black font-semibold py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-lg"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                Add NFC Card
+              </button>
+              <p className="text-zinc-500 text-sm text-center mt-3">
+                Requires Chrome on Android with NFC enabled
+              </p>
+            </>
+          ) : (
+            <div className="w-full bg-zinc-800 text-zinc-400 font-medium py-4 rounded-xl flex items-center justify-center gap-3">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+              Open in Chrome to add cards
+            </div>
+          )}
         </div>
       )}
 
