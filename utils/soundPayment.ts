@@ -4,19 +4,20 @@
 // Encodes payment tokens as audio frequencies
 
 const SAMPLE_RATE = 48000;
-const BASE_FREQ = 4000;        // Start frequency (Hz)
-const FREQ_STEP = 150;         // Increased spacing between frequencies
-const TONE_DURATION = 0.1;     // Longer tone duration
-const SILENCE_DURATION = 0.05; // Longer gap between tones
-const SYNC_FREQ = 2500;        // Lower sync tone - more distinct
-const SYNC_DURATION = 0.2;     // Longer sync
+const BASE_FREQ = 5000;        // Start frequency (Hz) - higher to be well clear of sync tones
+const FREQ_STEP = 150;         // Spacing between frequencies
+const TONE_DURATION = 0.15;    // Longer tone duration for reliability
+const SILENCE_DURATION = 0.08; // Gap between tones
+const SYNC_FREQ = 2000;        // Start sync tone frequency (lower)
+const END_SYNC_FREQ = 2500;    // End sync tone frequency
+const SYNC_DURATION = 0.3;     // Longer sync duration
 
 let audioContext: AudioContext | null = null;
 let mediaStream: MediaStream | null = null;
 let analyser: AnalyserNode | null = null;
 let isListening = false;
 
-// Character set for encoding - covers pay_[hex]
+// Character set for encoding
 const CHARSET = '_.0123456789abcdefsnpy';
 
 function charToFreq(char: string): number {
@@ -57,19 +58,15 @@ export async function broadcastToken(token: string): Promise<boolean> {
     if (!audioContext) throw new Error('Audio context not available');
 
     console.log('🔊 Broadcasting token:', token);
-    console.log('🔊 Character frequencies:');
-    for (const char of token) {
-      console.log(`   ${char} -> ${charToFreq(char)} Hz`);
-    }
 
     const ctx = audioContext;
     let currentTime = ctx.currentTime + 0.1;
 
-    // Play sync tone first (start marker)
+    // Play START sync tone
     const syncOsc = ctx.createOscillator();
     const syncGain = ctx.createGain();
     syncOsc.frequency.value = SYNC_FREQ;
-    syncGain.gain.value = 0.6;
+    syncGain.gain.value = 0.7;
     syncOsc.connect(syncGain);
     syncGain.connect(ctx.destination);
     syncOsc.start(currentTime);
@@ -85,10 +82,10 @@ export async function broadcastToken(token: string): Promise<boolean> {
       osc.frequency.value = freq;
       osc.type = 'sine';
       
-      // Smooth envelope
+      // Smooth envelope to reduce clicks
       gain.gain.setValueAtTime(0, currentTime);
-      gain.gain.linearRampToValueAtTime(0.6, currentTime + 0.01);
-      gain.gain.setValueAtTime(0.6, currentTime + TONE_DURATION - 0.01);
+      gain.gain.linearRampToValueAtTime(0.7, currentTime + 0.015);
+      gain.gain.setValueAtTime(0.7, currentTime + TONE_DURATION - 0.015);
       gain.gain.linearRampToValueAtTime(0, currentTime + TONE_DURATION);
       
       osc.connect(gain);
@@ -99,12 +96,12 @@ export async function broadcastToken(token: string): Promise<boolean> {
       currentTime += TONE_DURATION + SILENCE_DURATION;
     }
 
-    // Play end sync tone
+    // Play END sync tone (different frequency!)
     currentTime += SILENCE_DURATION;
     const endOsc = ctx.createOscillator();
     const endGain = ctx.createGain();
-    endOsc.frequency.value = SYNC_FREQ;
-    endGain.gain.value = 0.6;
+    endOsc.frequency.value = END_SYNC_FREQ;
+    endGain.gain.value = 0.7;
     endOsc.connect(endGain);
     endGain.connect(ctx.destination);
     endOsc.start(currentTime);
@@ -152,8 +149,8 @@ export async function startListening(
 
     const source = ctx.createMediaStreamSource(mediaStream);
     analyser = ctx.createAnalyser();
-    analyser.fftSize = 8192;  // Higher resolution
-    analyser.smoothingTimeConstant = 0.3;
+    analyser.fftSize = 8192;
+    analyser.smoothingTimeConstant = 0.2;
     source.connect(analyser);
 
     const bufferLength = analyser.frequencyBinCount;
@@ -167,10 +164,12 @@ export async function startListening(
     let lastChar = '';
     let lastToken = '';
     let lastTokenTime = 0;
+    let syncStartTime = 0;
 
     console.log('🎤 Listening started... (FSK mode)');
     console.log('🎤 Freq resolution:', freqResolution.toFixed(2), 'Hz');
-    console.log('🎤 Sync freq:', SYNC_FREQ, 'Hz');
+    console.log('🎤 Start sync freq:', SYNC_FREQ, 'Hz');
+    console.log('🎤 End sync freq:', END_SYNC_FREQ, 'Hz');
     console.log('🎤 Char freq range:', BASE_FREQ, '-', BASE_FREQ + CHARSET.length * FREQ_STEP, 'Hz');
 
     const detectFrequency = (): { freq: number, amplitude: number } | null => {
@@ -179,9 +178,9 @@ export async function startListening(
       let maxValue = 0;
       let maxIndex = 0;
       
-      // Look for peaks in our frequency range (2000-7000 Hz)
-      const minBin = Math.floor(2000 / freqResolution);
-      const maxBin = Math.ceil(7000 / freqResolution);
+      // Look for peaks in our frequency range (1500-9000 Hz)
+      const minBin = Math.floor(1500 / freqResolution);
+      const maxBin = Math.ceil(9000 / freqResolution);
       
       for (let i = minBin; i < maxBin; i++) {
         if (dataArray[i] > maxValue) {
@@ -190,7 +189,7 @@ export async function startListening(
         }
       }
       
-      if (maxValue < 120) return null;  // Need strong signal
+      if (maxValue < 100) return null;
       
       const freq = maxIndex * freqResolution;
       return { freq, amplitude: maxValue };
@@ -205,38 +204,46 @@ export async function startListening(
       if (detection) {
         const { freq, amplitude } = detection;
         
-        // Check for sync tone (with tolerance)
-        if (Math.abs(freq - SYNC_FREQ) < 100) {
-          if (!inSync && receivedChars.length === 0) {
-            // Start sync
-            inSync = true;
-            receivedChars = [];
-            lastChar = '';
-            console.log('🎤 === START SYNC === amp:', amplitude);
-          } else if (inSync && receivedChars.length >= 4) {
-            // End sync - we have characters
-            const token = receivedChars.join('');
-            console.log('🎤 === END SYNC === token:', token);
-            
-            if (token.startsWith('pay_') && token.length >= 8) {
-              if (token !== lastToken || now - lastTokenTime > 5000) {
-                lastToken = token;
-                lastTokenTime = now;
-                console.log('✅ TOKEN RECEIVED:', token);
-                onTokenReceived(token);
-              }
+        // Check for START sync tone (2000 Hz)
+        if (!inSync && Math.abs(freq - SYNC_FREQ) < 200) {
+          inSync = true;
+          syncStartTime = now;
+          receivedChars = [];
+          lastChar = '';
+          console.log('🎤 === START SYNC === amp:', amplitude, 'freq:', freq.toFixed(0));
+        }
+        // Check for END sync tone (2500 Hz)
+        else if (inSync && Math.abs(freq - END_SYNC_FREQ) < 200) {
+          const token = receivedChars.join('');
+          console.log('🎤 === END SYNC === token:', token, 'chars:', receivedChars.length);
+          
+          // Accept tokens starting with pay_ OR containing .snd_ (signed responses)
+          if ((token.startsWith('pay_') || token.includes('.snd_')) && token.length >= 8) {
+            if (token !== lastToken || now - lastTokenTime > 5000) {
+              lastToken = token;
+              lastTokenTime = now;
+              console.log('✅ TOKEN RECEIVED:', token);
+              onTokenReceived(token);
             }
-            
-            inSync = false;
-            receivedChars = [];
-            lastChar = '';
+          } else if (token.length > 0) {
+            console.log('⚠️ Invalid token format:', token);
           }
-        } else if (inSync) {
-          // Try to decode character
+          
+          inSync = false;
+          receivedChars = [];
+          lastChar = '';
+        }
+        // Decode character frequencies
+        else if (inSync) {
+          // Ignore if too close to sync frequencies (below 3000 Hz)
+          if (freq < 3500) {
+            return requestAnimationFrame(processFrame);
+          }
+          
           const char = freqToChar(freq);
           
           // Only record if different from last char and enough time passed
-          if (char && char !== lastChar && now - lastCharTime > 80) {
+          if (char && char !== lastChar && now - lastCharTime > 70) {
             receivedChars.push(char);
             lastChar = char;
             lastCharTime = now;
@@ -244,9 +251,16 @@ export async function startListening(
           }
         }
       } else {
-        // No signal - could be silence between tones
-        if (inSync && now - lastCharTime > 300) {
-          // Reset lastChar during silence to allow same char twice
+        // No signal - reset lastChar during silence to allow repeated chars
+        if (inSync && now - lastCharTime > 100) {
+          lastChar = '';
+        }
+        
+        // Timeout - if in sync too long without end sync, reset
+        if (inSync && now - syncStartTime > 10000) {
+          console.log('⚠️ Sync timeout, resetting');
+          inSync = false;
+          receivedChars = [];
           lastChar = '';
         }
       }
