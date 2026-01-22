@@ -20,8 +20,8 @@ const registerSoundDevice = async (wallet: string) => {
       console.log('🔊 Sound device already registered:', existingId);
       return;
     }
-    const soundId = 'snd_' + crypto.randomUUID().slice(0,8);
-    const secretKey = crypto.randomUUID();
+    const soundId = 'snd_' + (crypto.randomUUID ? crypto.randomUUID().slice(0,8) : Math.random().toString(36).slice(2,10));
+    const secretKey = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
     localStorage.setItem('yesallofus_sound_id', soundId);
     localStorage.setItem('yesallofus_sound_secret', secretKey);
     await fetch('https://api.dltpays.com/nfc/api/v1/sound/register', {
@@ -118,8 +118,8 @@ export default function TapToPaySettings({
 
       // Register sound device for sound payments
       try {
-        const soundId = 'snd_' + crypto.randomUUID().slice(0,8);
-        const secretKey = crypto.randomUUID();
+        const soundId = 'snd_' + (crypto.randomUUID ? crypto.randomUUID().slice(0,8) : Math.random().toString(36).slice(2,10));
+        const secretKey = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
         localStorage.setItem('yesallofus_sound_id', soundId);
         localStorage.setItem('yesallofus_sound_secret', secretKey);
         await fetch('https://api.dltpays.com/nfc/api/v1/sound/register', {
@@ -174,8 +174,8 @@ export default function TapToPaySettings({
 
       // Register sound device for sound payments
       try {
-        const soundId = 'snd_' + crypto.randomUUID().slice(0,8);
-        const secretKey = crypto.randomUUID();
+        const soundId = 'snd_' + (crypto.randomUUID ? crypto.randomUUID().slice(0,8) : Math.random().toString(36).slice(2,10));
+        const secretKey = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
         localStorage.setItem('yesallofus_sound_id', soundId);
         localStorage.setItem('yesallofus_sound_secret', secretKey);
         await fetch('https://api.dltpays.com/nfc/api/v1/sound/register', {
@@ -235,8 +235,8 @@ export default function TapToPaySettings({
 
       // Register sound device for sound payments
       try {
-        const soundId = 'snd_' + crypto.randomUUID().slice(0,8);
-        const secretKey = crypto.randomUUID();
+        const soundId = 'snd_' + (crypto.randomUUID ? crypto.randomUUID().slice(0,8) : Math.random().toString(36).slice(2,10));
+        const secretKey = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
         localStorage.setItem('yesallofus_sound_id', soundId);
         localStorage.setItem('yesallofus_sound_secret', secretKey);
         await fetch('https://api.dltpays.com/nfc/api/v1/sound/register', {
@@ -284,8 +284,8 @@ export default function TapToPaySettings({
 
       // Register sound device for sound payments
       try {
-        const soundId = 'snd_' + crypto.randomUUID().slice(0,8);
-        const secretKey = crypto.randomUUID();
+        const soundId = 'snd_' + (crypto.randomUUID ? crypto.randomUUID().slice(0,8) : Math.random().toString(36).slice(2,10));
+        const secretKey = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
         localStorage.setItem('yesallofus_sound_id', soundId);
         localStorage.setItem('yesallofus_sound_secret', secretKey);
         await fetch('https://api.dltpays.com/nfc/api/v1/sound/register', {
