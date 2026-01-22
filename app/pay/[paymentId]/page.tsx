@@ -7,6 +7,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import ReceiptActions from '@/components/ReceiptActions';
 import TipSelector from '@/components/TipSelector';
 import NebulaBackground from '@/components/NebulaBackground';
+import SoundPayment from '@/components/SoundPayment';
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
@@ -63,6 +64,8 @@ export default function PayPage() {
   const [nfcScanning, setNfcScanning] = useState(false);
   const [nfcController, setNfcController] = useState<AbortController | null>(null);
 
+
+  // Sound payment state
   // Live conversion state
   const [liveRate, setLiveRate] = useState<number | null>(null);
   const [rlusdAmount, setRlusdAmount] = useState<number | null>(null);
@@ -765,6 +768,18 @@ onClick={startNFCScan}
               </button>
             )}
 
+            {/* Sound Payment Listen */}
+            {payment?.status === 'pending' && (
+              <div className="mb-4">
+                <SoundPayment
+                  paymentId={paymentId}
+                  amount={payment?.amount || 0}
+                  storeName={payment?.store_name || ''}
+                  onError={(err) => setError(err)}
+                />
+              </div>
+            )}
+
             {payment?.status === 'pending' && (
   <>
     <div className="text-center text-zinc-500 my-4">or</div>
@@ -1055,6 +1070,8 @@ onClick={startNFCScan}
           </div>
         </div>
       )}
+
+      {/* Sound Payment Confirmation Modal */}
       </div>
     </div>
   );
