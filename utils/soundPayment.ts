@@ -53,7 +53,7 @@ const FREQ_CONFIG = {
   ultrasound: {
     baseFreq: 17800,
     freqStep: 30,
-    syncFreq: 17300,
+    syncFreq: 17500,
     endSyncFreq: 18800,
   },
   audible: {
