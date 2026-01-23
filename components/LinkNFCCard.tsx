@@ -58,12 +58,14 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
         }).then(res => res.json()).then(data => {
           if (data.success) {
             console.log('🔊 Sound device registered:', soundId);
+            setSoundRegistered(true);
           }
         }).catch(err => {
           console.warn('Sound registration failed:', err);
         });
       } else {
         console.log('🔊 Sound device already registered:', existingSoundId);
+        setSoundRegistered(true);
       }
     }
   }, [walletAddress]);
