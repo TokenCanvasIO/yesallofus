@@ -7,11 +7,11 @@
 
 const SAMPLE_RATE = 48000;
 const TONE_DURATION_AUDIBLE = 0.04;
-const TONE_DURATION_ULTRASOUND = 0.12;    // 80ms per char
+const TONE_DURATION_ULTRASOUND = 0.08;    // 80ms per char
 const SILENCE_DURATION_AUDIBLE = 0.01;
 const SILENCE_DURATION_ULTRASOUND = 0.02;// 15ms gap
 const SYNC_DURATION_AUDIBLE = 0.04;
-const SYNC_DURATION_ULTRASOUND = 0.10;    // 80ms sync
+const SYNC_DURATION_ULTRASOUND = 0.06;    // 80ms sync
 
 // ============================================================================
 // DEVICE DETECTION - Determines broadcast mode
@@ -51,10 +51,10 @@ const BROADCAST_MODE = 'ultrasound';
 // ============================================================================
 const FREQ_CONFIG = {
   ultrasound: {
-    baseFreq: 17500,
+    baseFreq: 17800,
     freqStep: 30,
-    syncFreq: 17000,
-    endSyncFreq: 18500,
+    syncFreq: 17300,
+    endSyncFreq: 18800,
   },
   audible: {
     baseFreq: 4000,
