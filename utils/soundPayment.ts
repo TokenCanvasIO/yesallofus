@@ -28,7 +28,7 @@ const detectBroadcastMode = (): 'ultrasound' | 'audible' => {
   const isTouchOnly = 'ontouchend' in (typeof document !== 'undefined' ? document : {}) && !(/Windows NT|Macintosh|Linux/i.test(ua) && window.innerWidth > 1024);
   
   // Desktop detection
-  const isMacDesktop = /Macintosh/i.test(ua) && window.innerWidth > 1024;
+  const isMacDesktop = /Macintosh/i.test(ua);
   const isWindowsDesktop = /Windows NT/i.test(ua) && !isTouchOnly;
   const isLinuxDesktop = /Linux/i.test(ua) && !(/Android/i.test(ua));
   
