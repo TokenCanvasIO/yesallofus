@@ -6,9 +6,12 @@
 // All devices: Listen for BOTH ranges
 
 const SAMPLE_RATE = 48000;
-const TONE_DURATION = 0.10;    // 80ms per char
-const SILENCE_DURATION = 0.015;// 15ms gap
-const SYNC_DURATION = 0.08;    // 80ms sync
+const TONE_DURATION_AUDIBLE = 0.04;
+const TONE_DURATION_ULTRASOUND = 0.12;    // 80ms per char
+const SILENCE_DURATION_AUDIBLE = 0.01;
+const SILENCE_DURATION_ULTRASOUND = 0.02;// 15ms gap
+const SYNC_DURATION_AUDIBLE = 0.04;
+const SYNC_DURATION_ULTRASOUND = 0.10;    // 80ms sync
 
 // ============================================================================
 // DEVICE DETECTION - Determines broadcast mode
@@ -194,6 +197,10 @@ export async function broadcastToken(token: string): Promise<boolean> {
       console.log(`   ${char} -> ${charToFreq(char)} Hz`);
     }
 
+    const TONE_DURATION = BROADCAST_MODE === 'ultrasound' ? TONE_DURATION_ULTRASOUND : TONE_DURATION_AUDIBLE;
+    const SYNC_DURATION = BROADCAST_MODE === 'ultrasound' ? SYNC_DURATION_ULTRASOUND : SYNC_DURATION_AUDIBLE;
+    const SILENCE_DURATION = BROADCAST_MODE === 'ultrasound' ? SILENCE_DURATION_ULTRASOUND : SILENCE_DURATION_AUDIBLE;
+    
     const ctx = audioContext;
     let currentTime = ctx.currentTime + 0.1;
 
@@ -274,6 +281,10 @@ export async function startListening(
     console.log('🔊 AudioContext state:', audioContext?.state);
     if (!audioContext) throw new Error('Audio context not available');
 
+    const TONE_DURATION = BROADCAST_MODE === 'ultrasound' ? TONE_DURATION_ULTRASOUND : TONE_DURATION_AUDIBLE;
+    const SYNC_DURATION = BROADCAST_MODE === 'ultrasound' ? SYNC_DURATION_ULTRASOUND : SYNC_DURATION_AUDIBLE;
+    const SILENCE_DURATION = BROADCAST_MODE === 'ultrasound' ? SILENCE_DURATION_ULTRASOUND : SILENCE_DURATION_AUDIBLE;
+    
     const ctx = audioContext;
 
     mediaStream = await navigator.mediaDevices.getUserMedia({
