@@ -57,10 +57,10 @@ const FREQ_CONFIG = {
     endSyncFreq: 18800,
   },
   audible: {
-    baseFreq: 4000,
+    baseFreq: 17000,
     freqStep: 100,    // Wider spacing for audible (more reliable)
-    syncFreq: 3000,
-    endSyncFreq: 6500,
+    syncFreq: 16500,
+    endSyncFreq: 17800,
   }
 };
 
