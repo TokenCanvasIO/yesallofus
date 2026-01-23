@@ -328,7 +328,7 @@ export async function startListening(
         }
       }
       
-      if (maxValue < 50) return null;
+      if (maxValue < 30) return null;
       
       const freq = maxIndex * freqResolution;
       return { freq, amplitude: maxValue };
