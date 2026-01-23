@@ -44,17 +44,17 @@ const detectBroadcastMode = (): 'ultrasound' | 'audible' => {
   return 'audible';
 };
 
-const BROADCAST_MODE = typeof window !== 'undefined' ? detectBroadcastMode() : 'audible';
+const BROADCAST_MODE = 'ultrasound';
 
 // ============================================================================
 // FREQUENCY CONFIGURATIONS
 // ============================================================================
 const FREQ_CONFIG = {
   ultrasound: {
-    baseFreq: 18500,
+    baseFreq: 17500,
     freqStep: 30,
-    syncFreq: 18000,
-    endSyncFreq: 19500,
+    syncFreq: 17000,
+    endSyncFreq: 18500,
   },
   audible: {
     baseFreq: 4000,
