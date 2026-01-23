@@ -131,6 +131,30 @@ function detectSyncType(freq: number): { type: 'start' | 'end'; mode: 'ultrasoun
   return null;
 }
 
+// Warmup - play silent tone to unlock iOS AudioContext
+export async function warmupAudio(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!audioContext || audioContext.state === 'closed') {
+      audioContext = new AudioContextClass({ sampleRate: SAMPLE_RATE });
+    }
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume();
+    }
+    // Play silent tone to unlock
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    gain.gain.value = 0.001; // Nearly silent
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start();
+    osc.stop(audioContext.currentTime + 0.1);
+    console.log('🔊 Audio warmup complete');
+  } catch (e) {
+    console.warn('Warmup failed:', e);
+  }
+}
 export async function initSoundPayment(): Promise<boolean> {
   if (typeof window === 'undefined') return false;
   try {

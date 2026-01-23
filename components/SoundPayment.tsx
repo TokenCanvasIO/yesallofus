@@ -66,6 +66,7 @@ export default function SoundPayment({
       if (!utils) throw new Error('Sound not available');
 
       await utils.initSoundPayment();
+      await utils.warmupAudio();
       
       // Short 4-char token for fast ultrasound
       const shortToken = paymentId.slice(-4).toUpperCase();
@@ -153,6 +154,7 @@ export default function SoundPayment({
       setStatus('active');
       setErrorMsg(null);
       await utils.initSoundPayment();
+      await utils.warmupAudio();
 
       console.log('🔊 Customer: Listening for payment request...');
 
