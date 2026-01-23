@@ -10,7 +10,7 @@ const TONE_DURATION_AUDIBLE = 0.05;
 const TONE_DURATION_ULTRASOUND = 0.08;    // 80ms per char
 const SILENCE_DURATION_AUDIBLE = 0.02;
 const SILENCE_DURATION_ULTRASOUND = 0.02;// 15ms gap
-const SYNC_DURATION_AUDIBLE = 0.07;
+const SYNC_DURATION_AUDIBLE = 0.05;
 const SYNC_DURATION_ULTRASOUND = 0.06;    // 80ms sync
 
 // ============================================================================
@@ -392,7 +392,7 @@ export async function startListening(
           if (charResult && charResult.mode === currentMode) {
             const { char } = charResult;
             
-            if (char !== lastChar && now - lastCharTime > 35) {
+            if (char !== lastChar && now - lastCharTime > 30) {
               if (receivedChars.length < 4) receivedChars.push(char);
               lastChar = char;
               lastCharTime = now;
