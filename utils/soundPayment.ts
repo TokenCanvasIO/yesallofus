@@ -208,7 +208,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
     const syncOsc = ctx.createOscillator();
     const syncGain = ctx.createGain();
     syncOsc.frequency.value = FREQ_CONFIG[BROADCAST_MODE].syncFreq;
-    syncGain.gain.value = 0.7;
+    syncGain.gain.value = BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4;
     syncOsc.connect(syncGain);
     syncGain.connect(ctx.destination);
     syncOsc.start(currentTime);
@@ -226,7 +226,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
       
       // Smooth envelope to reduce clicks
       gain.gain.setValueAtTime(0, currentTime);
-      gain.gain.linearRampToValueAtTime(0.7, currentTime + 0.015);
+      gain.gain.linearRampToValueAtTime(BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4, currentTime + 0.015);
       gain.gain.setValueAtTime(0.7, currentTime + TONE_DURATION - 0.015);
       gain.gain.linearRampToValueAtTime(0, currentTime + TONE_DURATION);
       
@@ -243,7 +243,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
     const endOsc = ctx.createOscillator();
     const endGain = ctx.createGain();
     endOsc.frequency.value = FREQ_CONFIG[BROADCAST_MODE].endSyncFreq;
-    endGain.gain.value = 0.7;
+    endGain.gain.value = BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4;
     endOsc.connect(endGain);
     endGain.connect(ctx.destination);
     endOsc.start(currentTime);
@@ -392,7 +392,7 @@ export async function startListening(
           if (charResult && charResult.mode === currentMode) {
             const { char } = charResult;
             
-            if (char !== lastChar && now - lastCharTime > 40) {
+            if (char !== lastChar && now - lastCharTime > 25) {
               receivedChars.push(char);
               lastChar = char;
               lastCharTime = now;
