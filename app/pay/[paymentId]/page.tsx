@@ -727,7 +727,7 @@ if (allPaid || payment?.status === 'paid') {
             console.log('DEBUG onSuccess:', { txHash, receiptId });
             // Play success ding
             const ding = new Audio('/ding.mp3');
-            ding.volume = 0.6;
+            ding.volume = 0.4;
             ding.play().catch(() => {});
             setTxHash(txHash);
             if (receiptId) setReceiptId(receiptId);
@@ -780,7 +780,7 @@ onClick={startNFCScan}
                   amount={payment?.amount || 0}
                   storeName={payment?.store_name || ''}
                   onError={(err) => setError(err)}
-                  onSuccess={(txHash) => { const ding = new Audio("/ding.mp3"); ding.volume = 0.6; ding.play().catch(() => {}); setTxHash(txHash); setShowToast(true); setTimeout(() => setShowToast(false), 3000); setAllPaid(true); }}
+                  onSuccess={(txHash) => { const ding = new Audio("/ding.mp3"); ding.volume = 0.4; ding.play().catch(() => {}); setTxHash(txHash); setShowToast(true); setTimeout(() => setShowToast(false), 3000); setAllPaid(true); }}
                 />
               </div>
             )}
