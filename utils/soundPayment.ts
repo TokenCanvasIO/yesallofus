@@ -8,8 +8,8 @@ const BASE_FREQ = 18250;       // Ultrasound range - inaudible
 const FREQ_STEP = 30;          // Tight spacing in narrow band
 const TONE_DURATION = 0.04;    // 40ms - fast
 const SILENCE_DURATION = 0.015;// 15ms gap
-const SYNC_FREQ = 18000;       // Start sync
-const END_SYNC_FREQ = 18500;   // End sync
+const SYNC_FREQ = 17500;       // Start sync
+const END_SYNC_FREQ = 19000;   // End sync
 const SYNC_DURATION = 0.08;    // 80ms sync
 
 let audioContext: AudioContext | null = null;
@@ -184,8 +184,8 @@ export async function startListening(
       let maxIndex = 0;
       
       // Look for peaks in ultrasound range (17500-19000 Hz)
-      const minBin = Math.floor(17500 / freqResolution);
-      const maxBin = Math.ceil(19000 / freqResolution);
+      const minBin = Math.floor(17000 / freqResolution);
+      const maxBin = Math.ceil(19500 / freqResolution);
       
       for (let i = minBin; i < maxBin; i++) {
         if (dataArray[i] > maxValue) {
