@@ -44,17 +44,17 @@ const detectBroadcastMode = (): 'ultrasound' | 'audible' => {
   return 'audible';
 };
 
-const BROADCAST_MODE = 'ultrasound';
+const BROADCAST_MODE = typeof window !== 'undefined' ? detectBroadcastMode() : 'audible';
 
 // ============================================================================
 // FREQUENCY CONFIGURATIONS
 // ============================================================================
 const FREQ_CONFIG = {
   ultrasound: {
-    baseFreq: 18250,
+    baseFreq: 15500,
     freqStep: 30,
-    syncFreq: 17500,
-    endSyncFreq: 19000,
+    syncFreq: 14500,
+    endSyncFreq: 16500,
   },
   audible: {
     baseFreq: 4000,
@@ -73,7 +73,7 @@ const END_SYNC_FREQ = BROADCAST_CONFIG.endSyncFreq;
 
 // Listening range covers BOTH audible and ultrasound
 const LISTEN_MIN_FREQ = 2500;   // Below audible sync
-const LISTEN_MAX_FREQ = 19500;  // Above ultrasound end sync
+const LISTEN_MAX_FREQ = 17000;  // Above ultrasound end sync
 
 let audioContext: AudioContext | null = null;
 let mediaStream: MediaStream | null = null;
@@ -208,7 +208,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
     const syncOsc = ctx.createOscillator();
     const syncGain = ctx.createGain();
     syncOsc.frequency.value = FREQ_CONFIG[BROADCAST_MODE].syncFreq;
-    syncGain.gain.value = BROADCAST_MODE === 'ultrasound' ? 1.0 : 0.4;
+    syncGain.gain.value = BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4;
     syncOsc.connect(syncGain);
     syncGain.connect(ctx.destination);
     syncOsc.start(currentTime);
@@ -226,7 +226,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
       
       // Smooth envelope to reduce clicks
       gain.gain.setValueAtTime(0, currentTime);
-      gain.gain.linearRampToValueAtTime(BROADCAST_MODE === 'ultrasound' ? 1.0 : 0.4, currentTime + 0.015);
+      gain.gain.linearRampToValueAtTime(BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4, currentTime + 0.015);
       gain.gain.setValueAtTime(0.7, currentTime + TONE_DURATION - 0.015);
       gain.gain.linearRampToValueAtTime(0, currentTime + TONE_DURATION);
       
@@ -243,7 +243,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
     const endOsc = ctx.createOscillator();
     const endGain = ctx.createGain();
     endOsc.frequency.value = FREQ_CONFIG[BROADCAST_MODE].endSyncFreq;
-    endGain.gain.value = BROADCAST_MODE === 'ultrasound' ? 1.0 : 0.4;
+    endGain.gain.value = BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4;
     endOsc.connect(endGain);
     endGain.connect(ctx.destination);
     endOsc.start(currentTime);
