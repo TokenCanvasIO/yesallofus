@@ -255,6 +255,10 @@ export async function broadcastToken(token: string): Promise<boolean> {
     return new Promise((resolve) => {
       setTimeout(() => {
         console.log('🔊 Broadcast complete');
+        // Play yes sound
+        const yesAudio = new Audio('/yes.mp3');
+        yesAudio.volume = 0.5;
+        yesAudio.play().catch(() => {});
         resolve(true);
       }, totalDuration + 100);
     });
