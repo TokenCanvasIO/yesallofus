@@ -51,10 +51,10 @@ const BROADCAST_MODE = typeof window !== 'undefined' ? detectBroadcastMode() : '
 // ============================================================================
 const FREQ_CONFIG = {
   ultrasound: {
-    baseFreq: 15500,
+    baseFreq: 17000,
     freqStep: 30,
-    syncFreq: 14500,
-    endSyncFreq: 16500,
+    syncFreq: 16000,
+    endSyncFreq: 18000,
   },
   audible: {
     baseFreq: 4000,
