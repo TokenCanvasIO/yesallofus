@@ -124,7 +124,7 @@ function detectSyncType(freq: number): { type: 'start' | 'end'; mode: 'ultrasoun
   }
   
   // Audible sync tones
-  if (Math.abs(freq - FREQ_CONFIG.audible.syncFreq) < 200) {
+  if (Math.abs(freq - FREQ_CONFIG.audible.syncFreq) < 300) {
     return { type: 'start', mode: 'audible' };
   }
   if (Math.abs(freq - FREQ_CONFIG.audible.endSyncFreq) < 300) {
@@ -339,7 +339,7 @@ export async function startListening(
         }
       }
       
-      if (maxValue < 30) return null;
+      if (maxValue < 20) return null;
       
       const freq = maxIndex * freqResolution;
       return { freq, amplitude: maxValue };
