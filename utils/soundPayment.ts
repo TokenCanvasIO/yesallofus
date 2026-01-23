@@ -393,7 +393,7 @@ export async function startListening(
             const { char } = charResult;
             
             if (char !== lastChar && now - lastCharTime > 35) {
-              receivedChars.push(char);
+              if (receivedChars.length < 4) receivedChars.push(char);
               lastChar = char;
               lastCharTime = now;
               console.log('🎤 Char:', char, '| freq:', freq.toFixed(0), '| amp:', amplitude, '| total:', receivedChars.join(''));
