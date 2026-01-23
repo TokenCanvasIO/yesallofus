@@ -21,7 +21,7 @@ let isListening = false;
 const CHARSET = '0123456789ABCDEF';
 
 function charToFreq(char: string): number {
-  const index = CHARSET.indexOf(char.toLowerCase());
+  const index = CHARSET.indexOf(char.toUpperCase());
   if (index === -1) return BASE_FREQ;
   return BASE_FREQ + (index * FREQ_STEP);
 }
