@@ -208,7 +208,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
     const syncOsc = ctx.createOscillator();
     const syncGain = ctx.createGain();
     syncOsc.frequency.value = FREQ_CONFIG[BROADCAST_MODE].syncFreq;
-    syncGain.gain.value = BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.25;
+    syncGain.gain.value = BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4;
     syncOsc.connect(syncGain);
     syncGain.connect(ctx.destination);
     syncOsc.start(currentTime);
@@ -226,8 +226,8 @@ export async function broadcastToken(token: string): Promise<boolean> {
       
       // Smooth envelope to reduce clicks
       gain.gain.setValueAtTime(0, currentTime);
-      gain.gain.linearRampToValueAtTime(BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.25, currentTime + 0.025);
-      gain.gain.setValueAtTime(BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.25, currentTime + TONE_DURATION - 0.015);
+      gain.gain.linearRampToValueAtTime(BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4, currentTime + 0.025);
+      gain.gain.setValueAtTime(BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4, currentTime + TONE_DURATION - 0.015);
       gain.gain.linearRampToValueAtTime(0, currentTime + TONE_DURATION);
       
       osc.connect(gain);
@@ -243,7 +243,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
     const endOsc = ctx.createOscillator();
     const endGain = ctx.createGain();
     endOsc.frequency.value = FREQ_CONFIG[BROADCAST_MODE].endSyncFreq;
-    endGain.gain.value = BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.25;
+    endGain.gain.value = BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4;
     endOsc.connect(endGain);
     endGain.connect(ctx.destination);
     endOsc.start(currentTime);
@@ -255,10 +255,6 @@ export async function broadcastToken(token: string): Promise<boolean> {
     return new Promise((resolve) => {
       setTimeout(() => {
         console.log('🔊 Broadcast complete');
-        // Play yes sound
-        const yesAudio = new Audio('/yes.mp3');
-        yesAudio.volume = 0.5;
-        yesAudio.play().catch(() => {});
         resolve(true);
       }, totalDuration + 100);
     });
