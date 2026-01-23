@@ -6,7 +6,7 @@
 // All devices: Listen for BOTH ranges
 
 const SAMPLE_RATE = 48000;
-const TONE_DURATION = 0.08;    // 80ms per char
+const TONE_DURATION = 0.10;    // 80ms per char
 const SILENCE_DURATION = 0.015;// 15ms gap
 const SYNC_DURATION = 0.08;    // 80ms sync
 
@@ -381,7 +381,7 @@ export async function startListening(
           if (charResult && charResult.mode === currentMode) {
             const { char } = charResult;
             
-            if (char !== lastChar && now - lastCharTime > 50) {
+            if (char !== lastChar && now - lastCharTime > 40) {
               receivedChars.push(char);
               lastChar = char;
               lastCharTime = now;
