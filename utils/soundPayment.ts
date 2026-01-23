@@ -1,16 +1,76 @@
 'use client';
 
-// Simple FSK (Frequency Shift Keying) Sound Payment System
-// Encodes payment tokens as audio frequencies
+// Hybrid FSK (Frequency Shift Keying) Sound Payment System
+// Mobile devices: Audible frequencies (reliable)
+// Desktop devices: Ultrasound frequencies (silent)
+// All devices: Listen for BOTH ranges
 
 const SAMPLE_RATE = 48000;
-const BASE_FREQ = 18250;       // Ultrasound range - inaudible
-const FREQ_STEP = 30;          // Tight spacing in narrow band
-const TONE_DURATION = 0.06;    // 40ms - fast
+const TONE_DURATION = 0.08;    // 80ms per char
 const SILENCE_DURATION = 0.015;// 15ms gap
-const SYNC_FREQ = 17500;       // Start sync
-const END_SYNC_FREQ = 19000;   // End sync
 const SYNC_DURATION = 0.08;    // 80ms sync
+
+// ============================================================================
+// DEVICE DETECTION - Determines broadcast mode
+// ============================================================================
+const detectBroadcastMode = (): 'ultrasound' | 'audible' => {
+  if (typeof navigator === 'undefined') return 'audible';
+  
+  const ua = navigator.userAgent;
+  
+  // Mobile phones - use audible (speakers struggle with 18kHz)
+  const isMobilePhone = /iPhone|iPod|Android.*Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  
+  // Tablets - use audible (safer)
+  const isTablet = /iPad|Android(?!.*Mobile)/i.test(ua);
+  
+  // Check for touch device that's not a desktop with touchscreen
+  const isTouchOnly = 'ontouchend' in document && !(/Windows NT|Macintosh|Linux/i.test(ua) && window.innerWidth > 1024);
+  
+  // Desktop detection
+  const isMacDesktop = /Macintosh/i.test(ua) && window.innerWidth > 1024;
+  const isWindowsDesktop = /Windows NT/i.test(ua) && !isTouchOnly;
+  const isLinuxDesktop = /Linux/i.test(ua) && !(/Android/i.test(ua));
+  
+  // Desktop/laptop with good speakers - use ultrasound
+  if ((isMacDesktop || isWindowsDesktop || isLinuxDesktop) && !isMobilePhone && !isTablet) {
+    return 'ultrasound';
+  }
+  
+  // Everything else - use audible
+  return 'audible';
+};
+
+const BROADCAST_MODE = detectBroadcastMode();
+
+// ============================================================================
+// FREQUENCY CONFIGURATIONS
+// ============================================================================
+const FREQ_CONFIG = {
+  ultrasound: {
+    baseFreq: 18250,
+    freqStep: 30,
+    syncFreq: 17500,
+    endSyncFreq: 19000,
+  },
+  audible: {
+    baseFreq: 4000,
+    freqStep: 100,    // Wider spacing for audible (more reliable)
+    syncFreq: 3000,
+    endSyncFreq: 5500,
+  }
+};
+
+// Broadcasting uses device-appropriate frequencies
+const BROADCAST_CONFIG = FREQ_CONFIG[BROADCAST_MODE];
+const BASE_FREQ = BROADCAST_CONFIG.baseFreq;
+const FREQ_STEP = BROADCAST_CONFIG.freqStep;
+const SYNC_FREQ = BROADCAST_CONFIG.syncFreq;
+const END_SYNC_FREQ = BROADCAST_CONFIG.endSyncFreq;
+
+// Listening range covers BOTH audible and ultrasound
+const LISTEN_MIN_FREQ = 2500;   // Below audible sync
+const LISTEN_MAX_FREQ = 19500;  // Above ultrasound end sync
 
 let audioContext: AudioContext | null = null;
 let mediaStream: MediaStream | null = null;
@@ -20,16 +80,55 @@ let isListening = false;
 // Character set for encoding - hex only for short tokens
 const CHARSET = '0123456789ABCDEF';
 
-function charToFreq(char: string): number {
+function charToFreq(char: string, config = BROADCAST_CONFIG): number {
   const index = CHARSET.indexOf(char.toUpperCase());
-  if (index === -1) return BASE_FREQ;
-  return BASE_FREQ + (index * FREQ_STEP);
+  if (index === -1) return config.baseFreq;
+  return config.baseFreq + (index * config.freqStep);
 }
 
-function freqToChar(freq: number): string | null {
-  const index = Math.round((freq - BASE_FREQ) / FREQ_STEP);
-  if (index < 0 || index >= CHARSET.length) return null;
-  return CHARSET[index];
+function freqToChar(freq: number): { char: string; mode: 'ultrasound' | 'audible' } | null {
+  // Try ultrasound range first
+  const ultraConfig = FREQ_CONFIG.ultrasound;
+  const ultraIndex = Math.round((freq - ultraConfig.baseFreq) / ultraConfig.freqStep);
+  if (ultraIndex >= 0 && ultraIndex < CHARSET.length) {
+    const expectedFreq = ultraConfig.baseFreq + (ultraIndex * ultraConfig.freqStep);
+    if (Math.abs(freq - expectedFreq) < ultraConfig.freqStep * 0.6) {
+      return { char: CHARSET[ultraIndex], mode: 'ultrasound' };
+    }
+  }
+  
+  // Try audible range
+  const audibleConfig = FREQ_CONFIG.audible;
+  const audibleIndex = Math.round((freq - audibleConfig.baseFreq) / audibleConfig.freqStep);
+  if (audibleIndex >= 0 && audibleIndex < CHARSET.length) {
+    const expectedFreq = audibleConfig.baseFreq + (audibleIndex * audibleConfig.freqStep);
+    if (Math.abs(freq - expectedFreq) < audibleConfig.freqStep * 0.6) {
+      return { char: CHARSET[audibleIndex], mode: 'audible' };
+    }
+  }
+  
+  return null;
+}
+
+// Check if frequency is a sync tone
+function detectSyncType(freq: number): { type: 'start' | 'end'; mode: 'ultrasound' | 'audible' } | null {
+  // Ultrasound sync tones
+  if (Math.abs(freq - FREQ_CONFIG.ultrasound.syncFreq) < 300) {
+    return { type: 'start', mode: 'ultrasound' };
+  }
+  if (Math.abs(freq - FREQ_CONFIG.ultrasound.endSyncFreq) < 300) {
+    return { type: 'end', mode: 'ultrasound' };
+  }
+  
+  // Audible sync tones
+  if (Math.abs(freq - FREQ_CONFIG.audible.syncFreq) < 200) {
+    return { type: 'start', mode: 'audible' };
+  }
+  if (Math.abs(freq - FREQ_CONFIG.audible.endSyncFreq) < 200) {
+    return { type: 'end', mode: 'audible' };
+  }
+  
+  return null;
 }
 
 export async function initSoundPayment(): Promise<boolean> {
@@ -42,7 +141,8 @@ export async function initSoundPayment(): Promise<boolean> {
     if (audioContext.state === 'suspended') {
       await audioContext.resume();
     }
-    console.log('🔊 Sound payment initialized (FSK mode)');
+    console.log('🔊 Sound payment initialized (Hybrid FSK mode)');
+    console.log('🔊 Broadcast mode:', BROADCAST_MODE, BROADCAST_MODE === 'ultrasound' ? '(silent)' : '(audible chirps)');
     return true;
   } catch (error) {
     console.error('Failed to initialize:', error);
@@ -59,6 +159,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
 
     const tokenUpper = token.toUpperCase();
     console.log('🔊 Broadcasting token:', tokenUpper);
+    console.log('🔊 Mode:', BROADCAST_MODE);
     console.log('🔊 Character frequencies:');
     for (const char of tokenUpper) {
       console.log(`   ${char} -> ${charToFreq(char)} Hz`);
@@ -101,7 +202,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
       currentTime += TONE_DURATION + SILENCE_DURATION;
     }
 
-    // Play END sync tone (different frequency!)
+    // Play END sync tone
     currentTime += SILENCE_DURATION;
     const endOsc = ctx.createOscillator();
     const endGain = ctx.createGain();
@@ -154,7 +255,7 @@ export async function startListening(
 
     const source = ctx.createMediaStreamSource(mediaStream);
     analyser = ctx.createAnalyser();
-    analyser.fftSize = 8192;  // High resolution
+    analyser.fftSize = 8192;
     analyser.smoothingTimeConstant = 0.2;
     source.connect(analyser);
 
@@ -165,17 +266,16 @@ export async function startListening(
     isListening = true;
     let receivedChars: string[] = [];
     let inSync = false;
+    let currentMode: 'ultrasound' | 'audible' | null = null;
     let lastCharTime = 0;
     let lastChar = '';
     let lastToken = '';
     let lastTokenTime = 0;
     let syncStartTime = 0;
 
-    console.log('🎤 Listening started... (FSK mode)');
+    console.log('🎤 Listening started... (Hybrid FSK mode)');
     console.log('🎤 Freq resolution:', freqResolution.toFixed(2), 'Hz');
-    console.log('🎤 Start sync freq:', SYNC_FREQ, 'Hz');
-    console.log('🎤 End sync freq:', END_SYNC_FREQ, 'Hz');
-    console.log('🎤 Char freq range:', BASE_FREQ, '-', BASE_FREQ + CHARSET.length * FREQ_STEP, 'Hz');
+    console.log('🎤 Listening for BOTH audible (3-5.5kHz) AND ultrasound (17.5-19kHz)');
 
     const detectFrequency = (): { freq: number, amplitude: number } | null => {
       analyser!.getByteFrequencyData(dataArray);
@@ -183,9 +283,9 @@ export async function startListening(
       let maxValue = 0;
       let maxIndex = 0;
       
-      // Look for peaks in ultrasound range (17500-19000 Hz)
-      const minBin = Math.floor(17000 / freqResolution);
-      const maxBin = Math.ceil(19500 / freqResolution);
+      // Scan the full range (2.5kHz - 19.5kHz)
+      const minBin = Math.floor(LISTEN_MIN_FREQ / freqResolution);
+      const maxBin = Math.ceil(LISTEN_MAX_FREQ / freqResolution);
       
       for (let i = minBin; i < maxBin; i++) {
         if (dataArray[i] > maxValue) {
@@ -194,7 +294,7 @@ export async function startListening(
         }
       }
       
-      if (maxValue < 60) return null;  // Lower threshold for ultrasound
+      if (maxValue < 50) return null;
       
       const freq = maxIndex * freqResolution;
       return { freq, amplitude: maxValue };
@@ -209,25 +309,26 @@ export async function startListening(
       if (detection) {
         const { freq, amplitude } = detection;
         
-        // Check for START sync tone (18000 Hz)
-        if (!inSync && Math.abs(freq - SYNC_FREQ) < 300) {
+        // Check for sync tones (both ranges)
+        const syncType = detectSyncType(freq);
+        
+        if (syncType && syncType.type === 'start' && !inSync) {
           inSync = true;
+          currentMode = syncType.mode;
           syncStartTime = now;
           receivedChars = [];
           lastChar = '';
-          console.log('🎤 === START SYNC === amp:', amplitude, 'freq:', freq.toFixed(0));
+          console.log('🎤 === START SYNC ===', syncType.mode, 'amp:', amplitude, 'freq:', freq.toFixed(0));
         }
-        // Check for END sync tone (18500 Hz)
-        else if (inSync && Math.abs(freq - END_SYNC_FREQ) < 300) {
+        else if (syncType && syncType.type === 'end' && inSync && syncType.mode === currentMode) {
           const token = receivedChars.join('');
-          console.log('🎤 === END SYNC === token:', token, 'chars:', receivedChars.length);
+          console.log('🎤 === END SYNC ===', currentMode, 'token:', token, 'chars:', receivedChars.length);
           
-          // Accept any 4+ char token (short hex like "A9F2")
           if (token.length >= 4) {
             if (token !== lastToken || now - lastTokenTime > 5000) {
               lastToken = token;
               lastTokenTime = now;
-              console.log('✅ TOKEN RECEIVED:', token);
+              console.log('✅ TOKEN RECEIVED:', token, '(via', currentMode + ')');
               onTokenReceived(token);
             }
           } else if (token.length > 0) {
@@ -235,36 +336,36 @@ export async function startListening(
           }
           
           inSync = false;
+          currentMode = null;
           receivedChars = [];
           lastChar = '';
         }
         // Decode character frequencies
-        else if (inSync) {
-          // Ignore if outside character range
-          if (freq < BASE_FREQ - 100 || freq > BASE_FREQ + CHARSET.length * FREQ_STEP + 100) {
-            return requestAnimationFrame(processFrame);
-          }
+        else if (inSync && currentMode) {
+          const charResult = freqToChar(freq);
           
-          const char = freqToChar(freq);
-          
-          // Only record if different from last char and enough time passed
-          if (char && char !== lastChar && now - lastCharTime > 70) {
-            receivedChars.push(char);
-            lastChar = char;
-            lastCharTime = now;
-            console.log('🎤 Char:', char, '| freq:', freq.toFixed(0), '| amp:', amplitude, '| total:', receivedChars.join(''));
+          if (charResult && charResult.mode === currentMode) {
+            const { char } = charResult;
+            
+            if (char !== lastChar && now - lastCharTime > 70) {
+              receivedChars.push(char);
+              lastChar = char;
+              lastCharTime = now;
+              console.log('🎤 Char:', char, '| freq:', freq.toFixed(0), '| amp:', amplitude, '| total:', receivedChars.join(''));
+            }
           }
         }
       } else {
-        // No signal - reset lastChar during silence to allow repeated chars
+        // No signal - reset lastChar during silence
         if (inSync && now - lastCharTime > 100) {
           lastChar = '';
         }
         
-        // Timeout - if in sync too long without end sync, reset
+        // Timeout
         if (inSync && now - syncStartTime > 10000) {
           console.log('⚠️ Sync timeout, resetting');
           inSync = false;
+          currentMode = null;
           receivedChars = [];
           lastChar = '';
         }
@@ -307,6 +408,10 @@ export function isSupported(): boolean {
     (window.AudioContext || (window as any).webkitAudioContext) &&
     navigator.mediaDevices?.getUserMedia
   );
+}
+
+export function getBroadcastMode(): 'ultrasound' | 'audible' {
+  return BROADCAST_MODE;
 }
 
 export function cleanup() {
