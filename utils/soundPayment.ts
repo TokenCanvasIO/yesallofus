@@ -73,7 +73,7 @@ const END_SYNC_FREQ = BROADCAST_CONFIG.endSyncFreq;
 
 // Listening range covers BOTH audible and ultrasound
 const LISTEN_MIN_FREQ = 2500;   // Below audible sync
-const LISTEN_MAX_FREQ = 17000;  // Above ultrasound end sync
+const LISTEN_MAX_FREQ = 19500;  // Above ultrasound end sync
 
 let audioContext: AudioContext | null = null;
 let mediaStream: MediaStream | null = null;
