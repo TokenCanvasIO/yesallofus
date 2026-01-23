@@ -239,7 +239,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
     }
 
     // Play END sync tone
-    currentTime += SILENCE_DURATION * 4; // Extra delay before END SYNC
+    currentTime += SILENCE_DURATION * 8; // Extra delay before END SYNC
     const endOsc = ctx.createOscillator();
     const endGain = ctx.createGain();
     endOsc.frequency.value = FREQ_CONFIG[BROADCAST_MODE].endSyncFreq;
