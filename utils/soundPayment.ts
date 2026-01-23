@@ -6,7 +6,7 @@
 const SAMPLE_RATE = 48000;
 const BASE_FREQ = 18250;       // Ultrasound range - inaudible
 const FREQ_STEP = 30;          // Tight spacing in narrow band
-const TONE_DURATION = 0.04;    // 40ms - fast
+const TONE_DURATION = 0.06;    // 40ms - fast
 const SILENCE_DURATION = 0.015;// 15ms gap
 const SYNC_FREQ = 17500;       // Start sync
 const END_SYNC_FREQ = 19000;   // End sync
