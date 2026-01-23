@@ -25,7 +25,7 @@ const detectBroadcastMode = (): 'ultrasound' | 'audible' => {
   const isTablet = /iPad|Android(?!.*Mobile)/i.test(ua);
   
   // Check for touch device that's not a desktop with touchscreen
-  const isTouchOnly = 'ontouchend' in document && !(/Windows NT|Macintosh|Linux/i.test(ua) && window.innerWidth > 1024);
+  const isTouchOnly = 'ontouchend' in (typeof document !== 'undefined' ? document : {}) && !(/Windows NT|Macintosh|Linux/i.test(ua) && window.innerWidth > 1024);
   
   // Desktop detection
   const isMacDesktop = /Macintosh/i.test(ua) && window.innerWidth > 1024;
@@ -41,7 +41,7 @@ const detectBroadcastMode = (): 'ultrasound' | 'audible' => {
   return 'audible';
 };
 
-const BROADCAST_MODE = detectBroadcastMode();
+const BROADCAST_MODE = typeof window !== 'undefined' ? detectBroadcastMode() : 'audible';
 
 // ============================================================================
 // FREQUENCY CONFIGURATIONS
