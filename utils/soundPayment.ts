@@ -155,6 +155,11 @@ export async function broadcastToken(token: string): Promise<boolean> {
 
   try {
     await initSoundPayment();
+    if (audioContext?.state === 'suspended') {
+      console.log('🔊 Resuming suspended AudioContext');
+      await audioContext.resume();
+    }
+    console.log('🔊 AudioContext state:', audioContext?.state);
     if (!audioContext) throw new Error('Audio context not available');
 
     const tokenUpper = token.toUpperCase();
@@ -238,6 +243,11 @@ export async function startListening(
 
   try {
     await initSoundPayment();
+    if (audioContext?.state === 'suspended') {
+      console.log('🔊 Resuming suspended AudioContext');
+      await audioContext.resume();
+    }
+    console.log('🔊 AudioContext state:', audioContext?.state);
     if (!audioContext) throw new Error('Audio context not available');
 
     const ctx = audioContext;
