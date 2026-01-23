@@ -57,7 +57,7 @@ const FREQ_CONFIG = {
     baseFreq: 4000,
     freqStep: 100,    // Wider spacing for audible (more reliable)
     syncFreq: 3000,
-    endSyncFreq: 5500,
+    endSyncFreq: 6500,
   }
 };
 
@@ -124,7 +124,7 @@ function detectSyncType(freq: number): { type: 'start' | 'end'; mode: 'ultrasoun
   if (Math.abs(freq - FREQ_CONFIG.audible.syncFreq) < 200) {
     return { type: 'start', mode: 'audible' };
   }
-  if (Math.abs(freq - FREQ_CONFIG.audible.endSyncFreq) < 200) {
+  if (Math.abs(freq - FREQ_CONFIG.audible.endSyncFreq) < 300) {
     return { type: 'end', mode: 'audible' };
   }
   
@@ -232,7 +232,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
     }
 
     // Play END sync tone
-    currentTime += SILENCE_DURATION;
+    currentTime += SILENCE_DURATION * 4; // Extra delay before END SYNC
     const endOsc = ctx.createOscillator();
     const endGain = ctx.createGain();
     endOsc.frequency.value = FREQ_CONFIG[BROADCAST_MODE].endSyncFreq;
