@@ -126,16 +126,34 @@ export default function SoundPayment({
   // RECEIVE (Customer) - Listen for payment ID, broadcast signed response
   const handleReceive = async () => {
     try {
-      // Check registration
-      const soundId = localStorage.getItem('yesallofus_sound_id');
-      const secretKey = localStorage.getItem('yesallofus_sound_secret');
+      // Check if logged in, if not → login with Web3Auth
+      const { loginWithWeb3Auth } = await import('@/lib/web3auth');
       
-      if (!soundId || !secretKey) {
-        setErrorMsg('Enable Tap-to-Pay first to use sound payments');
+      let wallet = sessionStorage.getItem('walletAddress');
+      
+      if (!wallet) {
+        setStatus('processing');
+        const result = await loginWithWeb3Auth();
+        wallet = result?.address || sessionStorage.getItem('walletAddress');
+      }
+      
+      if (!wallet) {
+        setErrorMsg('Please login to pay');
         setStatus('error');
-        onError?.('Sound payment not set up');
         return;
       }
+      
+      // Get sound_id from server using wallet
+      const deviceRes = await fetch(`https://api.dltpays.com/nfc/api/v1/sound/device-by-wallet/${wallet}`);
+      const deviceData = await deviceRes.json();
+      
+      if (!deviceData.success || !deviceData.sound_id) {
+        setErrorMsg('Enable Tap-to-Pay in dashboard first');
+        setStatus('error');
+        return;
+      }
+      
+      const soundId = deviceData.sound_id;
 
       const utils = await loadSoundUtils();
       if (!utils) throw new Error('Sound not available');

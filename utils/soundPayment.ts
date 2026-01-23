@@ -4,21 +4,21 @@
 // Encodes payment tokens as audio frequencies
 
 const SAMPLE_RATE = 48000;
-const BASE_FREQ = 18250;        // Start frequency (Hz) - higher to be well clear of sync tones
-const FREQ_STEP = 30;         // Spacing between frequencies
-const TONE_DURATION = 0.04;    // Longer tone duration for reliability
-const SILENCE_DURATION = 0.015; // Gap between tones
-const SYNC_FREQ = 18000;        // Start sync tone frequency (lower)
-const END_SYNC_FREQ = 18500;    // End sync tone frequency
-const SYNC_DURATION = 0.08;     // Longer sync duration
+const BASE_FREQ = 18250;       // Ultrasound range - inaudible
+const FREQ_STEP = 30;          // Tight spacing in narrow band
+const TONE_DURATION = 0.04;    // 40ms - fast
+const SILENCE_DURATION = 0.015;// 15ms gap
+const SYNC_FREQ = 18000;       // Start sync
+const END_SYNC_FREQ = 18500;   // End sync
+const SYNC_DURATION = 0.08;    // 80ms sync
 
 let audioContext: AudioContext | null = null;
 let mediaStream: MediaStream | null = null;
 let analyser: AnalyserNode | null = null;
 let isListening = false;
 
-// Character set for encoding
-const CHARSET = '_.0123456789abcdefsnpy';
+// Character set for encoding - hex only for short tokens
+const CHARSET = '0123456789ABCDEF';
 
 function charToFreq(char: string): number {
   const index = CHARSET.indexOf(char.toLowerCase());
@@ -57,7 +57,12 @@ export async function broadcastToken(token: string): Promise<boolean> {
     await initSoundPayment();
     if (!audioContext) throw new Error('Audio context not available');
 
-    console.log('🔊 Broadcasting token:', token);
+    const tokenUpper = token.toUpperCase();
+    console.log('🔊 Broadcasting token:', tokenUpper);
+    console.log('🔊 Character frequencies:');
+    for (const char of tokenUpper) {
+      console.log(`   ${char} -> ${charToFreq(char)} Hz`);
+    }
 
     const ctx = audioContext;
     let currentTime = ctx.currentTime + 0.1;
@@ -74,7 +79,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
     currentTime += SYNC_DURATION + SILENCE_DURATION * 2;
 
     // Play each character as a frequency
-    for (const char of token) {
+    for (const char of tokenUpper) {
       const freq = charToFreq(char);
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -149,7 +154,7 @@ export async function startListening(
 
     const source = ctx.createMediaStreamSource(mediaStream);
     analyser = ctx.createAnalyser();
-    analyser.fftSize = 8192;
+    analyser.fftSize = 8192;  // High resolution
     analyser.smoothingTimeConstant = 0.2;
     source.connect(analyser);
 
@@ -178,7 +183,7 @@ export async function startListening(
       let maxValue = 0;
       let maxIndex = 0;
       
-      // Look for peaks in our frequency range (1500-9000 Hz)
+      // Look for peaks in ultrasound range (17500-19000 Hz)
       const minBin = Math.floor(17500 / freqResolution);
       const maxBin = Math.ceil(19000 / freqResolution);
       
@@ -189,7 +194,7 @@ export async function startListening(
         }
       }
       
-      if (maxValue < 60) return null;
+      if (maxValue < 60) return null;  // Lower threshold for ultrasound
       
       const freq = maxIndex * freqResolution;
       return { freq, amplitude: maxValue };
@@ -204,7 +209,7 @@ export async function startListening(
       if (detection) {
         const { freq, amplitude } = detection;
         
-        // Check for START sync tone (2000 Hz)
+        // Check for START sync tone (18000 Hz)
         if (!inSync && Math.abs(freq - SYNC_FREQ) < 300) {
           inSync = true;
           syncStartTime = now;
@@ -212,13 +217,13 @@ export async function startListening(
           lastChar = '';
           console.log('🎤 === START SYNC === amp:', amplitude, 'freq:', freq.toFixed(0));
         }
-        // Check for END sync tone (2500 Hz)
+        // Check for END sync tone (18500 Hz)
         else if (inSync && Math.abs(freq - END_SYNC_FREQ) < 300) {
           const token = receivedChars.join('');
           console.log('🎤 === END SYNC === token:', token, 'chars:', receivedChars.length);
           
-          // Accept tokens starting with pay_ OR containing .snd_ (signed responses)
-          if ((token.startsWith('pay_') || token.includes('.snd_')) && token.length >= 8) {
+          // Accept any 4+ char token (short hex like "A9F2")
+          if (token.length >= 4) {
             if (token !== lastToken || now - lastTokenTime > 5000) {
               lastToken = token;
               lastTokenTime = now;
@@ -226,7 +231,7 @@ export async function startListening(
               onTokenReceived(token);
             }
           } else if (token.length > 0) {
-            console.log('⚠️ Invalid token format:', token);
+            console.log('⚠️ Token too short:', token);
           }
           
           inSync = false;
@@ -235,8 +240,8 @@ export async function startListening(
         }
         // Decode character frequencies
         else if (inSync) {
-          // Ignore if too close to sync frequencies (below 3000 Hz)
-          if (freq < 3500) {
+          // Ignore if outside character range
+          if (freq < BASE_FREQ - 100 || freq > BASE_FREQ + CHARSET.length * FREQ_STEP + 100) {
             return requestAnimationFrame(processFrame);
           }
           
