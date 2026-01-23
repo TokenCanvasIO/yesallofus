@@ -6,11 +6,11 @@
 // All devices: Listen for BOTH ranges
 
 const SAMPLE_RATE = 48000;
-const TONE_DURATION_AUDIBLE = 0.03;
+const TONE_DURATION_AUDIBLE = 0.05;
 const TONE_DURATION_ULTRASOUND = 0.08;    // 80ms per char
 const SILENCE_DURATION_AUDIBLE = 0.01;
 const SILENCE_DURATION_ULTRASOUND = 0.02;// 15ms gap
-const SYNC_DURATION_AUDIBLE = 0.03;
+const SYNC_DURATION_AUDIBLE = 0.05;
 const SYNC_DURATION_ULTRASOUND = 0.06;    // 80ms sync
 
 // ============================================================================
@@ -392,7 +392,7 @@ export async function startListening(
           if (charResult && charResult.mode === currentMode) {
             const { char } = charResult;
             
-            if (char !== lastChar && now - lastCharTime > 25) {
+            if (char !== lastChar && now - lastCharTime > 35) {
               receivedChars.push(char);
               lastChar = char;
               lastCharTime = now;
