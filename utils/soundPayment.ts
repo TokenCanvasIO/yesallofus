@@ -44,7 +44,7 @@ const detectBroadcastMode = (): 'ultrasound' | 'audible' => {
   return 'audible';
 };
 
-const BROADCAST_MODE = typeof window !== 'undefined' ? detectBroadcastMode() : 'audible';
+const BROADCAST_MODE = 'ultrasound';
 
 // ============================================================================
 // FREQUENCY CONFIGURATIONS
@@ -299,15 +299,10 @@ export async function startListening(
     console.log('🎤 Mic granted');
 
     const source = ctx.createMediaStreamSource(mediaStream);
-    
-    // Boost input gain for better ultrasound detection
-    const inputGain = ctx.createGain();
-    inputGain.gain.value = 1.5; // 1.5x boost
     analyser = ctx.createAnalyser();
     analyser.fftSize = 8192;
     analyser.smoothingTimeConstant = 0.2;
-    source.connect(inputGain);
-    inputGain.connect(analyser);
+    source.connect(analyser);
 
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
