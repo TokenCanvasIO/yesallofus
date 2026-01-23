@@ -41,7 +41,7 @@ const detectBroadcastMode = (): 'ultrasound' | 'audible' => {
   return 'audible';
 };
 
-const BROADCAST_MODE = 'ultrasound';
+const BROADCAST_MODE = typeof window !== 'undefined' ? detectBroadcastMode() : 'audible';
 
 // ============================================================================
 // FREQUENCY CONFIGURATIONS
