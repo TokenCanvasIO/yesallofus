@@ -37,9 +37,18 @@ export default function SoundPayment({
   // Check if customer has sound device registered (for receive mode)
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const soundId = localStorage.getItem('yesallofus_sound_id');
-    const secretKey = localStorage.getItem('yesallofus_sound_secret');
-    setIsRegistered(!!(soundId && secretKey));
+    
+    const checkRegistration = () => {
+      const soundId = localStorage.getItem('yesallofus_sound_id');
+      const secretKey = localStorage.getItem('yesallofus_sound_secret');
+      setIsRegistered(!!(soundId && secretKey));
+    };
+    
+    checkRegistration();
+    
+    // Re-check every 2 seconds in case registration happens
+    const interval = setInterval(checkRegistration, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   // Generate HMAC signature (for customer response)

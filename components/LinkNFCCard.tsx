@@ -24,6 +24,7 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [nfcSupported, setNfcSupported] = useState(true);
+  const [soundRegistered, setSoundRegistered] = useState(false);
 
   const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
@@ -32,9 +33,39 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
     setNfcSupported('NDEFReader' in window);
   }, []);
 
-  // Load all linked cards
+  // Load all linked cards + auto-register sound device
   useEffect(() => {
     fetchCards();
+    
+    // Auto-register sound device if wallet exists and not already registered
+    if (walletAddress) {
+      const existingSoundId = localStorage.getItem('yesallofus_sound_id');
+      if (!existingSoundId) {
+        const soundId = 'snd_' + Math.random().toString(36).slice(2,6);
+        const secretKey = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+        
+        localStorage.setItem('yesallofus_sound_id', soundId);
+        localStorage.setItem('yesallofus_sound_secret', secretKey);
+        
+        fetch(`${NFC_API_URL}/sound/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            wallet_address: walletAddress,
+            sound_id: soundId,
+            secret_key: secretKey
+          })
+        }).then(res => res.json()).then(data => {
+          if (data.success) {
+            console.log('🔊 Sound device registered:', soundId);
+          }
+        }).catch(err => {
+          console.warn('Sound registration failed:', err);
+        });
+      } else {
+        console.log('🔊 Sound device already registered:', existingSoundId);
+      }
+    }
   }, [walletAddress]);
 
   const fetchCards = async () => {
@@ -444,6 +475,24 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
         <p className="text-zinc-600 text-xs mt-4">
           Tap your card at any YesAllOfUs vendor to pay instantly.
         </p>
+      )}
+
+      {/* Sound Payment Status */}
+      {soundRegistered && (
+        <div className="mt-6 pt-6 border-t border-zinc-800">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
+              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-white font-medium text-sm">Sound Payment</p>
+              <p className="text-emerald-400 text-xs">Ready</p>
+            </div>
+            <span className="ml-auto text-emerald-400">✓</span>
+          </div>
+        </div>
       )}
     </div>
   );

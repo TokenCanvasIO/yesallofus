@@ -4,13 +4,13 @@
 // Encodes payment tokens as audio frequencies
 
 const SAMPLE_RATE = 48000;
-const BASE_FREQ = 5000;        // Start frequency (Hz) - higher to be well clear of sync tones
-const FREQ_STEP = 150;         // Spacing between frequencies
-const TONE_DURATION = 0.15;    // Longer tone duration for reliability
-const SILENCE_DURATION = 0.08; // Gap between tones
-const SYNC_FREQ = 2000;        // Start sync tone frequency (lower)
-const END_SYNC_FREQ = 2500;    // End sync tone frequency
-const SYNC_DURATION = 0.3;     // Longer sync duration
+const BASE_FREQ = 18250;        // Start frequency (Hz) - higher to be well clear of sync tones
+const FREQ_STEP = 30;         // Spacing between frequencies
+const TONE_DURATION = 0.04;    // Longer tone duration for reliability
+const SILENCE_DURATION = 0.015; // Gap between tones
+const SYNC_FREQ = 18000;        // Start sync tone frequency (lower)
+const END_SYNC_FREQ = 18500;    // End sync tone frequency
+const SYNC_DURATION = 0.08;     // Longer sync duration
 
 let audioContext: AudioContext | null = null;
 let mediaStream: MediaStream | null = null;
@@ -179,8 +179,8 @@ export async function startListening(
       let maxIndex = 0;
       
       // Look for peaks in our frequency range (1500-9000 Hz)
-      const minBin = Math.floor(1500 / freqResolution);
-      const maxBin = Math.ceil(9000 / freqResolution);
+      const minBin = Math.floor(17500 / freqResolution);
+      const maxBin = Math.ceil(19000 / freqResolution);
       
       for (let i = minBin; i < maxBin; i++) {
         if (dataArray[i] > maxValue) {
