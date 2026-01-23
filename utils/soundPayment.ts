@@ -80,7 +80,7 @@ let isListening = false;
 // Character set for encoding - hex only for short tokens
 const CHARSET = '0123456789ABCDEF';
 
-function charToFreq(char: string, config = BROADCAST_CONFIG): number {
+function charToFreq(char: string, config = FREQ_CONFIG[BROADCAST_MODE]): number {
   const index = CHARSET.indexOf(char.toUpperCase());
   if (index === -1) return config.baseFreq;
   return config.baseFreq + (index * config.freqStep);
@@ -176,7 +176,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
     // Play START sync tone
     const syncOsc = ctx.createOscillator();
     const syncGain = ctx.createGain();
-    syncOsc.frequency.value = SYNC_FREQ;
+    syncOsc.frequency.value = FREQ_CONFIG[BROADCAST_MODE].syncFreq;
     syncGain.gain.value = 0.7;
     syncOsc.connect(syncGain);
     syncGain.connect(ctx.destination);
@@ -211,7 +211,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
     currentTime += SILENCE_DURATION;
     const endOsc = ctx.createOscillator();
     const endGain = ctx.createGain();
-    endOsc.frequency.value = END_SYNC_FREQ;
+    endOsc.frequency.value = FREQ_CONFIG[BROADCAST_MODE].endSyncFreq;
     endGain.gain.value = 0.7;
     endOsc.connect(endGain);
     endGain.connect(ctx.destination);
