@@ -6,11 +6,11 @@
 // All devices: Listen for BOTH ranges
 
 const SAMPLE_RATE = 48000;
-const TONE_DURATION_AUDIBLE = 0.04;
+const TONE_DURATION_AUDIBLE = 0.03;
 const TONE_DURATION_ULTRASOUND = 0.08;    // 80ms per char
 const SILENCE_DURATION_AUDIBLE = 0.01;
 const SILENCE_DURATION_ULTRASOUND = 0.02;// 15ms gap
-const SYNC_DURATION_AUDIBLE = 0.04;
+const SYNC_DURATION_AUDIBLE = 0.03;
 const SYNC_DURATION_ULTRASOUND = 0.06;    // 80ms sync
 
 // ============================================================================
@@ -44,7 +44,7 @@ const detectBroadcastMode = (): 'ultrasound' | 'audible' => {
   return 'audible';
 };
 
-const BROADCAST_MODE = 'ultrasound';
+const BROADCAST_MODE = typeof window !== 'undefined' ? detectBroadcastMode() : 'audible';
 
 // ============================================================================
 // FREQUENCY CONFIGURATIONS
