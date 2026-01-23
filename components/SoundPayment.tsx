@@ -32,24 +32,9 @@ export default function SoundPayment({
   const [status, setStatus] = useState<'idle' | 'active' | 'processing' | 'success' | 'error'>('idle');
   const [stopFn, setStopFn] = useState<(() => void) | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [isRegistered, setIsRegistered] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(true);
 
-  // Check if customer has sound device registered (for receive mode)
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    const checkRegistration = () => {
-      const soundId = localStorage.getItem('yesallofus_sound_id');
-      const secretKey = localStorage.getItem('yesallofus_sound_secret');
-      setIsRegistered(!!(soundId && secretKey));
-    };
-    
-    checkRegistration();
-    
-    // Re-check every 2 seconds in case registration happens
-    const interval = setInterval(checkRegistration, 2000);
-    return () => clearInterval(interval);
-  }, []);
+  // Registration check removed - Web3Auth login handles this in handleReceive
 
   // Generate HMAC signature (for customer response)
   const generateSignature = async (paymentId: string, soundId: string, timestamp: string, secretKey: string): Promise<string> => {
