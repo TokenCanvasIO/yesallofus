@@ -392,7 +392,7 @@ export async function startListening(
           if (charResult && charResult.mode === currentMode) {
             const { char } = charResult;
             
-            if (char !== lastChar && now - lastCharTime > 35) {
+            if (char !== lastChar && now - lastCharTime > 45) {
               receivedChars.push(char);
               lastChar = char;
               lastCharTime = now;
