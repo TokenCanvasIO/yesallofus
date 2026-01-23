@@ -189,7 +189,7 @@ export async function startListening(
         }
       }
       
-      if (maxValue < 100) return null;
+      if (maxValue < 60) return null;
       
       const freq = maxIndex * freqResolution;
       return { freq, amplitude: maxValue };
@@ -205,7 +205,7 @@ export async function startListening(
         const { freq, amplitude } = detection;
         
         // Check for START sync tone (2000 Hz)
-        if (!inSync && Math.abs(freq - SYNC_FREQ) < 200) {
+        if (!inSync && Math.abs(freq - SYNC_FREQ) < 300) {
           inSync = true;
           syncStartTime = now;
           receivedChars = [];
@@ -213,7 +213,7 @@ export async function startListening(
           console.log('🎤 === START SYNC === amp:', amplitude, 'freq:', freq.toFixed(0));
         }
         // Check for END sync tone (2500 Hz)
-        else if (inSync && Math.abs(freq - END_SYNC_FREQ) < 200) {
+        else if (inSync && Math.abs(freq - END_SYNC_FREQ) < 300) {
           const token = receivedChars.join('');
           console.log('🎤 === END SYNC === token:', token, 'chars:', receivedChars.length);
           

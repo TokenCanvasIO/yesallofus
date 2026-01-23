@@ -73,87 +73,41 @@ export default function SoundPayment({
 
       await utils.initSoundPayment();
       
-      console.log('🔊 POS: Broadcasting payment ID:', paymentId);
-      await utils.broadcastToken(paymentId);
+      // Short 4-char token for fast ultrasound
+      const shortToken = paymentId.slice(-4).toUpperCase();
+      console.log('🔊 POS: Broadcasting:', shortToken);
+      await utils.broadcastToken(shortToken);
       
-      console.log('🔊 POS: Now listening for customer response...');
-      
-      // After sending, listen for customer's signed response
-      const stop = await utils.startListening(
-        async (received: string) => {
-          console.log('🔊 POS: Received:', received);
+      // Poll for payment status (no listening needed)
+      console.log('🔊 POS: Polling for payment...');
+      const pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`https://api.dltpays.com/nfc/api/v1/payment-link/${paymentId}`);
+          const data = await res.json();
           
-          // Check if it's a signed response: pay_xyz.snd_abc.timestamp.signature
-          if (received.includes('.snd_')) {
-            stop();
-            setStopFn(null);
-            setStatus('processing');
-            
-            try {
-              // Parse: paymentId.soundId.timestamp.signature
-              const parts = received.split('.');
-              if (parts.length < 4) throw new Error('Invalid response format');
-              
-              const [recvPaymentId, soundId, timestamp, ...sigParts] = parts;
-              const signature = sigParts.join('.'); // In case signature has dots
-              
-              console.log('🔊 POS: Calling API with:', { recvPaymentId, soundId, timestamp });
-              
-              // Call server to execute payment
-              const res = await fetch('https://api.dltpays.com/nfc/api/v1/sound/pay', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  payment_id: recvPaymentId,
-                  sound_id: soundId,
-                  timestamp,
-                  signature
-                })
-              });
-              
-              const data = await res.json();
-              
-              if (!data.success) {
-                throw new Error(data.error || 'Payment failed');
-              }
-              
-              console.log('🔊 POS: Payment complete!', data.tx_hash);
-              setStatus('success');
-              if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-              onSuccess?.(data.tx_hash);
-              
-              setTimeout(() => setStatus('idle'), 3000);
-              
-            } catch (err: any) {
-              console.error('🔊 POS: Payment error:', err);
-              setErrorMsg(err.message || 'Payment failed');
-              setStatus('error');
-              onError?.(err.message || 'Payment failed');
-            }
+          if (data.payment?.status === 'paid') {
+            clearInterval(pollInterval);
+            setStatus('success');
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+            onSuccess?.(data.payment.tx_hash);
+            setTimeout(() => setStatus('idle'), 3000);
           }
-        },
-        (error: string) => {
-          console.error('🔊 POS: Listen error:', error);
-          setErrorMsg(error);
-          setStatus('error');
-          onError?.(error);
+        } catch (e) {
+          console.warn('Poll error:', e);
         }
-      );
-      
-      setStopFn(() => stop);
+      }, 500);
       
       // Timeout after 30 seconds
       setTimeout(() => {
+        clearInterval(pollInterval);
         if (status === 'active') {
-          stop();
-          setStopFn(null);
-          setErrorMsg('No response received');
+          setErrorMsg('Payment timeout');
           setStatus('error');
         }
       }, 30000);
 
     } catch (error: any) {
-      console.error('Broadcast error:', error);
+      console.error('Send error:', error);
       setErrorMsg(error.message || 'Failed to send');
       setStatus('error');
       onError?.(error.message || 'Failed to send');
@@ -191,37 +145,36 @@ export default function SoundPayment({
       console.log('🔊 Customer: Listening for payment request...');
 
       const stop = await utils.startListening(
-        async (receivedId: string) => {
-          // Received payment ID from POS
-          if (receivedId.startsWith('pay_') && !receivedId.includes('.snd_')) {
-            console.log('🔊 Customer: Received payment request:', receivedId);
+        async (token: string) => {
+          // Received short token from POS (e.g. "A9F2")
+          if (token.length >= 4) {
+            console.log('🔊 Heard token:', token);
             stop();
             setStopFn(null);
             
             setStatus('processing');
             
             try {
-              // Generate signed response
-              const timestamp = Math.floor(Date.now() / 1000).toString();
-              const signature = await generateSignature(receivedId, soundId, timestamp, secretKey);
+              // Call API directly - no broadcast back
+              const res = await fetch(`https://api.dltpays.com/nfc/api/v1/p/${token}?sid=${soundId}`);
+              const data = await res.json();
               
-              // Broadcast: paymentId.soundId.timestamp.signature
-              const response = `${receivedId}.${soundId}.${timestamp}.${signature}`;
+              if (!data.success) {
+                throw new Error(data.error || 'Payment failed');
+              }
               
-              console.log('🔊 Customer: Broadcasting signed response');
-              
-              await utils.broadcastToken(response);
-              
+              console.log('🔊 Payment complete:', data.tx_hash);
               setStatus('success');
               if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+              onSuccess?.(data.tx_hash);
               
               setTimeout(() => setStatus('idle'), 3000);
               
             } catch (err: any) {
-              console.error('🔊 Customer: Broadcast error:', err);
-              setErrorMsg(err.message || 'Failed to send payment');
+              console.error('🔊 Payment error:', err);
+              setErrorMsg(err.message || 'Payment failed');
               setStatus('error');
-              onError?.(err.message || 'Failed to send');
+              onError?.(err.message || 'Payment failed');
             }
           }
         },
