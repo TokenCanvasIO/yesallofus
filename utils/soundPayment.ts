@@ -22,7 +22,7 @@ const SAMPLE_RATE = 48000;
 const TIMING = {
   // Preamble/Postamble - long enough to reliably detect
   PREAMBLE_DURATION: 0.20,      // 200ms - longer for better receiver lock 
-  POSTAMBLE_DURATION: 0.15,     // 150ms
+  POSTAMBLE_DURATION: 0.20,     // 200ms - longer for reliable detection
   
   // Character and gap durations
   CHAR_DURATION: 0.12,          // 120ms per character - more time to detect
@@ -359,7 +359,7 @@ export async function startListening(
     let consecutivePreambleCount = 0;
     let consecutiveGapCount = 0;
     
-    const AMPLITUDE_THRESHOLD = 30;
+    const AMPLITUDE_THRESHOLD = 25;  // Lowered for better postamble detection
     const PREAMBLE_CONFIRM_COUNT = 3;  // Need 3 consecutive preamble detections
     const GAP_CONFIRM_COUNT = 1;       // Need 1 gap detection (faster!)
     const CHAR_CONFIRM_COUNT = 1;      // Need 1 char detection (faster!)
