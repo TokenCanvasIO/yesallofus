@@ -36,7 +36,7 @@ export default function SoundPaymentPage() {
   useEffect(() => {
     if (status === 'success') {
       setShowSuccessVideo(true);
-      const timer = setTimeout(() => setShowSuccessVideo(false), 3000);
+      const timer = setTimeout(() => setShowSuccessVideo(false), 6000);
       return () => clearTimeout(timer);
     }
   }, [status]);
