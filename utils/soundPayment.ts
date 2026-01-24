@@ -360,9 +360,9 @@ export async function startListening(
     let consecutiveGapCount = 0;
     
     const AMPLITUDE_THRESHOLD = 30;
-    const PREAMBLE_CONFIRM_COUNT = 4;  // Need 4 consecutive preamble detections
-    const GAP_CONFIRM_COUNT = 2;       // Need 2 consecutive gap detections (reduced!)
-    const CHAR_CONFIRM_COUNT = 2;      // Need 2 consecutive same-char detections
+    const PREAMBLE_CONFIRM_COUNT = 3;  // Need 3 consecutive preamble detections
+    const GAP_CONFIRM_COUNT = 1;       // Need 1 gap detection (faster!)
+    const CHAR_CONFIRM_COUNT = 1;      // Need 1 char detection (faster!)
     
     let lastDetectedChar: string | null = null;
     let charConfirmCount = 0;

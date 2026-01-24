@@ -468,7 +468,6 @@ const handleSplitBill = async () => {
         storeName={payment?.store_name || ''}
         storeId={payment?.store_id}
         storeLogo={payment?.store_logo}
-        customerLogo={payment?.customer_logo}
         amount={payment?.amount || 0}
         tip={payment?.tip || 0}
         txHash={txHash || undefined}
