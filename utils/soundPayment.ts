@@ -21,20 +21,20 @@ const SAMPLE_RATE = 48000;
 // =============================================================================
 const TIMING = {
   // Preamble/Postamble - long enough to reliably detect
-  PREAMBLE_DURATION: 0.08,      // 80ms
-  POSTAMBLE_DURATION: 0.08,     // 80ms
+  PREAMBLE_DURATION: 0.12,      // 120ms (increased)
+  POSTAMBLE_DURATION: 0.12,     // 120ms (increased)
   
   // Character and gap durations
-  CHAR_DURATION: 0.06,          // 60ms per character
-  GAP_DURATION: 0.03,           // 30ms gap between chars
+  CHAR_DURATION: 0.08,          // 80ms per character (increased)
+  GAP_DURATION: 0.04,           // 40ms gap between chars (increased)
   
   // Receiver timing
-  SAMPLE_DELAY: 0.03,           // Sample 30ms into char slot (middle of 60ms)
-  PREAMBLE_MIN_DURATION: 0.04,  // Min time to confirm preamble (40ms)
+  SAMPLE_DELAY: 0.04,           // Sample 40ms into char slot
+  PREAMBLE_MIN_DURATION: 0.06,  // Min time to confirm preamble (60ms)
   
   // Envelope for smooth transitions
-  ATTACK_TIME: 0.008,           // 8ms fade in
-  RELEASE_TIME: 0.008,          // 8ms fade out
+  ATTACK_TIME: 0.01,            // 10ms fade in
+  RELEASE_TIME: 0.01,           // 10ms fade out
 };
 
 // Calculate total broadcast duration for a token
@@ -103,11 +103,11 @@ function freqToChar(freq: number, mode: 'ultrasound' | 'audible'): string | null
   return CHARSET[index];
 }
 
-function identifyTone(freq: number, mode: 'ultrasound' | 'audible'): 
+function identifyTone(freq: number, mode: 'ultrasound' | 'audible', logUnknown: boolean = false): 
   { type: 'preamble' | 'gap' | 'postamble' | 'char'; char?: string } | null {
   
   const config = FREQ_CONFIG[mode];
-  const tolerance = mode === 'ultrasound' ? 80 : 100;
+  const tolerance = mode === 'ultrasound' ? 100 : 120;  // Increased tolerance
   
   // Check preamble
   if (Math.abs(freq - config.syncFreq) < tolerance) {
@@ -119,8 +119,8 @@ function identifyTone(freq: number, mode: 'ultrasound' | 'audible'):
     return { type: 'gap' };
   }
   
-  // Check postamble
-  if (Math.abs(freq - config.endSyncFreq) < tolerance) {
+  // Check postamble - use stricter tolerance to avoid false positives
+  if (Math.abs(freq - config.endSyncFreq) < 150) {
     return { type: 'postamble' };
   }
   
@@ -355,9 +355,13 @@ export async function startListening(
     let consecutivePreambleCount = 0;
     let consecutiveGapCount = 0;
     
-    const AMPLITUDE_THRESHOLD = 25;
-    const PREAMBLE_CONFIRM_COUNT = 3;  // Need 3 consecutive preamble detections
-    const GAP_CONFIRM_COUNT = 2;       // Need 2 consecutive gap detections
+    const AMPLITUDE_THRESHOLD = 30;
+    const PREAMBLE_CONFIRM_COUNT = 5;  // Need 5 consecutive preamble detections
+    const GAP_CONFIRM_COUNT = 3;       // Need 3 consecutive gap detections
+    const CHAR_CONFIRM_COUNT = 2;      // Need 2 consecutive same-char detections
+    
+    let lastDetectedChar: string | null = null;
+    let charConfirmCount = 0;
 
     // Detect peak frequency in range
     const detectFrequency = (minFreq: number, maxFreq: number): { freq: number; amplitude: number } | null => {
@@ -451,11 +455,23 @@ export async function startListening(
           case 'WAITING_FOR_CHAR':
             // Looking for character tone
             if (tone?.type === 'char' && tone.char) {
-              receivedChars.push(tone.char);
-              state = 'WAITING_FOR_GAP';
-              stateStartTime = now;
-              console.log('🎤 [RX] CHAR[' + (receivedChars.length - 1) + '] = "' + tone.char + '" | freq:', freq.toFixed(0), '| amp:', amplitude, '| token so far:', receivedChars.join(''));
-              onProgress?.('receiving', receivedChars.join(''));
+              // Require consecutive confirmations of same char
+              if (tone.char === lastDetectedChar) {
+                charConfirmCount++;
+              } else {
+                lastDetectedChar = tone.char;
+                charConfirmCount = 1;
+              }
+              
+              if (charConfirmCount >= CHAR_CONFIRM_COUNT) {
+                receivedChars.push(tone.char);
+                state = 'WAITING_FOR_GAP';
+                stateStartTime = now;
+                charConfirmCount = 0;
+                lastDetectedChar = null;
+                console.log('🎤 [RX] CHAR[' + (receivedChars.length - 1) + '] = "' + tone.char + '" | freq:', freq.toFixed(0), '| amp:', amplitude, '| token so far:', receivedChars.join(''));
+                onProgress?.('receiving', receivedChars.join(''));
+              }
             } else if (tone?.type === 'postamble') {
               // End of transmission
               state = 'COMPLETE';
@@ -484,8 +500,17 @@ export async function startListening(
               receivedChars = [];
               consecutivePreambleCount = 0;
               consecutiveGapCount = 0;
+              charConfirmCount = 0;
+              lastDetectedChar = null;
             } else if (tone?.type === 'gap') {
-              // Still gap, waiting for char
+              // Still gap, waiting for char - reset char detection
+              lastDetectedChar = null;
+              charConfirmCount = 0;
+            } else {
+              // Unknown tone - log it for debugging
+              if (tone) {
+                console.log('🎤 [RX] ? Unknown tone in WAITING_FOR_CHAR | type:', tone.type, '| freq:', freq.toFixed(0), '| amp:', amplitude);
+              }
             }
             break;
 
@@ -528,6 +553,8 @@ export async function startListening(
               receivedChars = [];
               consecutivePreambleCount = 0;
               consecutiveGapCount = 0;
+              charConfirmCount = 0;
+              lastDetectedChar = null;
             } else if (tone?.type === 'char') {
               // Still hearing character, not gap yet
               consecutiveGapCount = 0;
