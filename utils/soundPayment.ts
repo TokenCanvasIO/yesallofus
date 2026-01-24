@@ -66,14 +66,15 @@ const FREQ_CONFIG = {
     freqStep: 30,
     syncFreq: 17500,       // PREAMBLE
     gapFreq: 17650,        // GAP tone (between sync and data range)
-    endSyncFreq: 18800,    // POSTAMBLE
+    endSyncFreq: 19500,    // POSTAMBLE - MOVED MUCH HIGHER (was 18800)
+    // Char range: 17800 (0) to 18250 (F) - gap to postamble now 1250 Hz
   },
   audible: {
     baseFreq: 3200,
     freqStep: 150,
     syncFreq: 3000,        // PREAMBLE  
     gapFreq: 3100,         // GAP tone
-    endSyncFreq: 5700,     // POSTAMBLE
+    endSyncFreq: 6200,     // POSTAMBLE - MOVED HIGHER (was 5700)
   }
 };
 
@@ -119,8 +120,9 @@ function identifyTone(freq: number, mode: 'ultrasound' | 'audible', logUnknown: 
     return { type: 'gap' };
   }
   
-  // Check postamble - use stricter tolerance to avoid false positives
-  if (Math.abs(freq - config.endSyncFreq) < 150) {
+  // Check postamble - use VERY strict tolerance to avoid false positives
+  // Postamble is now at 19500 Hz (ultrasound), far from chars (max 18250 Hz)
+  if (Math.abs(freq - config.endSyncFreq) < 200) {
     return { type: 'postamble' };
   }
   
