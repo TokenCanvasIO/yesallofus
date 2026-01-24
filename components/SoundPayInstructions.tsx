@@ -23,7 +23,7 @@ export default function SoundPayInstructions({
     
     const interval = setInterval(() => {
       setCurrentStep((prev) => (prev + 1) % totalSteps);
-    }, 3000);
+    }, 13500);
     
     return () => clearInterval(interval);
   }, [autoPlay]);
@@ -34,7 +34,7 @@ export default function SoundPayInstructions({
     
     const deviceInterval = setInterval(() => {
       setDevicePair((prev) => (prev + 1) % 3);
-    }, 1000);
+    }, 4500);
     
     return () => clearInterval(deviceInterval);
   }, [currentStep]);
@@ -54,15 +54,20 @@ export default function SoundPayInstructions({
       ];
 
   return (
-    <div className="w-full max-w-sm mx-auto">
+    <div className="w-full">
       {/* Animation Container */}
-      <div className="relative h-40 bg-gradient-to-b from-zinc-900 to-zinc-950 rounded-2xl border border-zinc-800 overflow-hidden">
+      <div className="relative w-full h-40 md:h-80 bg-zinc-900/25 backdrop-blur-sm rounded-2xl border border-zinc-800/30 overflow-hidden">
+        
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-black/20" />
         
         {/* Ambient glow */}
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-purple-500 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 md:w-64 md:h-64 bg-purple-500 rounded-full blur-3xl" />
         </div>
 
+        {/* Scale wrapper for desktop/tablet */}
+        <div className="absolute inset-0 md:scale-[2] md:origin-center">
         <AnimatePresence mode="wait">
           {/* Step 1: Tap to Listen / Wait for Receiver */}
           {currentStep === 0 && (
@@ -79,7 +84,7 @@ export default function SoundPayInstructions({
                 <motion.div 
                   className="relative w-14 h-24 bg-zinc-800 rounded-xl border-2 border-zinc-600 shadow-2xl"
                   animate={{ y: [0, -2, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
                 >
                   {/* Notch */}
                   <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-7 h-1 bg-zinc-700 rounded-full" />
@@ -92,7 +97,7 @@ export default function SoundPayInstructions({
                         <motion.div
                           className="w-7 h-7 rounded-full bg-purple-500/20 flex items-center justify-center"
                           animate={{ scale: [1, 1.1, 1] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
+                          transition={{ duration: 6.75, repeat: Infinity }}
                         >
                           <svg className="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
@@ -106,14 +111,14 @@ export default function SoundPayInstructions({
                         <motion.div
                           className="flex gap-1"
                           animate={{ opacity: [0.3, 1, 0.3] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
+                          transition={{ duration: 6.75, repeat: Infinity }}
                         >
                           {[0, 1, 2].map((i) => (
                             <motion.div
                               key={i}
                               className="w-1 h-1 rounded-full bg-blue-400"
                               animate={{ y: [0, -3, 0] }}
-                              transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+                              transition={{ duration: 2.7, repeat: Infinity, delay: i * 0.675 }}
                             />
                           ))}
                         </motion.div>
@@ -133,7 +138,7 @@ export default function SoundPayInstructions({
                       opacity: [0, 1, 1, 1],
                       y: [8, 0, 4, 0]
                     }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
+                    transition={{ duration: 6.75, repeat: Infinity }}
                   >
                     <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
                       <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -165,7 +170,7 @@ export default function SoundPayInstructions({
                   animate={{ 
                     y: [0, 3, 0],
                   }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
                 >
                   {/* Notch at TOP */}
                   <div className="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-zinc-700 rounded-full" />
@@ -174,7 +179,7 @@ export default function SoundPayInstructions({
                     <motion.div
                       className="w-4 h-4 rounded-full bg-purple-500/30 flex items-center justify-center"
                       animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 1, repeat: Infinity }}
+                      transition={{ duration: 4.5, repeat: Infinity }}
                     >
                       <svg className="w-2 h-2 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
@@ -199,9 +204,9 @@ export default function SoundPayInstructions({
                         opacity: [0.8, 0.4, 0],
                       }}
                       transition={{
-                        duration: 1,
+                        duration: 4.5,
                         repeat: Infinity,
-                        delay: i * 0.25,
+                        delay: i * 1.125,
                         ease: "easeOut"
                       }}
                     />
@@ -212,7 +217,7 @@ export default function SoundPayInstructions({
                 <motion.div 
                   className="relative w-10 h-[72px] bg-zinc-800 rounded-lg border-2 border-blue-500/50 shadow-lg shadow-blue-500/20"
                   animate={{ y: [0, -3, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                  transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 2.25 }}
                 >
                   {/* Notch at TOP */}
                   <div className="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-zinc-700 rounded-full" />
@@ -221,7 +226,7 @@ export default function SoundPayInstructions({
                     <motion.div
                       className="w-4 h-4 rounded-full bg-blue-500/30 flex items-center justify-center"
                       animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 1, repeat: Infinity, delay: 0.3 }}
+                      transition={{ duration: 4.5, repeat: Infinity, delay: 1.35 }}
                     >
                       <svg className="w-2 h-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728" />
@@ -303,9 +308,9 @@ export default function SoundPayInstructions({
                         x: [0, 8, 16]
                       }}
                       transition={{
-                        duration: 1,
+                        duration: 4.5,
                         repeat: Infinity,
-                        delay: i * 0.25,
+                        delay: i * 1.125,
                         ease: "easeOut"
                       }}
                     />
@@ -390,7 +395,7 @@ export default function SoundPayInstructions({
                   className="relative w-14 h-24 bg-zinc-800 rounded-xl border-2 border-emerald-500 shadow-lg shadow-emerald-500/30"
                   initial={{ scale: 0.9 }}
                   animate={{ scale: 1 }}
-                  transition={{ duration: 0.3, delay: 0.2 }}
+                  transition={{ duration: 1.35, delay: 0.9 }}
                 >
                   {/* Notch */}
                   <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-7 h-1 bg-zinc-700 rounded-full" />
@@ -402,7 +407,7 @@ export default function SoundPayInstructions({
                       className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center"
                       initial={{ scale: 0 }}
                       animate={{ scale: [0, 1.2, 1] }}
-                      transition={{ duration: 0.5, delay: 0.3 }}
+                      transition={{ duration: 2.25, delay: 1.35 }}
                     >
                       <motion.svg 
                         className="w-4 h-4 text-emerald-400" 
@@ -417,7 +422,7 @@ export default function SoundPayInstructions({
                           d="M5 13l4 4L19 7"
                           initial={{ pathLength: 0 }}
                           animate={{ pathLength: 1 }}
-                          transition={{ duration: 0.4, delay: 0.5 }}
+                          transition={{ duration: 1.8, delay: 2.25 }}
                         />
                       </motion.svg>
                     </motion.div>
@@ -425,7 +430,7 @@ export default function SoundPayInstructions({
                       className="text-[7px] text-emerald-300 font-medium"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.7 }}
+                      transition={{ delay: 3.15 }}
                     >
                       Paid!
                     </motion.span>
@@ -449,13 +454,14 @@ export default function SoundPayInstructions({
                       scale: [0, 1, 0],
                       opacity: [0, 1, 0]
                     }}
-                    transition={{ duration: 1, delay: 0.4 + i * 0.05 }}
+                    transition={{ duration: 4.5, delay: 1.8 + i * 0.05 }}
                   />
                 ))}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </div>
 
       {/* Step indicators and text */}
