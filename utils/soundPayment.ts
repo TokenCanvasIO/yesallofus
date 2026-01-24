@@ -314,6 +314,7 @@ export async function startListening(
     let currentMode: 'ultrasound' | 'audible' | null = null;
     let lastCharTime = 0;
     let lastChar = '';
+    let currentToneFreq: number | null = null;
     let lastToken = '';
     let lastTokenTime = 0;
     let syncStartTime = 0;
@@ -392,18 +393,21 @@ export async function startListening(
           if (charResult && charResult.mode === currentMode) {
             const { char } = charResult;
             
-            if ((char !== lastChar && now - lastCharTime > 35) || (char === lastChar && now - lastCharTime > 70)) {
-              if (receivedChars.length < 4) receivedChars.push(char);
-              lastChar = char;
+            // Only register when frequency CHANGES (new tone started)
+            const isNewTone = currentToneFreq === null || Math.abs(freq - currentToneFreq) > 50;
+            
+            if (isNewTone && receivedChars.length < 4) {
+              receivedChars.push(char);
+              currentToneFreq = freq;
               lastCharTime = now;
               console.log('🎤 Char:', char, '| freq:', freq.toFixed(0), '| amp:', amplitude, '| total:', receivedChars.join(''));
             }
           }
         }
       } else {
-        // No signal - reset lastChar during silence
-        if (inSync && now - lastCharTime > 100) {
-          lastChar = '';
+        // No signal - reset tone tracking during silence
+        if (inSync && now - lastCharTime > 30) {
+          currentToneFreq = null;
         }
         
         // Timeout
