@@ -56,13 +56,10 @@ export default function SoundPayInstructions({
   return (
     <div className="w-full">
       {/* Animation Container */}
-      <div className="relative w-full h-40 md:h-80 bg-zinc-900/10 backdrop-blur-sm rounded-2xl border border-zinc-800/10 overflow-hidden">
+      <div className="relative w-full h-40 md:h-80 rounded-2xl overflow-hidden">
         
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-black/5" />
-        
-        {/* Ambient glow - reduced purple */}
-        <div className="absolute inset-0 opacity-15">
+        {/* Ambient glow - subtle */}
+        <div className="absolute inset-0 opacity-10">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 md:w-64 md:h-64 bg-purple-500/20 rounded-full blur-3xl" />
         </div>
 

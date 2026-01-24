@@ -200,30 +200,21 @@ export default function SoundPaymentPage() {
     <div className="min-h-screen bg-black text-white overflow-hidden">
       <NebulaBackground opacity={0.3} />
       
-      {/* Sound wave video background - blends with nebula underneath */}
+      {/* Sound wave video background - very faint, nebula stays prominent */}
       <div className="fixed inset-0 z-[1] pointer-events-none">
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover mix-blend-overlay"
+          className="absolute inset-0 w-full h-full object-cover mix-blend-soft-light"
           style={{
-            opacity: 0.3,
+            opacity: 0.06,
           }}
         >
           <source src="/soundwave-bg.mp4" type="video/mp4" />
         </video>
-        {/* Darkening overlay */}
-        <div className="absolute inset-0 bg-black/15" />
       </div>
-      
-      <style jsx global>{`
-        @keyframes fadeInOut {
-          0%, 100% { opacity: 0.1; }
-          50% { opacity: 0.18; }
-        }
-      `}</style>
       
       <div className="max-w-md mx-auto p-4 pt-4 pb-32 md:pt-0 md:pb-4 md:min-h-screen md:flex md:flex-col md:justify-center relative z-10">
         {/* Instructions Animation - Tappable */}
@@ -256,7 +247,7 @@ export default function SoundPaymentPage() {
           >
             {soundId && (
               <>
-                {/* Nebula video background */}
+                {/* Video background */}
                 <video
                   autoPlay
                   loop
@@ -266,19 +257,8 @@ export default function SoundPaymentPage() {
                 >
                   <source src="/nebula-bg.webm" type="video/webm" />
                 </video>
-                {/* Sound wave video - blended on top */}
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="absolute inset-0 w-full h-full object-cover mix-blend-overlay"
-                  style={{ opacity: 0.3 }}
-                >
-                  <source src="/soundwave-bg.mp4" type="video/mp4" />
-                </video>
                 {/* Dark overlay */}
-                <div className="absolute inset-0 bg-black/15" />
+                <div className="absolute inset-0 bg-black/60" />
               </>
             )}
             <span className="text-2xl font-bold relative z-10">{soundId ? 'SoundPay' : 'Setting up...'}</span>
