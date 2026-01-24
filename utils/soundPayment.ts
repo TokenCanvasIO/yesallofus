@@ -390,17 +390,20 @@ export async function startListening(
     };
 
     // Try both frequency ranges
+    // IMPORTANT: Check audible FIRST because its POSTAMBLE (17000 Hz) 
+    // could be confused with ultrasound PREAMBLE (17500 Hz)
     const detectAnySignal = (): { freq: number; amplitude: number; mode: 'ultrasound' | 'audible' } | null => {
-      // Try ultrasound first (17000-20000 Hz)
-      const ultra = detectFrequency(17000, 20000);
-      if (ultra && ultra.amplitude > AMPLITUDE_THRESHOLD) {
-        return { ...ultra, mode: 'ultrasound' };
-      }
-      
-      // Try audible (14500-17500 Hz) - the 15000 Hz sweet spot for iPhone
-      const audible = detectFrequency(14500, 17500);
+      // Try audible first (14500-17200 Hz) - the 15000 Hz sweet spot for iPhone
+      // Upper limit 17200 to include POSTAMBLE but not overlap with ultrasound PREAMBLE
+      const audible = detectFrequency(14500, 17200);
       if (audible && audible.amplitude > AMPLITUDE_THRESHOLD) {
         return { ...audible, mode: 'audible' };
+      }
+      
+      // Try ultrasound (17300-20000 Hz) - starts above audible POSTAMBLE
+      const ultra = detectFrequency(17300, 20000);
+      if (ultra && ultra.amplitude > AMPLITUDE_THRESHOLD) {
+        return { ...ultra, mode: 'ultrasound' };
       }
       
       return null;
@@ -411,6 +414,11 @@ export async function startListening(
 
       const now = Date.now();
       const detection = detectAnySignal();
+
+      // Debug: log any strong signal detected (every 500ms to avoid spam)
+      if (detection && detection.amplitude > 50 && now % 500 < 20) {
+        console.log('🎤 [RX] Signal detected | mode:', detection.mode, '| freq:', detection.freq.toFixed(0), '| amp:', detection.amplitude);
+      }
 
       if (detection) {
         const { freq, amplitude, mode } = detection;
