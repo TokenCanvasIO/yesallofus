@@ -439,8 +439,8 @@ export default function SoundPaymentPage() {
         )}
       </div>
 
-      {/* YAOFUS Pioneers Badge - Fixed at bottom, hidden when error */}
-      {!(status === 'idle' && error) && (
+      {/* YAOFUS Pioneers Badge - Fixed at bottom, hidden when error or success */}
+      {!(status === 'idle' && error) && status !== 'success' && (
         <div className="fixed bottom-4 left-0 right-0 flex flex-col items-center gap-1">
           <span className="text-zinc-500 text-[10px] font-medium tracking-wider">ULTRA</span>
           <span className="text-base font-extrabold tracking-widest">
