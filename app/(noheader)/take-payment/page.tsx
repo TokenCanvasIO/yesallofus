@@ -312,7 +312,7 @@ useEffect(() => {
     const fetchStats = async () => {
       try {
         const res = await fetch(
-          `${API_URL}/store/${storeId}/receipts?wallet_address=${walletAddress}&limit=500`
+          `${API_URL}/store/${storeId}/receipts?wallet_address=${walletAddress}&limit=10000`
         );
         const data = await res.json();
         if (data.success) {
