@@ -21,20 +21,20 @@ const SAMPLE_RATE = 48000;
 // =============================================================================
 const TIMING = {
   // Preamble/Postamble - long enough to reliably detect
-  PREAMBLE_DURATION: 0.12,      // 120ms (increased)
-  POSTAMBLE_DURATION: 0.12,     // 120ms (increased)
+  PREAMBLE_DURATION: 0.15,      // 150ms 
+  POSTAMBLE_DURATION: 0.15,     // 150ms
   
   // Character and gap durations
-  CHAR_DURATION: 0.08,          // 80ms per character (increased)
-  GAP_DURATION: 0.04,           // 40ms gap between chars (increased)
+  CHAR_DURATION: 0.10,          // 100ms per character
+  GAP_DURATION: 0.06,           // 60ms gap - MUST be long enough to detect
   
   // Receiver timing
-  SAMPLE_DELAY: 0.04,           // Sample 40ms into char slot
-  PREAMBLE_MIN_DURATION: 0.06,  // Min time to confirm preamble (60ms)
+  SAMPLE_DELAY: 0.05,           // Sample 50ms into char slot
+  PREAMBLE_MIN_DURATION: 0.08,  // Min time to confirm preamble
   
   // Envelope for smooth transitions
-  ATTACK_TIME: 0.01,            // 10ms fade in
-  RELEASE_TIME: 0.01,           // 10ms fade out
+  ATTACK_TIME: 0.012,           // 12ms fade in
+  RELEASE_TIME: 0.012,          // 12ms fade out
 };
 
 // Calculate total broadcast duration for a token
@@ -356,8 +356,8 @@ export async function startListening(
     let consecutiveGapCount = 0;
     
     const AMPLITUDE_THRESHOLD = 30;
-    const PREAMBLE_CONFIRM_COUNT = 5;  // Need 5 consecutive preamble detections
-    const GAP_CONFIRM_COUNT = 3;       // Need 3 consecutive gap detections
+    const PREAMBLE_CONFIRM_COUNT = 4;  // Need 4 consecutive preamble detections
+    const GAP_CONFIRM_COUNT = 2;       // Need 2 consecutive gap detections (reduced!)
     const CHAR_CONFIRM_COUNT = 2;      // Need 2 consecutive same-char detections
     
     let lastDetectedChar: string | null = null;
@@ -448,6 +448,8 @@ export async function startListening(
               // Still in preamble, that's fine
               consecutiveGapCount = 0;
             } else {
+              // Something else detected - log it!
+              console.log('🎤 [RX] ? In PREAMBLE_DETECTED, got:', tone?.type || 'unknown', '| freq:', freq.toFixed(0), '| amp:', amplitude, '| gapCount:', consecutiveGapCount);
               consecutiveGapCount = 0;
             }
             break;
