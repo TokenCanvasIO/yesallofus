@@ -70,11 +70,13 @@ const FREQ_CONFIG = {
     // Char range: 17800 (0) to 18250 (F) - gap to postamble now 1250 Hz
   },
   audible: {
-    baseFreq: 3200,
-    freqStep: 150,
-    syncFreq: 3000,        // PREAMBLE  
-    gapFreq: 3100,         // GAP tone
-    endSyncFreq: 6200,     // POSTAMBLE - MOVED HIGHER (was 5700)
+    // 15000 Hz range - this is the sweet spot for iPhone speakers!
+    baseFreq: 15500,       // Character base frequency
+    freqStep: 80,          // 80 Hz per character (0-F = 0-1200 Hz range)
+    syncFreq: 15000,       // PREAMBLE
+    gapFreq: 15250,        // GAP tone (between sync and data range)
+    endSyncFreq: 17000,    // POSTAMBLE
+    // Char range: 15500 (0) to 16700 (F)
   }
 };
 
@@ -389,14 +391,14 @@ export async function startListening(
 
     // Try both frequency ranges
     const detectAnySignal = (): { freq: number; amplitude: number; mode: 'ultrasound' | 'audible' } | null => {
-      // Try ultrasound first (17000-19500 Hz)
-      const ultra = detectFrequency(17000, 19500);
+      // Try ultrasound first (17000-20000 Hz)
+      const ultra = detectFrequency(17000, 20000);
       if (ultra && ultra.amplitude > AMPLITUDE_THRESHOLD) {
         return { ...ultra, mode: 'ultrasound' };
       }
       
-      // Try audible (2500-6000 Hz)
-      const audible = detectFrequency(2500, 6000);
+      // Try audible (14500-17500 Hz) - the 15000 Hz sweet spot for iPhone
+      const audible = detectFrequency(14500, 17500);
       if (audible && audible.amplitude > AMPLITUDE_THRESHOLD) {
         return { ...audible, mode: 'audible' };
       }
