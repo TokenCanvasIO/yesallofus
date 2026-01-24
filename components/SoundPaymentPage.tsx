@@ -216,7 +216,7 @@ export default function SoundPaymentPage() {
         </video>
       </div>
       
-      <div className="max-w-md mx-auto p-4 pt-4 pb-32 md:pt-0 md:pb-4 md:min-h-screen md:flex md:flex-col md:justify-center relative z-10">
+      <div className={`max-w-md mx-auto p-4 pt-4 md:pt-0 md:pb-4 md:min-h-screen md:flex md:flex-col md:justify-center relative z-10 ${status === 'success' ? 'pb-4' : 'pb-32'}`}>
         {/* Instructions Animation - Tappable */}
         {status === 'idle' && (
           <div className="mb-4 cursor-pointer" onClick={startListen}>
@@ -345,7 +345,7 @@ export default function SoundPaymentPage() {
             </div>
 
             {/* Payment Summary */}
-            <div className="bg-zinc-900/50 rounded-xl p-4">
+            <div className="bg-zinc-900/50 rounded-xl p-4 text-center">
               <div className="text-zinc-400 text-sm mb-2">Amount paid:</div>
               <div className="text-2xl font-bold text-emerald-400">
                 £{(paymentData?.amount || 0).toFixed(2)}
