@@ -21,11 +21,11 @@ const SAMPLE_RATE = 48000;
 // =============================================================================
 const TIMING = {
   // Preamble/Postamble - long enough to reliably detect
-  PREAMBLE_DURATION: 0.15,      // 150ms 
+  PREAMBLE_DURATION: 0.20,      // 200ms - longer for better receiver lock 
   POSTAMBLE_DURATION: 0.15,     // 150ms
   
   // Character and gap durations
-  CHAR_DURATION: 0.10,          // 100ms per character
+  CHAR_DURATION: 0.12,          // 120ms per character - more time to detect
   GAP_DURATION: 0.06,           // 60ms gap - MUST be long enough to detect
   
   // Receiver timing
@@ -209,7 +209,7 @@ export async function broadcastToken(token: string, settings?: BroadcastSettings
 
     const tokenUpper = token.toUpperCase();
     const config = FREQ_CONFIG[BROADCAST_MODE];
-    const volume = settings?.volume ?? (BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.5);
+    const volume = settings?.volume ?? (BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.7);
     const totalDuration = calculateDuration(tokenUpper.length);
     
     console.log('🔊 ══════════════════════════════════════════════════════════');
