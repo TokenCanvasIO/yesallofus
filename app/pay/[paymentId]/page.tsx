@@ -7,7 +7,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import ReceiptActions from '@/components/ReceiptActions';
 import TipSelector from '@/components/TipSelector';
 import NebulaBackground from '@/components/NebulaBackground';
-import SoundPayment from '@/components/SoundPayment';
+import SoundPay from '@/components/SoundPay'
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
@@ -775,7 +775,7 @@ onClick={startNFCScan}
             {/* Sound Payment Listen */}
             {payment?.status === 'pending' && (
               <div className="mb-4">
-                <SoundPayment
+                <SoundPay
                   paymentId={paymentId}
                   amount={payment?.amount || 0}
                   storeName={payment?.store_name || ''}
