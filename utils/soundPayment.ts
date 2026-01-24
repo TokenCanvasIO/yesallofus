@@ -397,6 +397,11 @@ export async function startListening(
             // Always track current frequency (even if not new tone)
             currentToneFreq = freq;
           }
+          
+          // Reset on amplitude dip (detects gap between repeated chars)
+          if (amplitude < 100) {
+            currentToneFreq = null;
+          }
         }
       } else {
         // No signal OR weak signal - reset tone tracking
