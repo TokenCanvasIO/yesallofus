@@ -17,31 +17,14 @@ const SYNC_DURATION_ULTRASOUND = 0.06;    // 80ms sync
 // DEVICE DETECTION - Determines broadcast mode
 // ============================================================================
 const detectBroadcastMode = (): 'ultrasound' | 'audible' => {
-  if (typeof navigator === 'undefined') return 'audible';
+  if (typeof window === 'undefined') return 'audible';
   
-  const ua = navigator.userAgent;
+  // Use screen size - desktops/laptops have large screens
+  const isLargeScreen = window.innerWidth > 1024;
   
-  // Mobile phones - use audible (speakers struggle with 18kHz)
-  const isMobilePhone = /iPhone|iPod|Android.*Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-  
-  // Tablets - use audible (safer)
-  const isTablet = /iPad|Android(?!.*Mobile)/i.test(ua);
-  
-  // Check for touch device that's not a desktop with touchscreen
-  const isTouchOnly = 'ontouchend' in (typeof document !== 'undefined' ? document : {}) && !(/Windows NT|Macintosh|Linux/i.test(ua) && window.innerWidth > 1024);
-  
-  // Desktop detection
-  const isMacDesktop = /Macintosh/i.test(ua);
-  const isWindowsDesktop = /Windows NT/i.test(ua) && !isTouchOnly;
-  const isLinuxDesktop = /Linux/i.test(ua) && !(/Android/i.test(ua));
-  
-  // Desktop/laptop with good speakers - use ultrasound
-  if ((isMacDesktop || isWindowsDesktop || isLinuxDesktop) && !isMobilePhone && !isTablet) {
-    return 'ultrasound';
-  }
-  
-  // Everything else - use audible
-  return 'audible';
+  // Large screen = desktop = ultrasound (silent)
+  // Small screen = mobile = audible (chirps)
+  return isLargeScreen ? 'ultrasound' : 'audible';
 };
 
 const BROADCAST_MODE = typeof window !== 'undefined' ? detectBroadcastMode() : 'audible';
