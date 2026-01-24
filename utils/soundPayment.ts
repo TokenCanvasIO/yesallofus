@@ -400,7 +400,7 @@ export async function startListening(
         }
       } else {
         // No signal OR weak signal - reset tone tracking
-        if (inSync && now - lastCharTime > 20) {
+        if (inSync && now - lastCharTime > 8) {
           currentToneFreq = null;
         }
         
