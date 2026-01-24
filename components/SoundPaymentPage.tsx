@@ -171,7 +171,7 @@ export default function SoundPaymentPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       <NebulaBackground opacity={0.3} />
-      <div className="max-w-md mx-auto p-4 pt-4 relative z-10">
+      <div className="max-w-md mx-auto p-4 pt-4 pb-32 md:pt-0 md:pb-4 md:min-h-screen md:flex md:flex-col md:justify-center relative z-10">
         {/* Instructions Animation - Tappable */}
         {status === 'idle' && (
           <div className="mb-4 cursor-pointer" onClick={startListen}>
@@ -194,14 +194,30 @@ export default function SoundPaymentPage() {
           <button
             onClick={startListen}
             disabled={!soundId}
-            className={`w-full h-40 rounded-2xl font-semibold transition-all flex flex-col items-center justify-center gap-2 ${
+            className={`w-full h-40 rounded-2xl font-semibold transition-all flex flex-col items-center justify-center gap-2 relative overflow-hidden ${
               soundId 
-                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 text-white'
+                ? 'active:scale-95 text-white'
                 : 'bg-zinc-800 border border-zinc-700 text-zinc-500 cursor-not-allowed'
             }`}
           >
-            <span className="text-2xl font-bold">{soundId ? 'SoundPay' : 'Setting up...'}</span>
-            {soundId && <span className="text-purple-200 text-sm">Pay Now</span>}
+            {soundId && (
+              <>
+                {/* Video background */}
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                >
+                  <source src="/nebula-bg.webm" type="video/webm" />
+                </video>
+                {/* Dark overlay */}
+                <div className="absolute inset-0 bg-black/60" />
+              </>
+            )}
+            <span className="text-2xl font-bold relative z-10">{soundId ? 'SoundPay' : 'Setting up...'}</span>
+            {soundId && <span className="text-purple-200 text-sm relative z-10">Pay Now</span>}
           </button>
         )}
 
@@ -305,31 +321,33 @@ export default function SoundPaymentPage() {
           </div>
         )}
 
-        {/* Error display when idle */}
+        {/* Error display when idle - fixed at bottom over footer */}
         {status === 'idle' && error && (
-          <div className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
+          <div className="fixed bottom-0 left-4 right-4 mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-center z-20">
             <p className="text-red-400 text-sm">{error}</p>
           </div>
         )}
       </div>
 
-      {/* YAOFUS Pioneers Badge - Fixed at bottom */}
-      <div className="absolute bottom-4 left-0 right-0 flex flex-col items-center gap-1">
-        <span className="text-zinc-500 text-[10px] font-medium tracking-wider">ULTRA</span>
-        <span className="text-base font-extrabold tracking-widest">
-          <span className="text-emerald-500">Y</span>
-          <span className="text-green-500">A</span>
-          <span className="text-blue-500">O</span>
-          <span className="text-indigo-500">F</span>
-          <span className="text-violet-500">U</span>
-          <span className="text-purple-500">S</span>
-        </span>
-        <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">SoundPay</span>
-        <div className="flex items-center gap-2 mt-2 text-zinc-600 text-sm">
-          <img src="https://yesallofus.com/dltpayslogo1.png" alt="" className="w-5 h-5 rounded opacity-60" />
-          <span>Powered by YesAllOfUs</span>
+      {/* YAOFUS Pioneers Badge - Fixed at bottom, hidden when error */}
+      {!(status === 'idle' && error) && (
+        <div className="fixed bottom-4 left-0 right-0 flex flex-col items-center gap-1">
+          <span className="text-zinc-500 text-[10px] font-medium tracking-wider">ULTRA</span>
+          <span className="text-base font-extrabold tracking-widest">
+            <span className="text-emerald-500">Y</span>
+            <span className="text-green-500">A</span>
+            <span className="text-blue-500">O</span>
+            <span className="text-indigo-500">F</span>
+            <span className="text-violet-500">U</span>
+            <span className="text-purple-500">S</span>
+          </span>
+          <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">SoundPay</span>
+          <div className="flex items-center gap-2 mt-2 text-zinc-600 text-sm">
+            <img src="https://yesallofus.com/dltpayslogo1.png" alt="" className="w-5 h-5 rounded opacity-60" />
+            <span>Powered by YesAllOfUs</span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
