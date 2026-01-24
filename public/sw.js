@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yesallofus-v2';
+const CACHE_NAME = 'yesallofus-v3';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -19,10 +19,13 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
   if (event.request.method !== 'GET') return;
   
-  // Network first, fallback to cache
+  // Skip API requests
+  if (event.request.url.includes('api.dltpays.com')) {
+    return;
+  }
+  
   event.respondWith(
     fetch(event.request)
       .then((response) => {
