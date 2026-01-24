@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import MoveCloserAnimation from '@/components/MoveCloserAnimation';
 
 interface SoundPaymentProps {
   paymentId: string;
@@ -433,6 +434,11 @@ export default function SoundPayment({
           </>
         )}
       </button>
+
+      {/* Move Closer Animation - shows when receiving and active */}
+      {mode === 'receive' && status === 'active' && (
+        <MoveCloserAnimation className="mt-6" />
+      )}
 
       {/* Payment Info */}
       <div className="mt-6 pt-4 border-t border-zinc-800 text-center">

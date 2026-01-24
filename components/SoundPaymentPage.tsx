@@ -5,6 +5,7 @@ import { startListening, initSoundPayment, isSupported, cleanup, warmupAudio } f
 import NebulaBackground from '@/components/NebulaBackground';
 import SoundPayInstructions from '@/components/SoundPayInstructions';
 import ReceiptActions from '@/components/ReceiptActions';
+import MoveCloserAnimation from '@/components/MoveCloserAnimation';
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
@@ -268,31 +269,34 @@ export default function SoundPaymentPage() {
 
         {/* LISTENING STATE */}
         {status === 'listening' && (
-          <div className="space-y-6">
-            <div className="bg-purple-500/10 border-2 border-purple-500 rounded-3xl p-8 text-center">
+          <div className="flex flex-col min-h-[70vh]">
+            <div className="bg-purple-500/10 border-2 border-purple-500 rounded-3xl p-6 text-center">
               {/* Animated icon */}
-              <div className="relative w-24 h-24 mx-auto mb-6">
+              <div className="relative w-20 h-20 mx-auto mb-4">
                 <div className="absolute inset-0 rounded-full bg-purple-500/20 animate-ping" />
                 <div className="absolute inset-3 rounded-full bg-purple-500/30 animate-pulse" />
-                <div className="relative w-24 h-24 rounded-full bg-purple-500/40 flex items-center justify-center">
-                  <svg className="w-12 h-12 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="relative w-20 h-20 rounded-full bg-purple-500/40 flex items-center justify-center">
+                  <svg className="w-10 h-10 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                   </svg>
                 </div>
               </div>
               
-              <h2 className="text-xl font-bold text-purple-400 mb-2">
-                {listenState === 'ready' ? 'Ready - Listening...'
+              <h2 className="text-xl font-bold text-purple-400 mb-1">
+                {listenState === 'ready' ? 'Listening...'
                   : listenState === 'sync' ? 'Heard signal...'
                   : listenState === 'receiving' ? `Receiving ${receivedChars}...`
                   : 'Starting...'}
               </h2>
-              <p className="text-zinc-400">Hold phone near sender device</p>
+              <p className="text-zinc-400 text-sm">Hold phone near sender device</p>
             </div>
+
+            {/* Move Closer Animation */}
+            <MoveCloserAnimation className="flex-1" />
 
             <button
               onClick={stopListen}
-              className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-4 rounded-xl transition"
+              className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-4 rounded-xl transition mt-4"
             >
               Cancel
             </button>
@@ -315,39 +319,39 @@ export default function SoundPaymentPage() {
 
         {/* SUCCESS STATE */}
         {status === 'success' && (
-          <div className="space-y-6">
+          <div className="space-y-4 pt-4">
             {/* Store Logo */}
             {paymentData?.store_logo ? (
               <img
                 src={paymentData.store_logo}
                 alt={paymentData.store_name}
-                className="w-20 h-20 rounded-2xl object-cover mx-auto"
+                className="w-24 h-24 rounded-2xl object-cover mx-auto"
               />
             ) : (
               <img
                 src="https://yesallofus.com/dltpayslogo1.png"
                 alt="YesAllOfUs"
-                className="w-20 h-20 rounded-2xl mx-auto"
+                className="w-24 h-24 rounded-2xl mx-auto"
               />
             )}
 
             {/* Success Icon */}
-            <div className="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto">
-              <svg className="w-12 h-12 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-28 h-28 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto">
+              <svg className="w-14 h-14 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
             </div>
 
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-emerald-400 mb-2">Payment Complete!</h2>
-              <p className="text-xl text-zinc-400 mb-2">Thank you for shopping at</p>
+            <div className="text-center space-y-1">
+              <h2 className="text-3xl font-bold text-emerald-400">Payment Complete!</h2>
+              <p className="text-lg text-zinc-400">Thank you for shopping at</p>
               <p className="text-2xl font-bold">{paymentData?.store_name || 'Store'}</p>
             </div>
 
             {/* Payment Summary */}
             <div className="bg-zinc-900/50 rounded-xl p-4 text-center">
-              <div className="text-zinc-400 text-sm mb-2">Amount paid:</div>
-              <div className="text-2xl font-bold text-emerald-400">
+              <div className="text-zinc-400 text-sm mb-1">Amount paid:</div>
+              <div className="text-3xl font-bold text-emerald-400">
                 £{(paymentData?.amount || 0).toFixed(2)}
               </div>
               {paymentData?.tip && paymentData.tip > 0 && (
@@ -383,7 +387,7 @@ export default function SoundPaymentPage() {
             />
 
             {/* YAOFUS Receipt Badge */}
-            <div className="pt-6 border-t border-zinc-800 flex flex-col items-center gap-1">
+            <div className="pt-4 border-t border-zinc-800 flex flex-col items-center gap-1">
               <span className="text-zinc-500 text-[10px] font-medium tracking-wider">RECEIPT</span>
               <span className="text-base font-extrabold tracking-widest">
                 <span className="text-emerald-500">Y</span>
@@ -394,7 +398,7 @@ export default function SoundPaymentPage() {
                 <span className="text-purple-500">S</span>
               </span>
               <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">INSTANT</span>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 mt-1">
                 <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" className="w-5 h-5 rounded opacity-60" />
                 <span className="text-zinc-600 text-xs">Powered by YesAllOfUs</span>
               </div>
@@ -440,7 +444,7 @@ export default function SoundPaymentPage() {
       </div>
 
       {/* YAOFUS Pioneers Badge - Fixed at bottom, hidden when error or success */}
-      {!(status === 'idle' && error) && status !== 'success' && (
+      {!(status === 'idle' && error) && status !== 'success' && status !== 'listening' && (
         <div className="fixed bottom-4 left-0 right-0 flex flex-col items-center gap-1">
           <span className="text-zinc-500 text-[10px] font-medium tracking-wider">ULTRA</span>
           <span className="text-base font-extrabold tracking-widest">
