@@ -377,7 +377,9 @@ export async function startListening(
             const { char } = charResult;
             
             // Only register when frequency CHANGES (new tone started)
-            const isNewTone = currentToneFreq === null || Math.abs(freq - currentToneFreq) > 50;
+            // Ultrasound has 30Hz steps, audible has 80Hz steps
+            const freqThreshold = currentMode === 'ultrasound' ? 20 : 50;
+            const isNewTone = currentToneFreq === null || Math.abs(freq - currentToneFreq) > freqThreshold;
             
             if (isNewTone && receivedChars.length < 4) {
               receivedChars.push(char);
