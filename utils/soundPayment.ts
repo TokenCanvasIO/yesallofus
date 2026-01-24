@@ -398,15 +398,16 @@ export async function startListening(
             
             if (isNewTone && receivedChars.length < 4) {
               receivedChars.push(char);
-              currentToneFreq = freq;
               lastCharTime = now;
               console.log('🎤 Char:', char, '| freq:', freq.toFixed(0), '| amp:', amplitude, '| total:', receivedChars.join(''));
             }
+            // Always track current frequency (even if not new tone)
+            currentToneFreq = freq;
           }
         }
       } else {
         // No signal - reset tone tracking during silence
-        if (inSync && now - lastCharTime > 30) {
+        if (inSync && now - lastCharTime > 25) {
           currentToneFreq = null;
         }
         
