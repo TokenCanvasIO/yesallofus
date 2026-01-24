@@ -32,6 +32,9 @@ export default function SoundPayment({
   const [status, setStatus] = useState<'idle' | 'active' | 'processing' | 'success' | 'error'>('idle');
   const [stopFn, setStopFn] = useState<(() => void) | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const [listenState, setListenState] = useState<'idle' | 'ready' | 'sync' | 'receiving'>('idle');
+  const [receivedChars, setReceivedChars] = useState('');
   const [isRegistered, setIsRegistered] = useState(true);
 
   // Registration check removed - Web3Auth login handles this in handleReceive
@@ -81,6 +84,7 @@ export default function SoundPayment({
       
       for (let attempt = 0; attempt < attempts.length && !paid; attempt++) {
         const settings = attempts[attempt];
+        setAttempt(attempt + 1);
         console.log(`🔊 POS: Attempt ${attempt + 1}/${attempts.length}:`, shortToken, settings);
         
         await utils.broadcastToken(shortToken, settings);
@@ -182,6 +186,8 @@ export default function SoundPayment({
             setStopFn(null);
             
             setStatus('processing');
+            setListenState('idle');
+            setReceivedChars('');
             
             try {
               // Call API directly - no broadcast back
@@ -210,7 +216,12 @@ export default function SoundPayment({
         (error: string) => {
           setErrorMsg(error);
           setStatus('error');
+          setListenState('idle');
           onError?.(error);
+        },
+        (state: 'ready' | 'sync' | 'receiving', chars?: string) => {
+          setListenState(state);
+          if (chars) setReceivedChars(chars);
         }
       );
 
@@ -390,8 +401,16 @@ export default function SoundPayment({
                 )}
               </div>
             </div>
-            <span className={`text-lg font-medium ${mode === 'send' ? 'text-blue-400' : 'text-purple-400'}`}>
-              {mode === 'send' ? 'Waiting for customer...' : 'Listening...'}
+           <span className={`text-lg font-medium ${mode === 'send' ? 'text-blue-400' : 'text-purple-400'}`}>
+              {mode === 'send' 
+                ? attempt === 1 ? 'Sending payment...' 
+                  : attempt === 2 ? 'Trying again...'
+                  : attempt === 3 ? 'One more try...'
+                  : 'Sending...'
+                : listenState === 'ready' ? 'Ready - listening...'
+                  : listenState === 'sync' ? 'Heard signal...'
+                  : listenState === 'receiving' ? `Receiving ${receivedChars}...`
+                  : 'Starting...'}
             </span>
             <span className="text-sm text-zinc-500">Tap to cancel</span>
           </>

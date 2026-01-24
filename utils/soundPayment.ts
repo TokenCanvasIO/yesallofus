@@ -258,7 +258,8 @@ export async function broadcastToken(token: string, settings?: BroadcastSettings
 
 export async function startListening(
   onTokenReceived: (token: string) => void,
-  onError?: (error: string) => void
+  onError?: (error: string) => void,
+  onProgress?: (state: 'ready' | 'sync' | 'receiving', chars?: string) => void
 ): Promise<() => void> {
   if (typeof window === 'undefined') return () => {};
   if (isListening) return () => {};
@@ -284,6 +285,7 @@ export async function startListening(
     });
 
     console.log('🎤 Mic granted');
+    onProgress?.('ready');
 
     const source = ctx.createMediaStreamSource(mediaStream);
     analyser = ctx.createAnalyser();
@@ -352,6 +354,7 @@ export async function startListening(
           receivedChars = [];
           lastChar = '';
           console.log('🎤 === START SYNC ===', syncType.mode, 'amp:', amplitude, 'freq:', freq.toFixed(0));
+          onProgress?.('sync');
         }
         else if (syncType && syncType.type === 'end' && inSync && syncType.mode === currentMode) {
           const token = receivedChars.join('');
@@ -389,6 +392,7 @@ export async function startListening(
               receivedChars.push(char);
               lastCharTime = now;
               console.log('🎤 Char:', char, '| freq:', freq.toFixed(0), '| amp:', amplitude, '| total:', receivedChars.join(''));
+              onProgress?.('receiving', receivedChars.join(''));
             }
             // Always track current frequency (even if not new tone)
             currentToneFreq = freq;
