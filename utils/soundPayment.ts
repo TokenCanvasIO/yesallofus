@@ -160,7 +160,13 @@ export async function initSoundPayment(): Promise<boolean> {
   }
 }
 
-export async function broadcastToken(token: string): Promise<boolean> {
+export interface BroadcastSettings {
+  volume?: number;      // 0.0 - 1.0, default 0.4 audible / 0.8 ultrasound
+  toneDuration?: number; // seconds, default 0.05 audible / 0.08 ultrasound
+  silenceDuration?: number; // seconds, default 0.02
+}
+
+export async function broadcastToken(token: string, settings?: BroadcastSettings): Promise<boolean> {
   if (typeof window === 'undefined') return false;
 
   try {
@@ -180,9 +186,11 @@ export async function broadcastToken(token: string): Promise<boolean> {
       console.log(`   ${char} -> ${charToFreq(char)} Hz`);
     }
 
-    const TONE_DURATION = BROADCAST_MODE === 'ultrasound' ? TONE_DURATION_ULTRASOUND : TONE_DURATION_AUDIBLE;
+    const DEFAULT_VOLUME = BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4;
+    const TONE_DURATION = settings?.toneDuration ?? (BROADCAST_MODE === 'ultrasound' ? TONE_DURATION_ULTRASOUND : TONE_DURATION_AUDIBLE);
     const SYNC_DURATION = BROADCAST_MODE === 'ultrasound' ? SYNC_DURATION_ULTRASOUND : SYNC_DURATION_AUDIBLE;
-    const SILENCE_DURATION = BROADCAST_MODE === 'ultrasound' ? SILENCE_DURATION_ULTRASOUND : SILENCE_DURATION_AUDIBLE;
+    const SILENCE_DURATION = settings?.silenceDuration ?? (BROADCAST_MODE === 'ultrasound' ? SILENCE_DURATION_ULTRASOUND : SILENCE_DURATION_AUDIBLE);
+    const VOLUME = settings?.volume ?? DEFAULT_VOLUME;
     
     const ctx = audioContext;
     let currentTime = ctx.currentTime + 0.1;
@@ -191,7 +199,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
     const syncOsc = ctx.createOscillator();
     const syncGain = ctx.createGain();
     syncOsc.frequency.value = FREQ_CONFIG[BROADCAST_MODE].syncFreq;
-    syncGain.gain.value = BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4;
+    syncGain.gain.value = VOLUME;
     syncOsc.connect(syncGain);
     syncGain.connect(ctx.destination);
     syncOsc.start(currentTime);
@@ -209,8 +217,8 @@ export async function broadcastToken(token: string): Promise<boolean> {
       
       // Smooth envelope to reduce clicks
       gain.gain.setValueAtTime(0, currentTime);
-      gain.gain.linearRampToValueAtTime(BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4, currentTime + 0.025);
-      gain.gain.setValueAtTime(BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4, currentTime + TONE_DURATION - 0.015);
+      gain.gain.linearRampToValueAtTime(VOLUME, currentTime + 0.025);
+      gain.gain.setValueAtTime(VOLUME, currentTime + TONE_DURATION - 0.015);
       gain.gain.linearRampToValueAtTime(0, currentTime + TONE_DURATION);
       
       osc.connect(gain);
@@ -226,7 +234,7 @@ export async function broadcastToken(token: string): Promise<boolean> {
     const endOsc = ctx.createOscillator();
     const endGain = ctx.createGain();
     endOsc.frequency.value = FREQ_CONFIG[BROADCAST_MODE].endSyncFreq;
-    endGain.gain.value = BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4;
+    endGain.gain.value = VOLUME;
     endOsc.connect(endGain);
     endGain.connect(ctx.destination);
     endOsc.start(currentTime);
@@ -264,10 +272,6 @@ export async function startListening(
     console.log('🔊 AudioContext state:', audioContext?.state);
     if (!audioContext) throw new Error('Audio context not available');
 
-    const TONE_DURATION = BROADCAST_MODE === 'ultrasound' ? TONE_DURATION_ULTRASOUND : TONE_DURATION_AUDIBLE;
-    const SYNC_DURATION = BROADCAST_MODE === 'ultrasound' ? SYNC_DURATION_ULTRASOUND : SYNC_DURATION_AUDIBLE;
-    const SILENCE_DURATION = BROADCAST_MODE === 'ultrasound' ? SILENCE_DURATION_ULTRASOUND : SILENCE_DURATION_AUDIBLE;
-    
     const ctx = audioContext;
 
     mediaStream = await navigator.mediaDevices.getUserMedia({

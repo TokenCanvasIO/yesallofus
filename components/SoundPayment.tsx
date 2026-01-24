@@ -56,7 +56,7 @@ export default function SoundPayment({
       .join('');
   };
 
-  // SEND (POS) - Broadcast payment ID, then listen for customer response
+  // SEND (POS) - Broadcast payment ID with auto-retry
   const handleSend = async () => {
     try {
       setStatus('active');
@@ -68,38 +68,53 @@ export default function SoundPayment({
       await utils.initSoundPayment();
       await utils.warmupAudio();
       
-      // Short 4-char token for fast ultrasound
       const shortToken = paymentId.slice(-4).toUpperCase();
-      console.log('🔊 POS: Broadcasting:', shortToken);
-      await utils.broadcastToken(shortToken);
       
-      // Poll for payment status (no listening needed)
-      console.log('🔊 POS: Polling for payment...');
-      const pollInterval = setInterval(async () => {
-        try {
-          const res = await fetch(`https://api.dltpays.com/nfc/api/v1/payment-link/${paymentId}`);
-          const data = await res.json();
-          
-          if (data.payment?.status === 'paid') {
-            clearInterval(pollInterval);
-            setStatus('success');
-            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-            onSuccess?.(data.payment.tx_hash);
-            setTimeout(() => setStatus('idle'), 3000);
+      // Retry settings: each attempt is more robust
+      const attempts = [
+        { volume: 0.4, toneDuration: 0.05, silenceDuration: 0.02 },  // Normal
+        { volume: 0.7, toneDuration: 0.08, silenceDuration: 0.03 },  // Louder + longer
+        { volume: 1.0, toneDuration: 0.12, silenceDuration: 0.04 },  // Loudest + longest
+      ];
+      
+      let paid = false;
+      
+      for (let attempt = 0; attempt < attempts.length && !paid; attempt++) {
+        const settings = attempts[attempt];
+        console.log(`🔊 POS: Attempt ${attempt + 1}/${attempts.length}:`, shortToken, settings);
+        
+        await utils.broadcastToken(shortToken, settings);
+        
+        // Poll for 8 seconds before retrying
+        const pollDuration = 8000;
+        const pollStart = Date.now();
+        
+        while (Date.now() - pollStart < pollDuration && !paid) {
+          try {
+            const res = await fetch(`https://api.dltpays.com/nfc/api/v1/payment-link/${paymentId}`);
+            const data = await res.json();
+            
+            if (data.payment?.status === 'paid') {
+              paid = true;
+              setStatus('success');
+              if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+              onSuccess?.(data.payment.tx_hash);
+              setTimeout(() => setStatus('idle'), 3000);
+              return;
+            }
+          } catch (e) {
+            console.warn('Poll error:', e);
           }
-        } catch (e) {
-          console.warn('Poll error:', e);
+          await new Promise(r => setTimeout(r, 500));
         }
-      }, 500);
+      }
       
-      // Timeout after 30 seconds
-      setTimeout(() => {
-        clearInterval(pollInterval);
-        if (status === 'active') {
-          setErrorMsg('Payment timeout');
-          setStatus('error');
-        }
-      }, 30000);
+      // All attempts failed
+      if (!paid) {
+        setErrorMsg('Sound payment unavailable - try Tap to Pay or QR');
+        setStatus('error');
+        onError?.('Sound payment failed after 3 attempts');
+      }
 
     } catch (error: any) {
       console.error('Send error:', error);

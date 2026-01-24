@@ -161,6 +161,8 @@ useEffect(() => {
       
       // Check for direct payment completion
       if (data.payment?.status === 'paid' || data.payment?.status === 'complete' || data.payment?.status === 'completed') {
+clearInterval(pollInterval);
+setPaymentComplete(true);
         setPaymentComplete(true);
         setWaitingForPayment(false);
         

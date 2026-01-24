@@ -6,42 +6,25 @@
 // All devices: Listen for BOTH ranges
 
 const SAMPLE_RATE = 48000;
-const TONE_DURATION_AUDIBLE = 0.04;
-const TONE_DURATION_ULTRASOUND = 0.12;    // 80ms per char
-const SILENCE_DURATION_AUDIBLE = 0.01;
+const TONE_DURATION_AUDIBLE = 0.05;
+const TONE_DURATION_ULTRASOUND = 0.08;    // 80ms per char
+const SILENCE_DURATION_AUDIBLE = 0.02;
 const SILENCE_DURATION_ULTRASOUND = 0.02;// 15ms gap
-const SYNC_DURATION_AUDIBLE = 0.04;
-const SYNC_DURATION_ULTRASOUND = 0.10;    // 80ms sync
+const SYNC_DURATION_AUDIBLE = 0.05;
+const SYNC_DURATION_ULTRASOUND = 0.06;    // 80ms sync
 
 // ============================================================================
 // DEVICE DETECTION - Determines broadcast mode
 // ============================================================================
 const detectBroadcastMode = (): 'ultrasound' | 'audible' => {
-  if (typeof navigator === 'undefined') return 'audible';
+  if (typeof window === 'undefined') return 'audible';
   
-  const ua = navigator.userAgent;
+  // Use screen size - desktops/laptops have large screens
+  const isLargeScreen = window.innerWidth > 1024;
   
-  // Mobile phones - use audible (speakers struggle with 18kHz)
-  const isMobilePhone = /iPhone|iPod|Android.*Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-  
-  // Tablets - use audible (safer)
-  const isTablet = /iPad|Android(?!.*Mobile)/i.test(ua);
-  
-  // Check for touch device that's not a desktop with touchscreen
-  const isTouchOnly = 'ontouchend' in (typeof document !== 'undefined' ? document : {}) && !(/Windows NT|Macintosh|Linux/i.test(ua) && window.innerWidth > 1024);
-  
-  // Desktop detection
-  const isMacDesktop = /Macintosh/i.test(ua);
-  const isWindowsDesktop = /Windows NT/i.test(ua) && !isTouchOnly;
-  const isLinuxDesktop = /Linux/i.test(ua) && !(/Android/i.test(ua));
-  
-  // Desktop/laptop with good speakers - use ultrasound
-  if ((isMacDesktop || isWindowsDesktop || isLinuxDesktop) && !isMobilePhone && !isTablet) {
-    return 'ultrasound';
-  }
-  
-  // Everything else - use audible
-  return 'audible';
+  // Large screen = desktop = ultrasound (silent)
+  // Small screen = mobile = audible (chirps)
+  return isLargeScreen ? 'ultrasound' : 'audible';
 };
 
 const BROADCAST_MODE = typeof window !== 'undefined' ? detectBroadcastMode() : 'audible';
@@ -51,16 +34,16 @@ const BROADCAST_MODE = typeof window !== 'undefined' ? detectBroadcastMode() : '
 // ============================================================================
 const FREQ_CONFIG = {
   ultrasound: {
-    baseFreq: 18250,
+    baseFreq: 17800,
     freqStep: 30,
     syncFreq: 17500,
-    endSyncFreq: 19000,
+    endSyncFreq: 18800,
   },
   audible: {
-    baseFreq: 4000,
-    freqStep: 100,    // Wider spacing for audible (more reliable)
-    syncFreq: 3000,
-    endSyncFreq: 6500,
+    baseFreq: 15500,
+    freqStep: 80,    // Wider spacing for audible (more reliable)
+    syncFreq: 15000,
+    endSyncFreq: 17000,
   }
 };
 
@@ -124,7 +107,7 @@ function detectSyncType(freq: number): { type: 'start' | 'end'; mode: 'ultrasoun
   }
   
   // Audible sync tones
-  if (Math.abs(freq - FREQ_CONFIG.audible.syncFreq) < 200) {
+  if (Math.abs(freq - FREQ_CONFIG.audible.syncFreq) < 300) {
     return { type: 'start', mode: 'audible' };
   }
   if (Math.abs(freq - FREQ_CONFIG.audible.endSyncFreq) < 300) {
@@ -226,8 +209,8 @@ export async function broadcastToken(token: string): Promise<boolean> {
       
       // Smooth envelope to reduce clicks
       gain.gain.setValueAtTime(0, currentTime);
-      gain.gain.linearRampToValueAtTime(BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4, currentTime + 0.015);
-      gain.gain.setValueAtTime(0.7, currentTime + TONE_DURATION - 0.015);
+      gain.gain.linearRampToValueAtTime(BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4, currentTime + 0.025);
+      gain.gain.setValueAtTime(BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4, currentTime + TONE_DURATION - 0.015);
       gain.gain.linearRampToValueAtTime(0, currentTime + TONE_DURATION);
       
       osc.connect(gain);
@@ -314,6 +297,7 @@ export async function startListening(
     let currentMode: 'ultrasound' | 'audible' | null = null;
     let lastCharTime = 0;
     let lastChar = '';
+    let currentToneFreq: number | null = null;
     let lastToken = '';
     let lastTokenTime = 0;
     let syncStartTime = 0;
@@ -339,7 +323,7 @@ export async function startListening(
         }
       }
       
-      if (maxValue < 30) return null;
+      if (maxValue < 20) return null;
       
       const freq = maxIndex * freqResolution;
       return { freq, amplitude: maxValue };
@@ -392,18 +376,24 @@ export async function startListening(
           if (charResult && charResult.mode === currentMode) {
             const { char } = charResult;
             
-            if (char !== lastChar && now - lastCharTime > 25) {
+            // Only register when frequency CHANGES (new tone started)
+            // Ultrasound has 30Hz steps, audible has 80Hz steps
+            const freqThreshold = currentMode === 'ultrasound' ? 20 : 50;
+            const isNewTone = currentToneFreq === null || Math.abs(freq - currentToneFreq) > freqThreshold;
+            
+            if (isNewTone && receivedChars.length < 4) {
               receivedChars.push(char);
-              lastChar = char;
               lastCharTime = now;
               console.log('🎤 Char:', char, '| freq:', freq.toFixed(0), '| amp:', amplitude, '| total:', receivedChars.join(''));
             }
+            // Always track current frequency (even if not new tone)
+            currentToneFreq = freq;
           }
         }
       } else {
-        // No signal - reset lastChar during silence
-        if (inSync && now - lastCharTime > 100) {
-          lastChar = '';
+        // No signal OR weak signal - reset tone tracking
+        if (inSync && now - lastCharTime > 20) {
+          currentToneFreq = null;
         }
         
         // Timeout
