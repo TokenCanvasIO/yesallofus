@@ -4,12 +4,15 @@ import { useRouter } from 'next/navigation';
 import InstallAppButton from '@/components/InstallAppButton';
 import BackgroundVideo from '@/components/BackgroundVideo';
 
+const API_URL = 'https://api.dltpays.com/nfc/api/v1';
+
 export default function WelcomePage() {
   const router = useRouter();
   
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [isLoading, setIsLoading] = useState<'partner' | 'member' | 'affiliate' | null>(null);
+  const [isLoading, setIsLoading] = useState<'partner' | 'member' | 'affiliate' | 'soundpay' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [soundPayError, setSoundPayError] = useState<string | null>(null);
 
   const handleSelection = async (userType: 'partner' | 'member' | 'affiliate') => {
     
@@ -51,6 +54,60 @@ export default function WelcomePage() {
     }
   };
 
+  const handleSoundPay = async () => {
+    setIsLoading('soundpay');
+    setSoundPayError(null);
+    setError(null);
+
+    try {
+      // Check if already logged in
+      let walletAddress = sessionStorage.getItem('walletAddress');
+
+      if (!walletAddress) {
+        // Try to get wallet from Web3Auth without creating new
+        const { loginWithWeb3Auth } = await import('@/lib/web3auth');
+        const result = await loginWithWeb3Auth();
+
+        if (!result) {
+          setIsLoading(null);
+          setSoundPayError('Please register first');
+          return;
+        }
+
+        walletAddress = typeof result === 'string' ? result : result.address;
+        const provider = typeof result === 'string' ? 'google' : (result.provider || 'google');
+
+        if (walletAddress) {
+          sessionStorage.setItem('loginMethod', 'web3auth');
+          sessionStorage.setItem('socialProvider', provider);
+          sessionStorage.setItem('walletAddress', walletAddress);
+        }
+      }
+
+      if (!walletAddress) {
+        setSoundPayError('Please register first');
+        setIsLoading(null);
+        return;
+      }
+
+      // Check if customer exists
+      const res = await fetch(`${API_URL}/customer/exists/${walletAddress}`);
+      const data = await res.json();
+
+      if (data.success && data.exists) {
+        router.push('/sound-pay');
+      } else {
+        setSoundPayError('Please register as a Member first');
+        setIsLoading(null);
+      }
+
+    } catch (err: any) {
+      console.error('SoundPay check error:', err);
+      setSoundPayError('Please register first');
+      setIsLoading(null);
+    }
+  };
+
   const LoadingSpinner = () => (
     <div className="flex flex-col items-center">
       <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-2"></div>
@@ -77,8 +134,8 @@ export default function WelcomePage() {
           animation: breathe 4s ease-in-out infinite;
         }
         @keyframes shine {
-          0%, 90%, 100% { opacity: 0; }
-          95% { opacity: 1; }
+          0% { transform: translateX(-100%) rotate(25deg); }
+          100% { transform: translateX(200%) rotate(25deg); }
         }
         .logo-container {
           position: relative;
@@ -92,6 +149,29 @@ export default function WelcomePage() {
         .delay-200 { animation-delay: 0.2s; }
         .delay-300 { animation-delay: 0.3s; }
         .delay-400 { animation-delay: 0.4s; }
+        .delay-500 { animation-delay: 0.5s; }
+        .mirror-shine {
+          position: relative;
+          overflow: hidden;
+        }
+        .mirror-shine::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 50%;
+          height: 100%;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.1),
+            rgba(255, 255, 255, 0.3),
+            rgba(255, 255, 255, 0.1),
+            transparent
+          );
+          transform: skewX(-25deg);
+          animation: shine 3s infinite;
+        }
       `}</style>
       
       <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-4 md:py-6 lg:py-8 relative z-10">
@@ -218,6 +298,52 @@ export default function WelcomePage() {
                 <p className="text-zinc-500 text-[10px] md:text-xs mt-0.5">View site</p>
               </button>
             </div>
+
+            {/* SoundPay Button - Full Width with Video Background */}
+            <button
+              onClick={handleSoundPay}
+              disabled={isLoading !== null}
+              className="w-full mt-2 md:mt-3 rounded-2xl overflow-hidden relative animate-fade-in-up delay-500 disabled:opacity-50 group mirror-shine"
+            >
+              {/* Video Background */}
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover"
+              >
+                <source src="/affiliate-hq.webm" type="video/webm" />
+              </video>
+              
+              {/* Light Overlay - brighter than background */}
+              <div className="absolute inset-0 bg-white/5 group-hover:bg-white/8 transition-all duration-300" />
+              
+              {/* Content */}
+              <div className="relative z-10 p-4 md:p-5 lg:p-6 flex items-center justify-center gap-3">
+                {isLoading === 'soundpay' ? (
+                  <LoadingSpinner />
+                ) : soundPayError ? (
+                  <div className="text-center">
+                    <p className="text-amber-400 font-semibold text-sm">{soundPayError}</p>
+                    <p className="text-zinc-400 text-xs mt-1">Tap Member above to register</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Sound Wave Icon */}
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <svg className="w-5 h-5 md:w-6 md:h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+                      </svg>
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold text-lg md:text-xl text-white">SoundPay</p>
+                      <p className="text-zinc-400 text-xs md:text-sm">Pay with sound waves</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </button>
           </div>
 
           {/* Error */}

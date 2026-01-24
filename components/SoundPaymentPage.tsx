@@ -4,8 +4,19 @@ import { useState, useEffect } from 'react';
 import { startListening, initSoundPayment, isSupported, cleanup, warmupAudio } from '@/utils/soundPayment';
 import NebulaBackground from '@/components/NebulaBackground';
 import SoundPayInstructions from '@/components/SoundPayInstructions';
+import ReceiptActions from '@/components/ReceiptActions';
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
+
+interface PaymentData {
+  store_name: string;
+  store_id?: string;
+  store_logo?: string;
+  amount: number;
+  tip?: number;
+  items?: Array<{ name: string; quantity: number; unit_price: number }>;
+  rlusd_amount?: number;
+}
 
 export default function SoundPaymentPage() {
   const [status, setStatus] = useState<'idle' | 'listening' | 'processing' | 'success' | 'error'>('idle');
@@ -13,6 +24,8 @@ export default function SoundPaymentPage() {
   const [receivedChars, setReceivedChars] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [receiptId, setReceiptId] = useState<string | null>(null);
+  const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const [stopFn, setStopFn] = useState<(() => void) | null>(null);
   const [supported, setSupported] = useState(true);
   const [soundId, setSoundId] = useState<string | null>(null);
@@ -101,8 +114,21 @@ export default function SoundPaymentPage() {
                 throw new Error(data.error || 'Payment failed');
               }
               
-              console.log('🔊 Payment complete:', data.tx_hash);
+              console.log('🔊 Payment complete:', data);
               setTxHash(data.tx_hash);
+              if (data.receipt_id) setReceiptId(data.receipt_id);
+              
+              // Store payment details for receipt
+              setPaymentData({
+                store_name: data.store_name || 'Unknown Store',
+                store_id: data.store_id,
+                store_logo: data.store_logo,
+                amount: data.amount || 0,
+                tip: data.tip_amount || data.tip || 0,
+                items: data.items,
+                rlusd_amount: data.rlusd_amount || data.amount_rlusd,
+              });
+              
               setStatus('success');
               if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
               
@@ -150,6 +176,8 @@ export default function SoundPaymentPage() {
     setReceivedChars('');
     setError(null);
     setTxHash(null);
+    setReceiptId(null);
+    setPaymentData(null);
   };
 
   if (!supported) {
@@ -271,23 +299,88 @@ export default function SoundPaymentPage() {
         {/* SUCCESS STATE */}
         {status === 'success' && (
           <div className="space-y-6">
-            <div className="bg-emerald-500/10 border-2 border-emerald-500 rounded-3xl p-8 text-center">
-              <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+            {/* Store Logo */}
+            {paymentData?.store_logo ? (
+              <img
+                src={paymentData.store_logo}
+                alt={paymentData.store_name}
+                className="w-20 h-20 rounded-2xl object-cover mx-auto"
+              />
+            ) : (
+              <img
+                src="https://yesallofus.com/dltpayslogo1.png"
+                alt="YesAllOfUs"
+                className="w-20 h-20 rounded-2xl mx-auto"
+              />
+            )}
+
+            {/* Success Icon */}
+            <div className="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto">
+              <svg className="w-12 h-12 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-emerald-400 mb-2">Payment Complete!</h2>
+              <p className="text-xl text-zinc-400 mb-2">Thank you for shopping at</p>
+              <p className="text-2xl font-bold">{paymentData?.store_name || 'Store'}</p>
+            </div>
+
+            {/* Payment Summary */}
+            <div className="bg-zinc-900/50 rounded-xl p-4">
+              <div className="text-zinc-400 text-sm mb-2">Amount paid:</div>
+              <div className="text-2xl font-bold text-emerald-400">
+                £{(paymentData?.amount || 0).toFixed(2)}
               </div>
-              <h2 className="text-2xl font-bold text-emerald-400 mb-2">Paid!</h2>
-              {txHash && (
-                <a
-                  href={`https://livenet.xrpl.org/transactions/${txHash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-emerald-400 hover:text-emerald-300 text-sm underline"
-                >
-                  View on XRPL →
-                </a>
+              {paymentData?.tip && paymentData.tip > 0 && (
+                <div className="text-zinc-500 text-sm mt-1">
+                  Includes £{paymentData.tip.toFixed(2)} tip
+                </div>
               )}
+            </div>
+
+            {/* XRPL Link */}
+            {txHash && (
+              <a
+                href={`https://livenet.xrpl.org/transactions/${txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sky-400 text-sm underline block text-center"
+              >
+                View on XRPL →
+              </a>
+            )}
+
+            {/* Receipt Actions */}
+            <ReceiptActions
+              receiptId={receiptId || undefined}
+              txHash={txHash || undefined}
+              storeName={paymentData?.store_name || ''}
+              storeId={paymentData?.store_id}
+              amount={paymentData?.amount || 0}
+              rlusdAmount={paymentData?.rlusd_amount}
+              items={paymentData?.items}
+              tipAmount={paymentData?.tip || 0}
+              storeLogo={paymentData?.store_logo}
+            />
+
+            {/* YAOFUS Receipt Badge */}
+            <div className="pt-6 border-t border-zinc-800 flex flex-col items-center gap-1">
+              <span className="text-zinc-500 text-[10px] font-medium tracking-wider">RECEIPT</span>
+              <span className="text-base font-extrabold tracking-widest">
+                <span className="text-emerald-500">Y</span>
+                <span className="text-green-500">A</span>
+                <span className="text-blue-500">O</span>
+                <span className="text-indigo-500">F</span>
+                <span className="text-violet-500">U</span>
+                <span className="text-purple-500">S</span>
+              </span>
+              <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">INSTANT</span>
+              <div className="flex items-center gap-2 mt-2">
+                <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" className="w-5 h-5 rounded opacity-60" />
+                <span className="text-zinc-600 text-xs">Powered by YesAllOfUs</span>
+              </div>
             </div>
 
             <button
