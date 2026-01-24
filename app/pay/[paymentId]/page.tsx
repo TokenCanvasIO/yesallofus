@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import InstantPay from '@/components/InstantPay';
 import { QRCodeSVG } from 'qrcode.react';
 import ReceiptActions from '@/components/ReceiptActions';
+import PaymentSuccess from '@/components/PaymentSuccess';
 import TipSelector from '@/components/TipSelector';
 import NebulaBackground from '@/components/NebulaBackground';
 import SoundPay from '@/components/SoundPay'
@@ -26,6 +27,8 @@ interface PaymentData {
   total_splits: number | null;
   expires_at: string | null;
   paid_at: string | null;
+  payer_wallet: string | null;
+  customer_logo: string | null;
 }
 
 interface SplitData {
@@ -459,99 +462,25 @@ const handleSplitBill = async () => {
   }
 
   // All paid success state
-if (allPaid || payment?.status === 'paid') {
-  return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-      <div className="text-center">
-        {payment?.store_logo ? (
-          <img 
-            src={payment.store_logo} 
-            alt={payment.store_name} 
-            className="w-20 h-20 rounded-2xl object-cover mx-auto mb-6"
-          />
-        ) : (
-          <img 
-            src="https://yesallofus.com/dltpayslogo1.png" 
-            alt="YesAllOfUs" 
-            className="w-20 h-20 rounded-2xl mx-auto mb-6"
-          />
-        )}
-        <div className="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-12 h-12 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <h1 className="text-3xl font-bold text-emerald-400 mb-2">Payment Complete!</h1>
-        <p className="text-xl text-zinc-400 mb-2">Thank you for shopping at</p>
-        <p className="text-2xl font-bold mb-4">{payment?.store_name}</p>
-      
-{/* Payment Summary */}
-<div className="bg-zinc-900/50 rounded-xl p-4 mb-6">
-  {splits && splits.length > 0 ? (
-    <>
-      <div className="text-zinc-400 text-sm mb-2">Your payment:</div>
-      <div className="text-2xl font-bold text-emerald-400">£{getCurrentAmount().toFixed(2)}</div>
-      {payment?.tip && (
-        <div className="text-zinc-500 text-sm mt-1">
-          (£{((payment.amount || 0) / splits.length).toFixed(2)} + £{((payment.tip || 0) / splits.length).toFixed(2)} tip)
-        </div>
-      )}
-    </>
-  ) : (
-    <>
-      <div className="text-zinc-400 text-sm mb-2">Amount paid:</div>
-      <div className="text-2xl font-bold text-emerald-400">£{(payment?.amount || 0).toFixed(2)}</div>
-      {payment?.tip && (
-        <div className="text-zinc-500 text-sm mt-1">Includes £{payment.tip.toFixed(2)} tip</div>
-      )}
-    </>
-  )}
-</div>
-        
-        {txHash && (
-  <a 
-    href={`https://livenet.xrpl.org/transactions/${txHash}`}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="text-sky-400 text-sm underline block mb-6"
-  >
-    View on XRPL →
-  </a>
-)}
-
-<ReceiptActions
-  receiptId={receiptId || undefined}
-  txHash={txHash || undefined}
-  storeName={payment?.store_name || ''}
-  storeId={payment?.store_id || undefined}
-  amount={payment?.amount || 0}
-  rlusdAmount={rlusdAmount || undefined}
-  items={payment?.items || []}
-  tipAmount={tipAmount || payment?.tip || 0}
-  conversionRate={undefined}
-  storeLogo={payment?.store_logo || undefined}
-/>
-
-<div className="mt-8 pt-6 border-t border-zinc-800 flex flex-col items-center gap-1">
-  <span className="text-zinc-500 text-[10px] font-medium tracking-wider">RECEIPT</span>
-  <span className="text-base font-extrabold tracking-widest">
-    <span className="text-emerald-500">Y</span>
-    <span className="text-green-500">A</span>
-    <span className="text-blue-500">O</span>
-    <span className="text-indigo-500">F</span>
-    <span className="text-violet-500">U</span>
-    <span className="text-purple-500">S</span>
-  </span>
-  <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">INSTANT</span>
-  <div className="flex items-center gap-2 mt-2">
-    <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" className="w-5 h-5 rounded opacity-60" />
-    <span className="text-zinc-600 text-xs">Powered by YesAllOfUs</span>
-  </div>
-</div>
-      </div>
-    </div>
-  );
-}
+  if (allPaid || payment?.status === 'paid') {
+    return (
+      <PaymentSuccess
+        storeName={payment?.store_name || ''}
+        storeId={payment?.store_id}
+        storeLogo={payment?.store_logo}
+        customerLogo={payment?.customer_logo}
+        amount={payment?.amount || 0}
+        tip={payment?.tip || 0}
+        txHash={txHash || undefined}
+        receiptId={receiptId || undefined}
+        rlusdAmount={rlusdAmount || undefined}
+        items={payment?.items || []}
+        isSplit={!!(splits && splits.length > 0)}
+        splitAmount={splits ? getCurrentAmount() : undefined}
+        splitTip={splits && payment?.tip ? (payment.tip / splits.length) : undefined}
+      />
+    );
+  }
 
   // Main payment view
   const currentAmount = getCurrentAmount();

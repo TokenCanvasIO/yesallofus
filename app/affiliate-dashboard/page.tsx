@@ -173,6 +173,10 @@ export default function AffiliateDashboard() {
   const [allMilestonesComplete, setAllMilestonesComplete] = useState(false);
   const [setupComplete, setSetupComplete] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Customer logo state
+  const [customerLogo, setCustomerLogo] = useState<string | null>(null);
+  const [showLogoUpload, setShowLogoUpload] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   
   // Set sidebar open by default on desktop/tablet only (not mobile)
   useEffect(() => {
@@ -261,6 +265,25 @@ useEffect(() => {
   const toggleSection = (id: string) => {
     setOpenSections(prev => ({ ...prev, [id]: !prev[id] }));
   };
+
+  // Fetch customer logo on login
+  useEffect(() => {
+    const fetchCustomerLogo = async () => {
+      if (!walletAddress) return;
+      try {
+        const res = await fetch(`https://api.dltpays.com/nfc/api/v1/customer/${walletAddress}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.logo_url) {
+            setCustomerLogo(data.logo_url);
+          }
+        }
+      } catch (err) {
+        // No logo found, that's fine
+      }
+    };
+    fetchCustomerLogo();
+  }, [walletAddress]);
 
   // Save URL params before login
   useEffect(() => {
@@ -778,6 +801,86 @@ const deleteAffiliateData = async () => {
     // Don't collapse on desktop - let user control it
   };
 
+  // Handle customer logo upload
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be less than 5MB');
+      return;
+    }
+
+    setUploadingLogo(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', 'store_logos');
+
+      const uploadRes = await fetch('https://tokencanvas.io/api/cloudinary/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      const uploadData = await uploadRes.json();
+
+      if (!uploadData.secure_url) {
+        throw new Error(uploadData.error?.message || 'Upload failed');
+      }
+
+      const logoUrl = uploadData.secure_url;
+
+      const res = await fetch(`https://api.dltpays.com/nfc/api/v1/customer/${walletAddress}/logo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          logo_url: logoUrl,
+          wallet_address: walletAddress
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setCustomerLogo(logoUrl);
+        setShowLogoUpload(false);
+      } else {
+        setError('Failed to save logo');
+      }
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      setError(err.message || 'Failed to upload logo');
+    }
+    setUploadingLogo(false);
+  };
+
+  const removeCustomerLogo = async () => {
+    setUploadingLogo(true);
+    try {
+      const res = await fetch(`https://api.dltpays.com/nfc/api/v1/customer/${walletAddress}/logo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          logo_url: null,
+          wallet_address: walletAddress
+        })
+      });
+      if (res.ok) {
+        setCustomerLogo(null);
+        setShowLogoUpload(false);
+      }
+    } catch (err) {
+      setError('Failed to remove logo');
+    }
+    setUploadingLogo(false);
+  };
+
   // Navigation items for Sidebar component
   const navItems = [
     { id: 'earnings', label: 'Total Earnings', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
@@ -841,10 +944,11 @@ return <LoginScreen onLogin={handleLogin} />;
           storeName="Member"
           walletAddress={walletAddress}
           navItems={navItems}
+          storeLogo={customerLogo}
           onNavClick={handleNavClick}
           onSignOut={handleSignOut}
           onInfoClick={openInfo}
-          onLogoClick={() => {}}
+          onLogoClick={() => setShowLogoUpload(true)}
           onTakeTour={() => {
   setSidebarOpen(false);
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -863,6 +967,63 @@ return <LoginScreen onLogin={handleLogin} />;
             }
           }}
         />
+
+        {/* Logo Upload Modal */}
+        {showLogoUpload && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+            <div className="bg-zinc-900/95 rounded-2xl p-6 w-full max-w-sm border border-zinc-800">
+              <h3 className="text-lg font-bold mb-4">Your Profile Logo</h3>
+              {customerLogo && (
+                <div className="mb-4 flex justify-center">
+                  <img src={customerLogo} alt="Current logo" className="w-24 h-24 rounded-xl object-cover" />
+                </div>
+              )}
+              <label className="block mb-4">
+                <div className="bg-zinc-800/90 border-2 border-dashed border-zinc-700 hover:border-lime-500 rounded-xl p-6 text-center cursor-pointer transition">
+                  {uploadingLogo ? (
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 border-2 border-lime-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                      <p className="text-zinc-400 text-sm">Uploading...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <svg className="w-8 h-8 text-zinc-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-zinc-400 text-sm">Click to upload image</p>
+                      <p className="text-zinc-600 text-xs mt-1">Max 5MB • Shows on payment success</p>
+                    </>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                  disabled={uploadingLogo}
+                />
+              </label>
+              <div className="flex gap-3">
+                {customerLogo && (
+                  <button
+                    onClick={removeCustomerLogo}
+                    disabled={uploadingLogo}
+                    className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 py-3 rounded-xl transition disabled:opacity-50"
+                  >
+                    Remove
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowLogoUpload(false)}
+                  disabled={uploadingLogo}
+                  className="flex-1 bg-zinc-800/90 hover:bg-zinc-700 py-3 rounded-xl transition disabled:opacity-50"
+                >
+                  {customerLogo ? 'Done' : 'Cancel'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Main Content */}
         <main className={`min-h-screen pt-2 lg:pt-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-0' : 'lg:ml-64'}`}>
