@@ -6,7 +6,6 @@ interface PaymentSuccessProps {
   storeName: string;
   storeId?: string;
   storeLogo?: string | null;
-  customerLogo?: string | null;
   amount: number;
   tip?: number;
   txHash?: string | null;
@@ -23,7 +22,6 @@ export default function PaymentSuccess({
   storeName,
   storeId,
   storeLogo,
-  customerLogo,
   amount,
   tip = 0,
   txHash,
@@ -41,38 +39,24 @@ export default function PaymentSuccess({
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
       <div className="text-center">
-        {/* Logo - Customer logo takes priority */}
-        {customerLogo ? (
-          <img 
-            src={customerLogo} 
-            alt="Your logo" 
-            className="w-20 h-20 rounded-2xl object-cover mx-auto mb-6 ring-2 ring-lime-500/50"
-          />
-        ) : storeLogo ? (
-          <img 
-            src={storeLogo} 
-            alt={storeName} 
-            className="w-20 h-20 rounded-2xl object-cover mx-auto mb-6"
-          />
-        ) : (
-          <img 
-            src="https://yesallofus.com/dltpayslogo1.png" 
-            alt="YesAllOfUs" 
-            className="w-20 h-20 rounded-2xl mx-auto mb-6"
-          />
-        )}
+        {/* Store Logo */}
+        <img 
+          src={storeLogo || "https://yesallofus.com/dltpayslogo1.png"} 
+          alt={storeName || "YesAllOfUs"} 
+          className="w-14 h-14 rounded-xl object-cover mx-auto mb-4"
+        />
 
         {/* Success Checkmark */}
-        <div className="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-12 h-12 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
           </svg>
         </div>
 
         {/* Success Text */}
-        <h1 className="text-3xl font-bold text-emerald-400 mb-2">Payment Complete!</h1>
-        <p className="text-xl text-zinc-400 mb-2">Thank you for shopping at</p>
-        <p className="text-2xl font-bold mb-4">{storeName}</p>
+        <h1 className="text-2xl font-bold text-emerald-400 mb-2">Payment Complete!</h1>
+        <p className="text-lg text-zinc-400 mb-1">Thank you for shopping at</p>
+        <p className="text-xl font-bold mb-4">{storeName}</p>
 
         {/* Payment Summary */}
         <div className="bg-zinc-900/50 rounded-xl p-4 mb-6">
@@ -136,7 +120,7 @@ export default function PaymentSuccess({
           </span>
           <span className="text-zinc-600 text-[10px] font-semibold tracking-wider">INSTANT</span>
           <div className="flex items-center gap-2 mt-2">
-            <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" className="w-5 h-5 rounded opacity-60" />
+            <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" className="w-4 h-4 rounded opacity-60" />
             <span className="text-zinc-600 text-xs">Powered by YesAllOfUs</span>
           </div>
         </div>

@@ -30,6 +30,16 @@ export default function SoundPaymentPage() {
   const [stopFn, setStopFn] = useState<(() => void) | null>(null);
   const [supported, setSupported] = useState(true);
   const [soundId, setSoundId] = useState<string | null>(null);
+  const [showSuccessVideo, setShowSuccessVideo] = useState(true);
+
+  // Hide success video after 3 seconds
+  useEffect(() => {
+    if (status === 'success') {
+      setShowSuccessVideo(true);
+      const timer = setTimeout(() => setShowSuccessVideo(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [status]);
 
   // Check support and get sound_id on mount
   useEffect(() => {
@@ -320,20 +330,33 @@ export default function SoundPaymentPage() {
         {/* SUCCESS STATE */}
         {status === 'success' && (
           <div className="space-y-4 pt-4">
-            {/* Store Logo */}
-            {paymentData?.store_logo ? (
-              <img
-                src={paymentData.store_logo}
-                alt={paymentData.store_name}
-                className="w-24 h-24 rounded-2xl object-cover mx-auto"
-              />
-            ) : (
-              <img
-                src="https://yesallofus.com/dltpayslogo1.png"
-                alt="YesAllOfUs"
-                className="w-24 h-24 rounded-2xl mx-auto"
-              />
-            )}
+            {/* Store Logo with Success Video Overlay */}
+            <div className="relative w-24 h-24 mx-auto">
+              {paymentData?.store_logo ? (
+                <img
+                  src={paymentData.store_logo}
+                  alt={paymentData.store_name}
+                  className="w-24 h-24 rounded-2xl object-cover"
+                />
+              ) : (
+                <img
+                  src="https://yesallofus.com/dltpayslogo1.png"
+                  alt="YesAllOfUs"
+                  className="w-24 h-24 rounded-2xl"
+                />
+              )}
+              {showSuccessVideo && (
+                <video
+                  autoPlay
+                  muted
+                  playsInline
+                  onEnded={() => setShowSuccessVideo(false)}
+                  className="absolute inset-0 w-24 h-24 rounded-2xl object-cover"
+                >
+                  <source src="/successmessage.webm" type="video/webm" />
+                </video>
+              )}
+            </div>
 
             {/* Success Icon */}
             <div className="w-28 h-28 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto">
