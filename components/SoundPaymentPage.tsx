@@ -6,6 +6,7 @@ import NebulaBackground from '@/components/NebulaBackground';
 import SoundPayInstructions from '@/components/SoundPayInstructions';
 import ReceiptActions from '@/components/ReceiptActions';
 import MoveCloserAnimation from '@/components/MoveCloserAnimation';
+import VolumeReminder from '@/components/VolumeReminder';
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
@@ -286,7 +287,10 @@ const [countdown, setCountdown] = useState<string | null>(null);
             {soundId && <span className="text-purple-200 text-sm relative z-10">Pay Now</span>}
           </button>
         )}
-
+{/* Volume Reminder */}
+        {status === 'idle' && soundId && (
+          <VolumeReminder className="mt-6" />
+        )}
         {/* LISTENING STATE */}
         {status === 'listening' && (
           <div className="flex flex-col min-h-[70vh]">
@@ -311,11 +315,11 @@ const [countdown, setCountdown] = useState<string | null>(null);
               </div>
               
               <h2 className="text-xl font-bold text-purple-400 mb-1">
-                {listenState === 'ready' ? 'Listening...'
-                  : listenState === 'sync' ? 'Heard signal...'
-                  : listenState === 'receiving' ? `Receiving ${receivedChars}...`
-                  : 'Starting...'}
-              </h2>
+  {listenState === 'ready' ? 'Connected'
+    : listenState === 'sync' ? 'Heard signal...'
+    : listenState === 'receiving' ? `Receiving ${receivedChars}...`
+    : 'Ready to Pay'}
+</h2>
               <p className="text-zinc-400 text-sm">Hold phone near sender device</p>
               </div>
             )}
@@ -329,6 +333,8 @@ const [countdown, setCountdown] = useState<string | null>(null);
             >
               Cancel
             </button>
+
+            <VolumeReminder className="mt-6" />
           </div>
         )}
 
