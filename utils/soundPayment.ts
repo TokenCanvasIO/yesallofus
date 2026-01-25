@@ -90,7 +90,7 @@ const CHARSET = '0123456789ABCDEF';
 // =============================================================================
 // FREQUENCY HELPERS
 // =============================================================================
-function charToFreq(char: string, mode: 'ultrasound' | 'audible' = BROADCAST_MODE): number {
+function charToFreq(char: string, mode: 'ultrasound' | 'mid' | 'audible' = BROADCAST_MODE): number {
   const config = FREQ_CONFIG[mode];
   const index = CHARSET.indexOf(char.toUpperCase());
   if (index === -1) return config.baseFreq;
@@ -273,7 +273,7 @@ console.log('🔊 [TX] Total duration:', (totalDuration * 1000).toFixed(0) + 'ms
     // 3. For each character: CHAR + GAP
     for (let i = 0; i < tokenUpper.length; i++) {
       const char = tokenUpper[i];
-      const freq = charToFreq(char);
+      const freq = charToFreq(char, mode);
       playTone(freq, TIMING.CHAR_DURATION, 'CHAR[' + i + ']="' + char + '"');
       playTone(config.gapFreq, TIMING.GAP_DURATION, 'GAP');
     }
