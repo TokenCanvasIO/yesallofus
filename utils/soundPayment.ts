@@ -20,21 +20,21 @@ const SAMPLE_RATE = 48000;
 // TIMING CONFIGURATION (in seconds)
 // =============================================================================
 const TIMING = {
-  // Preamble/Postamble - long enough to reliably detect
-  PREAMBLE_DURATION: 0.20,      // 200ms - longer for better receiver lock 
-  POSTAMBLE_DURATION: 0.20,     // 200ms - longer for reliable detection
+  // Preamble/Postamble - shorter for faster transmission
+  PREAMBLE_DURATION: 0.12,      // 120ms - still reliable
+  POSTAMBLE_DURATION: 0.12,     // 120ms - still reliable
   
   // Character and gap durations
-  CHAR_DURATION: 0.12,          // 120ms per character - more time to detect
-  GAP_DURATION: 0.06,           // 60ms gap - MUST be long enough to detect
+  CHAR_DURATION: 0.08,          // 80ms per character - faster
+  GAP_DURATION: 0.04,           // 40ms gap - faster
   
   // Receiver timing
-  SAMPLE_DELAY: 0.05,           // Sample 50ms into char slot
-  PREAMBLE_MIN_DURATION: 0.08,  // Min time to confirm preamble
+  SAMPLE_DELAY: 0.03,           // Sample 30ms into char slot
+  PREAMBLE_MIN_DURATION: 0.06,  // Min time to confirm preamble
   
   // Envelope for smooth transitions
   ATTACK_TIME: 0.005,           // 5ms fade in - sharper attack
-RELEASE_TIME: 0.005,          // 5ms fade out - sharper cutoff
+  RELEASE_TIME: 0.005,          // 5ms fade out - sharper cutoff
 };
 
 // Calculate total broadcast duration for a token
@@ -50,9 +50,7 @@ const calculateDuration = (tokenLength: number): number => {
 // DEVICE DETECTION
 // =============================================================================
 const detectBroadcastMode = (): 'ultrasound' | 'audible' => {
-  if (typeof window === 'undefined') return 'audible';
-  const isLargeScreen = window.innerWidth > 1024;
-  return isLargeScreen ? 'ultrasound' : 'audible';
+  return 'audible';
 };
 
 const BROADCAST_MODE = typeof window !== 'undefined' ? detectBroadcastMode() : 'audible';
@@ -64,23 +62,19 @@ const FREQ_CONFIG = {
   ultrasound: {
     baseFreq: 17800,
     freqStep: 30,
-    syncFreq: 17500,
-    gapFreq: 17650,
-    endSyncFreq: 19500,
-  },
-  mid: {
-    baseFreq: 16800,
-    freqStep: 50,
-    syncFreq: 16500,
-    gapFreq: 16650,
-    endSyncFreq: 18000,
+    syncFreq: 17500,       // PREAMBLE
+    gapFreq: 17650,        // GAP tone (between sync and data range)
+    endSyncFreq: 19500,    // POSTAMBLE - MOVED MUCH HIGHER (was 18800)
+    // Char range: 17800 (0) to 18250 (F) - gap to postamble now 1250 Hz
   },
   audible: {
-    baseFreq: 15500,
-    freqStep: 80,
-    syncFreq: 15000,
-    gapFreq: 15250,
-    endSyncFreq: 17000,
+    // 15000 Hz range - this is the sweet spot for iPhone speakers!
+    baseFreq: 15500,       // Character base frequency
+    freqStep: 80,          // 80 Hz per character (0-F = 0-1200 Hz range)
+    syncFreq: 15000,       // PREAMBLE
+    gapFreq: 15250,        // GAP tone (between sync and data range)
+    endSyncFreq: 17000,    // POSTAMBLE
+    // Char range: 15500 (0) to 16700 (F)
   }
 };
 
@@ -90,7 +84,7 @@ const CHARSET = '0123456789ABCDEF';
 // =============================================================================
 // FREQUENCY HELPERS
 // =============================================================================
-function charToFreq(char: string, mode: 'ultrasound' | 'mid' | 'audible' = BROADCAST_MODE): number {
+function charToFreq(char: string, mode: 'ultrasound' | 'audible' = BROADCAST_MODE): number {
   const config = FREQ_CONFIG[mode];
   const index = CHARSET.indexOf(char.toUpperCase());
   if (index === -1) return config.baseFreq;
@@ -198,7 +192,6 @@ export async function initSoundPayment(): Promise<boolean> {
 // =============================================================================
 export interface BroadcastSettings {
   volume?: number;
-  mode?: 'ultrasound' | 'mid' | 'audible';
 }
 
 export async function broadcastToken(token: string, settings?: BroadcastSettings): Promise<boolean> {
@@ -213,12 +206,9 @@ export async function broadcastToken(token: string, settings?: BroadcastSettings
     }
 
     const tokenUpper = token.toUpperCase();
-const mode = settings?.mode || BROADCAST_MODE;
-const config = FREQ_CONFIG[mode];
-const volume = settings?.volume ?? 1.0;
-const totalDuration = calculateDuration(tokenUpper.length);
-
-console.log('🔊 [TX] Total duration:', (totalDuration * 1000).toFixed(0) + 'ms');
+    const config = FREQ_CONFIG[BROADCAST_MODE];
+    const volume = settings?.volume ?? (BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.7);
+    const totalDuration = calculateDuration(tokenUpper.length);
     
     console.log('🔊 ══════════════════════════════════════════════════════════');
     console.log('🔊 [TX] BROADCAST START');
@@ -273,7 +263,7 @@ console.log('🔊 [TX] Total duration:', (totalDuration * 1000).toFixed(0) + 'ms
     // 3. For each character: CHAR + GAP
     for (let i = 0; i < tokenUpper.length; i++) {
       const char = tokenUpper[i];
-      const freq = charToFreq(char, mode);
+      const freq = charToFreq(char);
       playTone(freq, TIMING.CHAR_DURATION, 'CHAR[' + i + ']="' + char + '"');
       playTone(config.gapFreq, TIMING.GAP_DURATION, 'GAP');
     }

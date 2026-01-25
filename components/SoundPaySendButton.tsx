@@ -52,9 +52,9 @@ export default function SoundPaySendButton({
 
       // Broadcast with retries
       const attempts = [
-  { volume: 1.0, mode: 'ultrasound' as const },  // 17.5kHz - silent
-  { volume: 1.0, mode: 'mid' as const },         // 16.5kHz - mid range
-  { volume: 1.0, mode: 'audible' as const },     // 15kHz - fallback
+  { volume: 1.0, toneDuration: 0.08, silenceDuration: 0.03 },
+  { volume: 1.0, toneDuration: 0.10, silenceDuration: 0.04 },
+  { volume: 1.0, toneDuration: 0.12, silenceDuration: 0.05 },
 ];
 
       let paid = false;
