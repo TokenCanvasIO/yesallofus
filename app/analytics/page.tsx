@@ -162,15 +162,40 @@ function AnalyticsPage() {
     return sum + (tipItem?.line_total || tipItem?.unit_price || 0);
   }, 0);
 
-  // Payment method breakdown
-  const qrPayments = filteredReceipts.filter(r => r.payment_method === 'qr_xaman').length;
-  const nfcPayments = filteredReceipts.filter(r => r.payment_method !== 'qr_xaman').length;
+  // Payment method breakdown - all methods
+  const paymentMethodCounts = filteredReceipts.reduce((acc, r) => {
+    const method = r.payment_method || 'unknown';
+    acc[method] = (acc[method] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const methodLabels: Record<string, string> = {
+    'qr_xaman': 'QR (Xaman)',
+    'xaman_qr': 'QR (Xaman)',
+    'nfc_card': 'NFC Card',
+    'web3auth': 'Web3Auth',
+    'crossmark': 'Crossmark',
+    'sound': 'Sound Payment',
+    'unknown': 'Other'
+  };
+  
+  const methodColors: Record<string, string> = {
+    'qr_xaman': 'bg-sky-500',
+    'xaman_qr': 'bg-sky-500',
+    'nfc_card': 'bg-emerald-500',
+    'web3auth': 'bg-purple-500',
+    'crossmark': 'bg-amber-500',
+    'sound': 'bg-pink-500',
+    'unknown': 'bg-zinc-500'
+  };
 
   // Top products
 const productSales: Record<string, { quantity: number; revenue: number }> = {};
 filteredReceipts.forEach(r => {
   r.items.forEach(item => {
-    if (item.name.toLowerCase() !== 'tip' && item.name.toLowerCase() !== 'payment') {
+    if (item.name.toLowerCase() !== 'tip' && 
+        item.name.toLowerCase() !== 'payment' &&
+        item.name.toLowerCase() !== 'sound payment') {
       if (!productSales[item.name]) {
         productSales[item.name] = { quantity: 0, revenue: 0 };
       }
@@ -489,41 +514,23 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
               {/* Payment Methods */}
 <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
   <h3 className="font-semibold mb-4">Payment Methods</h3>
-  <div className="space-y-4">
-    <div>
-      <div className="flex justify-between text-sm mb-1">
-        <span className="flex items-center gap-2">
-          <svg className="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-          </svg>
-          QR (Xaman)
-        </span>
-        <span className="font-medium">{qrPayments}</span>
-      </div>
-      <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-        <div 
-          className="h-full bg-sky-500 rounded-full transition-all duration-500"
-          style={{ width: `${transactionCount > 0 ? (qrPayments / transactionCount) * 100 : 0}%` }}
-        />
-      </div>
-    </div>
-    <div>
-      <div className="flex justify-between text-sm mb-1">
-        <span className="flex items-center gap-2">
-          <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-          </svg>
-          NFC Card
-        </span>
-        <span className="font-medium">{nfcPayments}</span>
-      </div>
-      <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-        <div 
-          className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-          style={{ width: `${transactionCount > 0 ? (nfcPayments / transactionCount) * 100 : 0}%` }}
-        />
-      </div>
-    </div>
+  <div className="space-y-3">
+    {Object.entries(paymentMethodCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([method, count]) => (
+        <div key={method}>
+          <div className="flex justify-between text-sm mb-1">
+            <span>{methodLabels[method] || method}</span>
+            <span className="font-medium">{count}</span>
+          </div>
+          <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+            <div 
+              className={`h-full ${methodColors[method] || 'bg-zinc-500'} rounded-full transition-all duration-500`}
+              style={{ width: `${transactionCount > 0 ? (count / transactionCount) * 100 : 0}%` }}
+            />
+          </div>
+        </div>
+      ))}
   </div>
 </div>
 
