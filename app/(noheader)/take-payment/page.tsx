@@ -1739,20 +1739,20 @@ className="w-full max-w-xs mx-auto bg-zinc-800 hover:bg-zinc-700 text-white font
 
     <div className="flex flex-col sm:flex-row items-center justify-center gap-10 sm:gap-16 mb-10">
       {/* SoundPay Send Button */}
-      <SoundPaySendButton
-        paymentId={soundPaymentId}
-        onSuccess={(txHash, receiptId) => {
-          setTxHash(txHash);
-          setReceiptId(receiptId || null);
-          setLastOrder([...cart]);
-          setStatus('success');
-          setSoundPaymentId(null);
-          if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-        }}
-        onError={(error) => {
-          setError(error);
-        }}
-      />
+<SoundPaySendButton
+  paymentId={soundPaymentId}
+  onSuccess={(txHash, receiptId) => {
+    setTxHash(txHash);
+    setReceiptId(receiptId || null);
+    setLastOrder([...cart]);
+    setStatus('success');
+    setSoundPaymentId(null);
+    if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+  }}
+  onError={(error) => {
+    setError(error);
+  }}
+/>
 
       {/* Divider */}
       <div className="flex items-center gap-4">
