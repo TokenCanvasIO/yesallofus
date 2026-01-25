@@ -359,7 +359,7 @@ export async function startListening(
     let consecutivePreambleCount = 0;
     let consecutiveGapCount = 0;
     
-    const AMPLITUDE_THRESHOLD = 25;  // Lowered for better postamble detection
+    const AMPLITUDE_THRESHOLD = 15;  // Lowered for better postamble detection
     const PREAMBLE_CONFIRM_COUNT = 3;  // Need 3 consecutive preamble detections
     const GAP_CONFIRM_COUNT = 1;       // Need 1 gap detection (faster!)
     const CHAR_CONFIRM_COUNT = 1;      // Need 1 char detection (faster!)
