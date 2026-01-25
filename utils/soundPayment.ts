@@ -50,9 +50,7 @@ const calculateDuration = (tokenLength: number): number => {
 // DEVICE DETECTION
 // =============================================================================
 const detectBroadcastMode = (): 'ultrasound' | 'audible' => {
-  if (typeof window === 'undefined') return 'audible';
-  const isLargeScreen = window.innerWidth > 1024;
-  return isLargeScreen ? 'ultrasound' : 'audible';
+  return 'audible';
 };
 
 const BROADCAST_MODE = typeof window !== 'undefined' ? detectBroadcastMode() : 'audible';
