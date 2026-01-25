@@ -20,17 +20,17 @@ const SAMPLE_RATE = 48000;
 // TIMING CONFIGURATION (in seconds)
 // =============================================================================
 const TIMING = {
-  // Preamble/Postamble - shorter for faster transmission
-  PREAMBLE_DURATION: 0.12,      // 120ms - still reliable
-  POSTAMBLE_DURATION: 0.12,     // 120ms - still reliable
+  // Preamble/Postamble - long enough to reliably detect
+  PREAMBLE_DURATION: 0.20,      // 200ms - longer for better receiver lock
+  POSTAMBLE_DURATION: 0.20,     // 200ms - longer for reliable detection
   
   // Character and gap durations
-  CHAR_DURATION: 0.08,          // 80ms per character - faster
-  GAP_DURATION: 0.04,           // 40ms gap - faster
+  CHAR_DURATION: 0.12,          // 120ms per character - more time to detect
+  GAP_DURATION: 0.06,           // 60ms gap - MUST be long enough to detect
   
   // Receiver timing
-  SAMPLE_DELAY: 0.03,           // Sample 30ms into char slot
-  PREAMBLE_MIN_DURATION: 0.06,  // Min time to confirm preamble
+  SAMPLE_DELAY: 0.05,           // Sample 50ms into char slot
+  PREAMBLE_MIN_DURATION: 0.08,  // Min time to confirm preamble
   
   // Envelope for smooth transitions
   ATTACK_TIME: 0.005,           // 5ms fade in - sharper attack
@@ -68,14 +68,12 @@ const FREQ_CONFIG = {
     // Char range: 17800 (0) to 18250 (F) - gap to postamble now 1250 Hz
   },
   audible: {
-    // 15000 Hz range - this is the sweet spot for iPhone speakers!
-    baseFreq: 15500,       // Character base frequency
-    freqStep: 80,          // 80 Hz per character (0-F = 0-1200 Hz range)
-    syncFreq: 15000,       // PREAMBLE
-    gapFreq: 15250,        // GAP tone (between sync and data range)
-    endSyncFreq: 17000,    // POSTAMBLE
-    // Char range: 15500 (0) to 16700 (F)
-  }
+  baseFreq: 17000,
+  freqStep: 60,
+  syncFreq: 16500,
+  gapFreq: 16750,
+  endSyncFreq: 18500,
+},
 };
 
 // Character set for encoding - hex only
