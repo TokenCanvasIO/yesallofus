@@ -106,7 +106,7 @@ export default function SoundPaySendButton({
     return (
       <button 
         onClick={handleSend}
-        className={`flex flex-col items-center justify-center flex-1 min-h-[280px] py-6 cursor-pointer ${className}`}
+        className={`flex flex-col items-center justify-center min-h-[224px] sm:min-h-[280px] py-4 cursor-pointer ${className}`}
       >
         {/* Main animation area */}
         <div className="relative flex flex-col items-center justify-center flex-1 w-full">
@@ -140,7 +140,7 @@ export default function SoundPaySendButton({
             transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
           >
             {/* Phone body */}
-            <div className="relative w-28 h-52 bg-zinc-800/80 rounded-3xl border-2 border-purple-500/50 shadow-xl shadow-purple-500/30 backdrop-blur-sm">
+            <div className="relative w-32 h-56 sm:w-36 sm:h-64 bg-zinc-800/80 rounded-3xl border-2 border-purple-500/50 shadow-xl shadow-purple-500/30 backdrop-blur-sm">
               {/* Notch */}
               <div className="absolute top-3 left-1/2 -translate-x-1/2 w-14 h-2 bg-zinc-700 rounded-full" />
               {/* Screen */}
@@ -178,7 +178,7 @@ export default function SoundPaySendButton({
   // ACTIVE STATE - Broadcasting animation
   if (status === 'active') {
     return (
-      <div className={`flex flex-col items-center justify-center flex-1 min-h-[280px] py-6 ${className}`}>
+      <div className={`flex flex-col items-center justify-center min-h-[224px] sm:min-h-[280px] py-4 ${className}`}>
         {/* Main animation area */}
         <div className="relative flex flex-col items-center justify-center flex-1 w-full">
           {/* Pulsing rings outward */}
@@ -230,7 +230,7 @@ export default function SoundPaySendButton({
   // SUCCESS STATE
   if (status === 'success') {
     return (
-      <div className={`flex flex-col items-center justify-center flex-1 min-h-[280px] py-6 ${className}`}>
+      <div className={`flex flex-col items-center justify-center min-h-[224px] sm:min-h-[280px] py-4 ${className}`}>
         <motion.div
           className="w-32 h-32 bg-emerald-500/20 rounded-full flex items-center justify-center"
           initial={{ scale: 0 }}
@@ -260,7 +260,7 @@ export default function SoundPaySendButton({
     return (
       <button 
         onClick={handleSend}
-        className={`flex flex-col items-center justify-center flex-1 min-h-[280px] py-6 cursor-pointer ${className}`}
+        className={`flex flex-col items-center justify-center min-h-[224px] sm:min-h-[280px] py-4 cursor-pointer ${className}`}
       >
         <motion.div
           className="w-32 h-32 bg-red-500/20 rounded-full flex items-center justify-center"

@@ -103,16 +103,16 @@ function AnalyticsPage() {
     
     if (period === 'today') {
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      filtered = filtered.filter(r => new Date(r.paid_at) >= todayStart);
+      filtered = filtered.filter(r => new Date(r.paid_at || r.created_at) >= todayStart);
     } else if (period === 'week') {
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      filtered = filtered.filter(r => new Date(r.paid_at) >= weekAgo);
+      filtered = filtered.filter(r => new Date(r.paid_at || r.created_at) >= weekAgo);
     } else if (period === 'month') {
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      filtered = filtered.filter(r => new Date(r.paid_at) >= monthAgo);
+      filtered = filtered.filter(r => new Date(r.paid_at || r.created_at) >= monthAgo);
     }
     
-    return filtered.sort((a, b) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime());
+    return filtered.sort((a, b) => new Date(b.paid_at || b.created_at).getTime() - new Date(a.paid_at || a.created_at).getTime());
   };
 
   const filteredReceipts = getFilteredReceipts();
@@ -141,7 +141,7 @@ function AnalyticsPage() {
     }
     
     return receipts.filter(r => {
-      const date = new Date(r.paid_at);
+      const date = new Date(r.paid_at || r.created_at);
       return date >= start && date < end;
     });
   };
@@ -225,7 +225,7 @@ const getSalesByDay = () => {
     const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
     
     const dayReceipts = receipts.filter(r => {
-      const rDate = new Date(r.paid_at);
+      const rDate = new Date(r.paid_at || r.created_at);
       return rDate >= dayStart && rDate < dayEnd;
     });
     
@@ -272,7 +272,7 @@ const getPeriodHourlyData = () => {
   }
   
   filteredReceipts.forEach(r => {
-    const hour = new Date(r.paid_at).getHours();
+    const hour = new Date(r.paid_at || r.created_at).getHours();
     hourlyTotals[hour].revenue += r.total;
     hourlyTotals[hour].count += 1;
   });
@@ -576,7 +576,7 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
                           <p className="text-sm font-medium">
                             {r.items.length === 1 ? r.items[0].name : `${r.items.length} items`}
                           </p>
-                          <p className="text-zinc-500 text-xs">{timeAgo(r.paid_at)}</p>
+                          <p className="text-zinc-500 text-xs">{timeAgo(r.paid_at || r.created_at)}</p>
                         </div>
                         <p className="font-semibold text-emerald-400">£{r.total.toFixed(2)}</p>
                       </div>

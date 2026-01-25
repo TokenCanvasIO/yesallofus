@@ -462,7 +462,7 @@ useEffect(() => {
   const { store_name, cart, total, status } = data;
 
   return (
-    <div className="min-h-screen w-full bg-black text-white flex flex-col overflow-hidden">
+    <div className="h-screen w-full bg-black text-white flex flex-col overflow-hidden scale-[0.85] origin-top">
       
       {/* Ambient gradient */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -728,7 +728,7 @@ useEffect(() => {
     </div>
 
     {/* Amount */}
-    <p className="text-7xl sm:text-[10rem] font-bold text-emerald-400 mb-4">£{total.toFixed(2)}</p>
+    <p className="text-5xl sm:text-7xl font-bold text-emerald-400 mb-4">£{total.toFixed(2)}</p>
     
     {/* Waiting indicator */}
     <div className="flex items-center gap-3 mb-4">
@@ -747,7 +747,7 @@ useEffect(() => {
     {/* Total at top */}
     <div className="text-center mb-8 sm:mb-12">
       <p className="text-zinc-500 text-xl sm:text-3xl mb-2">Total to pay</p>
-      <p className="text-7xl sm:text-[10rem] font-bold text-emerald-400">£{(total ?? 0).toFixed(2)}</p>
+      <p className="text-5xl sm:text-7xl font-bold text-emerald-400 mb-4">£{total.toFixed(2)}</p>
     </div>
 
     {/* Payment Options */}
@@ -816,7 +816,7 @@ useEffect(() => {
     {/* Total at top */}
     <div className="text-center mb-8 sm:mb-12">
       <p className="text-zinc-500 text-xl sm:text-3xl mb-2">Total to pay</p>
-      <p className="text-7xl sm:text-[10rem] font-bold text-emerald-400">£{(total ?? 0).toFixed(2)}</p>
+      <p className="text-5xl sm:text-7xl font-bold text-emerald-400 mb-4">£{total.toFixed(2)}</p>
     </div>
 
     {/* Payment Options */}
@@ -901,7 +901,7 @@ useEffect(() => {
     {/* Total at top */}
     <div className="text-center mb-8 sm:mb-12">
       <p className="text-zinc-500 text-xl sm:text-3xl mb-2">Total to pay</p>
-      <p className="text-7xl sm:text-[10rem] font-bold text-emerald-400">£{(total ?? 0).toFixed(2)}</p>
+      <p className="text-5xl sm:text-7xl font-bold text-emerald-400 mb-4">£{total.toFixed(2)}</p>
     </div>
 
     {/* Payment Options */}
@@ -909,9 +909,12 @@ useEffect(() => {
       
       {/* SoundPay Send Button - Left Side */}
 <div className="flex flex-col items-center">
-  <SoundPaySendButton
-  paymentId={data?.payment_id || ''}
-  onSuccess={(txHash, receiptId) => {
+  <div className="w-40 h-40 sm:w-56 sm:h-56 bg-purple-500/20 rounded-full flex items-center justify-center relative mb-5 sm:mb-8">
+    <div className="absolute inset-0 bg-purple-500/20 rounded-full animate-ping pointer-events-none" style={{ animationDuration: '2s' }}></div>
+    <div className="absolute inset-4 bg-purple-500/10 rounded-full animate-pulse"></div>
+    <SoundPaySendButton
+      paymentId={data?.payment_id || ''}
+      onSuccess={(txHash, receiptId) => {
     fetch(`${API_URL}/display/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -928,6 +931,9 @@ useEffect(() => {
   }}
   onError={(error) => console.error('SoundPay error:', error)}
 />
+  </div>
+  <p className="text-2xl sm:text-4xl font-bold text-purple-400 mb-2">SoundPay</p>
+  <p className="text-zinc-500 text-lg sm:text-xl text-center">Hold phone near speaker</p>
 </div>
 
       {/* Divider */}
