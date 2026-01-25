@@ -1659,19 +1659,6 @@ className="block mx-auto text-zinc-500 hover:text-white transition"
 {/* ============================================================= */}
 {status === 'success' && (
 <div className="text-center py-12">
-{/* Return to homepage - discrete top-right */}
-<div className="flex justify-end mb-4">
-  <button
-    onClick={() => router.push('/home')}
-    className="text-zinc-600 hover:text-zinc-400 transition-colors p-2 flex items-center gap-1 text-xs"
-    title="Return to homepage"
-  >
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-    </svg>
-    <span>Home</span>
-  </button>
-</div>
 <div className="w-40 h-40 mx-auto mb-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
 <svg className="w-24 h-24 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
