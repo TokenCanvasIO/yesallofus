@@ -33,8 +33,8 @@ const TIMING = {
   PREAMBLE_MIN_DURATION: 0.08,  // Min time to confirm preamble
   
   // Envelope for smooth transitions
-  ATTACK_TIME: 0.012,           // 12ms fade in
-  RELEASE_TIME: 0.012,          // 12ms fade out
+  ATTACK_TIME: 0.005,           // 5ms fade in - sharper attack
+RELEASE_TIME: 0.005,          // 5ms fade out - sharper cutoff
 };
 
 // Calculate total broadcast duration for a token

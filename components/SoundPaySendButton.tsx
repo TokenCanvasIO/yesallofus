@@ -52,10 +52,10 @@ export default function SoundPaySendButton({
 
       // Broadcast with retries
       const attempts = [
-        { volume: 0.8, toneDuration: 0.08, silenceDuration: 0.03 },
-        { volume: 1.0, toneDuration: 0.10, silenceDuration: 0.04 },
-        { volume: 1.0, toneDuration: 0.12, silenceDuration: 0.05 },
-      ];
+  { volume: 1.0, toneDuration: 0.08, silenceDuration: 0.03 },
+  { volume: 1.0, toneDuration: 0.10, silenceDuration: 0.04 },
+  { volume: 1.0, toneDuration: 0.12, silenceDuration: 0.05 },
+];
 
       let paid = false;
 
