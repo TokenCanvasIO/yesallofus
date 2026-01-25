@@ -391,7 +391,7 @@ export async function startListening(
     const detectAnySignal = (): { freq: number; amplitude: number; mode: 'ultrasound' | 'audible' } | null => {
       // Try audible first (14500-17200 Hz) - the 15000 Hz sweet spot for iPhone
       // Upper limit 17200 to include POSTAMBLE but not overlap with ultrasound PREAMBLE
-      const audible = detectFrequency(14500, 17200);
+      const audible = detectFrequency(14500, 18600);
       if (audible && audible.amplitude > AMPLITUDE_THRESHOLD) {
         return { ...audible, mode: 'audible' };
       }
