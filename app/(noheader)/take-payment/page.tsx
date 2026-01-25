@@ -13,6 +13,8 @@ import NebulaBackground from '@/components/NebulaBackground';
 import TakePaymentHeader from '@/components/TakePaymentHeader';
 import AutoSignModal from '@/components/AutoSignModal';
 import { getIconById } from '@/lib/foodIcons';
+import SoundPayButton from '@/components/SoundPayButton';
+import SoundPaySendButton from '@/components/SoundPaySendButton';
 interface Product {
 product_id: string;
 name: string;
@@ -169,7 +171,8 @@ const [showProductsManager, setShowProductsManager] = useState(false);
 const [showManualEntry, setShowManualEntry] = useState(false);
 const [manualAmount, setManualAmount] = useState('');
 // Payment State
-const [status, setStatus] = useState<'idle' | 'qr' | 'waiting' | 'processing' | 'success' | 'error'>('idle');
+const [status, setStatus] = useState<'idle' | 'qr' | 'waiting' | 'processing' | 'success' | 'error' | 'soundpay'>('idle');
+const [soundPaymentId, setSoundPaymentId] = useState<string | null>(null);
 const [error, setError] = useState<string | null>(null);
 const [lastUID, setLastUID] = useState<string | null>(null);
 const [txHash, setTxHash] = useState<string | null>(null);
@@ -327,6 +330,27 @@ useEffect(() => {
     fetchStats();
   }
 }, [storeId, walletAddress]);
+
+// Poll display status when in soundpay state
+useEffect(() => {
+  if (status !== 'soundpay' || !storeId) return;
+  
+  const pollDisplay = async () => {
+    try {
+      const res = await fetch(`${API_URL}/display/${storeId}`);
+      const data = await res.json();
+      if (data.status === 'success') {
+        setStatus('success');
+        setSoundPaymentId(null);
+      }
+    } catch (e) {
+      console.error('Poll error:', e);
+    }
+  };
+  
+  const interval = setInterval(pollDisplay, 1000);
+  return () => clearInterval(interval);
+}, [status, storeId]);
 // Poll for Xaman payment status
 useEffect(() => {
 if (status !== 'qr' || !xamanPaymentId) return;
@@ -1394,18 +1418,57 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
         Pay £{getPaymentAmount().toFixed(2)}
       </button>
 
+      {getPaymentAmount() > 0 && storeId && walletAddress && (
+  <SoundPayButton
+  storeId={storeId}
+  storeName={storeName}
+  vendorWallet={walletAddress}
+  amount={cart.length > 0 ? cartTotal : customAmount}
+  tipAmount={tipAmount}
+  items={cart.length > 0 ? cart.map(item => ({
+  name: item.name,
+  quantity: item.quantity,
+  unit_price: item.price,
+  emoji: item.emoji || getProductEmoji(item)
+})) : undefined}
+  size="w-full h-28"
+  onPaymentCreated={(paymentId) => {
+    setSoundPaymentId(paymentId);
+    setStatus('soundpay');
+  }}
+  onError={(error) => {
+    setError(error);
+  }}
+/>
+)}
+
       {getPaymentAmount() > 0 && (
-        <button
-          id="tp-send-link-btn"
-          onClick={() => setShowSendPaymentLink(true)}
-          className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white font-medium py-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-          </svg>
-          Send Payment Link
-        </button>
-      )}
+  <button
+    id="tp-send-link-btn"
+    onClick={() => setShowSendPaymentLink(true)}
+    className="w-full h-14 relative overflow-hidden rounded-xl transition active:scale-95 cursor-pointer"
+  >
+    {/* Video Background */}
+    <video
+      autoPlay
+      loop
+      muted
+      playsInline
+      className="absolute inset-0 w-full h-full object-cover"
+    >
+      <source src="/star-space-overlay.webm" type="video/webm" />
+    </video>
+    {/* Overlay */}
+    <div className="absolute inset-0 bg-black/30" />
+    {/* Content */}
+    <div className="relative z-10 flex items-center justify-center gap-2 h-full">
+      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+      </svg>
+      <span className="text-white font-medium">Send Payment Link</span>
+    </div>
+  </button>
+)}
 
       {!showManualEntry && (
         <button
@@ -1672,6 +1735,71 @@ className="w-full max-w-xs mx-auto bg-zinc-800 hover:bg-zinc-700 text-white font
 </button>
 </div>
         )}
+
+{/* ============================================================= */}
+{/* SOUNDPAY STATE */}
+{/* ============================================================= */}
+{status === 'soundpay' && soundPaymentId && (
+  <div className="flex-1 flex flex-col items-center justify-center py-8">
+    {/* Total */}
+    <div className="text-center mb-6">
+      <p className="text-zinc-500 text-lg mb-2">Total to pay</p>
+      <p className="text-6xl sm:text-7xl font-bold text-emerald-400">£{getPaymentAmount().toFixed(2)}</p>
+    </div>
+
+    <div className="flex flex-col sm:flex-row items-center justify-center gap-10 sm:gap-16 mb-10">
+      {/* SoundPay Send Button */}
+      <SoundPaySendButton
+        paymentId={soundPaymentId}
+        onSuccess={(txHash, receiptId) => {
+          setTxHash(txHash);
+          setReceiptId(receiptId || null);
+          setLastOrder([...cart]);
+          setStatus('success');
+          setSoundPaymentId(null);
+          if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+        }}
+        onError={(error) => {
+          setError(error);
+        }}
+      />
+
+      {/* Divider */}
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-px bg-zinc-800 sm:hidden"></div>
+        <div className="hidden sm:block w-px h-32 bg-zinc-800"></div>
+        <span className="text-zinc-600 text-lg font-medium">or</span>
+        <div className="w-16 h-px bg-zinc-800 sm:hidden"></div>
+        <div className="hidden sm:block w-px h-32 bg-zinc-800"></div>
+      </div>
+
+      {/* NFC Tap Zone */}
+      <div className="flex flex-col items-center">
+        <div className="w-40 h-40 sm:w-48 sm:h-48 bg-emerald-500/20 rounded-full flex items-center justify-center relative mb-5">
+          <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
+          <div className="absolute inset-4 bg-emerald-500/10 rounded-full animate-pulse"></div>
+          <svg className="w-20 h-20 sm:w-24 sm:h-24 text-emerald-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+        </div>
+        <p className="text-2xl sm:text-3xl font-bold text-emerald-400 mb-2">Tap Card</p>
+        <p className="text-zinc-500 text-base sm:text-lg text-center">Hold NFC card<br/>to phone</p>
+      </div>
+    </div>
+
+    <button
+      onClick={() => {
+        setStatus('idle');
+        setSoundPaymentId(null);
+        if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'idle', null, 0, tipsEnabled, walletAddress || undefined);
+      }}
+      className="bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-12 py-4 rounded-2xl transition active:scale-95 cursor-pointer text-lg"
+    >
+      Cancel
+    </button>
+  </div>
+)}
+
 {/* Custom Tip Modal */}
 {showCustomTipModal && (
 <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
@@ -1726,10 +1854,11 @@ className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 
     amount={getPaymentAmount()}
     tip={tipAmount}
     items={cart.length > 0 ? cart.map(item => ({
-      name: item.name,
-      quantity: item.quantity,
-      unit_price: item.price
-    })) : undefined}
+  name: item.name,
+  quantity: item.quantity,
+  unit_price: item.price,
+  emoji: item.emoji || getProductEmoji(item)
+})) : undefined}
     onClose={() => setShowSendPaymentLink(false)}
     onSuccess={() => {
       // Optionally clear cart after sending

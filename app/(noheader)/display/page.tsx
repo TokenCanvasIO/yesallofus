@@ -3,21 +3,26 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import MoveCloserAnimation from '@/components/MoveCloserAnimation';
+import SoundPaySendButton from '@/components/SoundPaySendButton';
+import { getIconById } from '@/lib/foodIcons';
 
 interface CartItem {
   name: string;
   quantity: number;
   price: number;
   emoji?: string;
+  icon_id?: string;
 }
 
 interface DisplayData {
   store_name: string;
-  logo_url?: string; 
+  logo_url?: string;
+  payment_id?: string; 
   cart: CartItem[];
   subtotal: number;
   total: number;
-  status: 'idle' | 'ready' | 'processing' | 'success' | 'error' | 'qr' | 'signup' | 'split_pending' | 'link_pending';
+  status: 'idle' | 'ready' | 'processing' | 'success' | 'error' | 'qr' | 'signup' | 'split_pending' | 'link_pending' | 'soundpay';
   qr_code?: string | null;
   tip?: number;
   tips_enabled?: boolean;
@@ -364,6 +369,7 @@ useEffect(() => {
       const res = await fetch(`${API_URL}/display/${storeId}`);
       if (!res.ok) throw new Error('Failed');
       const val = await res.json();
+      console.log('Display data:', val.status, val.cart); 
       setData(val);
       setConnected(true);
       if (val.status === 'qr') {
@@ -580,7 +586,11 @@ useEffect(() => {
                 className="flex items-center justify-between py-4 px-5 sm:py-5 sm:px-6 bg-zinc-900/50 rounded-2xl border border-zinc-800/50"
               >
                 <div className="flex items-center gap-4 sm:gap-5">
-                  <span className="text-3xl sm:text-5xl">{item.emoji || '📦'}</span>
+                  <span className="text-3xl sm:text-5xl w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
+  {item.icon_id && getIconById(item.icon_id) ? (
+    <span className="w-full h-full" dangerouslySetInnerHTML={{ __html: getIconById(item.icon_id)!.svg }} />
+  ) : (item.emoji || '📦')}
+</span>
                   <div>
                     <p className="text-xl sm:text-3xl font-semibold">{item.name}</p>
                     {item.quantity > 1 && (
@@ -737,7 +747,7 @@ useEffect(() => {
     {/* Total at top */}
     <div className="text-center mb-8 sm:mb-12">
       <p className="text-zinc-500 text-xl sm:text-3xl mb-2">Total to pay</p>
-      <p className="text-7xl sm:text-[10rem] font-bold text-emerald-400">£{total.toFixed(2)}</p>
+      <p className="text-7xl sm:text-[10rem] font-bold text-emerald-400">£{(total ?? 0).toFixed(2)}</p>
     </div>
 
     {/* Payment Options */}
@@ -806,7 +816,7 @@ useEffect(() => {
     {/* Total at top */}
     <div className="text-center mb-8 sm:mb-12">
       <p className="text-zinc-500 text-xl sm:text-3xl mb-2">Total to pay</p>
-      <p className="text-7xl sm:text-[10rem] font-bold text-emerald-400">£{total.toFixed(2)}</p>
+      <p className="text-7xl sm:text-[10rem] font-bold text-emerald-400">£{(total ?? 0).toFixed(2)}</p>
     </div>
 
     {/* Payment Options */}
@@ -872,6 +882,97 @@ useEffect(() => {
         <p className="text-2xl sm:text-4xl font-bold text-sky-400 mb-2">Scan QR</p>
         <p className="text-zinc-500 text-lg sm:text-xl text-center">Open Xaman wallet<br/>and scan code</p>
       </div>
+
+    </div>
+
+    {/* Items summary */}
+    {cart && cart.length > 0 && (
+      <div className="mt-8 sm:mt-10 pt-4 border-t border-zinc-800">
+        <p className="text-zinc-600 text-center text-base sm:text-lg">
+          {cart.reduce((sum, item) => sum + item.quantity, 0)} items: {cart.map(item => item.name).join(', ')}
+        </p>
+      </div>
+    )}
+  </div>
+)}
+{/* SoundPay State - Show animation and Tap options */}
+{status === 'soundpay' && (
+  <div className="flex-1 flex flex-col">
+    {/* Total at top */}
+    <div className="text-center mb-8 sm:mb-12">
+      <p className="text-zinc-500 text-xl sm:text-3xl mb-2">Total to pay</p>
+      <p className="text-7xl sm:text-[10rem] font-bold text-emerald-400">£{(total ?? 0).toFixed(2)}</p>
+    </div>
+
+    {/* Payment Options */}
+    <div className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
+      
+      {/* SoundPay Send Button - Left Side */}
+<div className="flex flex-col items-center">
+  <SoundPaySendButton
+  paymentId={data?.payment_id || ''}
+  onSuccess={(txHash, receiptId) => {
+    fetch(`${API_URL}/display/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        store_id: storeId,
+        store_name: data?.store_name,
+        cart: [],
+        total: 0,
+        status: 'success',
+        tip: 0,
+        vendor_wallet: data?.vendor_wallet,
+      }),
+    });
+  }}
+  onError={(error) => console.error('SoundPay error:', error)}
+/>
+</div>
+
+      {/* Divider */}
+      <div className="flex items-center gap-4">
+        <div className="w-20 sm:w-28 h-px bg-zinc-800 sm:hidden"></div>
+        <div className="hidden sm:block w-px h-40 bg-zinc-800"></div>
+        <span className="text-zinc-600 text-xl sm:text-2xl font-medium">or</span>
+        <div className="w-20 sm:w-28 h-px bg-zinc-800 sm:hidden"></div>
+        <div className="hidden sm:block w-px h-40 bg-zinc-800"></div>
+      </div>
+
+      {/* NFC Tap Zone - Right Side */}
+      <button 
+        onClick={startNFCPayment}
+        disabled={nfcScanning || paymentProcessing}
+        className="flex flex-col items-center cursor-pointer"
+      >
+        <div className={`w-40 h-40 sm:w-56 sm:h-56 rounded-full flex items-center justify-center relative mb-5 sm:mb-8 ${
+          nfcScanning ? 'bg-amber-500/30' : paymentProcessing ? 'bg-emerald-500/40' : 'bg-emerald-500/20'
+        }`}>
+          {!nfcScanning && !paymentProcessing && (
+            <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping pointer-events-none" style={{ animationDuration: '2s' }}></div>
+          )}
+          {nfcScanning && (
+            <div className="absolute inset-0 bg-amber-500/30 rounded-full animate-pulse"></div>
+          )}
+          <div className="absolute inset-4 bg-emerald-500/10 rounded-full animate-pulse"></div>
+          {paymentProcessing ? (
+            <div className="w-16 h-16 sm:w-20 sm:h-20 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <svg className={`w-20 h-20 sm:w-28 sm:h-28 relative z-10 ${nfcScanning ? 'text-amber-400' : 'text-emerald-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+          )}
+        </div>
+        <p className={`text-2xl sm:text-4xl font-bold mb-2 ${nfcScanning ? 'text-amber-400' : 'text-emerald-400'}`}>
+          {paymentProcessing ? 'Processing...' : nfcScanning ? 'Tap Now...' : 'Tap Card'}
+        </p>
+        <p className="text-zinc-500 text-lg sm:text-xl text-center">
+          {nfcScanning ? 'Hold your card to this device' : 'Tap here, then hold your NFC card'}
+        </p>
+        {nfcError && (
+          <p className="text-red-400 text-sm mt-2">{nfcError}</p>
+        )}
+      </button>
 
     </div>
 
