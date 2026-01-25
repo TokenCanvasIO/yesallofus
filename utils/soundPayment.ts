@@ -50,7 +50,9 @@ const calculateDuration = (tokenLength: number): number => {
 // DEVICE DETECTION
 // =============================================================================
 const detectBroadcastMode = (): 'ultrasound' | 'audible' => {
-  return 'audible';
+  if (typeof window === 'undefined') return 'audible';
+  const isLargeScreen = window.innerWidth > 1024;
+  return isLargeScreen ? 'ultrasound' : 'audible';
 };
 
 const BROADCAST_MODE = typeof window !== 'undefined' ? detectBroadcastMode() : 'audible';
@@ -62,19 +64,23 @@ const FREQ_CONFIG = {
   ultrasound: {
     baseFreq: 17800,
     freqStep: 30,
-    syncFreq: 17500,       // PREAMBLE
-    gapFreq: 17650,        // GAP tone (between sync and data range)
-    endSyncFreq: 19500,    // POSTAMBLE - MOVED MUCH HIGHER (was 18800)
-    // Char range: 17800 (0) to 18250 (F) - gap to postamble now 1250 Hz
+    syncFreq: 17500,
+    gapFreq: 17650,
+    endSyncFreq: 19500,
+  },
+  mid: {
+    baseFreq: 16800,
+    freqStep: 50,
+    syncFreq: 16500,
+    gapFreq: 16650,
+    endSyncFreq: 18000,
   },
   audible: {
-    // 15000 Hz range - this is the sweet spot for iPhone speakers!
-    baseFreq: 15500,       // Character base frequency
-    freqStep: 80,          // 80 Hz per character (0-F = 0-1200 Hz range)
-    syncFreq: 15000,       // PREAMBLE
-    gapFreq: 15250,        // GAP tone (between sync and data range)
-    endSyncFreq: 17000,    // POSTAMBLE
-    // Char range: 15500 (0) to 16700 (F)
+    baseFreq: 15500,
+    freqStep: 80,
+    syncFreq: 15000,
+    gapFreq: 15250,
+    endSyncFreq: 17000,
   }
 };
 
@@ -192,6 +198,7 @@ export async function initSoundPayment(): Promise<boolean> {
 // =============================================================================
 export interface BroadcastSettings {
   volume?: number;
+  mode?: 'ultrasound' | 'mid' | 'audible';
 }
 
 export async function broadcastToken(token: string, settings?: BroadcastSettings): Promise<boolean> {
@@ -206,9 +213,12 @@ export async function broadcastToken(token: string, settings?: BroadcastSettings
     }
 
     const tokenUpper = token.toUpperCase();
-    const config = FREQ_CONFIG[BROADCAST_MODE];
-    const volume = settings?.volume ?? (BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.7);
-    const totalDuration = calculateDuration(tokenUpper.length);
+const mode = settings?.mode || BROADCAST_MODE;
+const config = FREQ_CONFIG[mode];
+const volume = settings?.volume ?? 1.0;
+const totalDuration = calculateDuration(tokenUpper.length);
+
+console.log('🔊 [TX] Total duration:', (totalDuration * 1000).toFixed(0) + 'ms');
     
     console.log('🔊 ══════════════════════════════════════════════════════════');
     console.log('🔊 [TX] BROADCAST START');

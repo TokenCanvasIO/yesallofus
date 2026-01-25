@@ -1,123 +1,150 @@
 'use client';
 
-// Hybrid FSK (Frequency Shift Keying) Sound Payment System
-// Mobile devices: Audible frequencies (reliable)
-// Desktop devices: Ultrasound frequencies (silent)
-// All devices: Listen for BOTH ranges
+// =============================================================================
+// BOMBPROOF FSK Sound Payment System
+// =============================================================================
+// 
+// Protocol: Fixed Symbol Timing with Gap Tones
+// 
+// Transmission format:
+//   [PREAMBLE] → [GAP] → [CHAR1] → [GAP] → [CHAR2] → [GAP] → ... → [POSTAMBLE]
+//
+// Key principle: GAP tone between EVERY character eliminates repeated-char problem
+// Receiver locks to preamble, then samples at fixed time slots
+//
+// =============================================================================
 
 const SAMPLE_RATE = 48000;
-const TONE_DURATION_AUDIBLE = 0.05;
-const TONE_DURATION_ULTRASOUND = 0.08;    // 80ms per char
-const SILENCE_DURATION_AUDIBLE = 0.02;
-const SILENCE_DURATION_ULTRASOUND = 0.02;// 15ms gap
-const SYNC_DURATION_AUDIBLE = 0.05;
-const SYNC_DURATION_ULTRASOUND = 0.06;    // 80ms sync
 
-// ============================================================================
-// DEVICE DETECTION - Determines broadcast mode
-// ============================================================================
+// =============================================================================
+// TIMING CONFIGURATION (in seconds)
+// =============================================================================
+const TIMING = {
+  // Preamble/Postamble - long enough to reliably detect
+  PREAMBLE_DURATION: 0.20,      // 200ms - longer for better receiver lock 
+  POSTAMBLE_DURATION: 0.20,     // 200ms - longer for reliable detection
+  
+  // Character and gap durations
+  CHAR_DURATION: 0.12,          // 120ms per character - more time to detect
+  GAP_DURATION: 0.06,           // 60ms gap - MUST be long enough to detect
+  
+  // Receiver timing
+  SAMPLE_DELAY: 0.05,           // Sample 50ms into char slot
+  PREAMBLE_MIN_DURATION: 0.08,  // Min time to confirm preamble
+  
+  // Envelope for smooth transitions
+  ATTACK_TIME: 0.005,           // 5ms fade in - sharper attack
+RELEASE_TIME: 0.005,          // 5ms fade out - sharper cutoff
+};
+
+// Calculate total broadcast duration for a token
+const calculateDuration = (tokenLength: number): number => {
+  return TIMING.PREAMBLE_DURATION + 
+         TIMING.GAP_DURATION +  // gap after preamble
+         (tokenLength * TIMING.CHAR_DURATION) + 
+         (tokenLength * TIMING.GAP_DURATION) +  // gap after each char
+         TIMING.POSTAMBLE_DURATION;
+};
+
+// =============================================================================
+// DEVICE DETECTION
+// =============================================================================
 const detectBroadcastMode = (): 'ultrasound' | 'audible' => {
   if (typeof window === 'undefined') return 'audible';
-  
-  // Use screen size - desktops/laptops have large screens
   const isLargeScreen = window.innerWidth > 1024;
-  
-  // Large screen = desktop = ultrasound (silent)
-  // Small screen = mobile = audible (chirps)
   return isLargeScreen ? 'ultrasound' : 'audible';
 };
 
 const BROADCAST_MODE = typeof window !== 'undefined' ? detectBroadcastMode() : 'audible';
 
-// ============================================================================
+// =============================================================================
 // FREQUENCY CONFIGURATIONS
-// ============================================================================
+// =============================================================================
 const FREQ_CONFIG = {
   ultrasound: {
     baseFreq: 17800,
     freqStep: 30,
-    syncFreq: 17500,
-    endSyncFreq: 18800,
+    syncFreq: 17500,       // PREAMBLE
+    gapFreq: 17650,        // GAP tone (between sync and data range)
+    endSyncFreq: 19500,    // POSTAMBLE - MOVED MUCH HIGHER (was 18800)
+    // Char range: 17800 (0) to 18250 (F) - gap to postamble now 1250 Hz
   },
   audible: {
-    baseFreq: 15500,
-    freqStep: 80,    // Wider spacing for audible (more reliable)
-    syncFreq: 15000,
-    endSyncFreq: 17000,
+    // 15000 Hz range - this is the sweet spot for iPhone speakers!
+    baseFreq: 15500,       // Character base frequency
+    freqStep: 80,          // 80 Hz per character (0-F = 0-1200 Hz range)
+    syncFreq: 15000,       // PREAMBLE
+    gapFreq: 15250,        // GAP tone (between sync and data range)
+    endSyncFreq: 17000,    // POSTAMBLE
+    // Char range: 15500 (0) to 16700 (F)
   }
 };
 
-// Broadcasting uses device-appropriate frequencies
-const BROADCAST_CONFIG = FREQ_CONFIG[BROADCAST_MODE];
-const BASE_FREQ = BROADCAST_CONFIG.baseFreq;
-const FREQ_STEP = BROADCAST_CONFIG.freqStep;
-const SYNC_FREQ = BROADCAST_CONFIG.syncFreq;
-const END_SYNC_FREQ = BROADCAST_CONFIG.endSyncFreq;
-
-// Listening range covers BOTH audible and ultrasound
-const LISTEN_MIN_FREQ = 2500;   // Below audible sync
-const LISTEN_MAX_FREQ = 19500;  // Above ultrasound end sync
-
-let audioContext: AudioContext | null = null;
-let mediaStream: MediaStream | null = null;
-let analyser: AnalyserNode | null = null;
-let isListening = false;
-
-// Character set for encoding - hex only for short tokens
+// Character set for encoding - hex only
 const CHARSET = '0123456789ABCDEF';
 
-function charToFreq(char: string, config = FREQ_CONFIG[BROADCAST_MODE]): number {
+// =============================================================================
+// FREQUENCY HELPERS
+// =============================================================================
+function charToFreq(char: string, mode: 'ultrasound' | 'audible' = BROADCAST_MODE): number {
+  const config = FREQ_CONFIG[mode];
   const index = CHARSET.indexOf(char.toUpperCase());
   if (index === -1) return config.baseFreq;
   return config.baseFreq + (index * config.freqStep);
 }
 
-function freqToChar(freq: number): { char: string; mode: 'ultrasound' | 'audible' } | null {
-  // Try ultrasound range first
-  const ultraConfig = FREQ_CONFIG.ultrasound;
-  const ultraIndex = Math.round((freq - ultraConfig.baseFreq) / ultraConfig.freqStep);
-  if (ultraIndex >= 0 && ultraIndex < CHARSET.length) {
-    const expectedFreq = ultraConfig.baseFreq + (ultraIndex * ultraConfig.freqStep);
-    if (Math.abs(freq - expectedFreq) < ultraConfig.freqStep * 0.6) {
-      return { char: CHARSET[ultraIndex], mode: 'ultrasound' };
-    }
+function freqToChar(freq: number, mode: 'ultrasound' | 'audible'): string | null {
+  const config = FREQ_CONFIG[mode];
+  const index = Math.round((freq - config.baseFreq) / config.freqStep);
+  if (index < 0 || index >= CHARSET.length) return null;
+  
+  // Check if frequency is close enough to expected
+  const expectedFreq = config.baseFreq + (index * config.freqStep);
+  const tolerance = config.freqStep * 0.5;
+  if (Math.abs(freq - expectedFreq) > tolerance) return null;
+  
+  return CHARSET[index];
+}
+
+function identifyTone(freq: number, mode: 'ultrasound' | 'audible', logUnknown: boolean = false): 
+  { type: 'preamble' | 'gap' | 'postamble' | 'char'; char?: string } | null {
+  
+  const config = FREQ_CONFIG[mode];
+  const tolerance = mode === 'ultrasound' ? 100 : 120;  // Increased tolerance
+  
+  // Check preamble
+  if (Math.abs(freq - config.syncFreq) < tolerance) {
+    return { type: 'preamble' };
   }
   
-  // Try audible range
-  const audibleConfig = FREQ_CONFIG.audible;
-  const audibleIndex = Math.round((freq - audibleConfig.baseFreq) / audibleConfig.freqStep);
-  if (audibleIndex >= 0 && audibleIndex < CHARSET.length) {
-    const expectedFreq = audibleConfig.baseFreq + (audibleIndex * audibleConfig.freqStep);
-    if (Math.abs(freq - expectedFreq) < audibleConfig.freqStep * 0.6) {
-      return { char: CHARSET[audibleIndex], mode: 'audible' };
-    }
+  // Check gap
+  if (Math.abs(freq - config.gapFreq) < tolerance) {
+    return { type: 'gap' };
+  }
+  
+  // Check postamble - use VERY strict tolerance to avoid false positives
+  // Postamble is now at 19500 Hz (ultrasound), far from chars (max 18250 Hz)
+  if (Math.abs(freq - config.endSyncFreq) < 200) {
+    return { type: 'postamble' };
+  }
+  
+  // Check character
+  const char = freqToChar(freq, mode);
+  if (char) {
+    return { type: 'char', char };
   }
   
   return null;
 }
 
-// Check if frequency is a sync tone
-function detectSyncType(freq: number): { type: 'start' | 'end'; mode: 'ultrasound' | 'audible' } | null {
-  // Ultrasound sync tones
-  if (Math.abs(freq - FREQ_CONFIG.ultrasound.syncFreq) < 300) {
-    return { type: 'start', mode: 'ultrasound' };
-  }
-  if (Math.abs(freq - FREQ_CONFIG.ultrasound.endSyncFreq) < 300) {
-    return { type: 'end', mode: 'ultrasound' };
-  }
-  
-  // Audible sync tones
-  if (Math.abs(freq - FREQ_CONFIG.audible.syncFreq) < 300) {
-    return { type: 'start', mode: 'audible' };
-  }
-  if (Math.abs(freq - FREQ_CONFIG.audible.endSyncFreq) < 300) {
-    return { type: 'end', mode: 'audible' };
-  }
-  
-  return null;
-}
+// =============================================================================
+// AUDIO CONTEXT MANAGEMENT
+// =============================================================================
+let audioContext: AudioContext | null = null;
+let mediaStream: MediaStream | null = null;
+let analyser: AnalyserNode | null = null;
+let isListening = false;
 
-// Warmup - play silent tone to unlock iOS AudioContext
 export async function warmupAudio(): Promise<void> {
   if (typeof window === 'undefined') return;
   try {
@@ -128,19 +155,20 @@ export async function warmupAudio(): Promise<void> {
     if (audioContext.state === 'suspended') {
       await audioContext.resume();
     }
-    // Play silent tone to unlock
+    // Play silent tone to unlock iOS
     const osc = audioContext.createOscillator();
     const gain = audioContext.createGain();
-    gain.gain.value = 0.001; // Nearly silent
+    gain.gain.value = 0.001;
     osc.connect(gain);
     gain.connect(audioContext.destination);
     osc.start();
     osc.stop(audioContext.currentTime + 0.1);
-    console.log('🔊 Audio warmup complete');
+    console.log('🔊 [INIT] Audio warmup complete');
   } catch (e) {
-    console.warn('Warmup failed:', e);
+    console.warn('🔊 [INIT] Warmup failed:', e);
   }
 }
+
 export async function initSoundPayment(): Promise<boolean> {
   if (typeof window === 'undefined') return false;
   try {
@@ -151,19 +179,21 @@ export async function initSoundPayment(): Promise<boolean> {
     if (audioContext.state === 'suspended') {
       await audioContext.resume();
     }
-    console.log('🔊 Sound payment initialized (Hybrid FSK mode)');
-    console.log('🔊 Broadcast mode:', BROADCAST_MODE, BROADCAST_MODE === 'ultrasound' ? '(silent)' : '(audible chirps)');
+    console.log('🔊 [INIT] Sound payment initialized (BOMBPROOF protocol)');
+    console.log('🔊 [INIT] Broadcast mode:', BROADCAST_MODE, BROADCAST_MODE === 'ultrasound' ? '(silent)' : '(audible chirps)');
+    console.log('🔊 [INIT] Timing: CHAR=' + (TIMING.CHAR_DURATION * 1000) + 'ms, GAP=' + (TIMING.GAP_DURATION * 1000) + 'ms');
     return true;
   } catch (error) {
-    console.error('Failed to initialize:', error);
+    console.error('🔊 [INIT] Failed to initialize:', error);
     return false;
   }
 }
 
+// =============================================================================
+// BROADCAST (TRANSMITTER)
+// =============================================================================
 export interface BroadcastSettings {
-  volume?: number;      // 0.0 - 1.0, default 0.4 audible / 0.8 ultrasound
-  toneDuration?: number; // seconds, default 0.05 audible / 0.08 ultrasound
-  silenceDuration?: number; // seconds, default 0.02
+  volume?: number;
 }
 
 export async function broadcastToken(token: string, settings?: BroadcastSettings): Promise<boolean> {
@@ -171,90 +201,99 @@ export async function broadcastToken(token: string, settings?: BroadcastSettings
 
   try {
     await initSoundPayment();
-    if (audioContext?.state === 'suspended') {
-      console.log('🔊 Resuming suspended AudioContext');
+    if (!audioContext) throw new Error('Audio context not available');
+    
+    if (audioContext.state === 'suspended') {
       await audioContext.resume();
     }
-    console.log('🔊 AudioContext state:', audioContext?.state);
-    if (!audioContext) throw new Error('Audio context not available');
 
     const tokenUpper = token.toUpperCase();
-    console.log('🔊 Broadcasting token:', tokenUpper);
-    console.log('🔊 Mode:', BROADCAST_MODE);
-    console.log('🔊 Character frequencies:');
-    for (const char of tokenUpper) {
-      console.log(`   ${char} -> ${charToFreq(char)} Hz`);
-    }
-
-    const DEFAULT_VOLUME = BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.4;
-    const TONE_DURATION = settings?.toneDuration ?? (BROADCAST_MODE === 'ultrasound' ? TONE_DURATION_ULTRASOUND : TONE_DURATION_AUDIBLE);
-    const SYNC_DURATION = BROADCAST_MODE === 'ultrasound' ? SYNC_DURATION_ULTRASOUND : SYNC_DURATION_AUDIBLE;
-    const SILENCE_DURATION = settings?.silenceDuration ?? (BROADCAST_MODE === 'ultrasound' ? SILENCE_DURATION_ULTRASOUND : SILENCE_DURATION_AUDIBLE);
-    const VOLUME = settings?.volume ?? DEFAULT_VOLUME;
+    const config = FREQ_CONFIG[BROADCAST_MODE];
+    const volume = settings?.volume ?? (BROADCAST_MODE === 'ultrasound' ? 0.8 : 0.7);
+    const totalDuration = calculateDuration(tokenUpper.length);
     
-    const ctx = audioContext;
-    let currentTime = ctx.currentTime + 0.1;
-
-    // Play START sync tone
-    const syncOsc = ctx.createOscillator();
-    const syncGain = ctx.createGain();
-    syncOsc.frequency.value = FREQ_CONFIG[BROADCAST_MODE].syncFreq;
-    syncGain.gain.value = VOLUME;
-    syncOsc.connect(syncGain);
-    syncGain.connect(ctx.destination);
-    syncOsc.start(currentTime);
-    syncOsc.stop(currentTime + SYNC_DURATION);
-    currentTime += SYNC_DURATION + SILENCE_DURATION * 2;
-
-    // Play each character as a frequency
+    console.log('🔊 ══════════════════════════════════════════════════════════');
+    console.log('🔊 [TX] BROADCAST START');
+    console.log('🔊 [TX] Token:', tokenUpper);
+    console.log('🔊 [TX] Mode:', BROADCAST_MODE);
+    console.log('🔊 [TX] Volume:', volume);
+    console.log('🔊 [TX] Total duration:', (totalDuration * 1000).toFixed(0) + 'ms');
+    console.log('🔊 [TX] ──────────────────────────────────────────────────────');
+    console.log('🔊 [TX] Frequency map:');
+    console.log('🔊 [TX]   PREAMBLE  →', config.syncFreq, 'Hz');
+    console.log('🔊 [TX]   GAP       →', config.gapFreq, 'Hz');
     for (const char of tokenUpper) {
-      const freq = charToFreq(char);
+      console.log('🔊 [TX]   CHAR "' + char + '"  →', charToFreq(char), 'Hz');
+    }
+    console.log('🔊 [TX]   POSTAMBLE →', config.endSyncFreq, 'Hz');
+    console.log('🔊 [TX] ──────────────────────────────────────────────────────');
+
+    const ctx = audioContext;
+    let currentTime = ctx.currentTime + 0.05; // Small buffer
+    
+    // Helper to play a tone with envelope
+    const playTone = (freq: number, duration: number, label: string) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       
       osc.frequency.value = freq;
       osc.type = 'sine';
       
-      // Smooth envelope to reduce clicks
+      // Smooth envelope
       gain.gain.setValueAtTime(0, currentTime);
-      gain.gain.linearRampToValueAtTime(VOLUME, currentTime + 0.025);
-      gain.gain.setValueAtTime(VOLUME, currentTime + TONE_DURATION - 0.015);
-      gain.gain.linearRampToValueAtTime(0, currentTime + TONE_DURATION);
+      gain.gain.linearRampToValueAtTime(volume, currentTime + TIMING.ATTACK_TIME);
+      gain.gain.setValueAtTime(volume, currentTime + duration - TIMING.RELEASE_TIME);
+      gain.gain.linearRampToValueAtTime(0, currentTime + duration);
       
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(currentTime);
-      osc.stop(currentTime + TONE_DURATION);
+      osc.stop(currentTime + duration);
       
-      currentTime += TONE_DURATION + SILENCE_DURATION;
+      const startMs = ((currentTime - ctx.currentTime) * 1000).toFixed(0);
+      console.log('🔊 [TX] @' + startMs + 'ms: ' + label + ' (' + freq + 'Hz, ' + (duration * 1000).toFixed(0) + 'ms)');
+      
+      currentTime += duration;
+    };
+
+    // 1. PREAMBLE
+    playTone(config.syncFreq, TIMING.PREAMBLE_DURATION, 'PREAMBLE');
+    
+    // 2. GAP after preamble
+    playTone(config.gapFreq, TIMING.GAP_DURATION, 'GAP');
+    
+    // 3. For each character: CHAR + GAP
+    for (let i = 0; i < tokenUpper.length; i++) {
+      const char = tokenUpper[i];
+      const freq = charToFreq(char);
+      playTone(freq, TIMING.CHAR_DURATION, 'CHAR[' + i + ']="' + char + '"');
+      playTone(config.gapFreq, TIMING.GAP_DURATION, 'GAP');
     }
+    
+    // 4. POSTAMBLE
+    playTone(config.endSyncFreq, TIMING.POSTAMBLE_DURATION, 'POSTAMBLE');
 
-    // Play END sync tone
-    currentTime += SILENCE_DURATION * 8; // Extra delay before END SYNC
-    const endOsc = ctx.createOscillator();
-    const endGain = ctx.createGain();
-    endOsc.frequency.value = FREQ_CONFIG[BROADCAST_MODE].endSyncFreq;
-    endGain.gain.value = VOLUME;
-    endOsc.connect(endGain);
-    endGain.connect(ctx.destination);
-    endOsc.start(currentTime);
-    endOsc.stop(currentTime + SYNC_DURATION);
-
-    const totalDuration = (currentTime + SYNC_DURATION - ctx.currentTime) * 1000;
-    console.log('🔊 Broadcast duration:', totalDuration.toFixed(0), 'ms');
+    console.log('🔊 [TX] ──────────────────────────────────────────────────────');
+    console.log('🔊 [TX] All tones scheduled, waiting for completion...');
 
     return new Promise((resolve) => {
       setTimeout(() => {
-        console.log('🔊 Broadcast complete');
+        console.log('🔊 [TX] BROADCAST COMPLETE');
+        console.log('🔊 ══════════════════════════════════════════════════════════');
         resolve(true);
-      }, totalDuration + 100);
+      }, totalDuration * 1000 + 100);
     });
 
   } catch (error) {
-    console.error('Broadcast error:', error);
+    console.error('🔊 [TX] Broadcast error:', error);
     return false;
   }
 }
+
+// =============================================================================
+// LISTEN (RECEIVER) - Fixed Symbol Timing State Machine
+// =============================================================================
+type ReceiverState = 'IDLE' | 'PREAMBLE_DETECTED' | 'WAITING_FOR_GAP' | 'WAITING_FOR_CHAR' | 'COMPLETE';
 
 export async function startListening(
   onTokenReceived: (token: string) => void,
@@ -262,16 +301,18 @@ export async function startListening(
   onProgress?: (state: 'ready' | 'sync' | 'receiving', chars?: string) => void
 ): Promise<() => void> {
   if (typeof window === 'undefined') return () => {};
-  if (isListening) return () => {};
+  if (isListening) {
+    console.log('🎤 [RX] Already listening, ignoring duplicate call');
+    return () => {};
+  }
 
   try {
     await initSoundPayment();
-    if (audioContext?.state === 'suspended') {
-      console.log('🔊 Resuming suspended AudioContext');
+    if (!audioContext) throw new Error('Audio context not available');
+    
+    if (audioContext.state === 'suspended') {
       await audioContext.resume();
     }
-    console.log('🔊 AudioContext state:', audioContext?.state);
-    if (!audioContext) throw new Error('Audio context not available');
 
     const ctx = audioContext;
 
@@ -284,43 +325,57 @@ export async function startListening(
       }
     });
 
-    console.log('🎤 Mic granted');
+    console.log('🎤 ══════════════════════════════════════════════════════════');
+    console.log('🎤 [RX] RECEIVER STARTED');
+    console.log('🎤 [RX] Mic granted');
     onProgress?.('ready');
 
     const source = ctx.createMediaStreamSource(mediaStream);
     analyser = ctx.createAnalyser();
     analyser.fftSize = 8192;
-    analyser.smoothingTimeConstant = 0.2;
+    analyser.smoothingTimeConstant = 0.3;
     source.connect(analyser);
 
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     const freqResolution = SAMPLE_RATE / analyser.fftSize;
 
+    console.log('🎤 [RX] FFT size:', analyser.fftSize);
+    console.log('🎤 [RX] Freq resolution:', freqResolution.toFixed(2), 'Hz');
+    console.log('🎤 [RX] Listening for BOTH audible and ultrasound');
+    console.log('🎤 [RX] ──────────────────────────────────────────────────────');
+
     isListening = true;
+    
+    // State machine variables
+    let state: ReceiverState = 'IDLE';
+    let detectedMode: 'ultrasound' | 'audible' | null = null;
     let receivedChars: string[] = [];
-    let inSync = false;
-    let currentMode: 'ultrasound' | 'audible' | null = null;
-    let lastCharTime = 0;
-    let lastChar = '';
-    let currentToneFreq: number | null = null;
+    let preambleStartTime = 0;
+    let lastGapTime = 0;
     let lastToken = '';
     let lastTokenTime = 0;
-    let syncStartTime = 0;
+    let stateStartTime = 0;
+    let consecutivePreambleCount = 0;
+    let consecutiveGapCount = 0;
+    
+    const AMPLITUDE_THRESHOLD = 25;  // Lowered for better postamble detection
+    const PREAMBLE_CONFIRM_COUNT = 3;  // Need 3 consecutive preamble detections
+    const GAP_CONFIRM_COUNT = 1;       // Need 1 gap detection (faster!)
+    const CHAR_CONFIRM_COUNT = 1;      // Need 1 char detection (faster!)
+    
+    let lastDetectedChar: string | null = null;
+    let charConfirmCount = 0;
 
-    console.log('🎤 Listening started... (Hybrid FSK mode)');
-    console.log('🎤 Freq resolution:', freqResolution.toFixed(2), 'Hz');
-    console.log('🎤 Listening for BOTH audible (3-5.5kHz) AND ultrasound (17.5-19kHz)');
-
-    const detectFrequency = (): { freq: number, amplitude: number } | null => {
+    // Detect peak frequency in range
+    const detectFrequency = (minFreq: number, maxFreq: number): { freq: number; amplitude: number } | null => {
       analyser!.getByteFrequencyData(dataArray);
+      
+      const minBin = Math.floor(minFreq / freqResolution);
+      const maxBin = Math.ceil(maxFreq / freqResolution);
       
       let maxValue = 0;
       let maxIndex = 0;
-      
-      // Scan the full range (2.5kHz - 19.5kHz)
-      const minBin = Math.floor(LISTEN_MIN_FREQ / freqResolution);
-      const maxBin = Math.ceil(LISTEN_MAX_FREQ / freqResolution);
       
       for (let i = minBin; i < maxBin; i++) {
         if (dataArray[i] > maxValue) {
@@ -329,93 +384,212 @@ export async function startListening(
         }
       }
       
-      if (maxValue < 20) return null;
+      if (maxValue < AMPLITUDE_THRESHOLD) return null;
       
-      const freq = maxIndex * freqResolution;
-      return { freq, amplitude: maxValue };
+      return { freq: maxIndex * freqResolution, amplitude: maxValue };
+    };
+
+    // Try both frequency ranges
+    // IMPORTANT: Check audible FIRST because its POSTAMBLE (17000 Hz) 
+    // could be confused with ultrasound PREAMBLE (17500 Hz)
+    const detectAnySignal = (): { freq: number; amplitude: number; mode: 'ultrasound' | 'audible' } | null => {
+      // Try audible first (14500-17200 Hz) - the 15000 Hz sweet spot for iPhone
+      // Upper limit 17200 to include POSTAMBLE but not overlap with ultrasound PREAMBLE
+      const audible = detectFrequency(14500, 17200);
+      if (audible && audible.amplitude > AMPLITUDE_THRESHOLD) {
+        return { ...audible, mode: 'audible' };
+      }
+      
+      // Try ultrasound (17300-20000 Hz) - starts above audible POSTAMBLE
+      const ultra = detectFrequency(17300, 20000);
+      if (ultra && ultra.amplitude > AMPLITUDE_THRESHOLD) {
+        return { ...ultra, mode: 'ultrasound' };
+      }
+      
+      return null;
     };
 
     const processFrame = () => {
       if (!isListening) return;
 
-      const detection = detectFrequency();
       const now = Date.now();
+      const detection = detectAnySignal();
+
+      // Debug: log any strong signal detected (every 500ms to avoid spam)
+      if (detection && detection.amplitude > 50 && now % 500 < 20) {
+        console.log('🎤 [RX] Signal detected | mode:', detection.mode, '| freq:', detection.freq.toFixed(0), '| amp:', detection.amplitude);
+      }
 
       if (detection) {
-        const { freq, amplitude } = detection;
-        
-        // Check for sync tones (both ranges)
-        const syncType = detectSyncType(freq);
-        
-        if (syncType && syncType.type === 'start' && !inSync) {
-          inSync = true;
-          currentMode = syncType.mode;
-          syncStartTime = now;
-          receivedChars = [];
-          lastChar = '';
-          console.log('🎤 === START SYNC ===', syncType.mode, 'amp:', amplitude, 'freq:', freq.toFixed(0));
-          onProgress?.('sync');
-        }
-        else if (syncType && syncType.type === 'end' && inSync && syncType.mode === currentMode) {
-          const token = receivedChars.join('');
-          console.log('🎤 === END SYNC ===', currentMode, 'token:', token, 'chars:', receivedChars.length);
-          
-          if (token.length >= 4) {
-            if (token !== lastToken || now - lastTokenTime > 5000) {
-              lastToken = token;
-              lastTokenTime = now;
-              console.log('✅ TOKEN RECEIVED:', token, '(via', currentMode + ')');
-              onTokenReceived(token);
+        const { freq, amplitude, mode } = detection;
+        const tone = identifyTone(freq, mode);
+
+        switch (state) {
+          case 'IDLE':
+            // Looking for preamble
+            if (tone?.type === 'preamble') {
+              consecutivePreambleCount++;
+              if (consecutivePreambleCount >= PREAMBLE_CONFIRM_COUNT) {
+                state = 'PREAMBLE_DETECTED';
+                detectedMode = mode;
+                preambleStartTime = now;
+                stateStartTime = now;
+                receivedChars = [];
+                console.log('🎤 [RX] ══════════════════════════════════════════════════════════');
+                console.log('🎤 [RX] PREAMBLE LOCKED | mode:', mode, '| freq:', freq.toFixed(0), '| amp:', amplitude);
+                onProgress?.('sync');
+              }
+            } else {
+              consecutivePreambleCount = 0;
             }
-          } else if (token.length > 0) {
-            console.log('⚠️ Token too short:', token);
-          }
-          
-          inSync = false;
-          currentMode = null;
-          receivedChars = [];
-          lastChar = '';
-        }
-        // Decode character frequencies
-        else if (inSync && currentMode) {
-          const charResult = freqToChar(freq);
-          
-          if (charResult && charResult.mode === currentMode) {
-            const { char } = charResult;
-            
-            // Only register when frequency CHANGES (new tone started)
-            // Ultrasound has 30Hz steps, audible has 80Hz steps
-            const freqThreshold = currentMode === 'ultrasound' ? 20 : 50;
-            const isNewTone = currentToneFreq === null || Math.abs(freq - currentToneFreq) > freqThreshold;
-            
-            if (isNewTone && receivedChars.length < 4) {
-              receivedChars.push(char);
-              lastCharTime = now;
-              console.log('🎤 Char:', char, '| freq:', freq.toFixed(0), '| amp:', amplitude, '| total:', receivedChars.join(''));
-              onProgress?.('receiving', receivedChars.join(''));
+            break;
+
+          case 'PREAMBLE_DETECTED':
+            // Wait for first GAP after preamble
+            if (tone?.type === 'gap') {
+              consecutiveGapCount++;
+              if (consecutiveGapCount >= GAP_CONFIRM_COUNT) {
+                state = 'WAITING_FOR_CHAR';
+                lastGapTime = now;
+                stateStartTime = now;
+                consecutiveGapCount = 0;
+                console.log('🎤 [RX] GAP after preamble | freq:', freq.toFixed(0), '| amp:', amplitude);
+                console.log('🎤 [RX] ──────────────────────────────────────────────────────');
+              }
+            } else if (tone?.type === 'preamble') {
+              // Still in preamble, that's fine
+              consecutiveGapCount = 0;
+            } else {
+              // Something else detected - log it!
+              console.log('🎤 [RX] ? In PREAMBLE_DETECTED, got:', tone?.type || 'unknown', '| freq:', freq.toFixed(0), '| amp:', amplitude, '| gapCount:', consecutiveGapCount);
+              consecutiveGapCount = 0;
             }
-            // Always track current frequency (even if not new tone)
-            currentToneFreq = freq;
-          }
-          
-          // Reset on amplitude dip (detects gap between repeated chars)
-          if (amplitude < 100) {
-            currentToneFreq = null;
-          }
+            break;
+
+          case 'WAITING_FOR_CHAR':
+            // Looking for character tone
+            if (tone?.type === 'char' && tone.char) {
+              // Require consecutive confirmations of same char
+              if (tone.char === lastDetectedChar) {
+                charConfirmCount++;
+              } else {
+                lastDetectedChar = tone.char;
+                charConfirmCount = 1;
+              }
+              
+              if (charConfirmCount >= CHAR_CONFIRM_COUNT) {
+                receivedChars.push(tone.char);
+                state = 'WAITING_FOR_GAP';
+                stateStartTime = now;
+                charConfirmCount = 0;
+                lastDetectedChar = null;
+                console.log('🎤 [RX] CHAR[' + (receivedChars.length - 1) + '] = "' + tone.char + '" | freq:', freq.toFixed(0), '| amp:', amplitude, '| token so far:', receivedChars.join(''));
+                onProgress?.('receiving', receivedChars.join(''));
+              }
+            } else if (tone?.type === 'postamble') {
+              // End of transmission
+              state = 'COMPLETE';
+              const token = receivedChars.join('');
+              console.log('🎤 [RX] ──────────────────────────────────────────────────────');
+              console.log('🎤 [RX] POSTAMBLE DETECTED | freq:', freq.toFixed(0));
+              console.log('🎤 [RX] TOKEN COMPLETE:', token, '| length:', token.length);
+              
+              if (token.length >= 4) {
+                if (token !== lastToken || now - lastTokenTime > 5000) {
+                  lastToken = token;
+                  lastTokenTime = now;
+                  console.log('🎤 [RX] ✅ TOKEN ACCEPTED:', token);
+                  console.log('🎤 ══════════════════════════════════════════════════════════');
+                  onTokenReceived(token);
+                } else {
+                  console.log('🎤 [RX] ⚠️ Duplicate token ignored');
+                }
+              } else {
+                console.log('🎤 [RX] ⚠️ Token too short, discarding');
+              }
+              
+              // Reset
+              state = 'IDLE';
+              detectedMode = null;
+              receivedChars = [];
+              consecutivePreambleCount = 0;
+              consecutiveGapCount = 0;
+              charConfirmCount = 0;
+              lastDetectedChar = null;
+            } else if (tone?.type === 'gap') {
+              // Still gap, waiting for char - reset char detection
+              lastDetectedChar = null;
+              charConfirmCount = 0;
+            } else {
+              // Unknown tone - log it for debugging
+              if (tone) {
+                console.log('🎤 [RX] ? Unknown tone in WAITING_FOR_CHAR | type:', tone.type, '| freq:', freq.toFixed(0), '| amp:', amplitude);
+              }
+            }
+            break;
+
+          case 'WAITING_FOR_GAP':
+            // Looking for gap after character
+            if (tone?.type === 'gap') {
+              consecutiveGapCount++;
+              if (consecutiveGapCount >= GAP_CONFIRM_COUNT) {
+                state = 'WAITING_FOR_CHAR';
+                lastGapTime = now;
+                stateStartTime = now;
+                consecutiveGapCount = 0;
+                console.log('🎤 [RX] GAP after char | freq:', freq.toFixed(0), '| amp:', amplitude);
+              }
+            } else if (tone?.type === 'postamble') {
+              // End of transmission (no gap before postamble sometimes)
+              state = 'COMPLETE';
+              const token = receivedChars.join('');
+              console.log('🎤 [RX] ──────────────────────────────────────────────────────');
+              console.log('🎤 [RX] POSTAMBLE DETECTED | freq:', freq.toFixed(0));
+              console.log('🎤 [RX] TOKEN COMPLETE:', token, '| length:', token.length);
+              
+              if (token.length >= 4) {
+                if (token !== lastToken || now - lastTokenTime > 5000) {
+                  lastToken = token;
+                  lastTokenTime = now;
+                  console.log('🎤 [RX] ✅ TOKEN ACCEPTED:', token);
+                  console.log('🎤 ══════════════════════════════════════════════════════════');
+                  onTokenReceived(token);
+                } else {
+                  console.log('🎤 [RX] ⚠️ Duplicate token ignored');
+                }
+              } else {
+                console.log('🎤 [RX] ⚠️ Token too short, discarding');
+              }
+              
+              // Reset
+              state = 'IDLE';
+              detectedMode = null;
+              receivedChars = [];
+              consecutivePreambleCount = 0;
+              consecutiveGapCount = 0;
+              charConfirmCount = 0;
+              lastDetectedChar = null;
+            } else if (tone?.type === 'char') {
+              // Still hearing character, not gap yet
+              consecutiveGapCount = 0;
+            }
+            break;
         }
       } else {
-        // No signal OR weak signal - reset tone tracking
-        if (inSync && now - lastCharTime > 8) {
-          currentToneFreq = null;
-        }
-        
-        // Timeout
-        if (inSync && now - syncStartTime > 10000) {
-          console.log('⚠️ Sync timeout, resetting');
-          inSync = false;
-          currentMode = null;
-          receivedChars = [];
-          lastChar = '';
+        // No signal detected
+        if (state !== 'IDLE') {
+          // Timeout check
+          const timeSinceStateStart = now - stateStartTime;
+          if (timeSinceStateStart > 2000) {
+            console.log('🎤 [RX] ⚠️ Timeout in state:', state, '| resetting');
+            state = 'IDLE';
+            detectedMode = null;
+            receivedChars = [];
+            consecutivePreambleCount = 0;
+            consecutiveGapCount = 0;
+          }
+        } else {
+          consecutivePreambleCount = 0;
         }
       }
 
@@ -425,6 +599,7 @@ export async function startListening(
     requestAnimationFrame(processFrame);
 
     return () => {
+      console.log('🎤 [RX] Stopping listener...');
       isListening = false;
       if (mediaStream) {
         mediaStream.getTracks().forEach(track => track.stop());
@@ -434,11 +609,11 @@ export async function startListening(
         analyser.disconnect();
         analyser = null;
       }
-      console.log('🎤 Stopped');
+      console.log('🎤 [RX] Stopped');
     };
 
   } catch (error: any) {
-    console.error('Listen error:', error);
+    console.error('🎤 [RX] Listen error:', error);
     if (onError) {
       if (error.name === 'NotAllowedError') {
         onError('Microphone permission denied');
@@ -450,6 +625,9 @@ export async function startListening(
   }
 }
 
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
 export function isSupported(): boolean {
   if (typeof window === 'undefined') return false;
   return !!(
@@ -463,6 +641,7 @@ export function getBroadcastMode(): 'ultrasound' | 'audible' {
 }
 
 export function cleanup() {
+  console.log('🔊 [CLEANUP] Cleaning up audio resources...');
   isListening = false;
   if (mediaStream) {
     mediaStream.getTracks().forEach(track => track.stop());
@@ -476,4 +655,5 @@ export function cleanup() {
     audioContext.close();
     audioContext = null;
   }
+  console.log('🔊 [CLEANUP] Done');
 }

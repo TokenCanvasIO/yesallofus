@@ -76,10 +76,10 @@ export default function SoundPayment({
       
       // Retry settings: each attempt is more robust
       const attempts = [
-        { volume: 0.4, toneDuration: 0.05, silenceDuration: 0.02 },  // Normal
-        { volume: 0.7, toneDuration: 0.08, silenceDuration: 0.03 },  // Louder + longer
-        { volume: 1.0, toneDuration: 0.12, silenceDuration: 0.04 },  // Loudest + longest
-      ];
+  { volume: 1.0, mode: 'ultrasound' as const },  // 17.5kHz - silent
+  { volume: 1.0, mode: 'mid' as const },         // 16.5kHz - mid range
+  { volume: 1.0, mode: 'audible' as const },     // 15kHz - fallback
+];
       
       let paid = false;
       
