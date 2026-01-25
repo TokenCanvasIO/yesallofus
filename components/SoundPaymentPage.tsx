@@ -293,7 +293,7 @@ const [countdown, setCountdown] = useState<string | null>(null);
         )}
         {/* LISTENING STATE */}
         {status === 'listening' && (
-          <div className="flex flex-col min-h-[70vh]">
+          <div className="flex flex-col">
             {countdown !== null ? (
               <div className="bg-purple-500/10 border-2 border-purple-500 rounded-3xl p-6 text-center">
                 <div className="text-8xl font-bold text-purple-400 mb-4 animate-pulse">
@@ -325,7 +325,7 @@ const [countdown, setCountdown] = useState<string | null>(null);
             )}
 
             {/* Move Closer Animation */}
-            <MoveCloserAnimation className="flex-1" />
+            <MoveCloserAnimation className="my-4" />
 
             <button
               onClick={stopListen}
@@ -334,7 +334,7 @@ const [countdown, setCountdown] = useState<string | null>(null);
               Cancel
             </button>
 
-            <VolumeReminder className="mt-6" />
+            <VolumeReminder className="mt-4" />
           </div>
         )}
 
