@@ -106,7 +106,7 @@ function identifyTone(freq: number, mode: 'ultrasound' | 'audible', logUnknown: 
   { type: 'preamble' | 'gap' | 'postamble' | 'char'; char?: string } | null {
   
   const config = FREQ_CONFIG[mode];
-  const tolerance = mode === 'ultrasound' ? 100 : 120;  // Increased tolerance
+  const tolerance = mode === 'ultrasound' ? 100 : 75;  // Tighter for audible mode
   
   // Check preamble
   if (Math.abs(freq - config.syncFreq) < tolerance) {
@@ -518,7 +518,7 @@ export async function startListening(
               charConfirmCount = 0;
               consecutiveGapCount++;
               // If we have 4 chars and keep seeing gaps, postamble might be missed
-              if (consecutiveGapCount > 5 && receivedChars.length >= 4) {
+              if (consecutiveGapCount > 5 && receivedChars.length === 4) {
                 console.log('🎤 [RX] ──────────────────────────────────────────────────────');
                 console.log('🎤 [RX] POSTAMBLE ASSUMED (multiple gaps after 4 chars)');
                 const token = receivedChars.join('');
