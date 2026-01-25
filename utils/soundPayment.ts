@@ -516,6 +516,29 @@ export async function startListening(
               // Still gap, waiting for char - reset char detection
               lastDetectedChar = null;
               charConfirmCount = 0;
+              consecutiveGapCount++;
+              // If we have 4 chars and keep seeing gaps, postamble might be missed
+              if (consecutiveGapCount > 5 && receivedChars.length >= 4) {
+                console.log('🎤 [RX] ──────────────────────────────────────────────────────');
+                console.log('🎤 [RX] POSTAMBLE ASSUMED (multiple gaps after 4 chars)');
+                const token = receivedChars.join('');
+                console.log('🎤 [RX] TOKEN COMPLETE:', token, '| length:', token.length);
+                if (token !== lastToken || now - lastTokenTime > 5000) {
+                  lastToken = token;
+                  lastTokenTime = now;
+                  console.log('🎤 [RX] ✅ TOKEN ACCEPTED:', token);
+                  console.log('🎤 ══════════════════════════════════════════════════════════');
+                  onTokenReceived(token);
+                }
+                // Reset
+                state = 'IDLE';
+                detectedMode = null;
+                receivedChars = [];
+                consecutivePreambleCount = 0;
+                consecutiveGapCount = 0;
+                charConfirmCount = 0;
+                lastDetectedChar = null;
+              }
             } else {
               // Unknown tone - log it for debugging
               if (tone) {
