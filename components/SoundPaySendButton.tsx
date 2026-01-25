@@ -67,7 +67,7 @@ export default function SoundPaySendButton({
         await utils.broadcastToken(shortToken, settings);
 
         // Poll for 8 seconds before retrying
-        const pollDuration = 8000;
+        const pollDuration = i === attempts.length - 1 ? 11000 : 8000;
         const pollStart = Date.now();
 
         while (Date.now() - pollStart < pollDuration && !paid) {

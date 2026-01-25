@@ -21,7 +21,7 @@ const SAMPLE_RATE = 48000;
 // =============================================================================
 const TIMING = {
   // Preamble/Postamble - long enough to reliably detect
-  PREAMBLE_DURATION: 0.30,      // 200ms - longer for better receiver lock 
+  PREAMBLE_DURATION: 0.20,      // 200ms - longer for better receiver lock 
   POSTAMBLE_DURATION: 0.20,     // 200ms - longer for reliable detection
   
   // Character and gap durations
@@ -30,7 +30,7 @@ const TIMING = {
   
   // Receiver timing
   SAMPLE_DELAY: 0.05,           // Sample 50ms into char slot
-  PREAMBLE_MIN_DURATION: 0.15,  // Min time to confirm preamble
+  PREAMBLE_MIN_DURATION: 0.08,  // Min time to confirm preamble
   
   // Envelope for smooth transitions
   ATTACK_TIME: 0.005,           // 5ms fade in - sharper attack
