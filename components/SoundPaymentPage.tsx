@@ -293,7 +293,7 @@ const [countdown, setCountdown] = useState<string | null>(null);
         )}
         {/* LISTENING STATE */}
         {status === 'listening' && (
-          <div className="flex flex-col">
+          <div className="flex flex-col h-[calc(100vh-2rem)] justify-between py-2">
             {countdown !== null ? (
               <div className="bg-purple-500/10 border-2 border-purple-500 rounded-3xl p-6 text-center">
                 <div className="text-8xl font-bold text-purple-400 mb-4 animate-pulse">
@@ -302,19 +302,19 @@ const [countdown, setCountdown] = useState<string | null>(null);
                 <h2 className="text-xl font-bold text-zinc-400">Warming up mic...</h2>
               </div>
             ) : (
-              <div className="bg-purple-500/10 border-2 border-purple-500 rounded-3xl p-6 text-center">
+              <div className="bg-purple-500/10 border-2 border-purple-500 rounded-2xl p-4 text-center">
                 {/* Animated icon */}
-                <div className="relative w-20 h-20 mx-auto mb-4">
+                <div className="relative w-16 h-16 mx-auto mb-2">
                 <div className="absolute inset-0 rounded-full bg-purple-500/20 animate-ping" />
-                <div className="absolute inset-3 rounded-full bg-purple-500/30 animate-pulse" />
-                <div className="relative w-20 h-20 rounded-full bg-purple-500/40 flex items-center justify-center">
-                  <svg className="w-10 h-10 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute inset-2 rounded-full bg-purple-500/30 animate-pulse" />
+                <div className="relative w-16 h-16 rounded-full bg-purple-500/40 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                   </svg>
                 </div>
               </div>
               
-              <h2 className="text-xl font-bold text-purple-400 mb-1">
+              <h2 className="text-lg font-bold text-purple-400 mb-0.5">
   {listenState === 'ready' ? 'Connected'
     : listenState === 'sync' ? 'Heard signal...'
     : listenState === 'receiving' ? `Receiving ${receivedChars}...`
@@ -325,16 +325,16 @@ const [countdown, setCountdown] = useState<string | null>(null);
             )}
 
             {/* Move Closer Animation */}
-            <MoveCloserAnimation className="my-4" />
+            <MoveCloserAnimation className="my-2 flex-1" />
 
             <button
               onClick={stopListen}
-              className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-4 rounded-xl transition mt-4"
+              className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-3 rounded-xl transition mt-2"
             >
               Cancel
             </button>
 
-            <VolumeReminder className="mt-4" />
+            <VolumeReminder className="mt-2" />
           </div>
         )}
 
