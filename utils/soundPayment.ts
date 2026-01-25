@@ -30,7 +30,7 @@ const TIMING = {
   
   // Receiver timing
   SAMPLE_DELAY: 0.05,           // Sample 50ms into char slot
-  PREAMBLE_MIN_DURATION: 0.08,  // Min time to confirm preamble
+  PREAMBLE_MIN_DURATION: 0.15,  // Min time to confirm preamble
   
   // Envelope for smooth transitions
   ATTACK_TIME: 0.005,           // 5ms fade in - sharper attack
