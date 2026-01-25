@@ -31,6 +31,7 @@ export default function SoundPaymentPage() {
   const [supported, setSupported] = useState(true);
   const [soundId, setSoundId] = useState<string | null>(null);
   const [showSuccessVideo, setShowSuccessVideo] = useState(true);
+const [countdown, setCountdown] = useState<string | null>(null);
 
   // Hide success video after 3 seconds
   useEffect(() => {
@@ -103,6 +104,15 @@ export default function SoundPaymentPage() {
       
       await initSoundPayment();
       await warmupAudio();
+
+      // Countdown warmup
+      setCountdown('1');
+      await new Promise(r => setTimeout(r, 1000));
+      setCountdown('2');
+      await new Promise(r => setTimeout(r, 1000));
+      setCountdown('Ready!');
+      await new Promise(r => setTimeout(r, 500));
+      setCountdown(null);
 
       console.log('🔊 SoundPay: Listening for payment...');
       
@@ -280,9 +290,17 @@ export default function SoundPaymentPage() {
         {/* LISTENING STATE */}
         {status === 'listening' && (
           <div className="flex flex-col min-h-[70vh]">
-            <div className="bg-purple-500/10 border-2 border-purple-500 rounded-3xl p-6 text-center">
-              {/* Animated icon */}
-              <div className="relative w-20 h-20 mx-auto mb-4">
+            {countdown !== null ? (
+              <div className="bg-purple-500/10 border-2 border-purple-500 rounded-3xl p-6 text-center">
+                <div className="text-8xl font-bold text-purple-400 mb-4 animate-pulse">
+                  {countdown}
+                </div>
+                <h2 className="text-xl font-bold text-zinc-400">Warming up mic...</h2>
+              </div>
+            ) : (
+              <div className="bg-purple-500/10 border-2 border-purple-500 rounded-3xl p-6 text-center">
+                {/* Animated icon */}
+                <div className="relative w-20 h-20 mx-auto mb-4">
                 <div className="absolute inset-0 rounded-full bg-purple-500/20 animate-ping" />
                 <div className="absolute inset-3 rounded-full bg-purple-500/30 animate-pulse" />
                 <div className="relative w-20 h-20 rounded-full bg-purple-500/40 flex items-center justify-center">
@@ -299,7 +317,8 @@ export default function SoundPaymentPage() {
                   : 'Starting...'}
               </h2>
               <p className="text-zinc-400 text-sm">Hold phone near sender device</p>
-            </div>
+              </div>
+            )}
 
             {/* Move Closer Animation */}
             <MoveCloserAnimation className="flex-1" />
