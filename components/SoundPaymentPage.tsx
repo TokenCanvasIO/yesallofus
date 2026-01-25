@@ -287,9 +287,9 @@ const [countdown, setCountdown] = useState<string | null>(null);
             {soundId && <span className="text-purple-200 text-sm relative z-10">Pay Now</span>}
           </button>
         )}
-{/* Volume Reminder */}
+{/* Volume Reminder - fills space, overlaps footer */}
         {status === 'idle' && soundId && (
-          <VolumeReminder className="mt-6" />
+          <VolumeReminder className="mt-8 mb-[-80px]" />
         )}
         {/* LISTENING STATE */}
         {status === 'listening' && (
