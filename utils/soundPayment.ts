@@ -69,7 +69,7 @@ const FREQ_CONFIG = {
   },
   audible: {
   baseFreq: 17000,
-  freqStep: 60,
+  freqStep: 80,
   syncFreq: 16500,
   gapFreq: 16750,
   endSyncFreq: 18500,
