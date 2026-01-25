@@ -325,7 +325,7 @@ const [countdown, setCountdown] = useState<string | null>(null);
             )}
 
             {/* Move Closer Animation */}
-            <MoveCloserAnimation className="my-2 flex-1" />
+            <MoveCloserAnimation className="mt-8" />
 
             <button
               onClick={stopListen}
@@ -334,8 +334,7 @@ const [countdown, setCountdown] = useState<string | null>(null);
               Cancel
             </button>
 
-            <VolumeReminder className="mt-2" />
-          </div>
+            </div>
         )}
 
         {/* PROCESSING STATE */}
