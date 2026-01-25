@@ -1435,6 +1435,7 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
   onPaymentCreated={(paymentId) => {
     setSoundPaymentId(paymentId);
     setStatus('soundpay');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }}
   onError={(error) => {
     setError(error);
