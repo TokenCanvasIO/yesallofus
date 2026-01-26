@@ -101,6 +101,7 @@ export default function SoundPayButton({
     store_name: storeName,
     vendor_wallet: vendorWallet,
     amount: totalAmount,
+    tip: tipAmount,
     items: paymentItems,
     payment_type: 'soundpay',
   }),

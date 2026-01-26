@@ -115,7 +115,7 @@ export default function StaffSelector({ storeId, walletAddress, onStaffChange }:
               <div className="p-4 text-center">
                 <p className="text-zinc-500 text-sm mb-2">No staff members</p>
                 <button
-                  onClick={() => { setShowDropdown(false); router.push('/staff'); }}
+                  onClick={() => { setShowDropdown(false); router.push('/staffpos'); }}
                   className="text-emerald-400 text-sm hover:underline cursor-pointer"
                 >
                   + Add staff
@@ -171,7 +171,7 @@ export default function StaffSelector({ storeId, walletAddress, onStaffChange }:
 
             <div className="p-2 border-t border-zinc-800">
               <button
-                onClick={() => { setShowDropdown(false); router.push('/staff'); }}
+                onClick={() => { setShowDropdown(false); router.push('/staffpos'); }}
                 className="w-full text-center text-sm text-zinc-400 hover:text-white py-2 cursor-pointer"
               >
                 Manage Staff →

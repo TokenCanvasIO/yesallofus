@@ -2425,7 +2425,7 @@ onClick={async () => {
       <span className="text-zinc-500 text-xs group-hover:text-emerald-400 transition">Display</span>
     </button>
     <button
-      onClick={() => router.push('/staff')}
+      onClick={() => router.push('/staffpos')}
       className="group flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-zinc-800/90 transition"
     >
       <svg className="w-5 h-5 text-zinc-400 group-hover:text-emerald-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">

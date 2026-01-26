@@ -129,9 +129,13 @@ export default function StoreActivity({ storeId, walletAddress, showAmounts = fa
 
   const sortedPayments = [...payments].sort((a, b) => {
     if (paymentSortNewest) {
-      return new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime();
+      const bTime = b.paid_at ? new Date(b.paid_at).getTime() : 0;
+      const aTime = a.paid_at ? new Date(a.paid_at).getTime() : 0;
+      return bTime - aTime;
     }
-    return new Date(a.paid_at).getTime() - new Date(b.paid_at).getTime();
+    const aTime = a.paid_at ? new Date(a.paid_at).getTime() : 0;
+    const bTime = b.paid_at ? new Date(b.paid_at).getTime() : 0;
+    return aTime - bTime;
   });
 
   const paginatedAffiliates = sortedAffiliates.slice(page * perPage, (page + 1) * perPage);

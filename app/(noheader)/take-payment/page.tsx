@@ -1229,7 +1229,7 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
                 )}
 
                 {/* Products Grid */}
-                <div id="tp-products-grid" className={`grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-3 gap-3 items-end max-h-[calc(100vh-170px)] overflow-y-auto ${!showProductsGrid ? 'hidden' : ''}`}>
+                <div id="tp-products-grid" className={`grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-3 gap-3 items-end max-h-[calc(100vh-170px)] overflow-y-auto overflow-x-hidden ${!showProductsGrid ? 'hidden' : ''}`}>
                   {filteredProducts.map((product) => {
                     const inCart = cart.find(item => item.product_id === product.product_id);
                     return (
@@ -1773,9 +1773,11 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
   <div className="flex flex-col sm:flex-row items-center justify-center gap-10 sm:gap-16 mb-10">
     <SoundPaySendButton
       paymentId={soundPaymentId}
-      onSuccess={(txHash, receiptId) => {
+      storeId={storeId || ''}
+      onSuccess={(txHash, receiptId, rlusdAmount) => {
         setTxHash(txHash);
         setReceiptId(receiptId || null);
+        setRlusdAmount(rlusdAmount || null);
         setLastOrder([...cart]);
         setStatus('success');
         setSoundPaymentId(null);
@@ -1959,7 +1961,7 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
       onClick={() => {
         setShowStaffModal(false);
         setTimeout(() => {
-          router.push('/staff');
+          router.push('/staffpos');
         }, 100);
       }}
       className="block w-full text-center text-sm text-zinc-400 hover:text-white py-4 border-t border-zinc-800 cursor-pointer"

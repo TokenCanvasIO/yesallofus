@@ -12,7 +12,7 @@ interface SoundPaySendButtonProps {
   /** Store ID for payment verification */
   storeId?: string;
   /** Callback when payment succeeds */
-  onSuccess?: (txHash: string, receiptId?: string) => void;
+  onSuccess?: (txHash: string, receiptId?: string, rlusdAmount?: number) => void;
   /** Callback on error */
   onError?: (error: string) => void;
 }
@@ -80,7 +80,7 @@ export default function SoundPaySendButton({
               paid = true;
               setStatus('success');
               if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-              onSuccess?.(data.payment.tx_hash, data.payment.receipt_id);
+              onSuccess?.(data.payment.tx_hash, data.payment.receipt_id, data.payment.rlusd_amount);
               return;
             }
           } catch (e) {

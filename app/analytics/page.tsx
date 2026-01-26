@@ -286,8 +286,10 @@ const periodPeakHour = periodHourlyData.reduce((max, h) => h.revenue > max.reven
 
   // Format time ago
   const timeAgo = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
+  if (!dateStr) return 'Just now';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return 'Just now';
+  const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);

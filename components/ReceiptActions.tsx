@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import EmailReceiptModal from './EmailReceiptModal';
 
 interface ReceiptActionsProps {
@@ -35,128 +35,40 @@ export default function ReceiptActions({
   storeLogo,
 }: ReceiptActionsProps) {
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [receiptData, setReceiptData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
-  const printReceipt = async () => {
-    let receiptData: any = null;
+  // Fetch receipt data when print preview is opened
+  const openPrintPreview = async () => {
+    setLoading(true);
     
     if (receiptId) {
       try {
         const res = await fetch(`${API_URL}/receipts/${receiptId}`);
         const data = await res.json();
         if (data.success && data.receipt) {
-          receiptData = data.receipt;
+          setReceiptData(data.receipt);
         }
       } catch (e) {
         console.error('Failed to fetch receipt:', e);
       }
     }
-
-    const tip = receiptData?.tip_amount || tipAmount || 0;
-    const finalItems = receiptData?.items || items || [{ name: 'Payment', quantity: 1, unit_price: amount }];
-    const finalAmount = receiptData?.total || (amount + (tipAmount || 0));
-    const finalRlusd = receiptData?.amount_rlusd || rlusdAmount;
-    const finalRate = receiptData?.conversion_rate || conversionRate;
-
-    const settlementHtml = (finalRlusd && finalRate) ? `
-      <div style="margin-top: 20px; padding: 15px; background: #f0fdf4; border-radius: 8px; border-left: 3px solid #10b981;">
-        <div style="font-size: 12px; color: #166534; font-weight: 600; margin-bottom: 8px;">💱 SETTLEMENT DETAILS</div>
-        <div style="font-size: 13px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <span style="color: #666;">RLUSD Amount:</span>
-            <span style="font-weight: 600;">${finalRlusd.toFixed(4)} RLUSD</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <span style="color: #666;">Rate:</span>
-            <span>£1 = ${finalRate.rlusd_gbp?.toFixed(4) || '~'} RLUSD</span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: #666;">Source:</span>
-            <span>${finalRate.source || 'CoinGecko'}</span>
-          </div>
-        </div>
-      </div>
-    ` : '';
-
-    const receiptHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Receipt - ${storeName}</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; max-width: 400px; margin: 0 auto; }
-          .header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px dashed #ddd; }
-          .store-logo { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; margin-bottom: 12px; }
-          .store-name { font-size: 24px; font-weight: 700; color: #111; }
-          .receipt-label { font-size: 12px; color: #666; margin-top: 4px; }
-          .items { margin: 20px 0; }
-          .item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
-          .item-name { color: #333; }
-          .item-price { color: #111; font-weight: 500; }
-          .tip-row { display: flex; justify-content: space-between; padding: 8px 0; color: #10b981; }
-          .total-section { margin-top: 12px; padding-top: 12px; border-top: 2px solid #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
-          .total-label { font-size: 16px; font-weight: 600; }
-          .total-amount { font-size: 24px; font-weight: 700; color: #10b981; }
-          .tx-section { margin-top: 20px; padding: 12px; background: #f5f5f5; border-radius: 8px; }
-          .tx-label { font-size: 10px; color: #666; margin-bottom: 4px; }
-          .tx-hash { font-size: 9px; font-family: monospace; word-break: break-all; color: #333; }
-          .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-          .footer-text { color: #999; font-size: 11px; }
-          @media print { body { padding: 0; } }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          ${storeLogo 
-            ? `<img src="${storeLogo}" alt="${storeName}" class="store-logo">`
-            : `<img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="store-logo">`
-          }
-          <div class="store-name">${storeLogo ? storeName : 'YesAllOfUs'}</div>
-          ${!storeLogo ? `<div class="receipt-label">${storeName}</div>` : ''}
-        </div>
-        ${finalItems.length > 0 ? `
-          <div class="items">
-            ${finalItems.map((item: any) => `
-  <div class="item">
-    <span class="item-name">${item.quantity}x ${item.name}</span>
-    <span class="item-price">£${(item.unit_price * item.quantity).toFixed(2)}</span>
-  </div>
-`).join('')}
-${tip > 0 ? `
-  <div class="tip-row">
-    <span>Tip</span>
-    <span>£${tip.toFixed(2)}</span>
-  </div>
-` : ''}
-          </div>
-        ` : ''}
-        <div class="total-section">
-          <span class="total-label">Total Paid</span>
-          <span class="total-amount">£${finalAmount.toFixed(2)}</span>
-        </div>
-        ${settlementHtml}
-        ${txHash ? `
-          <div class="tx-section">
-            <div class="tx-label">XRPL TRANSACTION</div>
-            <div class="tx-hash">${txHash}</div>
-          </div>
-        ` : ''}
-        <div class="footer">
-          <div class="footer-text">Powered by YesAllOfUs</div>
-          <div class="footer-text">${new Date().toLocaleString()}</div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(receiptHtml);
-      printWindow.document.close();
-      setTimeout(() => printWindow.print(), 500);
-    }
+    
+    setLoading(false);
+    setShowPrintPreview(true);
   };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const tip = receiptData?.tip_amount || tipAmount || 0;
+  const finalItems = receiptData?.items || items || [{ name: 'Payment', quantity: 1, unit_price: amount }];
+  const finalAmount = receiptData?.total || (amount + (tipAmount || 0));
+  const finalRlusd = receiptData?.amount_rlusd || rlusdAmount;
+  const finalRate = receiptData?.conversion_rate || conversionRate;
+  const finalTxHash = receiptData?.tx_hash || txHash;
 
   return (
     <>
@@ -171,12 +83,17 @@ ${tip > 0 ? `
           Email Receipt
         </button>
         <button 
-          onClick={printReceipt}
+          onClick={openPrintPreview}
+          disabled={loading}
           className="bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 px-5 py-3 rounded-xl text-sm transition flex items-center gap-2"
         >
-          <svg className="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-          </svg>
+          {loading ? (
+            <div className="w-5 h-5 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <svg className="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+          )}
           Print
         </button>
       </div>
@@ -193,6 +110,191 @@ ${tip > 0 ? `
         items={items}
         tipAmount={tipAmount}
       />
+
+      {/* Print Preview Modal */}
+      {showPrintPreview && (
+        <div className="fixed inset-0 bg-black z-50 overflow-y-auto">
+          {/* Print Actions - Hidden when printing */}
+          <div className="no-print sticky top-0 z-10 bg-zinc-900/95 backdrop-blur border-b border-zinc-800 p-4">
+            <div className="max-w-md mx-auto flex items-center justify-between">
+              <h2 className="font-bold text-white">Print Preview</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={handlePrint}
+                  className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-6 py-2 rounded-xl transition flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  Print
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPrintPreview(false);
+                    setReceiptData(null);
+                  }}
+                  className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl transition text-white"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Print Content */}
+          <div className="max-w-md mx-auto bg-white text-black p-8 my-8 rounded-xl">
+            {/* Header with dark banner */}
+            <div className="text-center mb-6 pb-6 border-b-2 border-gray-200 bg-zinc-900 -mx-8 -mt-8 px-8 pt-8 pb-6 rounded-t-xl">
+              {storeLogo ? (
+                <img 
+                  src={storeLogo} 
+                  alt={storeName} 
+                  className="w-16 h-16 rounded-xl object-cover mx-auto mb-3"
+                />
+              ) : (
+                <img 
+                  src="https://yesallofus.com/dltpayslogo1.png" 
+                  alt="YesAllOfUs" 
+                  className="w-16 h-16 rounded-xl object-cover mx-auto mb-3"
+                />
+              )}
+              <h1 className="text-2xl font-bold mb-1 text-white">{storeName}</h1>
+              {receiptData?.receipt_number && (
+                <p className="text-sm text-zinc-400">Receipt #{receiptData.receipt_number}</p>
+              )}
+            </div>
+
+            {/* Date */}
+            <p className="text-sm text-gray-600 mb-6">
+              {new Date().toLocaleDateString('en-GB', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </p>
+
+            {/* Items */}
+            <div className="mb-6">
+              {finalItems.filter((item: any) => item.name.toLowerCase() !== 'tip').map((item: any, idx: number) => (
+                <div key={idx} className="flex justify-between py-3 border-b border-gray-200">
+                  <div>
+                    <p className="font-medium">{item.name}</p>
+                    <p className="text-sm text-gray-600">
+                      Qty: {item.quantity || 1} × £{(item.unit_price || item.price || 0).toFixed(2)}
+                    </p>
+                  </div>
+                  <p className="font-semibold">
+                    £{(item.line_total || (item.unit_price || item.price || 0) * (item.quantity || 1)).toFixed(2)}
+                  </p>
+                </div>
+              ))}
+
+              {/* Tip */}
+              {tip > 0 && (
+                <div className="flex justify-between py-3 border-t border-gray-200 mt-2">
+                  <div className="flex items-center gap-2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <div>
+                      <p className="font-medium text-emerald-600">Tip</p>
+                      <p className="text-sm text-gray-600">Thank you!</p>
+                    </div>
+                  </div>
+                  <p className="font-semibold text-emerald-600">
+                    £{tip.toFixed(2)}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Total */}
+            <div className="flex justify-between items-center py-4 border-t-2 border-black mb-6">
+              <span className="text-lg font-semibold">Total</span>
+              <span className="text-3xl font-bold text-emerald-600">
+                £{finalAmount.toFixed(2)}
+              </span>
+            </div>
+
+            {/* Settlement Details */}
+            {finalRlusd && finalRate && (
+              <div className="mb-6 p-4 bg-emerald-50 rounded-lg border-l-4 border-emerald-500">
+                <p className="text-xs font-semibold text-emerald-800 mb-2">💱 SETTLEMENT DETAILS</p>
+                <div className="text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Amount Quoted:</span>
+                    <span>£{finalAmount.toFixed(2)} GBP</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Amount Settled:</span>
+                    <span className="font-semibold">{finalRlusd.toFixed(6)} RLUSD</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Exchange Rate:</span>
+                    <span>£1 = {(1 / finalRate.rlusd_gbp)?.toFixed(6) || 'N/A'} RLUSD</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Rate Source:</span>
+                    <span>{finalRate.source || 'CoinGecko Pro API'}</span>
+                  </div>
+                  {finalRate.captured_at && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Rate Timestamp:</span>
+                      <span className="text-xs text-gray-500">{new Date(finalRate.captured_at).toISOString()}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Transaction Hash */}
+            {finalTxHash && (
+              <div className="mb-6 p-3 bg-gray-100 rounded-lg">
+                <p className="text-xs text-gray-500 mb-1">XRPL TRANSACTION</p>
+                <p className="text-xs font-mono break-all text-gray-700">{finalTxHash}</p>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="text-center pt-4 border-t border-gray-200">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-zinc-400 text-[9px] font-medium tracking-widest">RECEIPT</span>
+                <span className="text-base font-extrabold tracking-widest">
+                  <span className="text-emerald-500">Y</span>
+                  <span className="text-green-500">A</span>
+                  <span className="text-blue-500">O</span>
+                  <span className="text-indigo-500">F</span>
+                  <span className="text-violet-500">U</span>
+                  <span className="text-purple-500">S</span>
+                </span>
+                <span className="text-zinc-500 text-[10px] font-semibold tracking-widest">INSTANT</span>
+                <div className="flex items-center gap-2 mt-2">
+                  <img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" className="w-4 h-4 rounded opacity-60" />
+                  <span className="text-gray-400 text-xs">Powered by YesAllOfUs</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Print styles */}
+      <style jsx global>{`
+        @media print {
+          .no-print {
+            display: none !important;
+          }
+          body {
+            background: white !important;
+          }
+          .fixed {
+            position: static !important;
+          }
+        }
+      `}</style>
     </>
   );
 }

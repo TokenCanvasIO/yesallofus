@@ -164,7 +164,7 @@ export default function DashboardHeader({ walletAddress, storeId, onSignOut, sho
               {/* Staff */}
               <div className="relative group">
                 <button
-                  onClick={() => router.push('/staff')}
+                  onClick={() => router.push('/staffpos')}
                   className="text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
