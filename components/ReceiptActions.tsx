@@ -48,7 +48,7 @@ export default function ReceiptActions({
         const res = await fetch(`${API_URL}/receipts/${receiptId}`);
         const data = await res.json();
         if (data.success && data.receipt) {
-          setReceiptData(data.receipt);
+         setReceiptData(data.receipt);
         }
       } catch (e) {
         console.error('Failed to fetch receipt:', e);

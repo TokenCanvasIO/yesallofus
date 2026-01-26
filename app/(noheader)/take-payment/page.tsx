@@ -177,6 +177,7 @@ const [error, setError] = useState<string | null>(null);
 const [lastUID, setLastUID] = useState<string | null>(null);
 const [txHash, setTxHash] = useState<string | null>(null);
 const [receiptId, setReceiptId] = useState<string | null>(null);
+const [conversionRate, setConversionRate] = useState<any>(null);
 const [qrPaymentUrl, setQrPaymentUrl] = useState<string | null>(null);
 // Last order for repeat
 const [lastOrder, setLastOrder] = useState<CartItem[] | null>(null);
@@ -429,6 +430,28 @@ updateCustomerDisplay(storeId, storeName, cart, cartTotal + tipAmount, 'idle', n
 clearCustomerDisplay(storeId, storeName);
   }
 }, [cart, cartTotal, storeId, storeName, status, tipAmount, tipsEnabled]);
+
+// Fetch receipt data when receiptId is set (for conversion rate display)
+useEffect(() => {
+  if (!receiptId || status !== 'success') return;
+  
+  const fetchReceipt = async () => {
+    try {
+      const res = await fetch(`${API_URL}/receipts/${receiptId}`);
+      const data = await res.json();
+      if (data.success && data.receipt) {
+        setConversionRate(data.receipt.conversion_rate);
+        if (data.receipt.amount_rlusd) {
+          setRlusdAmount(data.receipt.amount_rlusd);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch receipt:', e);
+    }
+  };
+  
+  fetchReceipt();
+}, [receiptId, status]);
 
 // Poll for tip changes and customer confirmation from display
 useEffect(() => {
@@ -1709,6 +1732,31 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
     </a>
   )}
 
+  {/* Settlement Details */}
+  {rlusdAmount && conversionRate && (
+    <div className="max-w-sm mx-auto mb-6 p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/30 text-left">
+      <p className="text-xs font-semibold text-emerald-400 mb-3">💱 SETTLEMENT DETAILS</p>
+      <div className="text-sm space-y-2">
+        <div className="flex justify-between">
+          <span className="text-zinc-400">Amount Quoted:</span>
+          <span className="text-white">£{getPaymentAmount().toFixed(2)} GBP</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-zinc-400">Amount Settled:</span>
+          <span className="text-emerald-400 font-semibold">{rlusdAmount.toFixed(6)} RLUSD</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-zinc-400">Exchange Rate:</span>
+          <span className="text-white">£1 = {(1 / conversionRate.rlusd_gbp).toFixed(6)} RLUSD</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-zinc-400">Rate Source:</span>
+          <span className="text-white">{conversionRate.source || 'CoinGecko Pro API'}</span>
+        </div>
+      </div>
+    </div>
+  )}
+
   <ReceiptActions
     receiptId={receiptId || undefined}
     txHash={txHash || undefined}
@@ -1725,7 +1773,7 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
       ...(tipAmount > 0 ? [{ name: 'Tip', quantity: 1, unit_price: tipAmount }] : [])
     ]}
     tipAmount={tipAmount}
-    conversionRate={undefined}
+    conversionRate={conversionRate || undefined}
     storeLogo={storeLogo || undefined}
   />
 
