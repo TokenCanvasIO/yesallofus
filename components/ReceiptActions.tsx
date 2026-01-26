@@ -102,17 +102,18 @@ export default function ReceiptActions({
       </div>
 
       <EmailReceiptModal
-        isOpen={showEmailModal}
-        onClose={() => setShowEmailModal(false)}
-        receiptId={receiptId}
-        txHash={txHash}
-        storeName={storeName}
-        storeId={storeId}
-        amount={amount}
-        rlusdAmount={rlusdAmount}
-        items={items}
-        tipAmount={tipAmount}
-      />
+  isOpen={showEmailModal}
+  onClose={() => setShowEmailModal(false)}
+  receiptId={receiptId}
+  txHash={txHash}
+  storeName={storeName}
+  storeId={storeId}
+  amount={amount}
+  rlusdAmount={rlusdAmount}
+  items={items}
+  tipAmount={tipAmount}
+  conversionRate={conversionRate}
+/>
 
       {/* Print Preview Modal */}
       {showPrintPreview && (
