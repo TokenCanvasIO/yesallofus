@@ -766,10 +766,10 @@ useEffect(() => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
           </svg>
         </div>
-        <p className={`text-2xl sm:text-4xl font-bold mb-2 ${nfcScanning ? 'text-amber-400' : 'text-emerald-400'}`}>
+        <p className={`text-2xl sm:text-3xl font-bold mb-2 ${nfcScanning ? 'text-amber-400' : 'text-emerald-400'}`}>
           {paymentProcessing ? 'Processing...' : nfcScanning ? 'Tap Now...' : 'Tap Card'}
         </p>
-        <p className="text-zinc-500 text-lg sm:text-xl text-center">
+        <p className="text-zinc-500 text-base sm:text-lg text-center">
           {nfcScanning ? 'Hold your card to this device' : 'Tap here, then hold your NFC card'}
         </p>
         {nfcError && (
@@ -795,7 +795,7 @@ useEffect(() => {
           </svg>
         </div>
         <p className="text-2xl sm:text-4xl font-bold text-sky-400 mb-2">Scan QR</p>
-        <p className="text-zinc-500 text-lg sm:text-xl text-center">Open Xaman wallet<br/>and scan code</p>
+        <p className="text-zinc-500 text-base sm:text-lg text-center">Open Xaman wallet<br/>and scan code</p>
       </div>
 
     </div>
@@ -828,7 +828,7 @@ useEffect(() => {
         disabled={nfcScanning || paymentProcessing}
         className="flex flex-col items-center cursor-pointer"
       >
-        <div className={`w-40 h-40 sm:w-56 sm:h-56 rounded-full flex items-center justify-center relative mb-5 sm:mb-8 ${
+        <div className={`w-40 h-40 sm:w-48 sm:h-48 rounded-full flex items-center justify-center relative mb-5 ${
           nfcScanning ? 'bg-amber-500/30' : paymentProcessing ? 'bg-emerald-500/40' : 'bg-emerald-500/20'
         }`}>
           {!nfcScanning && !paymentProcessing && (
@@ -846,10 +846,10 @@ useEffect(() => {
             </svg>
           )}
         </div>
-        <p className={`text-2xl sm:text-4xl font-bold mb-2 ${nfcScanning ? 'text-amber-400' : 'text-emerald-400'}`}>
+        <p className={`text-2xl sm:text-3xl font-bold mb-2 ${nfcScanning ? 'text-amber-400' : 'text-emerald-400'}`}>
           {paymentProcessing ? 'Processing...' : nfcScanning ? 'Tap Now...' : 'Tap Card'}
         </p>
-        <p className="text-zinc-500 text-lg sm:text-xl text-center">
+        <p className="text-zinc-500 text-base sm:text-lg text-center">
           {nfcScanning ? 'Hold your card to this device' : 'Tap here, then hold your NFC card'}
         </p>
         {nfcError && (
@@ -880,7 +880,7 @@ useEffect(() => {
           <div className="w-40 h-40 sm:w-56 sm:h-56 bg-zinc-800 rounded-3xl animate-pulse mb-5 sm:mb-8"></div>
         )}
         <p className="text-2xl sm:text-4xl font-bold text-sky-400 mb-2">Scan QR</p>
-        <p className="text-zinc-500 text-lg sm:text-xl text-center">Open Xaman wallet<br/>and scan code</p>
+        <p className="text-zinc-500 text-base sm:text-lg text-center">Open Xaman wallet<br/>and scan code</p>
       </div>
 
     </div>
@@ -910,6 +910,7 @@ useEffect(() => {
       {/* SoundPay Send Button - Left Side */}
 <SoundPaySendButton
   paymentId={data?.payment_id || ''}
+  storeId={storeId || ''}
   onSuccess={(txHash, receiptId) => {
     fetch(`${API_URL}/display/update`, {
       method: 'POST',
@@ -943,7 +944,7 @@ useEffect(() => {
         disabled={nfcScanning || paymentProcessing}
         className="flex flex-col items-center cursor-pointer"
       >
-        <div className={`w-40 h-40 sm:w-56 sm:h-56 rounded-full flex items-center justify-center relative mb-5 sm:mb-8 ${
+        <div className={`w-40 h-40 sm:w-48 sm:h-48 rounded-full flex items-center justify-center relative mb-5 ${
           nfcScanning ? 'bg-amber-500/30' : paymentProcessing ? 'bg-emerald-500/40' : 'bg-emerald-500/20'
         }`}>
           {!nfcScanning && !paymentProcessing && (
@@ -961,10 +962,10 @@ useEffect(() => {
             </svg>
           )}
         </div>
-        <p className={`text-2xl sm:text-4xl font-bold mb-2 ${nfcScanning ? 'text-amber-400' : 'text-emerald-400'}`}>
+        <p className={`text-2xl sm:text-3xl font-bold mb-2 ${nfcScanning ? 'text-amber-400' : 'text-emerald-400'}`}>
           {paymentProcessing ? 'Processing...' : nfcScanning ? 'Tap Now...' : 'Tap Card'}
         </p>
-        <p className="text-zinc-500 text-lg sm:text-xl text-center">
+        <p className="text-zinc-500 text-base sm:text-lg text-center">
           {nfcScanning ? 'Hold your card to this device' : 'Tap here, then hold your NFC card'}
         </p>
         {nfcError && (

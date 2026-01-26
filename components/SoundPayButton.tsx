@@ -94,16 +94,17 @@ export default function SoundPayButton({
           ];
 
       const linkRes = await fetch(`${API_URL}/payment-link/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          store_id: storeId,
-          store_name: storeName,
-          vendor_wallet: vendorWallet,
-          amount: totalAmount,
-          items: paymentItems,
-        }),
-      });
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    store_id: storeId,
+    store_name: storeName,
+    vendor_wallet: vendorWallet,
+    amount: totalAmount,
+    items: paymentItems,
+    payment_type: 'soundpay',
+  }),
+});
       
       const linkData = await linkRes.json();
       if (!linkData.success || !linkData.payment_id) {

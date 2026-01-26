@@ -9,6 +9,8 @@ interface SoundPaySendButtonProps {
   className?: string;
   /** Payment ID to broadcast (last 4 chars used) */
   paymentId: string;
+  /** Store ID for payment verification */
+  storeId?: string;
   /** Callback when payment succeeds */
   onSuccess?: (txHash: string, receiptId?: string) => void;
   /** Callback on error */
@@ -29,6 +31,7 @@ async function loadSoundUtils() {
 export default function SoundPaySendButton({ 
   className = '',
   paymentId,
+  storeId = '',
   onSuccess,
   onError,
 }: SoundPaySendButtonProps) {
@@ -104,12 +107,12 @@ export default function SoundPaySendButton({
       <div className="flex flex-col items-center">
         <button 
           onClick={handleSend}
-          className={`flex flex-col items-center justify-center w-40 h-40 sm:w-48 sm:h-48 bg-purple-500/20 rounded-full cursor-pointer relative ${className}`}
+          className={`flex flex-col items-center justify-center w-40 h-40 sm:w-48 sm:h-48 bg-sky-500/20 rounded-full cursor-pointer relative ${className}`}
         >
-          <div className="absolute inset-0 bg-purple-500/20 rounded-full animate-ping pointer-events-none" style={{ animationDuration: '2s' }}></div>
-          <div className="absolute inset-4 bg-purple-500/10 rounded-full animate-pulse"></div>
+          <div className="absolute inset-0 bg-sky-500/20 rounded-full animate-ping pointer-events-none" style={{ animationDuration: '2s' }}></div>
+          <div className="absolute inset-4 bg-sky-500/10 rounded-full animate-pulse"></div>
           <svg
-            className="w-20 h-20 sm:w-24 sm:h-24 text-purple-400 relative z-10"
+            className="w-20 h-20 sm:w-24 sm:h-24 text-sky-400 relative z-10"
             style={{ transform: 'rotate(-90deg)' }}
             fill="currentColor"
             viewBox="0 0 24 24"
@@ -117,8 +120,8 @@ export default function SoundPaySendButton({
             <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
           </svg>
         </button>
-        <p className="text-2xl sm:text-3xl font-bold text-purple-400 mb-2 mt-5">SoundPay</p>
-        <p className="text-zinc-500 text-base sm:text-lg text-center">Tap to send sound</p>
+        <p className="text-2xl sm:text-3xl font-bold text-sky-400 mb-2 mt-5">SoundPay</p>
+        <p className="text-zinc-500 text-base sm:text-lg text-center">Tap to send payment</p>
       </div>
     );
   }
@@ -127,11 +130,11 @@ export default function SoundPaySendButton({
   if (status === 'active') {
     return (
       <div className="flex flex-col items-center">
-        <div className={`flex flex-col items-center justify-center w-40 h-40 sm:w-48 sm:h-48 bg-purple-500/20 rounded-full relative ${className}`}>
+        <div className={`flex flex-col items-center justify-center w-40 h-40 sm:w-48 sm:h-48 bg-sky-500/20 rounded-full relative ${className}`}>
           {[0, 1, 2, 3].map((i) => (
             <motion.div
               key={i}
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-purple-500/50"
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-500/50"
               initial={{ width: 60, height: 60, opacity: 0.8 }}
               animate={{ 
                 width: [60, 200],
@@ -147,17 +150,17 @@ export default function SoundPaySendButton({
             />
           ))}
           <motion.div
-            className="relative z-10 w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-purple-500/30 flex items-center justify-center"
+            className="relative z-10 w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-sky-500/30 flex items-center justify-center"
             animate={{ scale: [1, 1.1, 1] }}
             transition={{ duration: 0.5, repeat: Infinity }}
           >
-            <svg className="w-10 h-10 sm:w-12 sm:h-12 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <svg className="w-10 h-10 sm:w-12 sm:h-12 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <circle cx="12" cy="12" r="2" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.24 7.76a6 6 0 010 8.49M7.76 16.24a6 6 0 010-8.49M19.07 4.93a10 10 0 010 14.14M4.93 19.07a10 10 0 010-14.14" />
             </svg>
           </motion.div>
         </div>
-        <p className="text-2xl sm:text-3xl font-bold text-purple-400 mb-2 mt-5">
+        <p className="text-2xl sm:text-3xl font-bold text-sky-400 mb-2 mt-5">
           {attempt === 1 ? 'Sending...' : attempt === 2 ? 'Retrying...' : 'Final attempt...'}
         </p>
         <p className="text-zinc-500 text-base sm:text-lg text-center">Hold phone near speaker</p>
