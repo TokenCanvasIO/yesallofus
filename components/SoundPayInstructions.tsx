@@ -487,12 +487,12 @@ export default function SoundPayInstructions({
               exit={{ opacity: 0, y: -5 }}
               transition={{ duration: 0.15 }}
             >
-              <h3 className="text-white font-semibold text-xs">
-                {steps[currentStep].title}
-              </h3>
-              <p className="text-zinc-500 text-[10px] mt-0.5">
-                {steps[currentStep].subtitle}
-              </p>
+              <h3 className="text-white font-semibold text-base md:text-lg">
+  {steps[currentStep].title}
+</h3>
+<p className="text-zinc-500 text-sm md:text-base mt-0.5">
+  {steps[currentStep].subtitle}
+</p>
             </motion.div>
           </AnimatePresence>
         </div>

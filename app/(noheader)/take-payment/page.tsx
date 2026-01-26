@@ -1822,21 +1822,22 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
 
   <div className="flex flex-col sm:flex-row items-center justify-center gap-10 sm:gap-16 mb-10">
     <SoundPaySendButton
-      paymentId={soundPaymentId}
-      storeId={storeId || ''}
-      onSuccess={(txHash, receiptId, rlusdAmount) => {
-        setTxHash(txHash);
-        setReceiptId(receiptId || null);
-        setRlusdAmount(rlusdAmount || null);
-        setLastOrder([...cart]);
-        setStatus('success');
-        setSoundPaymentId(null);
-        if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+paymentId={soundPaymentId}
+storeId={storeId || ''}
+onSuccess={(txHash, receiptId, rlusdAmount) => {
+setTxHash(txHash);
+setReceiptId(receiptId || null);
+setRlusdAmount(rlusdAmount || null);
+setLastOrder([...cart]);
+setStatus('success');
+setSoundPaymentId(null);
+if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+if (storeId) updateCustomerDisplay(storeId, storeName, [], 0, 'success', null, 0, tipsEnabled, walletAddress || undefined);
       }}
-      onError={(error) => {
-        setError(error);
+onError={(error) => {
+setError(error);
       }}
-    />
+/>
 
     <div className="flex items-center gap-4">
       <div className="w-16 h-px bg-zinc-800 sm:hidden"></div>
