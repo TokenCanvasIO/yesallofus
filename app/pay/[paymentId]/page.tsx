@@ -701,14 +701,15 @@ onClick={startNFCScan}
             )}
 
             {/* Sound Payment Listen */}
-            {payment?.status === 'pending' && (
+            {console.log('DEBUG splits:', splits, 'currentSplitIndex:', currentSplitIndex, 'payment_id:', splits?.[currentSplitIndex]?.payment_id)}
+{(payment?.status === 'pending' || splits?.[currentSplitIndex]) && (
               <div className="mb-4">
                 <SoundPay
-                  paymentId={paymentId}
-                  amount={payment?.amount || 0}
+                  paymentId={splits?.[currentSplitIndex]?.payment_id || paymentId}
+                  amount={splits?.[currentSplitIndex]?.amount || payment?.amount || 0}
                   storeName={payment?.store_name || ''}
                   onError={(err) => setError(err)}
-                  onSuccess={(txHash) => { const ding = new Audio("/ding.mp3"); ding.volume = 0.4; ding.play().catch(() => {}); setTxHash(txHash); setShowToast(true); setTimeout(() => setShowToast(false), 3000); setAllPaid(true); }}
+                  onSuccess={(txHash) => { const ding = new Audio("/ding.mp3"); ding.volume = 0.4; ding.play().catch(() => {}); setTxHash(txHash); setShowToast(true); setTimeout(() => setShowToast(false), 3000); if (splits && splits.length > 0) { const updatedSplits = [...splits]; updatedSplits[currentSplitIndex] = { ...updatedSplits[currentSplitIndex], status: 'paid' }; setSplits(updatedSplits); const nextUnpaid = updatedSplits.findIndex((s, i) => i > currentSplitIndex && s.status !== 'paid'); if (nextUnpaid !== -1) { setCurrentSplitIndex(nextUnpaid); } else { setAllPaid(true); } } else { setAllPaid(true); } }}
                 />
               </div>
             )}

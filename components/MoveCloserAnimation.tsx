@@ -74,12 +74,12 @@ export default function MoveCloserAnimation({ className = '' }: MoveCloserAnimat
 
       {/* Instruction text */}
       <motion.p 
-        className="text-zinc-400 text-base mt-8 text-center font-medium"
-        animate={{ opacity: [0.5, 1, 0.5] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      >
-        Hold phone near sender device
-      </motion.p>
+  className="text-zinc-400 text-xl mt-8 text-center font-medium"
+  animate={{ opacity: [0.5, 1, 0.5] }}
+  transition={{ duration: 2, repeat: Infinity }}
+>
+  Hold phone near sender device
+</motion.p>
     </div>
   );
 }

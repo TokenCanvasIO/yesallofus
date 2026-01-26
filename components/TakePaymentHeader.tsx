@@ -84,7 +84,7 @@ export default function TakePaymentHeader({
         <div id="tp-toolbar" className="flex items-center gap-1">
           {/* Staff Selector - Icon only on mobile, full on desktop */}
           {storeId && walletAddress && (
-            <div id="tp-staff-selector" className="hidden sm:block">
+            <div id="tp-staff-selector" className="hidden lg:block">
               <StaffSelector
                 storeId={storeId}
                 walletAddress={walletAddress}
@@ -95,7 +95,7 @@ export default function TakePaymentHeader({
           {storeId && walletAddress && (
             <button
               onClick={onShowStaffModal}
-              className="sm:hidden text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
+              className="lg:hidden text-zinc-400 hover:text-white transition p-2 active:scale-90 cursor-pointer"
               title={activeStaff?.name || 'Staff'}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -77,6 +77,7 @@ export default function SoundPaySendButton({
             const data = await res.json();
 
             if (data.payment?.status === 'paid') {
+              console.log('SoundPay payment data:', data.payment);
               paid = true;
               setStatus('success');
               if (navigator.vibrate) navigator.vibrate([50, 50, 50]);

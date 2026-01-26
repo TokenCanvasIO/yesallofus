@@ -433,7 +433,9 @@ clearCustomerDisplay(storeId, storeName);
 
 // Fetch receipt data when receiptId is set (for conversion rate display)
 useEffect(() => {
+  console.log('Receipt useEffect:', { receiptId, status });
   if (!receiptId || status !== 'success') return;
+  console.log('Fetching receipt data for:', receiptId);
   
   const fetchReceipt = async () => {
     try {
