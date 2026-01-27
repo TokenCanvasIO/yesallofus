@@ -22,6 +22,7 @@ interface PaymentData {
   currency: string;
   items: any[];
   tip: number;
+  customer_tip?: number;
   status: string;
   split_index: number | null;
   total_splits: number | null;
@@ -29,6 +30,7 @@ interface PaymentData {
   paid_at: string | null;
   payer_wallet: string | null;
   customer_logo: string | null;
+  receipt_id?: string | null;
 }
 
 interface SplitData {
@@ -72,7 +74,12 @@ export default function PayPage() {
   // Live conversion state
   const [liveRate, setLiveRate] = useState<number | null>(null);
   const [rlusdAmount, setRlusdAmount] = useState<number | null>(null);
-  const [priceAge, setPriceAge] = useState<number>(0);
+const [priceAge, setPriceAge] = useState<number>(0);
+const [conversionRate, setConversionRate] = useState<{
+  rlusd_gbp: number;
+  source: string;
+  captured_at: string;
+} | null>(null);
 // Split success message
   const [showToast, setShowToast] = useState(false);
 
@@ -96,10 +103,15 @@ export default function PayPage() {
         const res = await fetch(`https://api.dltpays.com/convert/gbp-to-rlusd?amount=${amount}&capture=true`);
         const data = await res.json();
         if (data.success) {
-          setLiveRate(data.rate.gbp_to_rlusd);
-          setRlusdAmount(data.rlusd);
-          setPriceAge(data.price_age_ms);
-        }
+  setLiveRate(data.rate.gbp_to_rlusd);
+  setRlusdAmount(data.rlusd);
+  setPriceAge(data.price_age_ms);
+  setConversionRate({
+    rlusd_gbp: data.rate.rlusd_gbp || (1 / data.rate.gbp_to_rlusd),
+    source: data.rate.source || 'CoinGecko Pro API',
+    captured_at: data.rate.captured_at || new Date().toISOString()
+  });
+}
       } catch (err) {
         console.error('Rate fetch error:', err);
       }
@@ -202,6 +214,25 @@ useEffect(() => {
 
     return () => clearInterval(pollInterval);
   }, [xamanPaymentId, splits, currentSplitIndex]);
+
+  // Save tip to backend when changed
+  useEffect(() => {
+    const saveTip = async () => {
+      if (tipAmount > 0) {
+        try {
+          await fetch(`${API_URL}/payment-link/${getCurrentPaymentId()}/tip`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tip_amount: tipAmount })
+          });
+          console.log('💰 Tip saved:', tipAmount);
+        } catch (err) {
+          console.error('Failed to save tip:', err);
+        }
+      }
+    };
+    saveTip();
+  }, [tipAmount, currentSplitIndex]);
 
   const getCurrentPaymentId = () => {
     if (splits && splits.length > 0) {
@@ -463,20 +494,22 @@ const handleSplitBill = async () => {
 
   // All paid success state
   if (allPaid || payment?.status === 'paid') {
-    return (
-      <PaymentSuccess
+  console.log('🧾 PaymentSuccess render - receiptId:', receiptId, 'payment.receipt_id:', payment?.receipt_id);
+  return (
+    <PaymentSuccess
         storeName={payment?.store_name || ''}
         storeId={payment?.store_id}
         storeLogo={payment?.store_logo}
         amount={payment?.amount || 0}
-        tip={payment?.tip || 0}
+        tip={payment?.customer_tip || payment?.tip || 0}
         txHash={txHash || undefined}
-        receiptId={receiptId || undefined}
+        receiptId={receiptId || payment?.receipt_id || undefined}
         rlusdAmount={rlusdAmount || undefined}
-        items={payment?.items || []}
+conversionRate={conversionRate || undefined}
+items={payment?.items || []}
         isSplit={!!(splits && splits.length > 0)}
         splitAmount={splits ? getCurrentAmount() : undefined}
-        splitTip={splits && payment?.tip ? (payment.tip / splits.length) : undefined}
+        splitTip={splits ? (payment?.customer_tip || payment?.tip || 0) : undefined}
       />
     );
   }
@@ -705,11 +738,43 @@ onClick={startNFCScan}
 {(payment?.status === 'pending' || splits?.[currentSplitIndex]) && (
               <div className="mb-4">
                 <SoundPay
-                  paymentId={splits?.[currentSplitIndex]?.payment_id || paymentId}
-                  amount={splits?.[currentSplitIndex]?.amount || payment?.amount || 0}
-                  storeName={payment?.store_name || ''}
+  paymentId={splits?.[currentSplitIndex]?.payment_id || paymentId}
+  amount={(splits?.[currentSplitIndex]?.amount || payment?.amount || 0) + tipAmount}
+  storeName={payment?.store_name || ''}
+  tipAmount={tipAmount}
                   onError={(err) => setError(err)}
-                  onSuccess={(txHash) => { const ding = new Audio("/ding.mp3"); ding.volume = 0.4; ding.play().catch(() => {}); setTxHash(txHash); setShowToast(true); setTimeout(() => setShowToast(false), 3000); if (splits && splits.length > 0) { const updatedSplits = [...splits]; updatedSplits[currentSplitIndex] = { ...updatedSplits[currentSplitIndex], status: 'paid' }; setSplits(updatedSplits); const nextUnpaid = updatedSplits.findIndex((s, i) => i > currentSplitIndex && s.status !== 'paid'); if (nextUnpaid !== -1) { setCurrentSplitIndex(nextUnpaid); } else { setAllPaid(true); } } else { setAllPaid(true); } }}
+                  onSuccess={(txHash) => { 
+  const ding = new Audio("/ding.mp3"); 
+  ding.volume = 0.4; 
+  ding.play().catch(() => {}); 
+  setTxHash(txHash); 
+  setShowToast(true); 
+  setTimeout(() => setShowToast(false), 3000); 
+  
+  // Fetch receipt_id after payment
+  const pId = splits?.[currentSplitIndex]?.payment_id || paymentId;
+  fetch(`${API_URL}/payment-link/${pId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.payment?.receipt_id) {
+        setReceiptId(data.payment.receipt_id);
+      }
+    });
+  
+  if (splits && splits.length > 0) { 
+    const updatedSplits = [...splits]; 
+    updatedSplits[currentSplitIndex] = { ...updatedSplits[currentSplitIndex], status: 'paid' }; 
+    setSplits(updatedSplits); 
+    const nextUnpaid = updatedSplits.findIndex((s, i) => i > currentSplitIndex && s.status !== 'paid'); 
+    if (nextUnpaid !== -1) { 
+      setCurrentSplitIndex(nextUnpaid); 
+    } else { 
+      setAllPaid(true); 
+    } 
+  } else { 
+    setAllPaid(true); 
+  } 
+}}
                 />
               </div>
             )}

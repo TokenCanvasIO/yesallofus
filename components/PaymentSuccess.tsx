@@ -13,6 +13,12 @@ interface PaymentSuccessProps {
   receiptId?: string | null;
   rlusdAmount?: number | null;
   items?: any[];
+  // ADD: conversionRate prop
+  conversionRate?: {
+    rlusd_gbp: number;
+    source: string;
+    captured_at: string;
+  } | null;
   // For split bills
   splitAmount?: number | null;
   splitTip?: number | null;
@@ -29,6 +35,7 @@ export default function PaymentSuccess({
   receiptId,
   rlusdAmount,
   items = [],
+  conversionRate,  // ADD: destructure conversionRate
   splitAmount,
   splitTip,
   isSplit = false
@@ -123,7 +130,7 @@ export default function PaymentSuccess({
           </a>
         )}
 
-        {/* Receipt Actions */}
+        {/* Receipt Actions - FIXED: Pass conversionRate properly */}
         <ReceiptActions
           receiptId={receiptId || undefined}
           txHash={txHash || undefined}
@@ -133,7 +140,7 @@ export default function PaymentSuccess({
           rlusdAmount={rlusdAmount || undefined}
           items={items}
           tipAmount={displayTip}
-          conversionRate={undefined}
+          conversionRate={conversionRate || undefined}
           storeLogo={storeLogo || undefined}
         />
 

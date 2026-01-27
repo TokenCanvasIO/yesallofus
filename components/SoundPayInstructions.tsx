@@ -187,8 +187,8 @@ export default function SoundPayInstructions({
                     </div>
                   </motion.div>
 
-                  {/* Sound waves in the gap */}
-                  <div className="relative w-6 flex items-center justify-center">
+                  {/* Sound waves in the gap - hidden on small mobile and desktop */}
+<div className="relative w-6 hidden sm:flex lg:hidden items-center justify-center">
                     {[0, 1, 2].map((i) => (
                       <motion.div
                         key={i}
@@ -293,7 +293,8 @@ export default function SoundPayInstructions({
                   </AnimatePresence>
 
                   {/* Sound waves */}
-                  <div className="relative w-8 flex items-center justify-center">
+                  {/* Sound waves - hidden on small mobile and desktop */}
+<div className="relative w-8 hidden sm:flex lg:hidden items-center justify-center">
                     {[0, 1, 2].map((i) => (
                       <motion.div
                         key={i}

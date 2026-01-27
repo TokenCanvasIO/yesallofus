@@ -41,18 +41,21 @@ export default function ReceiptActions({
 
   // Fetch receipt data when print preview is opened
   const openPrintPreview = async () => {
-    setLoading(true);
+  console.log('🖨️ Print clicked, receiptId:', receiptId);
+  setLoading(true);
     
     if (receiptId) {
       try {
         const res = await fetch(`${API_URL}/receipts/${receiptId}`);
         const data = await res.json();
         if (data.success && data.receipt) {
-          setReceiptData(data.receipt);
-          setLoading(false);
-          setShowPrintPreview(true);
-          return;
-        }
+  console.log('📝 Receipt fetched:', data.receipt);
+  console.log('📝 Tip amount:', data.receipt.tip_amount);
+  setReceiptData(data.receipt);
+  setLoading(false);
+  setShowPrintPreview(true);
+  return;
+}
       } catch (e) {
         console.error('Failed to fetch receipt:', e);
       }

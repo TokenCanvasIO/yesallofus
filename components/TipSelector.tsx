@@ -64,14 +64,28 @@ export default function TipSelector({ amount, onTipChange }: TipSelectorProps) {
       <div className="relative">
         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-medium">£</span>
         <input
-          type="number"
-          placeholder="Custom amount"
-          value={customTip}
-          onChange={(e) => handleCustomTip(e.target.value)}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-8 pr-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 text-sm transition"
-          min="0"
-          step="0.01"
-        />
+  type="number"
+  placeholder="Custom amount"
+  value={customTip}
+  onChange={(e) => {
+    setCustomTip(e.target.value);
+    setSelectedPercent(null);
+  }}
+  onBlur={(e) => {
+    const tipAmount = parseFloat(e.target.value) || 0;
+    onTipChange(tipAmount);
+  }}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter') {
+      const tipAmount = parseFloat(customTip) || 0;
+      onTipChange(tipAmount);
+      (e.target as HTMLInputElement).blur();
+    }
+  }}
+  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-8 pr-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 text-sm transition"
+  min="0"
+  step="0.01"
+/>
       </div>
 
       {currentTip > 0 && (

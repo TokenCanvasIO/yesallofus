@@ -8,6 +8,7 @@ interface SoundPaymentProps {
   paymentId: string;
   amount: number;
   storeName: string;
+  tipAmount?: number;
   onSuccess?: (txHash: string) => void;
   onError?: (error: string) => void;
 }
@@ -25,6 +26,7 @@ export default function SoundPayment({
   paymentId,
   amount,
   storeName,
+  tipAmount = 0,
   onSuccess,
   onError
 }: SoundPaymentProps) {
@@ -65,6 +67,20 @@ export default function SoundPayment({
     try {
       setStatus('active');
       setErrorMsg(null);
+
+      // Save customer tip before processing
+      if (tipAmount > 0) {
+        try {
+          await fetch(`https://api.dltpays.com/nfc/api/v1/payment-link/${paymentId}/tip`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tip_amount: tipAmount })
+          });
+          console.log(`💰 Tip saved: £${tipAmount}`);
+        } catch (tipErr) {
+          console.warn('Could not save tip:', tipErr);
+        }
+      }
 
       const utils = await loadSoundUtils();
       if (!utils) throw new Error('Sound not available');
@@ -132,6 +148,20 @@ export default function SoundPayment({
   // RECEIVE (Customer) - Listen for payment ID, broadcast signed response
   const handleReceive = async () => {
     try {
+      // Save customer tip before processing
+      if (tipAmount > 0) {
+        try {
+          await fetch(`https://api.dltpays.com/nfc/api/v1/payment-link/${paymentId}/tip`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tip_amount: tipAmount })
+          });
+          console.log(`💰 Tip saved: £${tipAmount}`);
+        } catch (tipErr) {
+          console.warn('Could not save tip:', tipErr);
+        }
+      }
+
       // Check if logged in, if not → login with Web3Auth
       const { loginWithWeb3Auth } = await import('@/lib/web3auth');
       
