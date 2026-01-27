@@ -60,7 +60,8 @@ export default function EmailReceiptModal({
   rlusd_amount: rlusdAmount,
   items: items || [],
   tip_amount: tipAmount || 0,
-  tx_hash: txHash
+  tx_hash: txHash,
+  conversion_rate: conversionRate
 };
 
       if (receiptId) {
