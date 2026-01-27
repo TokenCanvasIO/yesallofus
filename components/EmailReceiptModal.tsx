@@ -13,6 +13,11 @@ interface EmailReceiptModalProps {
   rlusdAmount?: number;
   items?: Array<{ name: string; quantity: number; unit_price: number }>;
   tipAmount?: number;
+  conversionRate?: {
+    rlusd_gbp: number;
+    source: string;
+    captured_at: string;
+  };
 }
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
@@ -27,7 +32,8 @@ export default function EmailReceiptModal({
   amount,
   rlusdAmount,
   items,
-  tipAmount
+  tipAmount,
+  conversionRate
 }: EmailReceiptModalProps) {
   const [emailAddress, setEmailAddress] = useState('');
   const [sending, setSending] = useState(false);
