@@ -18,6 +18,7 @@ interface ReceiptActionsProps {
     captured_at: string;
   };
   storeLogo?: string;
+  walletAddress?: string;
 }
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
@@ -33,6 +34,7 @@ export default function ReceiptActions({
   tipAmount,
   conversionRate,
   storeLogo,
+  walletAddress,
 }: ReceiptActionsProps) {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
@@ -46,7 +48,10 @@ export default function ReceiptActions({
     
     if (receiptId) {
       try {
-        const res = await fetch(`${API_URL}/receipts/${receiptId}`);
+        const url = walletAddress
+          ? `${API_URL}/receipts/${receiptId}?wallet_address=${walletAddress}`
+          : `${API_URL}/receipts/${receiptId}`;
+        const res = await fetch(url);
         const data = await res.json();
         if (data.success && data.receipt) {
   console.log('📝 Receipt fetched:', data.receipt);

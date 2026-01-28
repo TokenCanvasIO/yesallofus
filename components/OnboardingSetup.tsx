@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/safeStorage';
 import { QRCodeSVG } from 'qrcode.react';
 import SuccessMessage from './SuccessMessage';
 
@@ -76,7 +77,7 @@ useEffect(() => {
   if (currentStep && currentStep !== 'complete' && currentStep !== 'loading') {
     const sessionKey = `onboarding_active_${storagePrefix}_${walletAddress}`;
     console.log('WIZARD ACTIVE - setting key:', sessionKey, 'step:', currentStep);
-    sessionStorage.setItem(sessionKey, 'true');
+    safeSetItem(sessionKey, 'true');
   }
 }, [currentStep, storagePrefix, walletAddress]);
 
@@ -95,7 +96,7 @@ useEffect(() => {
 useEffect(() => {
   if (currentStep === 'complete' && walletAddress) {
     const sessionKey = `onboarding_active_${storagePrefix}_${walletAddress}`;
-    const wizardWasActive = typeof window !== 'undefined' && sessionStorage.getItem(sessionKey);
+    const wizardWasActive = typeof window !== 'undefined' && safeGetItem(sessionKey);
     
     // Only show success if wizard was actively used this session
     if (wizardWasActive) {
@@ -106,7 +107,7 @@ useEffect(() => {
         localStorage.setItem(shownKey, 'true');
       }
       // Clear the active flag after showing success
-      sessionStorage.removeItem(sessionKey);
+      safeRemoveItem(sessionKey);
     }
   }
 }, [currentStep, storagePrefix, walletAddress]);
@@ -125,8 +126,8 @@ useEffect(() => {
         
         const walletKey = storagePrefix === 'vendor' ? 'vendorWalletAddress' : 'walletAddress';
 const methodKey = storagePrefix === 'vendor' ? 'vendorLoginMethod' : 'loginMethod';
-sessionStorage.setItem(walletKey, data.wallet_address);
-sessionStorage.setItem(methodKey, 'xaman');
+safeSetItem(walletKey, data.wallet_address);
+safeSetItem(methodKey, 'xaman');
         
         setConnectingXaman(false);
         setXamanQR(null);
@@ -628,9 +629,9 @@ if (currentStep === 'complete') {
               const provider = typeof result === 'string' ? 'google' : (result.provider || 'google');
               const walletKey = storagePrefix === 'vendor' ? 'vendorWalletAddress' : 'walletAddress';
 const methodKey = storagePrefix === 'vendor' ? 'vendorLoginMethod' : 'loginMethod';
-sessionStorage.setItem(walletKey, address);
-sessionStorage.setItem(methodKey, 'web3auth');
-sessionStorage.setItem('socialProvider', provider);
+safeSetItem(walletKey, address);
+safeSetItem(methodKey, 'web3auth');
+safeSetItem('socialProvider', provider);
               window.location.reload();
             }
           } catch (err) { console.error('Social login error:', err); }
@@ -671,8 +672,8 @@ sessionStorage.setItem('socialProvider', provider);
               if (response?.response?.data?.address) {
                 const walletKey = storagePrefix === 'vendor' ? 'vendorWalletAddress' : 'walletAddress';
 const methodKey = storagePrefix === 'vendor' ? 'vendorLoginMethod' : 'loginMethod';
-sessionStorage.setItem(walletKey, response.response.data.address);
-sessionStorage.setItem(methodKey, 'crossmark');
+safeSetItem(walletKey, response.response.data.address);
+safeSetItem(methodKey, 'crossmark');
                 window.location.reload();
               }
             } catch (err) { console.error('Crossmark error:', err); }

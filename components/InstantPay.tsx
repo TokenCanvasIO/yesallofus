@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { safeGetItem, safeSetItem } from '@/lib/safeStorage';
 import AutoSignModal from './AutoSignModal';
 
 const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1';
@@ -50,8 +51,8 @@ export default function InstantPay({
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const stored = sessionStorage.getItem('walletAddress');
-        const method = sessionStorage.getItem('loginMethod');
+        const stored = safeGetItem('walletAddress');
+        const method = safeGetItem('loginMethod');
         
         if (stored && method === 'web3auth') {
           setWalletAddress(stored);
@@ -89,6 +90,9 @@ export default function InstantPay({
     // Check if wallet is ready (funded + RLUSD enabled)
     try {
       const statusRes = await fetch(`${NFC_API_URL}/wallet/status/${wallet}`);
+      if (!statusRes.ok) {
+        console.warn('Wallet status check failed:', statusRes.status);
+      }
       const statusData = await statusRes.json();
 
       if (statusData.success && (!statusData.funded || !statusData.rlusd_trustline)) {
@@ -110,6 +114,10 @@ export default function InstantPay({
           tip_amount: tipAmount
         })
       });
+
+      if (!res.ok) {
+        throw new Error(`Payment request failed: ${res.status}`);
+      }
 
       const result = await res.json();
 
@@ -166,9 +174,9 @@ export default function InstantPay({
       const address = typeof result === 'string' ? result : result.address;
       const provider = typeof result === 'string' ? 'google' : (result.provider || 'google');
       
-      sessionStorage.setItem('walletAddress', address);
-      sessionStorage.setItem('loginMethod', 'web3auth');
-      sessionStorage.setItem('socialProvider', provider);
+      safeSetItem('walletAddress', address);
+      safeSetItem('loginMethod', 'web3auth');
+      safeSetItem('socialProvider', provider);
       
       setWalletAddress(address);
 
@@ -216,8 +224,8 @@ export default function InstantPay({
       }
 
       const address = typeof result === 'string' ? result : result.address;
-      sessionStorage.setItem('walletAddress', address);
-      sessionStorage.setItem('loginMethod', 'web3auth');
+      safeSetItem('walletAddress', address);
+      safeSetItem('loginMethod', 'web3auth');
       
       setWalletAddress(address);
       
@@ -306,7 +314,7 @@ export default function InstantPay({
 
   // Process payment
   const processPayment = async () => {
-    if (!walletAddress) return;
+    if (!walletAddress || paying) return;
     await processPaymentWithWallet(walletAddress);
   };
 

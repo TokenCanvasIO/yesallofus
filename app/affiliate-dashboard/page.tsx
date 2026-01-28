@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/safeStorage';
 import PayoutsTable from '@/components/PayoutsTable';
 import DashboardHeader from "@/components/DashboardHeader";
 import QRCodeModal from '@/components/QRCodeModal';
@@ -292,7 +293,7 @@ useEffect(() => {
     const storeId = urlParams.get('store');
     const join = urlParams.get('join');
     if (email && join === '1') {
-      sessionStorage.setItem('pendingSignup', JSON.stringify({ email, storeId }));
+      safeSetItem('pendingSignup', JSON.stringify({ email, storeId }));
     }
   }, []);
 
@@ -303,7 +304,7 @@ useEffect(() => {
     let join = urlParams.get('join');
     
     if (!email || join !== '1') {
-      const pending = sessionStorage.getItem('pendingSignup');
+      const pending = safeGetItem('pendingSignup');
       if (pending) {
         const parsed = JSON.parse(pending);
         email = parsed.email;
@@ -324,7 +325,7 @@ useEffect(() => {
       if (data.success && data.card_linked) {
         console.log('✅ NFC card linked to wallet:', data.card_uid);
       }
-      sessionStorage.removeItem('pendingSignup');
+      safeRemoveItem('pendingSignup');
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('email');
       newUrl.searchParams.delete('store');
@@ -489,7 +490,7 @@ useEffect(() => {
       
       // Clear success flag so wizard can show success again when re-enabled
       localStorage.removeItem(`onboarding_success_shown_affiliate_${walletAddress}`);
-      sessionStorage.setItem(`onboarding_active_affiliate_${walletAddress}`, 'true');
+      safeSetItem(`onboarding_active_affiliate_${walletAddress}`, 'true');
       
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to revoke auto-pay';
@@ -500,10 +501,10 @@ useEffect(() => {
 
   // Check for existing session on mount
   useEffect(() => {
-    const stored = sessionStorage.getItem('walletAddress');
-    const storedMethod = sessionStorage.getItem('loginMethod');
-    const storedProvider = sessionStorage.getItem('socialProvider');
-    const storedLoggedIn = sessionStorage.getItem('isLoggedIn');
+    const stored = safeGetItem('walletAddress');
+    const storedMethod = safeGetItem('loginMethod');
+    const storedProvider = safeGetItem('socialProvider');
+    const storedLoggedIn = safeGetItem('isLoggedIn');
     
     if (storedLoggedIn === 'true') setIsLoggedIn(true);
     
@@ -520,7 +521,7 @@ useEffect(() => {
     }
     
     const interval = setInterval(() => {
-      const currentStored = sessionStorage.getItem('walletAddress');
+      const currentStored = safeGetItem('walletAddress');
       if (currentStored && currentStored !== walletAddress && walletAddress) {
         setWalletAddress(currentStored);
         fetchDashboard(currentStored);
@@ -610,12 +611,12 @@ useEffect(() => {
     setWalletAddress(wallet);
     setLoginMethod(method);
     setIsLoggedIn(true);
-    sessionStorage.setItem('walletAddress', wallet);
-    sessionStorage.setItem('loginMethod', method);
-    sessionStorage.setItem('isLoggedIn', 'true');
+    safeSetItem('walletAddress', wallet);
+    safeSetItem('loginMethod', method);
+    safeSetItem('isLoggedIn', 'true');
     if (extras?.socialProvider) {
       setSocialProvider(extras.socialProvider);
-      sessionStorage.setItem('socialProvider', extras.socialProvider);
+      safeSetItem('socialProvider', extras.socialProvider);
     }
     completeCustomerSignup(wallet);
     fetchDashboard(wallet);
@@ -624,10 +625,10 @@ useEffect(() => {
   };
 
   const handleSignOut = () => {
-    sessionStorage.removeItem('walletAddress');
-    sessionStorage.removeItem('loginMethod');
-    sessionStorage.removeItem('socialProvider');
-    sessionStorage.removeItem('isLoggedIn');
+    safeRemoveItem('walletAddress');
+    safeRemoveItem('loginMethod');
+    safeRemoveItem('socialProvider');
+    safeRemoveItem('isLoggedIn');
     setWalletAddress('');
     setIsLoggedIn(false);
     setDashboardData(null);
@@ -644,9 +645,9 @@ useEffect(() => {
     if (walletAddress) {
       localStorage.removeItem(`onboarding_success_shown_affiliate_${walletAddress}`);
     }
-    sessionStorage.removeItem('walletAddress');
-    sessionStorage.removeItem('loginMethod');
-    sessionStorage.removeItem('socialProvider');
+    safeRemoveItem('walletAddress');
+    safeRemoveItem('loginMethod');
+    safeRemoveItem('socialProvider');
     setWalletAddress('');
     setLoginMethod(null);
     setSocialProvider(null);
@@ -678,10 +679,10 @@ const deleteAffiliateData = async () => {
 
     const data = await res.json();
     if (data.success) {
-      sessionStorage.removeItem('walletAddress');
-      sessionStorage.removeItem('loginMethod');
-      sessionStorage.removeItem('socialProvider');
-      sessionStorage.removeItem('isLoggedIn');
+      safeRemoveItem('walletAddress');
+      safeRemoveItem('loginMethod');
+      safeRemoveItem('socialProvider');
+      safeRemoveItem('isLoggedIn');
       window.location.href = '/affiliate-dashboard';
     } else {
       setError(data.error || 'Failed to delete data');
@@ -745,9 +746,9 @@ const deleteAffiliateData = async () => {
           setConnectingXaman(false);
           setXamanQR(null);
           setXamanLoginId(null);
-          sessionStorage.setItem('walletAddress', data.wallet_address);
-          sessionStorage.setItem('loginMethod', 'xaman');
-          sessionStorage.removeItem('socialProvider');
+          safeSetItem('walletAddress', data.wallet_address);
+          safeSetItem('loginMethod', 'xaman');
+          safeRemoveItem('socialProvider');
           setWalletAddress(data.wallet_address);
           setLoginMethod('xaman');
           setSocialProvider(null);
@@ -1249,9 +1250,9 @@ return <LoginScreen onLogin={handleLogin} />;
                                 if (!result) return;
                                 const address = typeof result === 'string' ? result : result.address;
                                 const provider = typeof result === 'string' ? 'google' : (result.provider || 'google');
-                                sessionStorage.setItem('walletAddress', address);
-                                sessionStorage.setItem('loginMethod', 'web3auth');
-                                sessionStorage.setItem('socialProvider', provider);
+                                safeSetItem('walletAddress', address);
+                                safeSetItem('loginMethod', 'web3auth');
+                                safeSetItem('socialProvider', provider);
                                 setWalletAddress(address);
                                 setLoginMethod('web3auth');
                                 setSocialProvider(provider);
@@ -1294,9 +1295,9 @@ return <LoginScreen onLogin={handleLogin} />;
                                   const response = await sdk.methods.signInAndWait();
                                   if (response?.response?.data?.address) {
                                     const newAddress = response.response.data.address;
-                                    sessionStorage.setItem('walletAddress', newAddress);
-                                    sessionStorage.setItem('loginMethod', 'crossmark');
-                                    sessionStorage.removeItem('socialProvider');
+                                    safeSetItem('walletAddress', newAddress);
+                                    safeSetItem('loginMethod', 'crossmark');
+                                    safeRemoveItem('socialProvider');
                                     setWalletAddress(newAddress);
                                     setLoginMethod('crossmark');
                                     setSocialProvider(null);

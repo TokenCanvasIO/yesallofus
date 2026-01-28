@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/safeStorage';
 import StoreActivity from '@/components/StoreActivity';
 import WalletFunding from '@/components/WalletFunding';
 import Script from 'next/script';
@@ -233,7 +234,7 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (data.success) {
       setStoreLogo(logoUrl);
       setStore({ ...store, logo_url: logoUrl });
-      sessionStorage.setItem('storeData', JSON.stringify({ ...store, logo_url: logoUrl }));
+      safeSetItem('storeData', JSON.stringify({ ...store, logo_url: logoUrl }));
       setShowLogoUpload(false);
     } else {
       setError('Failed to save logo');
@@ -261,7 +262,7 @@ const removeLogo = async () => {
     if (res.ok) {
       setStoreLogo(null);
       setStore({ ...store, logo_url: null });
-      sessionStorage.setItem('storeData', JSON.stringify({ ...store, logo_url: null }));
+      safeSetItem('storeData', JSON.stringify({ ...store, logo_url: null }));
       setShowLogoUpload(false);
     }
   } catch (err) {
@@ -345,18 +346,18 @@ useEffect(() => {
 
       // Check for WordPress return URL - just store in sessionStorage for now
 // It will be saved to Firebase in loadOrCreateStore
-const wpReturn = params.get('wordpress_return') || sessionStorage.getItem('wordpress_return');
+const wpReturn = params.get('wordpress_return') || safeGetItem('wordpress_return');
 if (wpReturn) {
-    sessionStorage.setItem('wordpress_return', wpReturn);
+    safeSetItem('wordpress_return', wpReturn);
 }
 
       // Check for referral code (from store referral link)
-      const ref = params.get('ref') || sessionStorage.getItem('vendorReferralCode');
+      const ref = params.get('ref') || safeGetItem('vendorReferralCode');
       if (ref) {
         setReferralCode(ref);
-        sessionStorage.setItem('vendorReferralCode', ref);
+        safeSetItem('vendorReferralCode', ref);
         // Check if we already have the referring store cached
-        const cachedReferrer = sessionStorage.getItem('vendorReferringStore');
+        const cachedReferrer = safeGetItem('vendorReferringStore');
         if (cachedReferrer) {
           setReferringStore(JSON.parse(cachedReferrer));
         }
@@ -365,16 +366,16 @@ if (wpReturn) {
           .then(data => {
             if (data.success && data.store) {
               setReferringStore(data.store);
-              sessionStorage.setItem('vendorReferringStore', JSON.stringify(data.store));
+              safeSetItem('vendorReferringStore', JSON.stringify(data.store));
             }
           })
           .catch(console.error);
       }
 
       // Check for existing Web3Auth session
-const savedWallet = sessionStorage.getItem('vendorWalletAddress');
-const savedType = sessionStorage.getItem('vendorLoginMethod');
-const savedSocialProvider = sessionStorage.getItem('socialProvider');
+const savedWallet = safeGetItem('vendorWalletAddress');
+const savedType = safeGetItem('vendorLoginMethod');
+const savedSocialProvider = safeGetItem('socialProvider');
 if (savedWallet && savedType) {
   setWalletAddress(savedWallet);
   setWalletType(savedType as 'xaman' | 'crossmark' | 'web3auth');
@@ -432,8 +433,8 @@ useEffect(() => {
           setWalletType('xaman');
           setXamanUserToken(data.xaman_user_token || null);
           setPolling(false);
-          sessionStorage.setItem('vendorWalletAddress', data.wallet_address);
-          sessionStorage.setItem('vendorLoginMethod', 'xaman');
+          safeSetItem('vendorWalletAddress', data.wallet_address);
+          safeSetItem('vendorLoginMethod', 'xaman');
           loadOrCreateStore(data.wallet_address, 'xaman', data.xaman_user_token);
         } else if (data.status === 'expired' || data.status === 'cancelled') {
           setPolling(false);
@@ -525,9 +526,9 @@ useEffect(() => {
       setWalletAddress(address);
       setWalletType('web3auth');
       setSocialProvider(socialProviderType);
-      sessionStorage.setItem('vendorWalletAddress', address);
-      sessionStorage.setItem('vendorLoginMethod', 'web3auth');
-      sessionStorage.setItem('socialProvider', socialProviderType);
+      safeSetItem('vendorWalletAddress', address);
+      safeSetItem('vendorLoginMethod', 'web3auth');
+      safeSetItem('socialProvider', socialProviderType);
       
       loadOrCreateStore(address, 'web3auth');
     } catch (err: unknown) {
@@ -561,7 +562,7 @@ useEffect(() => {
   setStore(data.store);
   setStoreLogo(data.store.logo_url || null);
   console.log('🔍 Normal flow - Logo URL:', data.store.logo_url);
-  sessionStorage.setItem('storeData', JSON.stringify(data.store));
+  safeSetItem('storeData', JSON.stringify(data.store));
   setNewSecret(null);
   if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
         setStep('dashboard');
@@ -581,7 +582,7 @@ useEffect(() => {
     if (data.success && data.store) {
   setStore(data.store);
   setStoreLogo(data.store.logo_url || null);
-  sessionStorage.setItem('storeData', JSON.stringify(data.store));
+  safeSetItem('storeData', JSON.stringify(data.store));
   setNewSecret(null);
       if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
       if (data.store.daily_limit) setDailyLimit(data.store.daily_limit);
@@ -589,7 +590,7 @@ useEffect(() => {
 
       // If we have a wordpress_return in URL/session, save it to Firebase
       const wpReturn = new URLSearchParams(window.location.search).get('wordpress_return') 
-        || sessionStorage.getItem('wordpress_return');
+        || safeGetItem('wordpress_return');
       
       if (wpReturn && !data.store.platform_return_url) {
         await fetch(`${API_URL}/store/set-platform-return`, {
@@ -696,12 +697,12 @@ useEffect(() => {
       setNewSecret(data.api_secret);
       
       // Clear referral sessionStorage after successful signup
-      sessionStorage.removeItem('vendorReferralCode');
-      sessionStorage.removeItem('vendorReferringStore');
+      safeRemoveItem('vendorReferralCode');
+      safeRemoveItem('vendorReferringStore');
 
 // Save platform return URL if we came from WordPress
 const wpReturn = new URLSearchParams(window.location.search).get('wordpress_return') 
-  || sessionStorage.getItem('wordpress_return');
+  || safeGetItem('wordpress_return');
 
 const newStore = {
   store_id: data.store_id,
@@ -863,8 +864,8 @@ setStep('dashboard');
   setWalletType(null);
   setWalletStatus(null);
   setCustomerAutoSignEnabled(false);
-  sessionStorage.removeItem('vendorWalletAddress');
-  sessionStorage.removeItem('vendorLoginMethod');
+  safeRemoveItem('vendorWalletAddress');
+  safeRemoveItem('vendorLoginMethod');
 } else {
   setError(data.error || 'Failed to disconnect');
 }
@@ -889,8 +890,8 @@ setStep('dashboard');
     }
     
     // Clear session storage
-    sessionStorage.removeItem('vendorWalletAddress');
-    sessionStorage.removeItem('vendorLoginMethod');
+    safeRemoveItem('vendorWalletAddress');
+    safeRemoveItem('vendorLoginMethod');
     
     // Reset state
     setWalletAddress(null);
@@ -1057,8 +1058,8 @@ setMilestone('auto_sign_enabled');
 await refreshWalletStatus();
       setWalletAddress(address);
       setWalletType('crossmark');
-      sessionStorage.setItem('vendorWalletAddress', address);
-      sessionStorage.setItem('vendorLoginMethod', 'crossmark');
+      safeSetItem('vendorWalletAddress', address);
+      safeSetItem('vendorLoginMethod', 'crossmark');
       setAutoSignTermsAccepted(false);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to enable auto-sign';
@@ -1271,7 +1272,7 @@ setCustomerAutoSignEnabled(false);
       // Clear success flag so wizard can show success again when re-enabled
       if (walletAddress) {
         localStorage.removeItem(`onboarding_success_shown_vendor_${walletAddress}`);
-        sessionStorage.setItem(`onboarding_active_vendor_${walletAddress}`, 'true');
+        safeSetItem(`onboarding_active_vendor_${walletAddress}`, 'true');
       }
       setLoading(false);
       return;
@@ -1328,7 +1329,7 @@ setCustomerAutoSignEnabled(false);
     // Clear success flag so wizard can show success again when re-enabled
     if (walletAddress) {
       localStorage.removeItem(`onboarding_success_shown_vendor_${walletAddress}`);
-      sessionStorage.setItem(`onboarding_active_vendor_${walletAddress}`, 'true');
+      safeSetItem(`onboarding_active_vendor_${walletAddress}`, 'true');
     }
     
   } catch (err: unknown) {
@@ -1356,9 +1357,9 @@ setCustomerAutoSignEnabled(false);
 
     const data = await res.json();
     if (data.success) {
-      sessionStorage.removeItem('vendorWalletAddress');
-      sessionStorage.removeItem('vendorLoginMethod');
-      sessionStorage.removeItem('socialProvider');
+      safeRemoveItem('vendorWalletAddress');
+      safeRemoveItem('vendorLoginMethod');
+      safeRemoveItem('socialProvider');
       window.location.href = '/dashboard';
     } else {
       setError(data.error || 'Failed to delete');
@@ -1446,9 +1447,9 @@ setWalletAddress(wallet);
 setWalletType(method);
 if (extras?.xamanUserToken) setXamanUserToken(extras.xamanUserToken);
 if (extras?.socialProvider) setSocialProvider(extras.socialProvider);
-sessionStorage.setItem('vendorWalletAddress', wallet);
-sessionStorage.setItem('vendorLoginMethod', method);
-if (extras?.socialProvider) sessionStorage.setItem('socialProvider', extras.socialProvider);
+safeSetItem('vendorWalletAddress', wallet);
+safeSetItem('vendorLoginMethod', method);
+if (extras?.socialProvider) safeSetItem('socialProvider', extras.socialProvider);
 loadOrCreateStore(wallet, method, extras?.xamanUserToken);
           }}
 requireTrustline={true}
@@ -1873,7 +1874,7 @@ return (
               // Determine the referring store - either from state, sessionStorage, or manual input
               let finalReferrer = referringStore;
               if (!finalReferrer) {
-                const cachedReferrer = sessionStorage.getItem('vendorReferringStore');
+                const cachedReferrer = safeGetItem('vendorReferringStore');
                 if (cachedReferrer) {
                   finalReferrer = JSON.parse(cachedReferrer);
                 }
@@ -1896,7 +1897,7 @@ return (
 
               // Get referral code from URL, sessionStorage, or manual input
               const refCode = new URLSearchParams(window.location.search).get('ref') 
-                || sessionStorage.getItem('vendorReferralCode')
+                || safeGetItem('vendorReferralCode')
                 || (form.elements.namedItem('referralCode') as HTMLInputElement)?.value?.trim()
                 || null;
               
@@ -2270,8 +2271,8 @@ onClick={async () => {
             if (address) {
   setWalletAddress(address);
   setWalletType('crossmark');
-  sessionStorage.setItem('vendorWalletAddress', address);
-  sessionStorage.setItem('vendorLoginMethod', 'crossmark');
+  safeSetItem('vendorWalletAddress', address);
+  safeSetItem('vendorLoginMethod', 'crossmark');
   loadOrCreateStore(address, 'crossmark');
 }
           } catch (err) {
@@ -2978,7 +2979,7 @@ onClick={async () => {
               wallet_address: walletAddress,
             }),
           });
-          sessionStorage.removeItem('wordpress_return');
+          safeRemoveItem('wordpress_return');
           const separator = targetUrl.includes('?') ? '&' : '?';
           window.location.href = `${targetUrl}${separator}claim_token=${tokenData.claim_token}`;
         } catch (err) {

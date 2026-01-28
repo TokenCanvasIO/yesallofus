@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/safeStorage';
 import { useRouter } from 'next/navigation';
 import InstallAppButton from '@/components/InstallAppButton';
 import BackgroundVideo from '@/components/BackgroundVideo';
@@ -36,12 +37,12 @@ export default function WelcomePage() {
         throw new Error('No wallet found');
       }
 
-      sessionStorage.setItem('loginMethod', 'web3auth');
-      sessionStorage.setItem('socialProvider', provider);
-      sessionStorage.setItem('walletAddress', address);
+      safeSetItem('loginMethod', 'web3auth');
+      safeSetItem('socialProvider', provider);
+      safeSetItem('walletAddress', address);
 
       if (userType === 'partner') {
-        sessionStorage.setItem('vendorWalletAddress', address);
+        safeSetItem('vendorWalletAddress', address);
         router.push('/dashboard');
       } else {
         router.push('/affiliate-dashboard');
@@ -61,7 +62,7 @@ export default function WelcomePage() {
 
     try {
       // Check if already logged in
-      let walletAddress = sessionStorage.getItem('walletAddress');
+      let walletAddress = safeGetItem('walletAddress');
 
       if (!walletAddress) {
         // Try to get wallet from Web3Auth without creating new
@@ -78,9 +79,9 @@ export default function WelcomePage() {
         const provider = typeof result === 'string' ? 'google' : (result.provider || 'google');
 
         if (walletAddress) {
-          sessionStorage.setItem('loginMethod', 'web3auth');
-          sessionStorage.setItem('socialProvider', provider);
-          sessionStorage.setItem('walletAddress', walletAddress);
+          safeSetItem('loginMethod', 'web3auth');
+          safeSetItem('socialProvider', provider);
+          safeSetItem('walletAddress', walletAddress);
         }
       }
 

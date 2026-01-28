@@ -23,6 +23,8 @@ interface PaymentSuccessProps {
   splitAmount?: number | null;
   splitTip?: number | null;
   isSplit?: boolean;
+  // For receipt authorization
+  walletAddress?: string | null;
 }
 
 export default function PaymentSuccess({
@@ -38,7 +40,8 @@ export default function PaymentSuccess({
   conversionRate,  // ADD: destructure conversionRate
   splitAmount,
   splitTip,
-  isSplit = false
+  isSplit = false,
+  walletAddress
 }: PaymentSuccessProps) {
   
   const [showSuccessVideo, setShowSuccessVideo] = useState(true);
@@ -142,6 +145,7 @@ export default function PaymentSuccess({
           tipAmount={displayTip}
           conversionRate={conversionRate || undefined}
           storeLogo={storeLogo || undefined}
+          walletAddress={walletAddress || undefined}
         />
 
         {/* Footer Branding */}

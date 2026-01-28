@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { safeGetItem, safeSetItem } from '@/lib/safeStorage';
 import { useRouter } from 'next/navigation';
 import MoveCloserAnimation from '@/components/MoveCloserAnimation';
 
@@ -165,12 +166,12 @@ export default function SoundPayment({
       // Check if logged in, if not → login with Web3Auth
       const { loginWithWeb3Auth } = await import('@/lib/web3auth');
       
-      let wallet = sessionStorage.getItem('walletAddress');
+      let wallet = safeGetItem('walletAddress');
       
       if (!wallet) {
         setStatus('processing');
         const result = await loginWithWeb3Auth();
-        wallet = result?.address || sessionStorage.getItem('walletAddress');
+        wallet = result?.address || safeGetItem('walletAddress');
       }
       
       if (!wallet) {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/safeStorage';
 import BackgroundVideo from './BackgroundVideo';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
@@ -61,7 +62,7 @@ const completeCustomerSignup = async (wallet: string) => {
   
   // If not in URL, check sessionStorage (saved before login)
   if (!email || join !== '1') {
-    const pending = sessionStorage.getItem('pendingSignup');
+    const pending = safeGetItem('pendingSignup');
     if (pending) {
       const parsed = JSON.parse(pending);
       email = parsed.email;
@@ -90,7 +91,7 @@ const completeCustomerSignup = async (wallet: string) => {
     }
     
     // Clean up
-    sessionStorage.removeItem('pendingSignup');
+    safeRemoveItem('pendingSignup');
     
     // Clean up URL params
     const newUrl = new URL(window.location.href);
@@ -146,8 +147,8 @@ const completeCustomerSignup = async (wallet: string) => {
           await handleStoreAutoJoin(data.wallet_address);
           await completeCustomerSignup(data.wallet_address);
           
-          sessionStorage.setItem(walletKey, data.wallet_address);
-          sessionStorage.setItem(methodKey, 'xaman');
+          safeSetItem(walletKey, data.wallet_address);
+          safeSetItem(methodKey, 'xaman');
           
           setConnecting('none');
           setXamanQR(null);
@@ -246,8 +247,8 @@ const completeCustomerSignup = async (wallet: string) => {
       await handleStoreAutoJoin(address);
       await completeCustomerSignup(address);
       
-      sessionStorage.setItem(walletKey, address);
-      sessionStorage.setItem(methodKey, 'crossmark');
+      safeSetItem(walletKey, address);
+      safeSetItem(methodKey, 'crossmark');
       
       onLogin(address, 'crossmark');
       
@@ -281,9 +282,9 @@ const completeCustomerSignup = async (wallet: string) => {
       await handleStoreAutoJoin(address);
       await completeCustomerSignup(address);
       
-      sessionStorage.setItem(walletKey, address);
-      sessionStorage.setItem(methodKey, 'web3auth');
-      sessionStorage.setItem('socialProvider', provider);
+      safeSetItem(walletKey, address);
+      safeSetItem(methodKey, 'web3auth');
+      safeSetItem('socialProvider', provider);
       
       onLogin(address, 'web3auth', { socialProvider: provider });
       

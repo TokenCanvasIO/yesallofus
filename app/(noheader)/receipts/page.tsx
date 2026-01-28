@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import { safeGetItem } from '@/lib/safeStorage';
 import { useRouter, useSearchParams } from 'next/navigation';
 import NebulaBackground from '@/components/NebulaBackground'; // adjust path as needed
 interface ReceiptItem {
@@ -79,8 +80,8 @@ function ReceiptsPage() {
 
   // Load store data
 useEffect(() => {
-  const stored = sessionStorage.getItem('vendorWalletAddress');
-  const storeData = sessionStorage.getItem('storeData');
+  const stored = safeGetItem('vendorWalletAddress');
+  const storeData = safeGetItem('storeData');
   
   if (!stored) {
     router.push('/dashboard');

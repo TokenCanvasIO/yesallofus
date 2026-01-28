@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { safeGetItem, safeSetItem } from '@/lib/safeStorage';
 import { startListening, initSoundPayment, isSupported, cleanup, warmupAudio } from '@/utils/soundPayment';
 import NebulaBackground from '@/components/NebulaBackground';
 import SoundPayInstructions from '@/components/SoundPayInstructions';
@@ -55,11 +56,11 @@ const [countdown, setCountdown] = useState<string | null>(null);
       try {
         const { loginWithWeb3Auth } = await import('@/lib/web3auth');
         
-        let wallet = sessionStorage.getItem('walletAddress');
+        let wallet = safeGetItem('walletAddress');
         
         if (!wallet) {
           const result = await loginWithWeb3Auth();
-          wallet = result?.address || sessionStorage.getItem('walletAddress');
+          wallet = result?.address || safeGetItem('walletAddress');
         }
         
         if (!wallet) {
@@ -431,6 +432,7 @@ const [countdown, setCountdown] = useState<string | null>(null);
               items={paymentData?.items}
               tipAmount={paymentData?.tip || 0}
               storeLogo={paymentData?.store_logo}
+              walletAddress={safeGetItem('walletAddress') || undefined}
             />
 
             {/* YAOFUS Receipt Badge */}

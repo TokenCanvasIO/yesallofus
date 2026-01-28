@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/safeStorage';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
 const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1';
@@ -136,9 +137,9 @@ export default function WalletSettings({
           setLoginId(null);
           
           // Update to Xaman wallet
-          sessionStorage.setItem('walletAddress', data.wallet_address);
-          sessionStorage.setItem('loginMethod', 'xaman');
-          sessionStorage.removeItem('socialProvider');
+          safeSetItem('walletAddress', data.wallet_address);
+          safeSetItem('loginMethod', 'xaman');
+          safeRemoveItem('socialProvider');
           
           if (onWalletChange) {
             onWalletChange(data.wallet_address, 'xaman');

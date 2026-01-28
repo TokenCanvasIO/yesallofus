@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { safeGetItem } from '@/lib/safeStorage';
 import { useRouter } from 'next/navigation';
 import DashboardHeader from '@/components/DashboardHeader';
 
@@ -209,7 +210,7 @@ export default function EarnPage() {
               </button>
               <button
                 onClick={() => {
-                  const vendorWallet = sessionStorage.getItem('vendorWalletAddress');
+                  const vendorWallet = safeGetItem('vendorWalletAddress');
                   if (vendorWallet) {
                     router.push('/dashboard');
                   } else {

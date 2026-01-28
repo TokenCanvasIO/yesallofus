@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/safeStorage';
 import { useRouter } from 'next/navigation';
 
 interface StaffMember {
@@ -31,7 +32,7 @@ export default function StaffSelector({ storeId, walletAddress, onStaffChange }:
     if (storeId && walletAddress) {
       fetchStaffList();
       // Load saved active staff from session
-      const savedStaff = sessionStorage.getItem('activeStaff');
+      const savedStaff = safeGetItem('activeStaff');
       if (savedStaff) {
         const parsed = JSON.parse(savedStaff);
         setActiveStaff(parsed);
@@ -59,9 +60,9 @@ export default function StaffSelector({ storeId, walletAddress, onStaffChange }:
   const selectStaff = (staff: StaffMember | null) => {
     setActiveStaff(staff);
     if (staff) {
-      sessionStorage.setItem('activeStaff', JSON.stringify(staff));
+      safeSetItem('activeStaff', JSON.stringify(staff));
     } else {
-      sessionStorage.removeItem('activeStaff');
+      safeRemoveItem('activeStaff');
     }
     onStaffChange?.(staff);
     setShowDropdown(false);

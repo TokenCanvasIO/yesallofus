@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/safeStorage';
 import { useRouter } from 'next/navigation';
 import ProductsManager from '@/components/ProductsManager';
 import { updateCustomerDisplay, clearCustomerDisplay } from '@/lib/customerDisplay';
@@ -251,8 +252,8 @@ const convertGBPtoRLUSD = async (gbpAmount: number): Promise<number> => {
 
 // Load store data
 useEffect(() => {
-const stored = sessionStorage.getItem('vendorWalletAddress');
-const storeData = sessionStorage.getItem('storeData');
+const stored = safeGetItem('vendorWalletAddress');
+const storeData = safeGetItem('storeData');
 if (!stored) {
 router.push('/dashboard');
 return;
@@ -272,7 +273,7 @@ if (data.success && data.store) {
 setStoreLogo(data.store.logo_url || null);
 // Update session storage with fresh data
 const updatedStore = { ...store, logo_url: data.store.logo_url };
-sessionStorage.setItem('storeData', JSON.stringify(updatedStore));
+safeSetItem('storeData', JSON.stringify(updatedStore));
           }
         })
         .catch(err => console.error('Failed to fetch store:', err));
@@ -862,11 +863,11 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (data.success) {
       setStoreLogo(logoUrl);
       // Update session storage
-      const storeData = sessionStorage.getItem('storeData');
+      const storeData = safeGetItem('storeData');
       if (storeData) {
         const store = JSON.parse(storeData);
         store.logo_url = logoUrl;
-        sessionStorage.setItem('storeData', JSON.stringify(store));
+        safeSetItem('storeData', JSON.stringify(store));
       }
       setShowLogoUpload(false);
     } else {
@@ -893,11 +894,11 @@ wallet_address: walletAddress
     });
 if (res.ok) {
 setStoreLogo(null);
-const storeData = sessionStorage.getItem('storeData');
+const storeData = safeGetItem('storeData');
 if (storeData) {
 const store = JSON.parse(storeData);
 store.logo_url = null;
-sessionStorage.setItem('storeData', JSON.stringify(store));
+safeSetItem('storeData', JSON.stringify(store));
       }
 setShowLogoUpload(false);
     }
@@ -911,7 +912,7 @@ setUploadingLogo(false);
 const setupWalletForPayments = async () => {
   setSettingUpWallet(true);
   try {
-    const loginMethod = sessionStorage.getItem('loginMethod');
+    const loginMethod = safeGetItem('loginMethod');
     
     if (loginMethod === 'web3auth') {
       const { getWeb3Auth } = await import('@/lib/web3auth');
@@ -1777,6 +1778,7 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
     tipAmount={tipAmount}
     conversionRate={conversionRate || undefined}
     storeLogo={storeLogo || undefined}
+    walletAddress={walletAddress || undefined}
   />
 
   <button
@@ -1974,7 +1976,7 @@ setError(error);
       <button
         onClick={() => {
           setActiveStaff(null);
-          sessionStorage.removeItem('activeStaff');
+          safeRemoveItem('activeStaff');
           setShowStaffModal(false);
         }}
         className={`w-full flex items-center gap-3 px-4 py-4 border-b border-zinc-800 transition ${!activeStaff ? 'bg-zinc-800' : ''}`}
@@ -2002,7 +2004,7 @@ setError(error);
         onSelect={(staff) => {
           setActiveStaff(staff);
           if (staff) {
-            sessionStorage.setItem('activeStaff', JSON.stringify(staff));
+            safeSetItem('activeStaff', JSON.stringify(staff));
           }
           setShowStaffModal(false);
         }}

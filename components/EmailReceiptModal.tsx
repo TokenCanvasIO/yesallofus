@@ -18,6 +18,7 @@ interface EmailReceiptModalProps {
     source: string;
     captured_at: string;
   };
+  walletAddress?: string;
 }
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
@@ -33,7 +34,8 @@ export default function EmailReceiptModal({
   rlusdAmount,
   items,
   tipAmount,
-  conversionRate
+  conversionRate,
+  walletAddress
 }: EmailReceiptModalProps) {
   const [emailAddress, setEmailAddress] = useState('');
   const [sending, setSending] = useState(false);
@@ -65,7 +67,13 @@ export default function EmailReceiptModal({
 };
 
       if (receiptId) {
-        const res = await fetch(`${API_URL}/receipts/${receiptId}`);
+        const url = walletAddress
+          ? `${API_URL}/receipts/${receiptId}?wallet_address=${walletAddress}`
+          : `${API_URL}/receipts/${receiptId}`;
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(`Failed to fetch receipt: ${res.status}`);
+        }
         const data = await res.json();
         if (data.success && data.receipt) {
           const r = data.receipt;
@@ -86,11 +94,15 @@ export default function EmailReceiptModal({
         }
       }
 
-      await fetch(`${API_URL}/receipt/email`, {
+      const emailRes = await fetch(`${API_URL}/receipt/email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+
+      if (!emailRes.ok) {
+        throw new Error(`Failed to send email: ${emailRes.status}`);
+      }
 
       setSent(true);
       setTimeout(() => {

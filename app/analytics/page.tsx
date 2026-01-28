@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import { safeGetItem } from '@/lib/safeStorage';
 import { useRouter } from 'next/navigation';
 import NebulaBackground from '@/components/NebulaBackground';
 
@@ -45,8 +46,8 @@ function AnalyticsPage() {
 
   // Load store data
   useEffect(() => {
-    const stored = sessionStorage.getItem('vendorWalletAddress');
-    const storeData = sessionStorage.getItem('storeData');
+    const stored = safeGetItem('vendorWalletAddress');
+    const storeData = safeGetItem('storeData');
     
     if (!stored) {
       router.push('/dashboard');

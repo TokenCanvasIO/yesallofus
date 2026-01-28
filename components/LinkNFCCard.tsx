@@ -25,6 +25,7 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
   const [editName, setEditName] = useState('');
   const [nfcSupported, setNfcSupported] = useState(true);
   const [soundRegistered, setSoundRegistered] = useState(false);
+  const [nfcController, setNfcController] = useState<AbortController | null>(null);
 
   const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
@@ -92,6 +93,15 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
     setLoading(false);
   };
 
+  // Stop any existing NFC scan
+  const stopNFCScan = () => {
+    if (nfcController) {
+      nfcController.abort();
+      setNfcController(null);
+    }
+    setScanning(false);
+  };
+
   const startNFCScan = async () => {
     setError(null);
     setSuccess(null);
@@ -101,15 +111,24 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
       return;
     }
 
+    // Abort any existing scan first
+    stopNFCScan();
+
+    const controller = new AbortController();
+    setNfcController(controller);
     setScanning(true);
 
     try {
       const ndef = new (window as any).NDEFReader();
-      await ndef.scan();
+      await ndef.scan({ signal: controller.signal });
 
       ndef.addEventListener('reading', async (event: any) => {
+        // Abort to prevent duplicate reads
+        controller.abort();
+        setNfcController(null);
+
         const serialNumber = event.serialNumber;
-        
+
         if (!serialNumber) {
           setError('Could not read card. Please try again.');
           setScanning(false);
@@ -119,15 +138,19 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
         const cardUid = serialNumber.replace(/:/g, '').toUpperCase();
         await linkCard(cardUid);
         setScanning(false);
-      });
+      }, { signal: controller.signal });
 
       ndef.addEventListener('readingerror', () => {
         setError('Error reading card. Please try again.');
-        setScanning(false);
-      });
+        stopNFCScan();
+      }, { signal: controller.signal });
 
     } catch (err: any) {
       console.error('NFC error:', err);
+      if (err.name === 'AbortError') {
+        // User cancelled - ignore
+        return;
+      }
       if (err.name === 'NotAllowedError') {
         setError('NFC permission denied. Please allow NFC access.');
       } else if (err.name === 'NotSupportedError') {
@@ -135,7 +158,7 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
       } else {
         setError('Failed to start NFC scan. Make sure NFC is enabled.');
       }
-      setScanning(false);
+      stopNFCScan();
     }
   };
 
@@ -425,7 +448,7 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
           <p className="text-emerald-400 font-medium mb-2">Ready to scan</p>
           <p className="text-zinc-400 text-sm mb-4">Hold your NFC card near the back of your phone</p>
           <button
-            onClick={() => setScanning(false)}
+            onClick={stopNFCScan}
             className="text-zinc-500 hover:text-white text-sm transition"
           >
             Cancel

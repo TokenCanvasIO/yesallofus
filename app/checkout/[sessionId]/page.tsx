@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { safeGetItem, safeSetItem } from '@/lib/safeStorage';
 import { useParams } from 'next/navigation';
 import NebulaBackground from '@/components/NebulaBackground';
 import PaymentOptions from '@/components/PaymentOptions';
@@ -80,7 +81,7 @@ useEffect(() => {
     try {
       // Check if user has a connected wallet
       const walletAddress = localStorage.getItem('yesallofus_wallet') || 
-                           sessionStorage.getItem('walletAddress');
+                           safeGetItem('walletAddress');
       
       if (!walletAddress) {
         setUserStatus('new');
@@ -237,7 +238,7 @@ useEffect(() => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tx_hash: hash,
-          payer_wallet: sessionStorage.getItem('walletAddress'),
+          payer_wallet: safeGetItem('walletAddress'),
           payment_method: 'web3auth',
           tip_amount: tipAmount
         })
@@ -379,6 +380,7 @@ useEffect(() => {
                 items={session.items}
                 tipAmount={tipAmount}
                 storeLogo={session.store_logo || undefined}
+                walletAddress={safeGetItem('walletAddress') || undefined}
               />
             </div>
 

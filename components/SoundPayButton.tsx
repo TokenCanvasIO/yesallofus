@@ -117,28 +117,34 @@ export default function SoundPayButton({
 
       // 2. Update display to soundpay status
       const displayCart = items ? items.map(item => ({
-  name: item.name,
-  quantity: item.quantity,
-  price: item.unit_price,
-  emoji: item.emoji || '📦'
-})) : [];
-      
-      fetch(`${API_URL}/display/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          store_id: storeId,
-          store_name: storeName,
-          cart: displayCart,
-          total: totalAmount,
-          status: 'soundpay',
-          tip: tipAmount,
-          vendor_wallet: vendorWallet,
-          payment_id: paymentId,
-        }),
-      }).catch(err => console.error('Display update failed:', err));
+        name: item.name,
+        quantity: item.quantity,
+        price: item.unit_price,
+        emoji: item.emoji || '📦'
+      })) : [];
+
+      try {
+        await fetch(`${API_URL}/display/update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            store_id: storeId,
+            store_name: storeName,
+            cart: displayCart,
+            total: totalAmount,
+            status: 'soundpay',
+            tip: tipAmount,
+            vendor_wallet: vendorWallet,
+            payment_id: paymentId,
+          }),
+        });
+      } catch (err) {
+        console.error('Display update failed:', err);
+        // Continue anyway - display update is non-critical
+      }
 
       // 3. Callback with payment ID - parent handles state change
+      // Only reset to idle after all operations complete
       setStatus('idle');
       onPaymentCreated?.(paymentId);
 

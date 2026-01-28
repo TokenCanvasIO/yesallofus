@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, JSX } from 'react';
+import { safeGetItem } from '@/lib/safeStorage';
 import { useRouter } from 'next/navigation';
 import DashboardHeader from '@/components/DashboardHeader';
 
@@ -92,7 +93,7 @@ export default function EarnAnalyticsPage() {
               <button
                 onClick={() => {
                   // Try to go back to dashboard - check sessionStorage for login type
-                  const vendorWallet = sessionStorage.getItem('vendorWalletAddress');
+                  const vendorWallet = safeGetItem('vendorWalletAddress');
                   if (vendorWallet) {
                     router.push('/dashboard');
                   } else {

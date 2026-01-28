@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
+import { safeGetItem } from '@/lib/safeStorage';
 import InstantPay from '@/components/InstantPay';
 import { QRCodeSVG } from 'qrcode.react';
 import ReceiptActions from '@/components/ReceiptActions';
@@ -59,6 +60,13 @@ export default function PayPage() {
   const [currentSplitIndex, setCurrentSplitIndex] = useState(0);
   const [splitting, setSplitting] = useState(false);
   const [allPaid, setAllPaid] = useState(false);
+
+  // Ref for currentSplitIndex to avoid stale closures in event handlers
+  const currentSplitIndexRef = useRef(currentSplitIndex);
+  currentSplitIndexRef.current = currentSplitIndex;
+
+  // Ref to prevent TOCTOU race in split creation
+  const splitCreationInProgress = useRef(false);
 
   // Xaman QR state
   const [xamanQR, setXamanQR] = useState<string | null>(null);
@@ -184,7 +192,7 @@ useEffect(() => {
           if (data.receipt_id) setReceiptId(data.receipt_id);
           setXamanQR(null);
           setXamanPaymentId(null);
-          
+
           // Mark payment as paid in our system
           const payRes = await fetch(`${API_URL}/payment-link/${getCurrentPaymentId()}/pay`, {
             method: 'POST',
@@ -194,8 +202,9 @@ useEffect(() => {
           const payData = await payRes.json();
           if (payData.receipt_id) setReceiptId(payData.receipt_id);
 
-          // Move to next split or show success
-          if (splits && currentSplitIndex < splits.length - 1) {
+          // Move to next split or show success - use ref for fresh value
+          const splitIdx = currentSplitIndexRef.current;
+          if (splits && splitIdx < splits.length - 1) {
             setCurrentSplitIndex(prev => prev + 1);
           } else {
             setAllPaid(true);
@@ -213,7 +222,7 @@ useEffect(() => {
     }, 2000);
 
     return () => clearInterval(pollInterval);
-  }, [xamanPaymentId, splits, currentSplitIndex]);
+  }, [xamanPaymentId, splits]);
 
   // Save tip to backend when changed
   useEffect(() => {
@@ -321,13 +330,14 @@ useEffect(() => {
         setNfcController(null);
         setProcessing(true);
 
-        // Get the current payment ID at the moment of scan
-        const currentPaymentId = splits && splits.length > 0 
-          ? splits[currentSplitIndex]?.payment_id 
+        // Get the current payment ID at the moment of scan using ref for fresh value
+        const splitIdx = currentSplitIndexRef.current;
+        const currentPaymentId = splits && splits.length > 0
+          ? splits[splitIdx]?.payment_id
           : paymentId;
-          
+
         // Check if this split is already paid
-        if (splits && splits[currentSplitIndex]?.status === 'paid') {
+        if (splits && splits[splitIdx]?.status === 'paid') {
           setError(null);
           setProcessing(false);
           return;
@@ -347,19 +357,20 @@ useEffect(() => {
   setReceiptId(result.receipt_id);
   setError(null);
   
-  // Mark current split as paid
+  // Mark current split as paid using ref for fresh value
+  const paidIdx = currentSplitIndexRef.current;
   if (splits) {
-    setSplits(prev => prev!.map((s, idx) => 
-      idx === currentSplitIndex ? { ...s, status: 'paid' } : s
+    setSplits(prev => prev!.map((s, idx) =>
+      idx === paidIdx ? { ...s, status: 'paid' } : s
     ));
   }
-  
+
   // Show success toast
   setShowToast(true);
   setTimeout(() => setShowToast(false), 2500);
-  
+
   // Move to next split or show success
-  if (splits && currentSplitIndex < splits.length - 1) {
+  if (splits && paidIdx < splits.length - 1) {
     setTimeout(() => {
       setCurrentSplitIndex(prev => prev + 1);
     }, 800);
@@ -403,10 +414,15 @@ useEffect(() => {
 
   // Handle split bill
 const handleSplitBill = async () => {
+  // Prevent TOCTOU: check and set atomically with ref
+  if (splitCreationInProgress.current) return;
+  splitCreationInProgress.current = true;
+
   // Prevent if already split
   if (payment?.status === 'split' || splits) {
     setError('This bill has already been split');
     setShowSplitModal(false);
+    splitCreationInProgress.current = false;
     return;
   }
 
@@ -438,6 +454,7 @@ const handleSplitBill = async () => {
       setError('Failed to split bill');
     } finally {
       setSplitting(false);
+      splitCreationInProgress.current = false;
     }
   };
 
@@ -505,11 +522,12 @@ const handleSplitBill = async () => {
         txHash={txHash || undefined}
         receiptId={receiptId || payment?.receipt_id || undefined}
         rlusdAmount={rlusdAmount || undefined}
-conversionRate={conversionRate || undefined}
-items={payment?.items || []}
+        conversionRate={conversionRate || undefined}
+        items={payment?.items || []}
         isSplit={!!(splits && splits.length > 0)}
         splitAmount={splits ? getCurrentAmount() : undefined}
         splitTip={splits ? (payment?.customer_tip || payment?.tip || 0) : undefined}
+        walletAddress={safeGetItem('walletAddress')}
       />
     );
   }
@@ -959,8 +977,8 @@ onClick={startNFCScan}
               <div className="flex justify-between font-bold text-lg">
                 <span>Each pays</span>
                 <span className="text-emerald-400">
- £{((payment?.amount || 0) / splitCount).toFixed(3)}
-</span>
+                  £{((payment?.amount || 0) / splitCount).toFixed(2)}
+                </span>
               </div>
             </div>
 
