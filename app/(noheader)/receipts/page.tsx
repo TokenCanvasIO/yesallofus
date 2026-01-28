@@ -5,6 +5,9 @@ import { useState, useEffect, Suspense } from 'react';
 import { safeGetItem } from '@/lib/safeStorage';
 import { useRouter, useSearchParams } from 'next/navigation';
 import NebulaBackground from '@/components/NebulaBackground'; // adjust path as needed
+
+// Email validation regex
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 interface ReceiptItem {
 name: string;
 quantity: number;
@@ -820,7 +823,7 @@ const exportPDF = () => {
             </button>
             <button
               onClick={async () => {
-                if (!emailAddress || !emailAddress.includes('@')) return;
+                if (!emailAddress || !isValidEmail(emailAddress)) return;
                 setSendingEmail(true);
                 try {
                   const res = await fetch(`${API_URL}/receipt/email`, {

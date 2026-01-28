@@ -110,9 +110,12 @@ export default function SendPaymentLink({
     }
   };
 
+  // Email validation regex
+  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
   // Send via email
   const sendEmail = async () => {
-    if (!email || !email.includes('@')) {
+    if (!email || !isValidEmail(email)) {
       setError('Please enter a valid email');
       return;
     }

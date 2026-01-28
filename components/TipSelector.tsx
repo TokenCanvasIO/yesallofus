@@ -7,6 +7,9 @@ interface TipSelectorProps {
   onTipChange: (tip: number) => void;
 }
 
+// Maximum tip amount to prevent accidental large tips
+const MAX_TIP = 999.99;
+
 export default function TipSelector({ amount, onTipChange }: TipSelectorProps) {
   const [selectedPercent, setSelectedPercent] = useState<number | null>(null);
   const [customTip, setCustomTip] = useState('');
@@ -28,7 +31,9 @@ export default function TipSelector({ amount, onTipChange }: TipSelectorProps) {
   const handleCustomTip = (value: string) => {
     setCustomTip(value);
     setSelectedPercent(null);
-    const tipAmount = parseFloat(value) || 0;
+    // Clamp tip between 0 and MAX_TIP to prevent accidental large tips
+    const parsed = parseFloat(value) || 0;
+    const tipAmount = Math.max(0, Math.min(parsed, MAX_TIP));
     onTipChange(tipAmount);
   };
 
@@ -72,12 +77,14 @@ export default function TipSelector({ amount, onTipChange }: TipSelectorProps) {
     setSelectedPercent(null);
   }}
   onBlur={(e) => {
-    const tipAmount = parseFloat(e.target.value) || 0;
+    const parsed = parseFloat(e.target.value) || 0;
+    const tipAmount = Math.max(0, Math.min(parsed, MAX_TIP));
     onTipChange(tipAmount);
   }}
   onKeyDown={(e) => {
     if (e.key === 'Enter') {
-      const tipAmount = parseFloat(customTip) || 0;
+      const parsed = parseFloat(customTip) || 0;
+      const tipAmount = Math.max(0, Math.min(parsed, MAX_TIP));
       onTipChange(tipAmount);
       (e.target as HTMLInputElement).blur();
     }

@@ -23,6 +23,9 @@ interface EmailReceiptModalProps {
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
+// Email validation regex
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 export default function EmailReceiptModal({
   isOpen,
   onClose,
@@ -45,7 +48,7 @@ export default function EmailReceiptModal({
   if (!isOpen) return null;
 
   const handleSend = async () => {
-    if (!emailAddress || !emailAddress.includes('@')) {
+    if (!emailAddress || !isValidEmail(emailAddress)) {
       setError('Please enter a valid email address');
       return;
     }

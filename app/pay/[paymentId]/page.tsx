@@ -13,6 +13,9 @@ import SoundPay from '@/components/SoundPay'
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
 
+// Valid payment ID pattern (alphanumeric, underscores, hyphens)
+const VALID_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
 interface PaymentData {
   payment_id: string;
   store_id: string;
@@ -44,11 +47,14 @@ interface SplitData {
 
 export default function PayPage() {
   const params = useParams();
-  const paymentId = params.paymentId as string;
+  const rawPaymentId = params.paymentId as string;
+
+  // Validate payment ID to prevent injection attacks
+  const paymentId = VALID_ID_PATTERN.test(rawPaymentId) ? rawPaymentId : '';
 
   const [payment, setPayment] = useState<PaymentData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(paymentId ? null : 'Invalid payment ID');
   const [processing, setProcessing] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [receiptId, setReceiptId] = useState<string | null>(null);
@@ -83,11 +89,16 @@ export default function PayPage() {
   const [liveRate, setLiveRate] = useState<number | null>(null);
   const [rlusdAmount, setRlusdAmount] = useState<number | null>(null);
 const [priceAge, setPriceAge] = useState<number>(0);
+const [rateStale, setRateStale] = useState(false); // M5: Track if rate is stale
 const [conversionRate, setConversionRate] = useState<{
   rlusd_gbp: number;
   source: string;
   captured_at: string;
 } | null>(null);
+
+// M6: Ref for amount to reduce useEffect dependency churn
+const amountRef = useRef<number>(0);
+
 // Split success message
   const [showToast, setShowToast] = useState(false);
 
@@ -101,34 +112,38 @@ const [conversionRate, setConversionRate] = useState<{
   // Tip selector
   const [tipAmount, setTipAmount] = useState(0);
 
-  // Fetch live conversion rate
+  // Fetch live conversion rate - M6: Use ref to reduce dependency churn
   useEffect(() => {
     const fetchRate = async () => {
       const amount = getCurrentAmount();
+      amountRef.current = amount;
       if (amount <= 0) return;
-      
+
       try {
         const res = await fetch(`https://api.dltpays.com/convert/gbp-to-rlusd?amount=${amount}&capture=true`);
         const data = await res.json();
         if (data.success) {
-  setLiveRate(data.rate.gbp_to_rlusd);
-  setRlusdAmount(data.rlusd);
-  setPriceAge(data.price_age_ms);
-  setConversionRate({
-    rlusd_gbp: data.rate.rlusd_gbp || (1 / data.rate.gbp_to_rlusd),
-    source: data.rate.source || 'CoinGecko Pro API',
-    captured_at: data.rate.captured_at || new Date().toISOString()
-  });
-}
+          setLiveRate(data.rate.gbp_to_rlusd);
+          setRlusdAmount(data.rlusd);
+          setPriceAge(data.price_age_ms);
+          // M5: Check if rate is stale (> 30 seconds old)
+          setRateStale(data.price_age_ms > 30000);
+          setConversionRate({
+            rlusd_gbp: data.rate.rlusd_gbp || (1 / data.rate.gbp_to_rlusd),
+            source: data.rate.source || 'CoinGecko Pro API',
+            captured_at: data.rate.captured_at || new Date().toISOString()
+          });
+        }
       } catch (err) {
         console.error('Rate fetch error:', err);
+        setRateStale(true); // Mark as stale on fetch error
       }
     };
 
     fetchRate();
     const interval = setInterval(fetchRate, 10000); // Refresh every 10s
     return () => clearInterval(interval);
-  }, [payment, splits, currentSplitIndex]);
+  }, [payment, splits]);
 
   // Convert GBP to RLUSD
   const convertGBPtoRLUSD = async (gbpAmount: number): Promise<number> => {
@@ -593,8 +608,17 @@ const handleSplitBill = async () => {
               <span className="text-xs text-zinc-500">Live rate from CoinGecko Pro</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-              <span className="text-xs text-emerald-500 font-medium">LIVE</span>
+              {rateStale ? (
+                <>
+                  <div className="w-2 h-2 bg-amber-500 rounded-full" />
+                  <span className="text-xs text-amber-500 font-medium">STALE</span>
+                </>
+              ) : (
+                <>
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                  <span className="text-xs text-emerald-500 font-medium">LIVE</span>
+                </>
+              )}
             </div>
           </div>
           
@@ -621,6 +645,18 @@ const handleSplitBill = async () => {
               <span className="text-zinc-400 font-medium">Live price.</span> Updated every 10s via CoinGecko Pro (600+ exchanges). Settlement variance &lt;0.1%.
             </p>
           </div>
+
+          {/* M5: Rate staleness warning */}
+          {rateStale && (
+            <div className="mt-3 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 flex items-start gap-2">
+              <svg className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p className="text-xs text-amber-400">
+                Rate data is stale. Please wait for fresh pricing before completing payment.
+              </p>
+            </div>
+          )}
         </div>
 
         {error && (

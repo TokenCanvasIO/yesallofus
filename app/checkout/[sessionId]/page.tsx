@@ -13,6 +13,9 @@ import AutoSignModal from '@/components/AutoSignModal';
 
 const API_URL = 'https://api.dltpays.com/plugins/api/v1';
 
+// Valid session ID pattern (alphanumeric, underscores, hyphens)
+const VALID_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
 interface CheckoutSession {
   session_id: string;
   platform: string;
@@ -43,11 +46,14 @@ interface SplitData {
 
 export default function CheckoutPage() {
   const params = useParams();
-  const sessionId = params.sessionId as string;
+  const rawSessionId = params.sessionId as string;
+
+  // Validate session ID to prevent injection attacks
+  const sessionId = VALID_ID_PATTERN.test(rawSessionId) ? rawSessionId : '';
 
   const [session, setSession] = useState<CheckoutSession | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(sessionId ? null : 'Invalid session ID');
   const [showAutoSignModal, setShowAutoSignModal] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [receiptId, setReceiptId] = useState<string | null>(null);
