@@ -2,6 +2,27 @@
 
 import { useState } from 'react';
 
+// L7: Map technical errors to user-friendly messages
+const sanitizeError = (error: string): string => {
+  if (error.includes('tec') || error.includes('tem') || error.includes('tef')) {
+    return 'Transaction failed. Please try again.';
+  }
+  if (error.includes('timeout') || error.includes('Timeout')) {
+    return 'Request timed out. Please try again.';
+  }
+  if (error.includes('network') || error.includes('Network') || error.includes('fetch')) {
+    return 'Network error. Please check your connection.';
+  }
+  if (error.includes('User rejected') || error.includes('user rejected')) {
+    return 'Setup cancelled.';
+  }
+  // Avoid exposing internal errors
+  if (error.length > 100 || error.includes('Error:') || error.includes('at ')) {
+    return 'Setup failed. Please try again.';
+  }
+  return error;
+};
+
 interface AutoSignModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -125,7 +146,8 @@ export default function AutoSignModal({
 
     } catch (err: any) {
       console.error('AutoSign setup error:', err);
-      setError(err.message || 'Failed to set up wallet');
+      // L7: Sanitize error to prevent info disclosure
+      setError(sanitizeError(err.message || 'Failed to set up wallet'));
       setStep('login');
     }
     setLoading(false);

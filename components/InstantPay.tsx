@@ -6,6 +6,29 @@ import AutoSignModal from './AutoSignModal';
 const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1';
 const PLUGINS_API_URL = 'https://api.dltpays.com/plugins/api/v1';
 
+// L7: Map technical errors to user-friendly messages
+const sanitizeError = (error: string): string => {
+  // Known error codes that should pass through
+  if (['INSUFFICIENT_FUNDS', 'SELF_PAYMENT_NOT_ALLOWED', 'WALLET_NOT_READY'].includes(error)) {
+    return error;
+  }
+  // Map technical errors to friendly messages
+  if (error.includes('tec') || error.includes('tem') || error.includes('tef')) {
+    return 'Transaction failed. Please try again.';
+  }
+  if (error.includes('timeout') || error.includes('Timeout')) {
+    return 'Request timed out. Please try again.';
+  }
+  if (error.includes('network') || error.includes('Network') || error.includes('fetch')) {
+    return 'Network error. Please check your connection.';
+  }
+  // Avoid exposing internal errors
+  if (error.length > 100 || error.includes('Error:') || error.includes('at ')) {
+    return 'Payment failed. Please try again.';
+  }
+  return error;
+};
+
 interface InstantPayProps {
   amount: number;
   rlusdAmount: number;
@@ -152,7 +175,8 @@ export default function InstantPay({
         }
         onError('INSUFFICIENT_FUNDS');
       } else {
-        onError(errorMsg);
+        // L7: Sanitize error to prevent info disclosure
+        onError(sanitizeError(errorMsg));
       }
     } finally {
       setPaying(false);
@@ -204,7 +228,8 @@ export default function InstantPay({
       ) {
         onError('INSUFFICIENT_FUNDS');
       } else {
-        onError(errorMsg);
+        // L7: Sanitize error to prevent info disclosure
+        onError(sanitizeError(errorMsg));
       }
     } finally {
       setLoading(false);

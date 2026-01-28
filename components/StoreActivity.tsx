@@ -59,16 +59,27 @@ export default function StoreActivity({ storeId, walletAddress, showAmounts = fa
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [affRes, payRes] = await Promise.all([
+      // L4: Use Promise.allSettled to handle partial failures gracefully
+      const [affResult, payResult] = await Promise.allSettled([
         fetch(`${API_URL}/store/${storeId}/affiliates?wallet=${walletAddress}`),
         fetch(`${API_URL}/store/${storeId}/payouts?wallet=${walletAddress}`)
       ]);
-      
-      const affData = await affRes.json();
-      const payData = await payRes.json();
-      
-      if (affData.success) setAffiliates(affData.affiliates || []);
-      if (payData.success) setPayments(payData.payouts || []);
+
+      // Handle affiliates response
+      if (affResult.status === 'fulfilled') {
+        const affData = await affResult.value.json();
+        if (affData.success) setAffiliates(affData.affiliates || []);
+      } else {
+        console.error('Failed to fetch affiliates:', affResult.reason);
+      }
+
+      // Handle payouts response
+      if (payResult.status === 'fulfilled') {
+        const payData = await payResult.value.json();
+        if (payData.success) setPayments(payData.payouts || []);
+      } else {
+        console.error('Failed to fetch payouts:', payResult.reason);
+      }
     } catch (err) {
       console.error('Failed to fetch activity:', err);
     }

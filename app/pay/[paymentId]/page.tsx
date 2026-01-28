@@ -74,6 +74,9 @@ export default function PayPage() {
   // Ref to prevent TOCTOU race in split creation
   const splitCreationInProgress = useRef(false);
 
+  // L3: Track consecutive poll failures
+  const pollFailureCount = useRef(0);
+
   // Xaman QR state
   const [xamanQR, setXamanQR] = useState<string | null>(null);
   const [xamanPaymentId, setXamanPaymentId] = useState<string | null>(null);
@@ -197,10 +200,16 @@ useEffect(() => {
   useEffect(() => {
     if (!xamanPaymentId) return;
 
+    // L3: Reset failure count when starting new poll
+    pollFailureCount.current = 0;
+
     const pollInterval = setInterval(async () => {
       try {
         const res = await fetch(`https://api.dltpays.com/api/v1/xaman/payment/poll/${xamanPaymentId}`);
         const data = await res.json();
+
+        // L3: Reset failure count on successful poll
+        pollFailureCount.current = 0;
 
         if (data.status === 'signed') {
           setTxHash(data.tx_hash);
@@ -232,7 +241,12 @@ useEffect(() => {
           setXamanPaymentId(null);
         }
       } catch (err) {
-        console.error('Poll error:', err);
+        // L3: Track consecutive failures and show error after 3
+        pollFailureCount.current++;
+        console.error('Poll error:', err, `(failure ${pollFailureCount.current})`);
+        if (pollFailureCount.current >= 3) {
+          setError('Connection lost. Please check your payment in Xaman and refresh.');
+        }
       }
     }, 2000);
 
@@ -244,13 +258,19 @@ useEffect(() => {
     const saveTip = async () => {
       if (tipAmount > 0) {
         try {
-          await fetch(`${API_URL}/payment-link/${getCurrentPaymentId()}/tip`, {
+          const res = await fetch(`${API_URL}/payment-link/${getCurrentPaymentId()}/tip`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tip_amount: tipAmount })
           });
-          console.log('💰 Tip saved:', tipAmount);
+          if (!res.ok) {
+            console.error('Tip save failed:', res.status);
+            // L1: Don't block payment for tip save failure, just log
+          } else {
+            console.log('💰 Tip saved:', tipAmount);
+          }
         } catch (err) {
+          // L1: Log but don't block - tip save is non-critical
           console.error('Failed to save tip:', err);
         }
       }

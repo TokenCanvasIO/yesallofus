@@ -93,14 +93,22 @@ useEffect(() => {
 }, [data?.tip]);
 
 // Send tip to API and confirm payment
-const addTip = (tipAmount: number) => {
+const addTip = async (tipAmount: number) => {
   setSelectedTip(tipAmount);
-  
-  fetch(`${API_URL}/display/${storeId}/tip`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tip: tipAmount })
-  }).catch(err => console.error('Failed to add tip:', err));
+
+  // L5: Await tip update and handle errors
+  try {
+    const res = await fetch(`${API_URL}/display/${storeId}/tip`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tip: tipAmount })
+    });
+    if (!res.ok) {
+      console.error('Failed to add tip:', res.status);
+    }
+  } catch (err) {
+    console.error('Failed to add tip:', err);
+  }
 };
 
 const startNFCPayment = async () => {

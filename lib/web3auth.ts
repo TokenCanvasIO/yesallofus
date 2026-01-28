@@ -2,7 +2,8 @@
 // Web3Auth must be imported dynamically due to SSR issues
 // See: https://web3auth.io/docs/troubleshooting/different-methods#nextjs
 
-export const WEB3AUTH_CLIENT_ID = "BJammoKWeysr0S4Nk7J0WxyYHnfFw1Jscfgwx3iuvwI4GEMJCCz1iQ_wtbd40MDLrcf_xaXbi7AVif0MCv19Fk4";
+// L6: Use environment variable for Web3Auth client ID
+export const WEB3AUTH_CLIENT_ID = process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID || "BJammoKWeysr0S4Nk7J0WxyYHnfFw1Jscfgwx3iuvwI4GEMJCCz1iQ_wtbd40MDLrcf_xaXbi7AVif0MCv19Fk4";
 
 // Cache instance so withdraw can reuse the connected session
 let web3authInstance: any = null;
