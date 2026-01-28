@@ -19,6 +19,7 @@ interface ReceiptActionsProps {
   };
   storeLogo?: string;
   walletAddress?: string;
+  isSplit?: boolean;
 }
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
@@ -35,6 +36,7 @@ export default function ReceiptActions({
   conversionRate,
   storeLogo,
   walletAddress,
+  isSplit = false,
 }: ReceiptActionsProps) {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
@@ -110,18 +112,19 @@ export default function ReceiptActions({
       </div>
 
       <EmailReceiptModal
-  isOpen={showEmailModal}
-  onClose={() => setShowEmailModal(false)}
-  receiptId={receiptId}
-  txHash={txHash}
-  storeName={storeName}
-  storeId={storeId}
-  amount={amount}
-  rlusdAmount={rlusdAmount}
-  items={items}
-  tipAmount={tipAmount}
-  conversionRate={conversionRate}
-/>
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        receiptId={receiptId}
+        txHash={txHash}
+        storeName={storeName}
+        storeId={storeId}
+        amount={amount}
+        rlusdAmount={rlusdAmount}
+        items={items}
+        tipAmount={tipAmount}
+        conversionRate={conversionRate}
+        walletAddress={walletAddress}
+      />
 
       {/* Print Preview Modal */}
       {showPrintPreview && (

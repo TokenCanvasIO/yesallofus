@@ -133,19 +133,20 @@ export default function PaymentSuccess({
           </a>
         )}
 
-        {/* Receipt Actions - FIXED: Pass conversionRate properly */}
+        {/* Receipt Actions - Pass split-adjusted amount for split payments */}
         <ReceiptActions
           receiptId={receiptId || undefined}
           txHash={txHash || undefined}
           storeName={storeName}
           storeId={storeId}
-          amount={amount}
+          amount={displayAmount}
           rlusdAmount={rlusdAmount || undefined}
           items={items}
           tipAmount={displayTip}
           conversionRate={conversionRate || undefined}
           storeLogo={storeLogo || undefined}
           walletAddress={walletAddress || undefined}
+          isSplit={isSplit}
         />
 
         {/* Footer Branding */}

@@ -19,6 +19,11 @@ interface PaymentData {
   tip?: number;
   items?: Array<{ name: string; quantity: number; unit_price: number }>;
   rlusd_amount?: number;
+  conversion_rate?: {
+    rlusd_gbp: number;
+    source: string;
+    captured_at: string;
+  };
 }
 
 export default function SoundPaymentPage() {
@@ -150,6 +155,7 @@ const [countdown, setCountdown] = useState<string | null>(null);
                 tip: data.tip_amount || data.tip || 0,
                 items: data.items,
                 rlusd_amount: data.rlusd_amount || data.amount_rlusd,
+                conversion_rate: data.conversion_rate,
               });
               
               setStatus('success');
@@ -431,6 +437,7 @@ const [countdown, setCountdown] = useState<string | null>(null);
               rlusdAmount={paymentData?.rlusd_amount}
               items={paymentData?.items}
               tipAmount={paymentData?.tip || 0}
+              conversionRate={paymentData?.conversion_rate}
               storeLogo={paymentData?.store_logo}
               walletAddress={safeGetItem('walletAddress') || undefined}
             />
