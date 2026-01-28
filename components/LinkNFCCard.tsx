@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { authenticatedFetch } from '@/lib/walletAuth';
 
 interface Card {
   card_uid: string;
@@ -164,7 +165,8 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
 
   const linkCard = async (cardUid: string) => {
     try {
-      const res = await fetch(`${NFC_API_URL}/nfc/link-card`, {
+      // Use authenticated fetch for protected endpoint
+      const res = await authenticatedFetch(walletAddress, `${NFC_API_URL}/nfc/link-card`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -195,7 +197,8 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
     if (!confirm(`Remove "${displayName}"? You will need to tap it again to re-link.`)) return;
 
     try {
-      const res = await fetch(`${NFC_API_URL}/nfc/unlink-card`, {
+      // Use authenticated fetch for protected endpoint
+      const res = await authenticatedFetch(walletAddress, `${NFC_API_URL}/nfc/unlink-card`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

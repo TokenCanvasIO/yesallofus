@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/safeStorage';
+import { refreshWalletAuth } from '@/lib/walletAuth';
 import BackgroundVideo from './BackgroundVideo';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
@@ -149,11 +150,14 @@ const completeCustomerSignup = async (wallet: string) => {
           
           safeSetItem(walletKey, data.wallet_address);
           safeSetItem(methodKey, 'xaman');
-          
+
+          // Refresh wallet auth token for protected API calls
+          await refreshWalletAuth(data.wallet_address);
+
           setConnecting('none');
           setXamanQR(null);
           setLoginId(null);
-          
+
           onLogin(data.wallet_address, 'xaman', { xamanUserToken: data.xaman_user_token });
           
         } else if (data.status === 'expired' || data.status === 'cancelled') {
@@ -246,10 +250,13 @@ const completeCustomerSignup = async (wallet: string) => {
       
       await handleStoreAutoJoin(address);
       await completeCustomerSignup(address);
-      
+
       safeSetItem(walletKey, address);
       safeSetItem(methodKey, 'crossmark');
-      
+
+      // Refresh wallet auth token for protected API calls
+      await refreshWalletAuth(address);
+
       onLogin(address, 'crossmark');
       
     } catch (err: any) {
@@ -281,11 +288,14 @@ const completeCustomerSignup = async (wallet: string) => {
       
       await handleStoreAutoJoin(address);
       await completeCustomerSignup(address);
-      
+
       safeSetItem(walletKey, address);
       safeSetItem(methodKey, 'web3auth');
       safeSetItem('socialProvider', provider);
-      
+
+      // Refresh wallet auth token for protected API calls
+      await refreshWalletAuth(address);
+
       onLogin(address, 'web3auth', { socialProvider: provider });
       
     } catch (err: any) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/safeStorage';
+import { authenticatedFetch, refreshWalletAuth } from '@/lib/walletAuth';
 import PayoutsTable from '@/components/PayoutsTable';
 import DashboardHeader from "@/components/DashboardHeader";
 import QRCodeModal from '@/components/QRCodeModal';
@@ -558,10 +559,26 @@ useEffect(() => {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch(`${API_URL}/affiliate/dashboard/${wallet}`);
+
+      // Use authenticated fetch for protected endpoint
+      const res = await authenticatedFetch(wallet, `${API_URL}/affiliate/dashboard/${wallet}`);
       const data = await res.json();
-      
+
       if (!res.ok) {
+        // If auth failed, try refreshing token and retry once
+        if (res.status === 401) {
+          await refreshWalletAuth(wallet);
+          const retryRes = await authenticatedFetch(wallet, `${API_URL}/affiliate/dashboard/${wallet}`);
+          const retryData = await retryRes.json();
+          if (retryRes.ok) {
+            setDashboardData(retryData);
+            if (retryData.stores.length === 0) {
+              setShowDiscover(true);
+              await fetchPublicStores();
+            }
+            return;
+          }
+        }
         if (res.status === 404) {
           setDashboardData(null);
           setShowDiscover(true);
@@ -668,7 +685,8 @@ useEffect(() => {
 const deleteAffiliateData = async () => {
   setDeleting(true);
   try {
-    const res = await fetch(`${API_URL}/affiliate/delete`, {
+    // Use authenticated fetch for protected endpoint
+    const res = await authenticatedFetch(walletAddress, `${API_URL}/affiliate/delete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
