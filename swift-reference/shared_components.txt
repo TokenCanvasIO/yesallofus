@@ -1,0 +1,458 @@
+================================================================================
+SHARED COMPONENTS, UTILITIES, AND LIBRARIES REFERENCE
+================================================================================
+Web project: /Users/markflynn/Local Sites/yesallofus/
+Generated: 2026-01-30
+================================================================================
+
+
+================================================================================
+1. lib/web3auth.ts - Web3Auth Authentication Provider
+================================================================================
+
+PURPOSE:
+  Provides XRPL wallet authentication via social login (Google, Apple, Discord,
+  GitHub, etc.) using Web3Auth Modal SDK. Dynamically imports to avoid SSR issues.
+  This is the PRIMARY login method for customers/affiliates ("Social Login").
+
+EXPORTS:
+  - WEB3AUTH_CLIENT_ID: string
+      Client ID for Web3Auth, sourced from NEXT_PUBLIC_WEB3AUTH_CLIENT_ID env var
+      Fallback: "BJammoKWeysr0S4Nk7J0WxyYHnfFw1Jscfgwx3iuvwI4GEMJCCz1iQ_wtbd40MDLrcf_xaXbi7AVif0MCv19Fk4"
+
+  - getWeb3Auth(): Promise<Web3Auth | null>
+      Returns cached Web3Auth instance. Creates and initializes if needed.
+      Returns null on server-side (typeof window === 'undefined').
+      Caches instance in module-level `web3authInstance` variable.
+
+  - loginWithWeb3Auth(): Promise<{ address: string; provider: string } | null>
+      Connects user via Web3Auth modal, returns XRPL address and social provider name.
+      Flow: getWeb3Auth() -> web3auth.connect() -> request xrpl_getAccounts -> getUserInfo()
+      Returns: { address: "rXXXX...", provider: "google" | "apple" | "discord" | etc. }
+
+  - logoutWeb3Auth(): Promise<void>
+      Disconnects Web3Auth session. Nulls cached instance.
+
+USED BY:
+  - LoginScreen.tsx (connectWeb3Auth flow)
+  - SoundPay.tsx (handleReceive - auto-login for payment)
+  - SoundPaymentPage.tsx (setupWallet on mount)
+  - InstantPay.tsx (customer login)
+  - OnboardingSetup.tsx (wallet setup wizard)
+  - affiliate-dashboard/page.tsx (wallet switching)
+
+FULL CONFIGURATION:
+  Chain: XRPL Mainnet
+  chainConfig = {
+    chainNamespace: "xrpl",
+    chainId: "0x1",
+    rpcTarget: "https://xrplcluster.com",
+    wsTarget: "wss://xrplcluster.com",
+    ticker: "XRP",
+    tickerName: "XRPL",
+    displayName: "XRPL Mainnet",
+    blockExplorerUrl: "https://livenet.xrpl.org",
+  }
+
+  Provider: XrplPrivateKeyProvider
+  Network: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET
+
+  Dependencies (dynamically imported):
+    - @web3auth/modal (Web3Auth)
+    - @web3auth/xrpl-provider (XrplPrivateKeyProvider)
+    - @web3auth/base (WEB3AUTH_NETWORK)
+
+iOS EQUIVALENT NOTES:
+  - Web3Auth has a native iOS SDK: @web3auth/swift-sdk
+  - Same client ID can be used
+  - Same XRPL chain config applies
+  - Social login providers are configured in the Web3Auth dashboard
+  - The iOS SDK handles OAuth natively (no browser popup needed)
+
+
+================================================================================
+2. lib/walletAuth.ts - HMAC Wallet Authentication
+================================================================================
+
+PURPOSE:
+  Provides HMAC-signed authentication headers for protected API endpoints.
+  Backend verifies wallet ownership via x-wallet-signature header.
+  Token is fetched from server and cached in-memory with auto-refresh.
+
+EXPORTS:
+  - refreshWalletAuth(walletAddress: string): Promise<boolean>
+      Fetches new auth token from POST /api/v1/wallet/auth-token
+      Caches in Map<string, WalletAuthToken> with expiry time.
+      Request body: { wallet_address: string }
+      Response: { success, signature, timestamp, expires_in }
+      Token cached for (expires_in - 60s) milliseconds.
+
+  - getWalletAuthHeaders(walletAddress: string): Record<string, string>
+      SYNCHRONOUS. Returns cached auth headers or empty object.
+      Headers: { 'x-wallet-signature': sig, 'x-wallet-timestamp': ts }
+      Caller must ensure refreshWalletAuth() called first.
+
+  - getWalletAuthHeadersAsync(walletAddress: string): Promise<Record<string, string>>
+      ASYNC. Auto-refreshes if expired. Returns auth headers.
+
+  - authenticatedFetch(walletAddress, url, options): Promise<Response>
+      Wrapper around fetch() that auto-injects auth headers.
+
+  - clearWalletAuth(walletAddress?: string): void
+      Clears cached token(s). Call on logout.
+
+  - hasValidAuthToken(walletAddress: string): boolean
+      Checks if non-expired token exists in cache.
+
+USED BY:
+  - LoginScreen.tsx (calls refreshWalletAuth after successful login)
+  - dashboard/page.tsx (authenticated API calls)
+  - affiliate-dashboard/page.tsx (authenticated calls)
+
+FULL SOURCE (key parts):
+  API_URL = 'https://api.dltpays.com/api/v1'
+
+  interface WalletAuthToken {
+    wallet_address: string;
+    signature: string;
+    timestamp: string;
+    expires_at: number; // Unix timestamp
+  }
+
+  Cache: Map<string, WalletAuthToken> (in-memory, per wallet)
+  Refresh buffer: 60 seconds before expiry
+
+iOS EQUIVALENT NOTES:
+  - Store auth token in Keychain instead of in-memory Map
+  - Use URLSession with custom headers
+  - Implement token refresh logic with similar auto-refresh pattern
+  - Headers needed: x-wallet-signature, x-wallet-timestamp
+
+
+================================================================================
+3. lib/safeStorage.ts - Safe Session Storage Wrapper
+================================================================================
+
+PURPOSE:
+  Wraps browser sessionStorage with safety fallbacks for:
+  - Safari private browsing (throws on access)
+  - Storage quota exceeded
+  - SSR (no window object)
+  Falls back to in-memory Map when sessionStorage unavailable.
+
+EXPORTS:
+  - safeGetItem(key: string): string | null
+  - safeSetItem(key: string, value: string): void
+  - safeRemoveItem(key: string): void
+  - safeClear(): void
+  - safeGetJSON<T>(key: string): T | null
+  - safeSetJSON(key: string, value: unknown): void
+
+USED BY:
+  Every component that stores/retrieves session state:
+  - LoginScreen.tsx, dashboard/page.tsx, affiliate-dashboard/page.tsx
+  - SoundPay.tsx, SoundPaymentPage.tsx, InstantPay.tsx
+  - OnboardingSetup.tsx, WalletSettings.tsx, StaffSelector.tsx
+  - take-payment/page.tsx, receipts/page.tsx, analytics/page.tsx
+
+FULL SOURCE:
+  Storage backend: window.sessionStorage (primary)
+  Fallback: Map<string, string> (in-memory)
+
+  Availability check: Tests setItem/removeItem with '__storage_test__' key.
+  Result is cached in module-level boolean.
+
+iOS EQUIVALENT:
+  - Use UserDefaults for session-like storage (cleared on logout)
+  - Use Keychain for sensitive data (wallet address, auth tokens)
+  - No need for "safe" wrapper since iOS APIs don't throw like Safari private browsing
+
+
+================================================================================
+4. lib/customerDisplay.ts - Customer-Facing Display Updates
+================================================================================
+
+PURPOSE:
+  Sends display state updates to the customer-facing screen (second screen/tablet).
+  Used during POS checkout to show cart, total, and payment status.
+
+EXPORTS:
+  - DisplayStatus: type = 'idle' | 'ready' | 'processing' | 'success' | 'error' | 'qr' | 'signup' | 'split_pending' | 'link_pending'
+
+  - updateCustomerDisplay(storeId, storeName, cart, total, status, qrCode?, tip?, tipsEnabled?, vendorWallet?): Promise<void>
+      POST to /nfc/api/v1/display/update
+      Body: { store_id, store_name, cart, total, status, qr_code, tip, tips_enabled, vendor_wallet }
+
+  - clearCustomerDisplay(storeId, storeName): Promise<void>
+      Convenience wrapper: sets status='idle', empty cart, total=0
+
+USED BY:
+  - take-payment/page.tsx (POS flow)
+  - display/page.tsx (customer display page)
+  - SoundPayButton.tsx (updates display to soundpay status)
+
+
+================================================================================
+5. utils/soundPayment.ts - FSK Sound Payment Protocol
+================================================================================
+
+PURPOSE:
+  Implements the "SoundPay" feature - device-to-device payment via ultrasonic/audible
+  FSK (Frequency Shift Keying) audio tones. POS broadcasts a payment token as
+  a sequence of frequency tones; customer device listens via microphone and decodes.
+
+PROTOCOL:
+  Format: [PREAMBLE] -> [GAP] -> [CHAR1] -> [GAP] -> [CHAR2] -> [GAP] -> ... -> [POSTAMBLE]
+  Charset: Hex (0-9, A-F)
+  Token: Last 4 hex chars of payment ID
+
+  Frequency Config (audible mode):
+    baseFreq: 17000 Hz
+    freqStep: 80 Hz
+    syncFreq (PREAMBLE): 16500 Hz
+    gapFreq: 16750 Hz
+    endSyncFreq (POSTAMBLE): 18500 Hz
+    Char range: 17000 (0) to 18200 (F)
+
+  Frequency Config (ultrasound mode):
+    baseFreq: 17800 Hz
+    freqStep: 30 Hz
+    syncFreq: 17500 Hz
+    gapFreq: 17650 Hz
+    endSyncFreq: 19500 Hz
+
+  Timing:
+    PREAMBLE_DURATION: 200ms
+    POSTAMBLE_DURATION: 200ms
+    CHAR_DURATION: 120ms
+    GAP_DURATION: 60ms
+    ATTACK_TIME: 5ms
+    RELEASE_TIME: 5ms
+
+EXPORTS:
+  - warmupAudio(): Promise<void>
+      Creates AudioContext, plays silent tone to unlock iOS audio.
+
+  - initSoundPayment(): Promise<boolean>
+      Creates/resumes AudioContext with 48kHz sample rate.
+
+  - broadcastToken(token: string, settings?: BroadcastSettings): Promise<boolean>
+      Transmits payment token as FSK audio tones.
+      Uses Web Audio API oscillators with envelope shaping.
+
+  - startListening(onTokenReceived, onError?, onProgress?): Promise<() => void>
+      Listens via microphone. State machine: IDLE -> PREAMBLE_DETECTED -> WAITING_FOR_GAP -> WAITING_FOR_CHAR -> COMPLETE
+      Uses FFT analysis (fftSize=8192, smoothing=0.3)
+      Returns cleanup function.
+
+  - isSupported(): boolean
+      Checks AudioContext and getUserMedia availability.
+
+  - getBroadcastMode(): 'ultrasound' | 'audible'
+  - cleanup(): void
+
+USED BY:
+  - SoundPay.tsx (bidirectional - send from POS, receive on customer)
+  - SoundPaymentPage.tsx (customer-only receive page)
+  - SoundPaySend.tsx (POS-only send)
+
+iOS EQUIVALENT NOTES:
+  - Use AVFoundation (AVAudioEngine) for microphone input and tone generation
+  - Use Accelerate/vDSP for FFT analysis
+  - Same frequencies and protocol can be used
+  - iOS has better audio latency than web browsers
+  - Need to handle AVAudioSession categories (playback + record)
+
+
+================================================================================
+6. components/LoginScreen.tsx - Shared Login Screen
+================================================================================
+
+PURPOSE:
+  Unified login screen for both vendor (store) and affiliate (customer) dashboards.
+  Supports 3 login methods: Xaman (QR), Crossmark (browser extension), Web3Auth (social).
+  Configurable via props for vendor vs affiliate mode.
+
+PROPS:
+  - onLogin(wallet, method, extras?): callback after successful login
+  - requireTrustline?: boolean (vendor only)
+  - claimStore?: { store_name } | null (vendor only)
+  - referringStore?: { store_name, store_id } | null (vendor only)
+  - storagePrefix?: 'vendor' | 'affiliate' (determines storage key prefix)
+  - title, subtitle, showLogo: UI customization
+
+LOGIN FLOWS:
+  1. Xaman: POST /api/v1/xaman/login -> get QR + login_id -> poll /xaman/login/poll/{id}
+  2. Crossmark: window.xrpl.crossmark.methods.signInAndWait() -> get address
+  3. Web3Auth: import('@/lib/web3auth').loginWithWeb3Auth() -> get address + provider
+
+POST-LOGIN ACTIONS (all methods):
+  - handleStoreAutoJoin(wallet) - auto-join affiliate store if ?store= URL param
+  - completeCustomerSignup(wallet) - link NFC card if ?email=&join=1 URL params
+  - refreshWalletAuth(wallet) - get HMAC auth token
+  - Save to sessionStorage: walletKey, methodKey, socialProvider
+
+STORAGE KEYS (depends on storagePrefix):
+  Vendor: 'vendorWalletAddress', 'vendorLoginMethod'
+  Affiliate: 'walletAddress', 'loginMethod'
+  Shared: 'socialProvider', 'pendingSignup'
+
+
+================================================================================
+7. components/BackgroundVideo.tsx - Background Video Player
+================================================================================
+
+PURPOSE: Renders full-screen background video with optional dark overlay.
+PROPS: src (string), overlay (boolean, default true)
+BEHAVIOR: Plays at 40% speed (playbackRate=0.4), autoplay, loop, muted, playsInline
+USED BY: LoginScreen.tsx
+
+
+================================================================================
+8. components/Header.tsx - Main Site Header/Navigation
+================================================================================
+
+PURPOSE: Sticky top navigation bar for public pages.
+FEATURES:
+  - Logo + "YesAllofUs" brand link
+  - Desktop nav: Docs, Pricing, Affiliates, Resources dropdown, Store Login
+  - Mobile hamburger menu
+  - Resources dropdown with PDF downloads
+  - Hides on /dashboard and /affiliate-dashboard routes
+IMPORTS: Logo component, next/navigation (usePathname)
+USED BY: app/(main)/layout.tsx
+
+
+================================================================================
+9. components/Footer.tsx - Main Site Footer
+================================================================================
+
+PURPOSE: Full-width footer with link columns and branding.
+SECTIONS: Brand, Product links, Resources, Company, Legal
+FEATURES:
+  - Social links (X/Twitter, LinkedIn, Blog, Email)
+  - YAOFUS brand badge
+  - "Built on XRP Ledger" badge
+  - Hides on dashboard routes
+USED BY: app/(main)/layout.tsx
+
+
+================================================================================
+10. components/Sidebar.tsx - Dashboard Sidebar Navigation
+================================================================================
+
+PURPOSE: Collapsible sidebar for vendor and affiliate dashboards.
+PROPS:
+  - isOpen, isCollapsed: toggle states
+  - dashboardType: 'vendor' | 'affiliate' (changes accent colors)
+  - storeName, storeLogo, walletAddress: display info
+  - navItems: NavItem[] (dynamic navigation items)
+  - onNavClick, onLogoClick, onSignOut, onTakeTour, onInfoClick, onShowProgress: callbacks
+
+FEATURES:
+  - Mobile overlay (bg-black/50)
+  - Desktop collapsible with tab handle
+  - Store info header with logo
+  - Scrollable nav area
+  - Footer with tour button, progress button, sign out
+  - Guernsey flag video background in footer (desktop only)
+  - YAOFUS badge: "PARTNER" (vendor) or "AFFILIATE" (affiliate)
+
+USED BY: dashboard/page.tsx, affiliate-dashboard/page.tsx
+
+
+================================================================================
+11. components/Logo.tsx - Adaptive Brand Logo
+================================================================================
+
+PURPOSE: Shows 3D rotating model on capable desktops, static PNG otherwise.
+LOGIC:
+  1. Check: isDesktop (>768px), hasWebGL, hardwareConcurrency > 4
+  2. If all true: render <model-viewer> with 3D model from Arweave
+  3. Otherwise: render static /dltpayslogo1.png via next/image
+3D MODEL URL: https://arweave.net/hdTXnxScjddEJr4FIvLpfeC1ZaAOwIr5bANUZ9zDC9c
+USED BY: Header.tsx
+
+
+================================================================================
+12. components/InstallAppButton.tsx - PWA Install Prompt
+================================================================================
+
+PURPOSE: Detects platform and browser, provides "Add to Home Screen" functionality.
+FEATURES:
+  - Captures beforeinstallprompt event for native install
+  - Platform-specific instructions (iOS, Safari, Chrome, Edge, Firefox)
+  - Modal with step-by-step instructions when native prompt unavailable
+  - Hides if already installed (display-mode: standalone)
+  - Detects browser type: chrome, edge, brave, safari, firefox, other
+USED BY: Dashboard pages
+
+
+================================================================================
+13. components/SoundPay.tsx - SoundPay Payment Component
+================================================================================
+
+PURPOSE: Bidirectional sound payment - vendor sends, customer receives.
+MODES:
+  - 'send' (POS): Broadcasts payment ID as FSK tones, polls for payment status
+  - 'receive' (Customer): Listens for token, calls API to process payment
+STATES: idle -> active -> processing -> success/error
+KEY LOGIC (send):
+  - Saves tip via POST /payment-link/{id}/tip
+  - Broadcasts last 4 chars of paymentId as token
+  - Retries 3 times with increasing tone/silence durations
+  - Polls GET /payment-link/{id} for status='paid'
+KEY LOGIC (receive):
+  - Auto-login via Web3Auth if no wallet
+  - Gets sound_id from GET /sound/device-by-wallet/{wallet}
+  - Listens for token, calls GET /p/{token}?sid={soundId}
+USED BY: take-payment/page.tsx, display/page.tsx
+
+
+================================================================================
+14. components/SoundPayButton.tsx - SoundPay Trigger Button
+================================================================================
+
+PURPOSE: Creates a payment link and triggers SoundPay flow.
+PROPS: storeId, storeName, vendorWallet, amount, tipAmount, items, size, callbacks
+FLOW:
+  1. POST /payment-link/create (creates payment link)
+  2. POST /display/update (updates customer display)
+  3. Callback onPaymentCreated(paymentId) to parent
+USED BY: take-payment/page.tsx (POS screen)
+
+
+================================================================================
+15. components/SoundPaymentPage.tsx - Dedicated Customer SoundPay Page
+================================================================================
+
+PURPOSE: Full-page SoundPay receiver for customers (navigated from /soundpay route).
+FLOW:
+  1. On mount: auto-login via Web3Auth, get sound_id
+  2. User taps "SoundPay" button -> countdown warmup -> start listening
+  3. On token received: GET /p/{token}?sid={soundId}
+  4. Display receipt with store info, amount, XRPL tx link
+STATES: idle -> listening -> processing -> success/error
+USED BY: app/(noheader)/soundpay/page.tsx
+
+
+================================================================================
+16. Layout Architecture
+================================================================================
+
+app/layout.tsx (Root):
+  - Wraps everything in TourProvider
+  - Loads fonts (Geist, Geist_Mono)
+  - Includes: manifest.json, service worker, Crossmark SDK, model-viewer, Google Analytics
+  - Meta: SEO, Open Graph, Twitter cards
+
+app/(main)/layout.tsx:
+  - Adds Header + Footer
+  - Used by: home, docs, pricing, dashboard, faq, connect, discover-vendors, etc.
+
+app/(noheader)/layout.tsx:
+  - No header/footer, just children
+  - Used by: take-payment, display, receipts, soundpay, signup-customer, customer-signup
+
+next.config.ts:
+  - transpilePackages: ['nextstepjs'] (tour library)

@@ -1,0 +1,548 @@
+================================================================================
+STATE ARCHITECTURE REFERENCE
+================================================================================
+Web project: /Users/markflynn/Local Sites/yesallofus/
+Generated: 2026-01-30
+================================================================================
+
+
+================================================================================
+1. AUTHENTICATION STATE FLOW
+================================================================================
+
+OVERVIEW:
+  Authentication uses Web3Auth (social login), Xaman (QR/mobile wallet), or
+  Crossmark (browser extension) to obtain an XRPL wallet address. The wallet
+  address is the user's identity. No passwords, no server-side sessions.
+
+  Flow: Login Provider -> Wallet Address -> sessionStorage -> Components
+
+THREE LOGIN PATHS:
+
+  A. Web3Auth (Social Login - PRIMARY for customers):
+     1. User clicks "Social Login" -> import('@/lib/web3auth').loginWithWeb3Auth()
+     2. Web3Auth modal opens (Google, Apple, Discord, etc.)
+     3. Web3Auth derives XRPL keypair from social OAuth token
+     4. Returns { address: "rXXXX...", provider: "google" }
+     5. Save to sessionStorage:
+        - walletAddress / vendorWalletAddress = "rXXXX..."
+        - loginMethod / vendorLoginMethod = "web3auth"
+        - socialProvider = "google" (or apple, discord, etc.)
+     6. Call refreshWalletAuth(address) -> gets HMAC auth token (in-memory cache)
+
+  B. Xaman (QR Code - for mobile wallet users):
+     1. POST /api/v1/xaman/login -> returns { qr_png, deep_link, login_id }
+     2. Display QR code, user scans with Xaman app
+     3. Poll GET /api/v1/xaman/login/poll/{loginId} every 3 seconds
+     4. When status='signed': wallet_address returned
+     5. Save to sessionStorage:
+        - walletAddress / vendorWalletAddress = returned address
+        - loginMethod / vendorLoginMethod = "xaman"
+     6. Call refreshWalletAuth(address)
+
+  C. Crossmark (Browser Extension - desktop only):
+     1. window.xrpl.crossmark.methods.signInAndWait()
+     2. Returns { response: { data: { address: "rXXXX..." } } }
+     3. Save to sessionStorage:
+        - walletAddress / vendorWalletAddress = address
+        - loginMethod / vendorLoginMethod = "crossmark"
+     4. Call refreshWalletAuth(address)
+
+POST-LOGIN COMMON STEPS:
+  - handleStoreAutoJoin(): if URL has ?store= param, auto-register as affiliate
+  - completeCustomerSignup(): if URL has ?email=&join=1, link NFC card to wallet
+  - refreshWalletAuth(): get HMAC token for protected API calls
+
+SESSION RESTORATION (on page load):
+  - Check sessionStorage for walletAddress (affiliate) or vendorWalletAddress (vendor)
+  - If found, restore loginMethod and socialProvider
+  - Re-initialize Web3Auth if method was 'web3auth' (for withdrawal capability)
+  - If Web3Auth reconnects, verify address matches stored address
+  - If mismatch or failure, clear session and show login screen
+
+LOGOUT FLOW:
+  1. If Web3Auth: logoutWeb3Auth() (clears Web3Auth session)
+  2. clearWalletAuth() (clears HMAC token cache)
+  3. safeRemoveItem('walletAddress') (or vendorWalletAddress)
+  4. safeRemoveItem('loginMethod') (or vendorLoginMethod)
+  5. safeRemoveItem('socialProvider')
+  6. safeRemoveItem('isLoggedIn')
+  7. Reset component state -> show login screen
+
+
+================================================================================
+2. WALLET ADDRESS DERIVATION & STORAGE
+================================================================================
+
+DERIVATION:
+  - Web3Auth: Derives XRPL private key from OAuth token using MPC (Multi-Party
+    Computation). The private key is split across Web3Auth nodes and the user's
+    device. The XRPL address is derived from this private key.
+    Method: web3auth.provider.request({ method: "xrpl_getAccounts" })
+
+  - Xaman: User's existing XRPL address from their Xaman wallet app.
+    The address is returned after signing a login payload.
+
+  - Crossmark: User's existing XRPL address from browser extension.
+    The address is returned from signInAndWait().
+
+STORAGE LOCATIONS:
+  Primary: sessionStorage (via safeStorage.ts wrapper)
+    - Clears on tab close (session-scoped)
+    - Falls back to in-memory Map if sessionStorage unavailable
+
+  Secondary: localStorage (for persistent preferences)
+    - Tour completion flags
+    - Milestone dismissal flags
+    - Sound device IDs
+
+  In-Memory: walletAuth.ts token cache
+    - Map<string, WalletAuthToken>
+    - Auto-refreshes 60s before expiry
+
+DUAL WALLET SYSTEM:
+  The app maintains TWO separate wallet identities in sessionStorage:
+
+  Affiliate/Customer wallet:
+    Key: 'walletAddress'        Value: "rXXXX..."
+    Key: 'loginMethod'          Value: "web3auth" | "xaman" | "crossmark"
+    Key: 'socialProvider'       Value: "google" | "apple" | etc.
+    Key: 'isLoggedIn'           Value: "true"
+    Used by: affiliate-dashboard, pay pages, SoundPay customer, InstantPay
+
+  Vendor/Store wallet:
+    Key: 'vendorWalletAddress'  Value: "rXXXX..."
+    Key: 'vendorLoginMethod'    Value: "web3auth" | "xaman" | "crossmark"
+    Key: 'socialProvider'       Value: shared between both
+    Used by: dashboard, take-payment, receipts, analytics, staffpos
+
+
+================================================================================
+3. VENDOR STORE DATA FLOW
+================================================================================
+
+FLOW: API -> sessionStorage -> Components
+
+INITIAL LOAD (dashboard/page.tsx):
+  1. Read vendorWalletAddress from sessionStorage
+  2. If found: GET /api/v1/store/by-wallet/{walletAddress}
+  3. If store exists: save full store object to sessionStorage
+     safeSetItem('storeData', JSON.stringify(store))
+  4. Store object contains: store_id, store_name, wallet_address, api_key,
+     secret_key, commission_rate, auto_sign_enabled, logo_url, settings, etc.
+  5. If no store: show registration form
+
+STORE CREATION:
+  1. User fills store name + settings
+  2. POST /api/v1/store/register { store_name, wallet_address, referral_code?, ... }
+  3. Response contains full store object
+  4. safeSetItem('storeData', JSON.stringify(store))
+  5. Check for WordPress return URL -> redirect if present
+
+STORE DATA UPDATES:
+  When store data changes (logo upload, settings change):
+  - Update state in component
+  - safeSetItem('storeData', JSON.stringify(updatedStore))
+  - Other pages read from sessionStorage on mount
+
+CROSS-PAGE DATA SHARING:
+  take-payment/page.tsx reads:
+    - safeGetItem('vendorWalletAddress') -> wallet
+    - safeGetItem('storeData') -> parse JSON -> store object
+    - If storeData stale, re-fetch from: GET /nfc/api/v1/store/public/{storeId}
+    - Updates storeData in sessionStorage after re-fetch
+
+  receipts/page.tsx, analytics/page.tsx, staffpos/page.tsx:
+    - Same pattern: read vendorWalletAddress + storeData from sessionStorage
+
+STORE DATA SHAPE (key fields):
+  {
+    store_id: string,
+    store_name: string,
+    wallet_address: string,
+    api_key: string,
+    secret_key: string,
+    commission_rate: number,
+    auto_sign_enabled: boolean,
+    logo_url: string | null,
+    tips_enabled: boolean,
+    settings: {
+      currency: string,
+      country: string,
+      ...
+    }
+  }
+
+
+================================================================================
+4. PAYMENT FLOW (END-TO-END)
+================================================================================
+
+There are MULTIPLE payment flows. Here are the main ones:
+
+--- A. POS TAKE-PAYMENT FLOW (Vendor takes payment from customer) ---
+
+  1. Vendor opens take-payment page
+     - Reads store data from sessionStorage
+     - Loads product inventory from API
+
+  2. Vendor builds cart (add items, quantities)
+     - Customer display auto-updates via POST /display/update
+
+  3. Vendor chooses payment method:
+
+     3a. QR Code Payment Link:
+         - POST /payment-link/create -> { payment_id }
+         - Generate QR code with URL: /pay/{payment_id}
+         - Customer scans QR, opens in browser
+         - Customer pays via Xaman, Crossmark, or auto-sign
+         - Vendor polls GET /payment-link/{id} for status='paid'
+         - On paid: show success, clear cart
+
+     3b. SoundPay:
+         - POST /payment-link/create -> { payment_id }
+         - POST /display/update (status='soundpay')
+         - Broadcast last 4 hex chars of payment_id as FSK audio
+         - Customer device listens via mic, decodes token
+         - Customer device calls GET /p/{token}?sid={soundId}
+         - Server processes payment (auto-sign must be enabled)
+         - Both devices show success
+
+     3c. NFC Tap:
+         - Customer taps NFC card on vendor device
+         - POST /nfc/payment { store_id, amount, card_uid }
+         - Server looks up wallet from card_uid
+         - Processes payment via auto-sign
+         - Returns tx_hash
+
+     3d. Xaman QR Payment:
+         - POST /xaman/payment { destination, amount, currency }
+         - Shows QR code to customer
+         - Customer scans with Xaman, signs transaction
+         - Poll /xaman/payment/poll/{id} for status='signed'
+         - Record payment on backend
+
+  4. Post-payment:
+     - Adjust inventory: POST /store/{id}/inventory/{productId}/adjust
+     - Update display: POST /display/update (status='success')
+     - Generate receipt
+
+--- B. PAYMENT LINK FLOW (Remote/email payment) ---
+
+  1. Vendor creates payment link:
+     POST /payment-link/create { store_id, amount, items }
+
+  2. Optionally sends via email:
+     POST /payment-link/send-email { payment_id, email }
+
+  3. Customer opens /pay/{paymentId}:
+     - GET /payment-link/{paymentId} -> load payment details
+     - GET /convert/gbp-to-rlusd?amount={amount} -> show RLUSD equivalent
+     - Customer can add tip
+     - Customer pays via Xaman QR, Crossmark, Web3Auth auto-sign
+     - POST /payment-link/{paymentId}/pay { payer_wallet }
+     - On success: show receipt with XRPL tx link
+
+  4. Split payment option:
+     - POST /payment-link/{paymentId}/split { splits: [...] }
+     - Creates sub-payments, each with own payment link
+
+--- C. CHECKOUT SESSION FLOW (WooCommerce plugin) ---
+
+  1. WooCommerce plugin creates checkout session via server-side API
+  2. Customer redirected to /checkout/{sessionId}
+  3. GET /plugins/api/v1/checkout/session/{sessionId}
+  4. Customer pays (same methods as payment link)
+  5. POST /plugins/api/v1/checkout/session/{sessionId}/pay
+  6. Plugin webhook notifies WooCommerce of payment
+
+
+================================================================================
+5. SOUNDPAY STATE MACHINE
+================================================================================
+
+SENDER (POS / Vendor Device):
+  States: idle -> active -> processing -> success | error
+
+  idle:
+    - User taps "Tap to Send"
+    - Transition: -> active
+
+  active:
+    - Save tip if present: POST /payment-link/{id}/tip
+    - Initialize audio: initSoundPayment() + warmupAudio()
+    - Extract last 4 hex chars of paymentId
+    - Retry loop (3 attempts):
+      - broadcastToken(shortToken, settings)
+      - Poll GET /payment-link/{id} for 8 seconds
+      - If status='paid': -> success
+      - If no response: retry with longer tone durations
+    - If all 3 fail: -> error
+    - Track attempt number (1, 2, 3) for UI feedback
+
+  processing:
+    - Intermediate state during API calls
+    - Shows spinner
+
+  success:
+    - Payment confirmed
+    - Vibrate device
+    - Call onSuccess(txHash)
+    - Auto-reset to idle after 3 seconds
+
+  error:
+    - Show error message
+    - User can tap to retry (-> idle)
+    - Call onError(message)
+
+
+RECEIVER (Customer Device):
+  States: idle -> listening -> processing -> success | error
+  Sub-states (listenState): idle -> ready -> sync -> receiving
+
+  idle:
+    - User taps "SoundPay" or "Tap to Listen"
+    - Auto-login via Web3Auth if no wallet
+    - GET /sound/device-by-wallet/{wallet} -> get sound_id
+    - Transition: -> listening
+
+  listening:
+    - Initialize audio + warmup
+    - Countdown: "1" -> "2" -> "Ready!" (2.5 seconds)
+    - startListening(onToken, onError, onProgress)
+    - Audio state machine (from soundPayment.ts):
+      IDLE: scanning for preamble frequency
+        -> 3 consecutive preamble detections: PREAMBLE_DETECTED
+      PREAMBLE_DETECTED: waiting for gap tone
+        -> gap detected: WAITING_FOR_CHAR
+      WAITING_FOR_CHAR: waiting for character frequency
+        -> char detected (confirmed): add to buffer, -> WAITING_FOR_GAP
+        -> postamble detected: -> COMPLETE (emit token)
+      WAITING_FOR_GAP: waiting for gap after character
+        -> gap detected: -> WAITING_FOR_CHAR
+        -> postamble detected: -> COMPLETE
+      Timeout: 2 seconds of silence -> reset to IDLE
+
+    - listenState updates: 'ready' -> 'sync' -> 'receiving'
+    - receivedChars shows partial token
+
+  processing:
+    - Token received (4+ hex chars)
+    - Stop listening
+    - GET /p/{token}?sid={soundId}
+    - If success: -> success
+    - If error: -> error
+
+  success:
+    - Show payment details (store, amount, receipt)
+    - Vibrate device
+    - Show XRPL transaction link
+    - "Done" button -> reset
+
+  error:
+    - Show error message
+    - "Try Again" button -> reset to idle
+
+
+================================================================================
+6. SESSIONSTORAGE KEYS AND PURPOSES
+================================================================================
+
+--- AUTHENTICATION (via safeStorage.ts -> sessionStorage) ---
+
+'walletAddress'
+  Value: XRPL address string ("rXXXX...")
+  Purpose: Customer/affiliate wallet address
+  Set by: LoginScreen, affiliate-dashboard, InstantPay, SoundPay, WalletSettings
+  Read by: All customer-facing components
+
+'vendorWalletAddress'
+  Value: XRPL address string
+  Purpose: Vendor/store owner wallet address
+  Set by: LoginScreen (vendor mode), dashboard, OnboardingSetup
+  Read by: take-payment, receipts, analytics, staffpos, earn pages
+
+'loginMethod'
+  Value: "web3auth" | "xaman" | "crossmark"
+  Purpose: Customer login method (for session restore + wallet switching)
+  Set by: LoginScreen, affiliate-dashboard
+  Read by: affiliate-dashboard (session restore), take-payment
+
+'vendorLoginMethod'
+  Value: "web3auth" | "xaman" | "crossmark"
+  Purpose: Vendor login method
+  Set by: dashboard/page.tsx, OnboardingSetup
+  Read by: dashboard (session restore)
+
+'socialProvider'
+  Value: "google" | "apple" | "discord" | "github" | etc.
+  Purpose: Which social login provider was used (shared between vendor/affiliate)
+  Set by: LoginScreen, dashboard, OnboardingSetup
+  Read by: Session restore, UI display
+
+'isLoggedIn'
+  Value: "true"
+  Purpose: Quick check for affiliate logged-in state
+  Set by: affiliate-dashboard/page.tsx
+  Read by: affiliate-dashboard/page.tsx
+
+--- STORE DATA ---
+
+'storeData'
+  Value: JSON string of full store object
+  Purpose: Cache vendor store data across pages (avoid re-fetching)
+  Set by: dashboard (after load/create/update), take-payment (after re-fetch)
+  Read by: take-payment, receipts, analytics, staffpos
+
+--- ONBOARDING & REFERRALS ---
+
+'pendingSignup'
+  Value: JSON string { email: string, storeId: string }
+  Purpose: Preserve customer signup data across Web3Auth redirect
+  Set by: affiliate-dashboard (before login redirect)
+  Read by: LoginScreen (after login, to complete signup)
+
+'vendorReferralCode'
+  Value: Referral code string
+  Purpose: Preserve vendor referral code from URL across login
+  Set by: dashboard (from URL param ?ref=XXX)
+  Read by: dashboard (during store registration)
+
+'vendorReferringStore'
+  Value: JSON string of referring store object
+  Purpose: Cache referring store data to avoid re-fetch
+  Set by: dashboard (after lookup)
+  Read by: dashboard (during registration)
+
+'wordpress_return'
+  Value: URL string
+  Purpose: WordPress return URL after store setup
+  Set by: dashboard (from URL param ?wordpress_return=)
+  Read by: dashboard (redirect after store creation)
+
+--- ONBOARDING WIZARD ---
+
+'onboarding_active_vendor_{walletAddress}'
+  Value: "true"
+  Purpose: Track active onboarding wizard session
+  Set by: dashboard, OnboardingSetup
+  Read by: OnboardingSetup (to detect wizard restart)
+
+'onboarding_active_affiliate_{walletAddress}'
+  Value: "true"
+  Purpose: Track active affiliate onboarding wizard
+  Set by: affiliate-dashboard
+  Read by: OnboardingSetup
+
+--- STAFF ---
+
+'activeStaff'
+  Value: JSON string of staff member object
+  Purpose: Remember which staff member is active during POS session
+  Set by: StaffSelector, take-payment
+  Read by: StaffSelector, take-payment
+
+
+================================================================================
+7. LOCALSTORAGE KEYS AND PURPOSES
+================================================================================
+
+Note: localStorage persists across sessions (unlike sessionStorage).
+These are used for preferences and flags that should survive tab close.
+
+'yesallofus_sound_id'
+  Value: Sound device ID string
+  Purpose: Cache SoundPay device registration ID
+  Set by: TapToPaySettings, LinkNFCCard
+  Read by: TapToPaySettings (to avoid re-registration)
+
+'yesallofus_sound_secret'
+  Value: Secret key string
+  Purpose: HMAC secret for SoundPay authentication
+  Set by: TapToPaySettings, LinkNFCCard
+  Read by: (currently not read back - server uses it)
+
+'yesallofus_wallet'
+  Value: XRPL address
+  Purpose: Alternative wallet storage (checkout flow)
+  Read by: checkout/[sessionId]/page.tsx
+
+'tour_completed_{walletAddress}'
+  Value: "true"
+  Purpose: Remember that affiliate tour was completed
+  Set by: affiliate-dashboard (after tour)
+  Read by: affiliate-dashboard (to not show tour again)
+
+'vendor_tour_completed_{storeId}'
+  Value: "true"
+  Purpose: Remember that vendor tour was completed
+  Set by: dashboard (after tour)
+  Read by: dashboard
+
+'take_payment_tour_completed_{storeId}'
+  Value: "true"
+  Purpose: Remember POS tour was completed
+  Set by: take-payment (after tour)
+  Read by: take-payment
+
+'milestones_dismissed_{storeId}'
+  Value: "true"
+  Purpose: Remember vendor dismissed milestone checklist
+  Set by: MilestoneChecklist, dashboard
+  Read by: dashboard (to hide checklist)
+
+'milestones_dismissed_customer_{walletAddress}'
+  Value: "true"
+  Purpose: Remember customer dismissed milestone checklist
+  Set by: affiliate-dashboard
+  Read by: affiliate-dashboard
+
+'onboarding_success_shown_vendor_{walletAddress}'
+  Value: "true"
+  Purpose: Remember onboarding success message was shown
+  Set by: OnboardingSetup
+  Read by: OnboardingSetup (prevent showing twice)
+
+'onboarding_success_shown_affiliate_{walletAddress}'
+  Value: "true"
+  Purpose: Same for affiliate onboarding
+  Set by: OnboardingSetup
+  Read by: affiliate-dashboard
+
+'milestone_celebrated_{milestone}_{walletAddress}'
+  Value: "true"
+  Purpose: Remember that a specific milestone celebration was shown
+  Set by: affiliate-dashboard
+  Read by: affiliate-dashboard
+
+
+================================================================================
+8. CONTEXT PROVIDERS
+================================================================================
+
+The web app uses minimal React context. Most state is managed locally in page
+components with sessionStorage as a cross-page communication mechanism.
+
+TourProvider (components/TourProvider.tsx):
+  - Wraps entire app (in root layout.tsx)
+  - Provides guided tour functionality using nextstepjs library
+  - Used by: dashboard, affiliate-dashboard, take-payment pages
+  - Each page defines its own tour steps
+  - Tour state tracked in localStorage (completion flags)
+
+NO OTHER GLOBAL CONTEXT PROVIDERS:
+  - No AuthContext (auth state in sessionStorage + local component state)
+  - No StoreContext (store data in sessionStorage + local component state)
+  - No CartContext (cart is local state in take-payment page)
+  - No ThemeContext (dark theme only, hardcoded)
+
+iOS EQUIVALENT ARCHITECTURE NOTES:
+  For the iOS app, consider:
+  - AuthManager (singleton): manages wallet address, login method, auth tokens
+  - StoreManager: manages vendor store data, caches locally
+  - PaymentManager: handles payment creation, polling, status
+  - SoundPayManager: handles audio broadcast/receive
+  - Use Combine/SwiftUI @Published for reactive state
+  - Use UserDefaults for session-equivalent storage
+  - Use Keychain for wallet credentials
+  - Use @EnvironmentObject for dependency injection instead of Context

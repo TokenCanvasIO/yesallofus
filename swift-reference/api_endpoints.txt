@@ -1,0 +1,719 @@
+================================================================================
+API ENDPOINTS REFERENCE
+================================================================================
+Web project: /Users/markflynn/Local Sites/yesallofus/
+Generated: 2026-01-30
+================================================================================
+
+BASE URLs:
+  MAIN API:    https://api.dltpays.com/api/v1
+  NFC API:     https://api.dltpays.com/nfc/api/v1
+  PLUGINS API: https://api.dltpays.com/plugins/api/v1
+  CONVERT API: https://api.dltpays.com/convert
+  LOCAL PROXY: /api/exchanges (Next.js API route -> tokencanvas.io)
+
+AUTHENTICATION:
+  Most endpoints are public. Protected endpoints use HMAC wallet auth:
+    Headers: x-wallet-signature, x-wallet-timestamp
+  Obtained via: POST /api/v1/wallet/auth-token
+
+
+================================================================================
+AUTHENTICATION & WALLET
+================================================================================
+
+POST /api/v1/wallet/auth-token
+  Purpose: Get HMAC authentication token for protected API calls
+  Body: { wallet_address: string }
+  Response: { success: boolean, signature: string, timestamp: string, expires_in: number }
+  Called by: lib/walletAuth.ts (refreshWalletAuth)
+
+GET /api/v1/wallet/status/{walletAddress}
+  Purpose: Check wallet XRPL status (balance, trustlines, activation)
+  Response: { activated: boolean, balance: string, trustlines: [...] }
+  Called by: dashboard/page.tsx, affiliate-dashboard/page.tsx, take-payment/page.tsx,
+            OnboardingSetup.tsx, WalletFunding.tsx, faq/dashboard/page.tsx
+
+POST /api/v1/waitlist
+  Purpose: Join beta waitlist
+  Body: { email: string }
+  Response: { success: boolean }
+  Called by: home/page.tsx, dashboard/page.tsx
+
+GET /api/v1/beta/status
+  Purpose: Check beta program status
+  Response: { open: boolean }
+  Called by: home/page.tsx
+
+
+================================================================================
+XAMAN (WALLET LOGIN & PAYMENTS)
+================================================================================
+
+POST /api/v1/xaman/login
+  Purpose: Create Xaman QR login request
+  Body: {} (empty)
+  Response: { qr_png: string, deep_link: string, login_id: string, error?: string }
+  Called by: LoginScreen.tsx, OnboardingSetup.tsx, dashboard/page.tsx, WalletSettings.tsx
+
+GET /api/v1/xaman/login/poll/{loginId}
+  Purpose: Poll for Xaman login completion
+  Response: { status: 'pending'|'signed'|'expired'|'cancelled', wallet_address?: string, xaman_user_token?: string }
+  Called by: LoginScreen.tsx (useEffect interval), OnboardingSetup.tsx, dashboard/page.tsx
+
+POST /api/v1/xaman/payment
+  Purpose: Create Xaman payment request (QR code for sending RLUSD)
+  Body: { destination: string, amount: string, currency: string, store_id?: string }
+  Response: { qr_png: string, deep_link: string, payment_id: string }
+  Called by: PaymentOptions.tsx, take-payment/page.tsx, pay/[paymentId]/page.tsx
+
+GET /api/v1/xaman/payment/poll/{xamanPaymentId}
+  Purpose: Poll for Xaman payment completion
+  Response: { status: 'pending'|'signed'|'expired', tx_hash?: string }
+  Called by: PaymentOptions.tsx, take-payment/page.tsx, pay/[paymentId]/page.tsx
+
+POST /api/v1/xaman/setup-autosign
+  Purpose: Setup auto-sign for vendor Xaman wallet
+  Body: { wallet_address: string, store_id: string }
+  Response: { success: boolean, qr_png?: string, deep_link?: string }
+  Called by: dashboard/page.tsx (vendor autosign setup)
+
+GET /api/v1/xaman/verify-autosign?store_id={storeId}
+  Purpose: Verify vendor auto-sign is active
+  Response: { success: boolean, autosign_enabled: boolean }
+  Called by: dashboard/page.tsx
+
+POST /api/v1/xaman/connect
+  Purpose: Create Xaman connection request (public wallet linking)
+  Body: { store_id: string }
+  Response: { qr_png: string, deep_link: string, connection_id: string }
+  Called by: connect/page.tsx
+
+GET /api/v1/xaman/poll/{connectionId}?store_id={storeId}
+  Purpose: Poll for Xaman connection completion
+  Response: { status: string, wallet_address?: string }
+  Called by: connect/page.tsx
+
+
+================================================================================
+STORE MANAGEMENT
+================================================================================
+
+POST /api/v1/store/register
+  Purpose: Register new store
+  Body: { store_name: string, wallet_address: string, referral_code?: string,
+          commission_rate?: number, wordpress_url?: string }
+  Response: { success: boolean, store: StoreObject }
+  Called by: dashboard/page.tsx
+
+GET /api/v1/store/by-wallet/{walletAddress}
+  Purpose: Get store data by wallet address
+  Response: { success: boolean, store: StoreObject }
+  Called by: dashboard/page.tsx (loadStoreData)
+
+GET /api/v1/store/by-claim/{claimToken}
+  Purpose: Lookup store by claim token (for wallet connection flow)
+  Response: { success: boolean, store: StoreObject }
+  Called by: dashboard/page.tsx
+
+POST /api/v1/store/claim
+  Purpose: Claim/connect wallet to existing store
+  Body: { claim_token: string, wallet_address: string }
+  Response: { success: boolean, store: StoreObject }
+  Called by: dashboard/page.tsx
+
+POST /api/v1/store/link-wallet
+  Purpose: Link additional wallet to store
+  Body: { store_id: string, wallet_address: string }
+  Response: { success: boolean }
+  Called by: dashboard/page.tsx
+
+POST /api/v1/store/settings
+  Purpose: Update store settings
+  Body: { store_id: string, wallet_address: string, settings: { commission_rate?, auto_sign?, ... } }
+  Response: { success: boolean }
+  Called by: dashboard/page.tsx
+
+POST /api/v1/store/save-crossmark-wallet
+  Purpose: Save Crossmark wallet for vendor
+  Body: { wallet_address: string, store_id: string | null }
+  Response: { success: boolean }
+  Called by: LoginScreen.tsx (vendor crossmark flow)
+
+POST /api/v1/store/save-xaman-wallet
+  Purpose: Save Xaman wallet for vendor
+  Body: { wallet_address: string, store_id: string }
+  Response: { success: boolean }
+  Called by: dashboard/page.tsx
+
+POST /api/v1/store/save-wallet-public
+  Purpose: Save wallet via public connection flow
+  Body: { store_id: string, wallet_address: string }
+  Response: { success: boolean }
+  Called by: connect/page.tsx
+
+POST /api/v1/store/disconnect-wallet
+  Purpose: Disconnect wallet from store
+  Body: { store_id: string, wallet_address: string }
+  Response: { success: boolean }
+  Called by: dashboard/page.tsx
+
+POST /api/v1/store/regenerate-secret
+  Purpose: Regenerate store API secret key
+  Body: { store_id: string, wallet_address: string }
+  Response: { success: boolean, new_secret: string }
+  Called by: dashboard/page.tsx
+
+POST /api/v1/store/set-platform-return
+  Purpose: Set WordPress return URL for store
+  Body: { store_id: string, platform_return_url: string }
+  Response: { success: boolean }
+  Called by: dashboard/page.tsx
+
+POST /api/v1/store/clear-platform-return
+  Purpose: Clear WordPress return URL
+  Body: { store_id: string }
+  Response: { success: boolean }
+  Called by: dashboard/page.tsx
+
+POST /api/v1/store/generate-claim-token
+  Purpose: Generate claim token for store wallet connection
+  Body: { store_id: string, wallet_address: string }
+  Response: { success: boolean, claim_token: string }
+  Called by: dashboard/page.tsx
+
+POST /api/v1/store/update-milestone
+  Purpose: Mark a vendor milestone as complete
+  Body: { store_id: string, milestone: string }
+  Response: { success: boolean }
+  Called by: OnboardingSetup.tsx
+
+GET /api/v1/store/{storeId}/milestone
+  Purpose: Get store milestone status
+  Response: { success: boolean, milestones: object }
+  Called by: dashboard/page.tsx
+
+POST /api/v1/store/revoke-autosign
+  Purpose: Start auto-sign revocation process
+  Body: { store_id: string, wallet_address: string }
+  Response: { success: boolean, qr_png?: string }
+  Called by: dashboard/page.tsx
+
+POST /api/v1/store/confirm-revoke
+  Purpose: Confirm auto-sign revocation
+  Body: { store_id: string, wallet_address: string }
+  Response: { success: boolean }
+  Called by: dashboard/page.tsx
+
+DELETE /api/v1/store/delete
+  Purpose: Delete store
+  Body: { store_id: string, wallet_address: string }
+  Response: { success: boolean }
+  Called by: dashboard/page.tsx
+
+GET /api/v1/store/lookup-referral/{referralCode}
+  Purpose: Lookup referring store by referral code
+  Response: { success: boolean, store: { store_name, store_id } }
+  Called by: dashboard/page.tsx
+
+GET /api/v1/stores/public
+  Purpose: Get list of all public stores
+  Response: { success: boolean, stores: StoreObject[] }
+  Called by: affiliate-dashboard/page.tsx, customer-signup/page.tsx
+
+GET /nfc/api/v1/store/public/{storeId}
+  Purpose: Get public store info (name, logo, settings)
+  Response: { success: boolean, store: StoreObject }
+  Called by: take-payment/page.tsx, display/page.tsx, receipts/page.tsx, signup-customer/page.tsx
+
+
+================================================================================
+STORE LOGO
+================================================================================
+
+POST /nfc/api/v1/store/{storeId}/logo
+  Purpose: Upload store logo
+  Body: { logo_url: string, wallet_address: string }
+  Response: { success: boolean }
+  Called by: dashboard/page.tsx, take-payment/page.tsx
+
+DELETE /nfc/api/v1/store/{storeId}/logo
+  Purpose: Remove store logo
+  Body: { wallet_address: string }
+  Response: { success: boolean }
+  Called by: dashboard/page.tsx, take-payment/page.tsx
+
+
+================================================================================
+AFFILIATES & COMMISSIONS
+================================================================================
+
+POST /api/v1/affiliate/register-public
+  Purpose: Register as affiliate for a store (public/self-serve)
+  Body: { store_id: string, wallet: string, parent_referral_code?: string }
+  Response: { success: boolean }
+  Called by: LoginScreen.tsx (auto-join from URL), affiliate-dashboard/page.tsx
+
+POST /api/v1/affiliate/join
+  Purpose: Join a store as affiliate
+  Body: { store_id: string, wallet: string }
+  Response: { success: boolean }
+  Called by: affiliate-dashboard/page.tsx
+
+GET /api/v1/store/{storeId}/affiliates?wallet={walletAddress}
+  Purpose: Get affiliate list for a store
+  Response: { success: boolean, affiliates: [...] }
+  Called by: StoreActivity.tsx, dashboard/page.tsx
+
+GET /api/v1/store/{storeId}/affiliate-count?wallet_address={walletAddress}
+  Purpose: Get affiliate count for a store
+  Response: { success: boolean, count: number }
+  Called by: SignUpCustomerCard.tsx, dashboard/page.tsx
+
+GET /api/v1/store/{storeId}/payouts?wallet={walletAddress}
+  Purpose: Get payout history for a store
+  Response: { success: boolean, payouts: [...] }
+  Called by: StoreActivity.tsx
+
+GET /api/v1/store/{storeId}/referred-vendors
+  Purpose: Get vendors referred by this store
+  Response: { success: boolean, vendors: [...] }
+  Called by: dashboard/page.tsx
+
+POST /api/v1/payout
+  Purpose: Trigger affiliate payout (API integration)
+  Body: { store_id: string, amount: number, wallet_address: string, api_key: string }
+  Response: { success: boolean, tx_hash: string }
+  Called by: External integrations (documented in docs/page.tsx)
+
+
+================================================================================
+CUSTOMER MANAGEMENT
+================================================================================
+
+GET /nfc/api/v1/customer/{walletAddress}
+  Purpose: Get customer profile data
+  Response: { success: boolean, customer: CustomerObject }
+  Called by: affiliate-dashboard/page.tsx
+
+GET /nfc/api/v1/customer/exists/{walletAddress}
+  Purpose: Check if customer exists
+  Response: { success: boolean, exists: boolean }
+  Called by: (noheader)/page.tsx
+
+GET /api/v1/customer/milestones/{walletAddress}
+  Purpose: Get customer milestone progress
+  Response: { success: boolean, milestones: object }
+  Called by: affiliate-dashboard/page.tsx
+
+GET /api/v1/customer/status?wallet={walletAddress}&store={storeId}
+  Purpose: Check customer status for a store (e.g., is affiliate)
+  Response: { success: boolean, is_affiliate: boolean, ... }
+  Called by: checkout/[sessionId]/page.tsx
+
+POST /nfc/api/v1/customer/{walletAddress}/logo
+  Purpose: Upload customer/affiliate avatar
+  Body: { logo_url: string }
+  Response: { success: boolean }
+  Called by: affiliate-dashboard/page.tsx
+
+DELETE /nfc/api/v1/customer/{walletAddress}/logo
+  Purpose: Remove customer avatar
+  Response: { success: boolean }
+  Called by: affiliate-dashboard/page.tsx
+
+
+================================================================================
+NFC CARDS & CUSTOMER SIGNUP
+================================================================================
+
+POST /nfc/api/v1/nfc/complete-customer-signup
+  Purpose: Complete customer signup and link NFC card
+  Body: { email: string, wallet_address: string, store_id?: string }
+  Response: { success: boolean, card_linked: boolean, card_uid?: string }
+  Called by: LoginScreen.tsx, affiliate-dashboard/page.tsx
+
+POST /nfc/api/v1/nfc/register-customer
+  Purpose: Register new customer (from display/signup page)
+  Body: { email: string, store_id: string, name?: string }
+  Response: { success: boolean }
+  Called by: signup-customer/page.tsx, display/page.tsx
+
+POST /nfc/api/v1/nfc/link-card
+  Purpose: Link NFC card to customer wallet
+  Body: { wallet_address: string, card_uid: string, store_id?: string }
+  Response: { success: boolean }
+  Called by: customer-signup/page.tsx
+
+GET /nfc/api/v1/nfc/cards-by-wallet/{walletAddress}
+  Purpose: Get NFC cards linked to a wallet
+  Response: { success: boolean, cards: [...] }
+  Called by: LinkNFCCard.tsx
+
+POST /nfc/api/v1/nfc/card/{cardUid}/name
+  Purpose: Set friendly name for NFC card
+  Body: { name: string }
+  Response: { success: boolean }
+  Called by: LinkNFCCard.tsx
+
+GET /nfc/api/v1/nfc/pending/{params}
+  Purpose: Get pending customer records
+  Response: { success: boolean, customers: [...] }
+  Called by: PendingCustomers.tsx
+
+POST /nfc/api/v1/nfc/pending/update-email
+  Purpose: Update pending customer email
+  Body: { customer_id: string, email: string }
+  Response: { success: boolean }
+  Called by: PendingCustomers.tsx, MyPendingStatus.tsx
+
+GET /nfc/api/v1/nfc/my-pending-status?{params}
+  Purpose: Check customer's own pending signup status
+  Response: { success: boolean, status: string }
+  Called by: MyPendingStatus.tsx
+
+
+================================================================================
+AUTO-SIGN (CUSTOMER)
+================================================================================
+
+GET /nfc/api/v1/nfc/customer/autosign-status/{walletAddress}
+  Purpose: Check customer auto-sign status
+  Response: { success: boolean, enabled: boolean, ... }
+  Called by: AutoSignModal.tsx, TapToPaySettings.tsx, InstantPay.tsx, affiliate-dashboard/page.tsx, OnboardingSetup.tsx
+
+POST /nfc/api/v1/nfc/customer/setup-autosign
+  Purpose: Setup customer auto-sign (creates Xaman signing request)
+  Body: { wallet_address: string }
+  Response: { success: boolean, qr_png?: string, deep_link?: string }
+  Called by: AutoSignModal.tsx, TapToPaySettings.tsx, InstantPay.tsx, affiliate-dashboard/page.tsx, OnboardingSetup.tsx, WalletSettings.tsx
+
+POST /nfc/api/v1/nfc/customer/enable-autosign
+  Purpose: Enable auto-sign after setup
+  Body: { wallet_address: string }
+  Response: { success: boolean }
+  Called by: AutoSignModal.tsx, OnboardingSetup.tsx
+
+POST /nfc/api/v1/nfc/customer/revoke-autosign
+  Purpose: Revoke customer auto-sign
+  Body: { wallet_address: string }
+  Response: { success: boolean }
+  Called by: TapToPaySettings.tsx, WalletSettings.tsx, affiliate-dashboard/page.tsx
+
+POST /nfc/api/v1/nfc/customer/confirm-revoke
+  Purpose: Confirm customer auto-sign revocation (via Xaman)
+  Body: { wallet_address: string }
+  Response: { success: boolean }
+  Called by: TapToPaySettings.tsx
+
+GET /nfc/api/v1/nfc/customer/verify-autosign/{walletAddress}
+  Purpose: Verify auto-sign setup completed
+  Response: { success: boolean, verified: boolean }
+  Called by: WalletSettings.tsx
+
+
+================================================================================
+PAYMENTS & PAYMENT LINKS
+================================================================================
+
+POST /nfc/api/v1/payment-link/create
+  Purpose: Create a new payment link
+  Body: { store_id, store_name, vendor_wallet, amount, tip?, items?, payment_type? }
+  Response: { success: boolean, payment_id: string }
+  Called by: SoundPayButton.tsx, SoundPaySend.tsx, SendPaymentLink.tsx
+
+GET /nfc/api/v1/payment-link/{paymentId}
+  Purpose: Get payment link details / check status
+  Response: { success: boolean, payment: { status, amount, tx_hash, ... } }
+  Called by: SoundPay.tsx (polling), SoundPaySendButton.tsx, SendPaymentLink.tsx, pay/[paymentId]/page.tsx
+
+POST /nfc/api/v1/payment-link/{paymentId}/pay
+  Purpose: Process payment for a payment link
+  Body: { payer_wallet: string, ... }
+  Response: { success: boolean, tx_hash: string }
+  Called by: pay/[paymentId]/page.tsx, SoundPaymentConfirm.tsx
+
+POST /nfc/api/v1/payment-link/{paymentId}/tip
+  Purpose: Save tip amount for payment
+  Body: { tip_amount: number }
+  Response: { success: boolean }
+  Called by: SoundPay.tsx, pay/[paymentId]/page.tsx
+
+POST /nfc/api/v1/payment-link/{paymentId}/split
+  Purpose: Split payment into multiple parts
+  Body: { splits: [...] }
+  Response: { success: boolean, split_payments: [...] }
+  Called by: pay/[paymentId]/page.tsx
+
+GET /nfc/api/v1/payment-link/{paymentId}/split-status
+  Purpose: Check split payment status
+  Response: { success: boolean, splits: [...] }
+  Called by: SendPaymentLink.tsx
+
+POST /nfc/api/v1/payment-link/{paymentId}/cancel
+  Purpose: Cancel a payment link
+  Body: {}
+  Response: { success: boolean }
+  Called by: PendingPayments.tsx
+
+POST /nfc/api/v1/payment-link/send-email
+  Purpose: Send payment link via email
+  Body: { payment_id: string, email: string, store_name?: string }
+  Response: { success: boolean }
+  Called by: SendPaymentLink.tsx, pay/[paymentId]/page.tsx
+
+GET /nfc/api/v1/store/{storeId}/pending-payments
+  Purpose: Get pending payments for a store
+  Response: { success: boolean, payments: [...] }
+  Called by: PendingPayments.tsx
+
+GET /nfc/api/v1/p/{token}?sid={soundId}
+  Purpose: Process SoundPay payment (short token + sound device ID)
+  Response: { success: boolean, tx_hash?: string, store_name?, amount?, receipt_id?, ... }
+  Called by: SoundPay.tsx, SoundPaymentPage.tsx
+
+POST /nfc/api/v1/nfc/payment
+  Purpose: Process NFC tap payment (from customer display)
+  Body: { store_id, amount, card_uid?, wallet_address?, ... }
+  Response: { success: boolean, tx_hash: string }
+  Called by: display/page.tsx, take-payment/page.tsx
+
+POST /nfc/api/v1/sound-payment/pay
+  Purpose: Process confirmed sound payment
+  Body: { payment_id: string, sound_id: string, ... }
+  Response: { success: boolean, tx_hash: string }
+  Called by: SoundPaymentConfirm.tsx
+
+POST /nfc/api/v1/sound-payment/token
+  Purpose: Generate sound payment broadcast token
+  Body: { store_id: string, amount: number }
+  Response: { success: boolean, token: string }
+  Called by: SoundBroadcast.tsx
+
+GET /nfc/api/v1/sound-payment/redeem/{token}
+  Purpose: Redeem a sound payment token
+  Response: { success: boolean, payment: object }
+  Called by: SoundListen.tsx
+
+
+================================================================================
+SOUND DEVICE REGISTRATION
+================================================================================
+
+POST /nfc/api/v1/sound/register
+  Purpose: Register device for SoundPay (links wallet to sound_id)
+  Body: { wallet_address: string, device_info?: object }
+  Response: { success: boolean, sound_id: string, secret_key: string }
+  Called by: TapToPaySettings.tsx, LinkNFCCard.tsx
+
+GET /nfc/api/v1/sound/device-by-wallet/{walletAddress}
+  Purpose: Get sound device ID for a wallet
+  Response: { success: boolean, sound_id: string }
+  Called by: SoundPay.tsx, SoundPaymentPage.tsx
+
+
+================================================================================
+CUSTOMER DISPLAY
+================================================================================
+
+POST /nfc/api/v1/display/update
+  Purpose: Update customer-facing display (cart, total, status)
+  Body: { store_id, store_name, cart, total, status, qr_code?, tip?, tips_enabled?, vendor_wallet?, payment_id? }
+  Response: { success: boolean }
+  Called by: lib/customerDisplay.ts, SoundPayButton.tsx, display/page.tsx, take-payment/page.tsx
+
+GET /nfc/api/v1/display/{storeId}
+  Purpose: Get current display state for a store
+  Response: { store_name, cart, total, status, qr_code, ... }
+  Called by: display/page.tsx, take-payment/page.tsx
+
+POST /nfc/api/v1/display/{storeId}/tip
+  Purpose: Submit tip from customer display
+  Body: { tip_amount: number }
+  Response: { success: boolean }
+  Called by: display/page.tsx
+
+POST /nfc/api/v1/display/{storeId}/status
+  Purpose: Update display status only
+  Body: { status: string }
+  Response: { success: boolean }
+  Called by: dashboard/page.tsx, signup-customer/page.tsx
+
+POST /nfc/api/v1/display/{storeId}/confirm
+  Purpose: Confirm payment from display
+  Body: { ... }
+  Response: { success: boolean }
+  Called by: display/page.tsx
+
+POST /nfc/api/v1/display/{storeId}/reset-confirm
+  Purpose: Reset display confirmation state
+  Body: {}
+  Response: { success: boolean }
+  Called by: take-payment/page.tsx
+
+
+================================================================================
+RECEIPTS
+================================================================================
+
+GET /nfc/api/v1/receipts/{receiptId}
+  Purpose: Get receipt details
+  Response: { success: boolean, receipt: object }
+  Called by: take-payment/page.tsx, ReceiptActions.tsx, EmailReceiptModal.tsx
+
+POST /nfc/api/v1/receipt/email
+  Purpose: Email receipt to customer
+  Body: { receipt_id: string, email: string }
+  Response: { success: boolean }
+  Called by: EmailReceiptModal.tsx, receipts/page.tsx
+
+GET /nfc/api/v1/store/{storeId}/receipts?wallet={wallet}&page={page}
+  Purpose: Get paginated receipts for a store
+  Response: { success: boolean, receipts: [...], total: number }
+  Called by: receipts/page.tsx
+
+
+================================================================================
+INVENTORY / PRODUCTS
+================================================================================
+
+GET /nfc/api/v1/store/{storeId}/products?wallet_address={wallet}
+  Purpose: Get all products for a store
+  Response: { success: boolean, products: [...] }
+  Called by: ProductsManager.tsx
+
+POST /nfc/api/v1/store/{storeId}/products/bulk
+  Purpose: Bulk create/update products
+  Body: { products: [...], wallet_address: string }
+  Response: { success: boolean }
+  Called by: ProductsManager.tsx
+
+PUT /nfc/api/v1/store/{storeId}/products/{productId}
+  Purpose: Update a single product
+  Body: { name, price, emoji, category, ... }
+  Response: { success: boolean }
+  Called by: ProductsManager.tsx
+
+DELETE /nfc/api/v1/store/{storeId}/products/{productId}
+  Purpose: Delete a product
+  Response: { success: boolean }
+  Called by: ProductsManager.tsx
+
+POST /nfc/api/v1/store/{storeId}/inventory/{productId}/adjust
+  Purpose: Adjust inventory stock level
+  Body: { adjustment: number, reason?: string }
+  Response: { success: boolean }
+  Called by: take-payment/page.tsx (after sale)
+
+GET /nfc/api/v1/store/{storeId}/inventory/{productId}/history
+  Purpose: Get inventory adjustment history
+  Response: { success: boolean, history: [...] }
+  Called by: InventoryHistoryModal.tsx
+
+
+================================================================================
+STAFF MANAGEMENT
+================================================================================
+
+GET /nfc/api/v1/store/{storeId}/staff?wallet_address={wallet}
+  Purpose: Get staff list for a store
+  Response: { success: boolean, staff: [...] }
+  Called by: StaffSelector.tsx, staffpos/page.tsx, take-payment/page.tsx
+
+POST /nfc/api/v1/store/{storeId}/staff/{staffId}/clock-in
+  Purpose: Clock staff member in
+  Body: {}
+  Response: { success: boolean }
+  Called by: staffpos/page.tsx
+
+POST /nfc/api/v1/store/{storeId}/staff/{staffId}/clock-out
+  Purpose: Clock staff member out
+  Body: {}
+  Response: { success: boolean }
+  Called by: staffpos/page.tsx
+
+
+================================================================================
+ANALYTICS
+================================================================================
+
+GET /nfc/api/v1/store/{storeId}/analytics?wallet_address={wallet}&period={period}
+  Purpose: Get store analytics (sales, revenue, trends)
+  Response: { success: boolean, analytics: object }
+  Called by: analytics/page.tsx, earn/analytics/page.tsx
+
+GET /nfc/api/v1/store/{storeId}/analytics/customers?wallet_address={wallet}
+  Purpose: Get customer analytics
+  Response: { success: boolean, customer_analytics: object }
+  Called by: staffpos/page.tsx
+
+
+================================================================================
+CHECKOUT (PLUGINS API - WooCommerce/WordPress)
+================================================================================
+
+GET /plugins/api/v1/checkout/session/{sessionId}
+  Purpose: Get checkout session details (from WooCommerce plugin)
+  Response: { success: boolean, session: { amount, store_id, items, ... } }
+  Called by: checkout/[sessionId]/page.tsx
+
+POST /plugins/api/v1/checkout/session/{sessionId}/pay
+  Purpose: Process checkout session payment
+  Body: { payer_wallet: string }
+  Response: { success: boolean, tx_hash: string }
+  Called by: checkout/[sessionId]/page.tsx
+
+POST /plugins/api/v1/checkout/session/{sessionId}/split
+  Purpose: Split checkout session payment
+  Body: { splits: [...] }
+  Response: { success: boolean }
+  Called by: checkout/[sessionId]/page.tsx
+
+
+================================================================================
+CURRENCY CONVERSION
+================================================================================
+
+GET /convert/gbp-to-rlusd?amount={amount}&capture={true|false}
+  Purpose: Convert GBP amount to RLUSD with live rate
+  Response: { rlusd_amount: number, rate: number, source: string, captured_at: string }
+  Called by: pay/[paymentId]/page.tsx, display/page.tsx, take-payment/page.tsx,
+            checkout/[sessionId]/page.tsx, LiveConversionWidget.tsx
+
+
+================================================================================
+EXTERNAL / THIRD-PARTY
+================================================================================
+
+GET https://tokencanvas.io/api/coingecko/coins/ripple/tickers
+  Purpose: Get XRP exchange tickers (proxied through /api/exchanges)
+  Response: CoinGecko format tickers data
+  Called by: app/api/exchanges/route.ts -> WalletFunding.tsx
+
+GET https://tokencanvas.io/api/coingecko/simple/price?ids=ripple-usd&vs_currencies=gbp
+  Purpose: Fallback RLUSD/GBP price
+  Called by: take-payment/page.tsx
+
+POST https://tokencanvas.io/api/cloudinary/upload
+  Purpose: Upload images to Cloudinary (via proxy)
+  Body: FormData with file
+  Response: { secure_url: string }
+  Called by: dashboard/page.tsx (logo upload), affiliate-dashboard/page.tsx (avatar upload),
+            take-payment/page.tsx, ProductsManager.tsx
+
+POST https://api.cloudinary.com/v1_1/dghhmw3q3/image/upload
+  Purpose: Direct Cloudinary upload (product images)
+  Body: FormData
+  Response: { secure_url: string }
+  Called by: ProductsManager.tsx
+
+
+================================================================================
+MILESTONE CHECKLIST
+================================================================================
+
+GET /api/v1/store/{storeId}/milestone-status
+GET /api/v1/customer/milestones/{walletAddress}
+  Purpose: Get milestone completion status for onboarding checklists
+  Response: { success: boolean, milestones: { step1: boolean, step2: boolean, ... } }
+  Called by: MilestoneChecklist.tsx
