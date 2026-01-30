@@ -2,8 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import Papa from 'papaparse';
 import { Theme } from 'emoji-picker-react';
 import { foodIcons, foodIconCategories, findIconForProduct, getIconById, FoodIcon } from '@/lib/foodIcons';
+import CSVImportModal from './CSVImportModal';
+import InventoryHistoryModal from './InventoryHistoryModal';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
@@ -16,6 +19,12 @@ interface Product {
   emoji?: string | null;
   icon_id?: string | null;
   image_url?: string | null;
+  // Inventory fields
+  barcode?: string | null;
+  track_stock?: boolean;
+  quantity?: number;
+  low_stock_threshold?: number;
+  allow_negative_stock?: boolean;
 }
 
 interface ProductsManagerProps {
@@ -101,6 +110,18 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
   const [formEmoji, setFormEmoji] = useState('');
   const [formIconId, setFormIconId] = useState<string | null>(null);
   const [formImageUrl, setFormImageUrl] = useState<string | null>(null);
+  // Inventory form fields
+  const [formBarcode, setFormBarcode] = useState('');
+  const [formTrackStock, setFormTrackStock] = useState(false);
+  const [formQuantity, setFormQuantity] = useState('');
+  const [formLowStockThreshold, setFormLowStockThreshold] = useState('5');
+
+  // CSV Import/Export
+  const [showImportModal, setShowImportModal] = useState(false);
+
+  // Inventory History
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyProduct, setHistoryProduct] = useState<Product | null>(null);
 
   const fetchProducts = async () => {
     try {
@@ -119,6 +140,78 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
     if (storeId && walletAddress) fetchProducts();
   }, [storeId, walletAddress]);
 
+  // CSV Import Handler
+  const handleCSVImport = async (rows: Record<string, string>[]): Promise<{ success: number; failed: number; errors: string[] }> => {
+    try {
+      const products = rows.map(row => ({
+        name: row.name?.trim(),
+        price: parseFloat(row.price),
+        category: row.category?.trim() || null,
+        sku: row.sku?.trim() || null,
+        barcode: row.barcode?.trim() || null,
+        track_stock: row.quantity !== undefined && row.quantity !== '',
+        quantity: parseInt(row.quantity) || 0,
+        low_stock_threshold: parseInt(row.low_stock_threshold) || 5
+      }));
+
+      const res = await fetch(`${API_URL}/store/${storeId}/products/bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wallet_address: walletAddress,
+          products
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        await fetchProducts(); // Refresh the product list
+        return {
+          success: data.created || 0,
+          failed: data.errors?.length || 0,
+          errors: data.errors || []
+        };
+      } else {
+        return {
+          success: 0,
+          failed: rows.length,
+          errors: [data.error || 'Import failed']
+        };
+      }
+    } catch (err: any) {
+      return {
+        success: 0,
+        failed: rows.length,
+        errors: [err.message || 'Network error']
+      };
+    }
+  };
+
+  // CSV Export Handler
+  const handleCSVExport = () => {
+    const csv = Papa.unparse({
+      fields: ['name', 'price', 'category', 'sku', 'barcode', 'quantity', 'low_stock_threshold'],
+      data: products.map(p => ({
+        name: p.name,
+        price: p.price.toFixed(2),
+        category: p.category || '',
+        sku: p.sku || '',
+        barcode: p.barcode || '',
+        quantity: p.track_stock ? (p.quantity || 0).toString() : '',
+        low_stock_threshold: p.track_stock ? (p.low_stock_threshold || 5).toString() : ''
+      }))
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `products-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     if (formName && !editingProduct && !formIconId && !formImageUrl) {
       const icon = findIconForProduct(formName, formCategory);
@@ -135,6 +228,7 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
   const resetForm = () => {
     setFormName(''); setFormPrice(''); setFormSku(''); setFormCategory('');
     setFormEmoji(''); setFormIconId(null); setFormImageUrl(null);
+    setFormBarcode(''); setFormTrackStock(false); setFormQuantity(''); setFormLowStockThreshold('5');
     setEditingProduct(null); setShowForm(false); setShowIconPicker(false);
     setIconSearch(''); setSelectedIconCategory(null); setError(null);
   };
@@ -148,6 +242,11 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
     setFormEmoji(product.emoji || '');
     setFormIconId(product.icon_id || null);
     setFormImageUrl(product.image_url || null);
+    // Inventory fields
+    setFormBarcode(product.barcode || '');
+    setFormTrackStock(product.track_stock || false);
+    setFormQuantity(product.quantity?.toString() || '0');
+    setFormLowStockThreshold(product.low_stock_threshold?.toString() || '5');
     setShowForm(true);
   };
 
@@ -174,7 +273,12 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
           category: formCategory.trim() || null,
           emoji: formIconId || formImageUrl ? null : (formEmoji || null),
           icon_id: formIconId || null,
-          image_url: formImageUrl || null
+          image_url: formImageUrl || null,
+          // Inventory fields
+          barcode: formBarcode.trim() || null,
+          track_stock: formTrackStock,
+          quantity: parseInt(formQuantity) || 0,
+          low_stock_threshold: parseInt(formLowStockThreshold) || 5
         })
       });
       const data = await res.json();
@@ -271,10 +375,59 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
           <h2 className="text-lg font-bold">Products</h2>
           <p className="text-zinc-500 text-sm">Manage your product catalog</p>
         </div>
-        <button onClick={() => { resetForm(); setShowForm(true); }} className="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-          Add Product
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Import/Export dropdown for mobile, buttons for desktop */}
+          <div className="hidden sm:flex items-center gap-2">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded-lg transition flex items-center gap-2 text-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Import
+            </button>
+            {products.length > 0 && (
+              <button
+                onClick={handleCSVExport}
+                className="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded-lg transition flex items-center gap-2 text-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export
+              </button>
+            )}
+          </div>
+          {/* Mobile: compact buttons */}
+          <div className="flex sm:hidden items-center gap-1">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-lg transition"
+              title="Import CSV"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+            </button>
+            {products.length > 0 && (
+              <button
+                onClick={handleCSVExport}
+                className="bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-lg transition"
+                title="Export CSV"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <button onClick={() => { resetForm(); setShowForm(true); }} className="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            <span className="hidden sm:inline">Add Product</span>
+            <span className="sm:hidden">Add</span>
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -283,6 +436,42 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
           <button onClick={() => setError(null)} className="text-red-400 text-xs mt-1 hover:underline">Dismiss</button>
         </div>
       )}
+
+      {/* Low Stock Alert */}
+      {(() => {
+        const lowStockProducts = products.filter(p =>
+          p.track_stock && (p.quantity || 0) <= (p.low_stock_threshold || 5)
+        );
+        if (lowStockProducts.length === 0) return null;
+
+        const outOfStock = lowStockProducts.filter(p => (p.quantity || 0) === 0);
+
+        return (
+          <div className={`rounded-lg p-4 mb-4 ${outOfStock.length > 0 ? 'bg-red-500/10 border border-red-500/30' : 'bg-amber-500/10 border border-amber-500/30'}`}>
+            <div className="flex items-center gap-2 mb-2">
+              <svg className={`w-5 h-5 ${outOfStock.length > 0 ? 'text-red-400' : 'text-amber-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span className={`font-semibold ${outOfStock.length > 0 ? 'text-red-400' : 'text-amber-400'}`}>
+                {outOfStock.length > 0 ? `${outOfStock.length} out of stock` : 'Low Stock Alert'}
+              </span>
+            </div>
+            <ul className="text-sm text-zinc-400 space-y-1">
+              {lowStockProducts.slice(0, 5).map(p => (
+                <li key={p.product_id} className="flex items-center justify-between">
+                  <span>{p.name}</span>
+                  <span className={`font-mono ${(p.quantity || 0) === 0 ? 'text-red-400' : 'text-amber-400'}`}>
+                    {p.quantity || 0} left
+                  </span>
+                </li>
+              ))}
+              {lowStockProducts.length > 5 && (
+                <li className="text-zinc-500">...and {lowStockProducts.length - 5} more</li>
+              )}
+            </ul>
+          </div>
+        );
+      })()}
 
       {showForm && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
@@ -374,6 +563,56 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
                 <input type="text" value={formSku} onChange={e => setFormSku(e.target.value.toUpperCase())} placeholder="e.g. FLATWHT" className="w-full bg-zinc-800 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono" />
               </div>
 
+              <div>
+                <label className="text-zinc-400 text-sm block mb-1">Barcode <span className="text-zinc-600">(optional)</span></label>
+                <input type="text" value={formBarcode} onChange={e => setFormBarcode(e.target.value)} placeholder="e.g. 5901234123457" className="w-full bg-zinc-800 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono" />
+              </div>
+
+              {/* Inventory Section */}
+              <div className="border-t border-zinc-700 pt-4 mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <label className="text-zinc-300 text-sm font-medium">Track Stock</label>
+                    <p className="text-zinc-500 text-xs">Monitor inventory levels</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFormTrackStock(!formTrackStock)}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${formTrackStock ? 'bg-emerald-500' : 'bg-zinc-700'}`}
+                  >
+                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${formTrackStock ? 'left-7' : 'left-1'}`} />
+                  </button>
+                </div>
+
+                {formTrackStock && (
+                  <div className="space-y-4 bg-zinc-800/50 rounded-lg p-4">
+                    <div>
+                      <label className="text-zinc-400 text-sm block mb-1">Current Stock</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formQuantity}
+                        onChange={e => setFormQuantity(e.target.value)}
+                        placeholder="0"
+                        className="w-full bg-zinc-800 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-zinc-400 text-sm block mb-1">Low Stock Alert</label>
+                      <p className="text-zinc-500 text-xs mb-2">Alert when stock falls to this level</p>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formLowStockThreshold}
+                        onChange={e => setFormLowStockThreshold(e.target.value)}
+                        placeholder="5"
+                        className="w-full bg-zinc-800 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={resetForm} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-lg font-medium transition">Cancel</button>
                 <button type="submit" disabled={saving} className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black py-3 rounded-lg font-semibold transition disabled:opacity-50">
@@ -405,7 +644,13 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
                   <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wide mb-2">{category}</h3>
                   <div className="space-y-2">
                     {products.filter(p => p.category === category).map(product => (
-                      <ProductRow key={product.product_id} product={product} onEdit={() => openEditForm(product)} onDelete={() => handleDelete(product)} />
+                      <ProductRow
+                        key={product.product_id}
+                        product={product}
+                        onEdit={() => openEditForm(product)}
+                        onDelete={() => handleDelete(product)}
+                        onHistory={() => { setHistoryProduct(product); setShowHistoryModal(true); }}
+                      />
                     ))}
                   </div>
                 </div>
@@ -415,7 +660,13 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
                   <h3 className="text-zinc-500 text-xs font-semibold uppercase tracking-wide mb-2">Uncategorized</h3>
                   <div className="space-y-2">
                     {products.filter(p => !p.category).map(product => (
-                      <ProductRow key={product.product_id} product={product} onEdit={() => openEditForm(product)} onDelete={() => handleDelete(product)} />
+                      <ProductRow
+                        key={product.product_id}
+                        product={product}
+                        onEdit={() => openEditForm(product)}
+                        onDelete={() => handleDelete(product)}
+                        onHistory={() => { setHistoryProduct(product); setShowHistoryModal(true); }}
+                      />
                     ))}
                   </div>
                 </div>
@@ -423,7 +674,13 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
             </>
           ) : (
             products.map(product => (
-              <ProductRow key={product.product_id} product={product} onEdit={() => openEditForm(product)} onDelete={() => handleDelete(product)} />
+              <ProductRow
+                key={product.product_id}
+                product={product}
+                onEdit={() => openEditForm(product)}
+                onDelete={() => handleDelete(product)}
+                onHistory={() => { setHistoryProduct(product); setShowHistoryModal(true); }}
+              />
             ))
           )}
         </div>
@@ -432,26 +689,102 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
       {products.length > 0 && (
         <div className="mt-4 pt-4 flex items-center justify-between text-sm text-zinc-500">
           <span>{products.length} product{products.length !== 1 ? 's' : ''}</span>
-          {categories.length > 0 && <span>{categories.length} categor{categories.length !== 1 ? 'ies' : 'y'}</span>}
+          <div className="flex items-center gap-4">
+            {(() => {
+              const tracked = products.filter(p => p.track_stock);
+              const lowStock = tracked.filter(p => (p.quantity || 0) <= (p.low_stock_threshold || 5));
+              if (tracked.length === 0) return null;
+              return (
+                <>
+                  <span className={lowStock.length > 0 ? 'text-amber-400' : 'text-zinc-500'}>
+                    {lowStock.length > 0 ? `${lowStock.length} low stock` : `${tracked.length} tracked`}
+                  </span>
+                  <button
+                    onClick={() => { setHistoryProduct(null); setShowHistoryModal(true); }}
+                    className="text-cyan-400 hover:text-cyan-300 transition flex items-center gap-1"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    History
+                  </button>
+                </>
+              );
+            })()}
+            {categories.length > 0 && <span>{categories.length} categor{categories.length !== 1 ? 'ies' : 'y'}</span>}
+          </div>
         </div>
+      )}
+
+      {/* CSV Import Modal */}
+      <CSVImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleCSVImport}
+        templateColumns={['name', 'price', 'category', 'sku', 'barcode', 'quantity', 'low_stock_threshold']}
+        requiredColumns={['name', 'price']}
+        templateName="Products"
+      />
+
+      {/* Inventory History Modal */}
+      {showHistoryModal && (
+        <InventoryHistoryModal
+          storeId={storeId}
+          walletAddress={walletAddress}
+          productId={historyProduct?.product_id}
+          productName={historyProduct?.name}
+          onClose={() => {
+            setShowHistoryModal(false);
+            setHistoryProduct(null);
+          }}
+        />
       )}
     </div>
   );
 }
 
-function ProductRow({ product, onEdit, onDelete }: { product: Product; onEdit: () => void; onDelete: () => void }) {
+function ProductRow({ product, onEdit, onDelete, onHistory }: { product: Product; onEdit: () => void; onDelete: () => void; onHistory?: () => void }) {
+  const isLowStock = product.track_stock && (product.quantity || 0) <= (product.low_stock_threshold || 5);
+  const isOutOfStock = product.track_stock && (product.quantity || 0) === 0;
+
   return (
     <div className="flex items-center justify-between bg-zinc-800/50 hover:bg-zinc-800 rounded-lg p-3 transition group">
       <div className="flex items-center gap-3 min-w-0">
-        <ProductIcon product={product} size={40} />
+        <div className="relative">
+          <ProductIcon product={product} size={40} />
+          {isOutOfStock && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+              <span className="text-[8px] font-bold text-white">0</span>
+            </div>
+          )}
+        </div>
         <div className="min-w-0">
           <p className="font-medium truncate">{product.name}</p>
-          <p className="text-zinc-500 text-xs font-mono">{product.sku}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-zinc-500 text-xs font-mono">{product.sku}</p>
+            {product.barcode && (
+              <p className="text-zinc-600 text-xs">• {product.barcode}</p>
+            )}
+          </div>
         </div>
       </div>
       <div className="flex items-center gap-3">
+        {product.track_stock && (
+          <div className={`text-xs px-2 py-1 rounded-full font-medium ${
+            isOutOfStock ? 'bg-red-500/20 text-red-400' :
+            isLowStock ? 'bg-amber-500/20 text-amber-400' :
+            'bg-zinc-700 text-zinc-400'
+          }`}>
+            {product.quantity || 0} in stock
+          </div>
+        )}
         <span className="text-emerald-400 font-semibold">£{product.price.toFixed(2)}</span>
         <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition">
+          {product.track_stock && onHistory && (
+            <button onClick={onHistory} className="p-2 text-zinc-400 hover:text-cyan-400 hover:bg-zinc-700 rounded-lg transition" title="View history">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </button>
+          )}
           <button onClick={onEdit} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-700 rounded-lg transition" title="Edit">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
           </button>
