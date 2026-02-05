@@ -76,3 +76,19 @@ export async function logoutWeb3Auth() {
     web3authInstance = null;
   }
 }
+
+/**
+ * Get the raw secp256k1 private key from Web3Auth (pre-XRPL derivation).
+ * This is the same key used by iOS/Android for XRPL key derivation.
+ */
+export async function getPrivateKey(): Promise<string | null> {
+  try {
+    const web3auth = await getWeb3Auth();
+    if (!web3auth?.connected || !web3auth.provider) return null;
+    const key = await web3auth.provider.request({ method: "private_key" }) as string;
+    return key || null;
+  } catch (error) {
+    console.error("Failed to get private key:", error);
+    return null;
+  }
+}

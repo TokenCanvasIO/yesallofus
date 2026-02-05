@@ -383,14 +383,14 @@ const [reauthing, setReauthing] = useState(false);
           <div className="flex-1">
             <h3 className="text-lg font-bold text-white mb-2">Activate Your Wallet</h3>
             <p className="text-zinc-400 text-sm mb-4">
-              Your wallet needs at least <strong className="text-white">1.5 XRP</strong> to be activated on the XRP Ledger
+              Your wallet needs at least <strong className="text-white">2 XRP</strong> to be activated on the XRP Ledger
               and set up the RLUSD trustline.
               Send XRP from an exchange or another wallet.
             </p>
 
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-4">
               <p className="text-blue-400 text-sm">
-                <strong>Why 1.5 XRP?</strong> 1 XRP activates your wallet + 0.2 XRP reserves the RLUSD trustline + buffer for transaction fees.
+                <strong>Why 2 XRP?</strong> 1 XRP base reserve + 0.4 XRP for trustlines + 0.2 XRP for signer + buffer for fees.
               </p>
             </div>
 
@@ -505,7 +505,7 @@ const [reauthing, setReauthing] = useState(false);
               </div>
 
               <p className="text-zinc-600 text-xs mt-3 text-center">
-                Buy at least 1.5 XRP on any exchange, then withdraw to your wallet address above.
+                Buy at least 2 XRP on any exchange, then withdraw to your wallet address above.
               </p>
             </div>
 

@@ -23,7 +23,9 @@
     "qrcode.react": "^4.2.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "viem": "^2.44.2"
+    "viem": "^2.44.2",
+    "@noble/secp256k1": "^2.2.3",
+    "@noble/hashes": "^1.7.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

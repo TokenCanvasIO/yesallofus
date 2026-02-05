@@ -41,13 +41,13 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
     
     // Auto-register sound device if wallet exists and not already registered
     if (walletAddress) {
-      const existingSoundId = localStorage.getItem('yesallofus_sound_id');
+      const existingSoundId = sessionStorage.getItem('yesallofus_sound_id');
       if (!existingSoundId) {
         const soundId = 'snd_' + Math.random().toString(36).slice(2,6);
         const secretKey = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-        
-        localStorage.setItem('yesallofus_sound_id', soundId);
-        localStorage.setItem('yesallofus_sound_secret', secretKey);
+
+        sessionStorage.setItem('yesallofus_sound_id', soundId);
+        sessionStorage.setItem('yesallofus_sound_secret', secretKey);
         
         fetch(`${NFC_API_URL}/sound/register`, {
           method: 'POST',

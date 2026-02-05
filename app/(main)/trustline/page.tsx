@@ -181,11 +181,11 @@ export default function TrustlineGuide() {
                   <circle cx="12" cy="12" r="10"/>
                   <path d="M12 16v-4M12 8h.01"/>
                 </svg>
-                Why the 1.50 XRP threshold?
+                Why the 2 XRP threshold?
               </h5>
               <p className="text-zinc-400 text-sm">
-                New XRPL wallets require a minimum reserve of ~1 XRP to activate, plus ~0.2 XRP for each trustline. 
-                Instead of asking you to fund this yourself, we cover it from your first commissions plus transaction fees to help you start. 
+                New XRPL wallets require a base reserve of 1 XRP, plus 0.2 XRP for each trustline and 0.2 XRP for the signer list.
+                2 XRP covers all reserves plus transaction fees to complete the full setup. 
                 You don&apos;t pay anything — it just means your first few dollars are held briefly until the we can tell the ledger to activate your wallet.
               </p>
             </div>

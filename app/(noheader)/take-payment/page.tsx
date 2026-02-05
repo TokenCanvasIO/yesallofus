@@ -16,6 +16,7 @@ import AutoSignModal from '@/components/AutoSignModal';
 import { getIconById } from '@/lib/foodIcons';
 import SoundPayButton from '@/components/SoundPayButton';
 import SoundPaySendButton from '@/components/SoundPaySendButton';
+import BarcodeScanner from '@/components/BarcodeScanner';
 interface Product {
 product_id: string;
 name: string;
@@ -25,6 +26,11 @@ category: string | null;
 emoji?: string;
 icon_id?: string | null;
 image_url?: string | null;
+// Inventory fields
+track_stock?: boolean;
+stock_quantity?: number;
+low_stock_threshold?: number;
+barcode?: string | null;
 }
 interface CartItem extends Product {
 quantity: number;
@@ -219,6 +225,8 @@ const [settingUpWallet, setSettingUpWallet] = useState(false);
 const [runTour, setRunTour] = useState(false);
 // Mobile products collapse
 const [productsExpanded, setProductsExpanded] = useState(false);
+// Barcode scanner
+const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
 // Stats data
 const [stats, setStats] = useState({ totalRevenue: 0, totalSales: 0 });
@@ -248,6 +256,37 @@ const convertGBPtoRLUSD = async (gbpAmount: number): Promise<number> => {
     } catch {}
     return Math.round(gbpAmount * 1.35 * 1000000) / 1000000;
   }
+};
+
+// Decrement stock for cart items after successful payment
+const decrementStockForCart = async (cartItems: CartItem[]) => {
+  if (!storeId || !walletAddress) return;
+
+  // Filter items that have stock tracking enabled
+  const stockItems = cartItems.filter(item => item.track_stock);
+  if (stockItems.length === 0) return;
+
+  // Decrement stock for each item
+  for (const item of stockItems) {
+    try {
+      await fetch(`${API_URL}/store/${storeId}/inventory/${item.product_id}/adjust`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wallet_address: walletAddress,
+          adjustment: -item.quantity, // Negative to decrement
+          reason: 'sale',
+          notes: `POS sale - ${item.quantity} unit(s)`
+        })
+      });
+    } catch (err) {
+      console.error(`Failed to decrement stock for ${item.name}:`, err);
+      // Don't block payment success for stock errors
+    }
+  }
+
+  // Refresh products to show updated stock
+  fetchProducts();
 };
 
 // Load store data
@@ -342,6 +381,7 @@ useEffect(() => {
       const res = await fetch(`${API_URL}/display/${storeId}`);
       const data = await res.json();
       if (data.status === 'success') {
+        decrementStockForCart(cart); // Decrement stock for sold items
         setStatus('success');
         setSoundPaymentId(null);
       }
@@ -364,6 +404,7 @@ if (data.status === 'signed') {
           setTxHash(data.tx_hash);
           setReceiptId(data.receipt_id);
           setLastOrder([...cart]);
+          decrementStockForCart(cart); // Decrement stock for sold items
           setStatus('success');
 paymentInProgressRef.current = false;
 if (storeId) updateCustomerDisplay(storeId, storeName, cart, getPaymentAmount(), 'success', null, tipAmount, tipsEnabled, walletAddress || undefined);
@@ -474,6 +515,7 @@ setTipAmount(data.tip);
 
 // Check if display completed payment (NFC tap-to-pay)
 if (data.status === 'success') {
+decrementStockForCart(cart); // Decrement stock for sold items
 setStatus('success');
 setTxHash(data.tx_hash || null);
 return;
@@ -525,6 +567,36 @@ return [...prev, { ...product, quantity: 1 }];
 // Haptic feedback
 if (navigator.vibrate) navigator.vibrate(10);
   };
+
+  // Handle barcode scan - lookup product and add to cart
+  const handleBarcodeScan = async (barcode: string, format: string) => {
+    setShowBarcodeScanner(false);
+
+    if (!storeId || !walletAddress) return;
+
+    try {
+      const res = await fetch(
+        `${API_URL}/store/${storeId}/products/barcode/${encodeURIComponent(barcode)}?wallet_address=${walletAddress}`
+      );
+      const data = await res.json();
+
+      if (data.success && data.product) {
+        // Add product to cart
+        addToCart(data.product);
+        // Success feedback
+        if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+      } else {
+        // Product not found - show error
+        setError(`No product found with barcode: ${barcode}`);
+        setTimeout(() => setError(null), 3000);
+      }
+    } catch (err) {
+      console.error('Barcode lookup error:', err);
+      setError('Failed to lookup barcode');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
 // Remove from cart
 const removeFromCart = (productId: string) => {
 setCart(prev => prev.filter(item => item.product_id !== productId));
@@ -765,6 +837,7 @@ if (data.success) {
 setTxHash(data.tx_hash);
 setReceiptId(data.receipt_id);
 setLastOrder([...cart]);
+decrementStockForCart(cart); // Decrement stock for sold items
 setStatus('success');
 if (storeId) updateCustomerDisplay(storeId, storeName, cart, paymentAmount, 'success', null, tipAmount, tipsEnabled, walletAddress || undefined);
 // Haptic + sound feedback
@@ -966,6 +1039,37 @@ const filteredProducts = searchQuery
 : activeCategory
 ? groupedProducts[activeCategory] || []
 : products;
+
+// Low stock alerts - products with track_stock enabled that are at or below threshold
+const lowStockProducts = products.filter(p =>
+  p.track_stock &&
+  typeof p.stock_quantity === 'number' &&
+  typeof p.low_stock_threshold === 'number' &&
+  p.stock_quantity <= p.low_stock_threshold &&
+  p.stock_quantity > 0
+);
+
+// Out of stock products
+const outOfStockProducts = products.filter(p =>
+  p.track_stock &&
+  typeof p.stock_quantity === 'number' &&
+  p.stock_quantity <= 0
+);
+
+// Helper to check if product is low stock
+const isLowStock = (product: Product) =>
+  product.track_stock &&
+  typeof product.stock_quantity === 'number' &&
+  typeof product.low_stock_threshold === 'number' &&
+  product.stock_quantity <= product.low_stock_threshold &&
+  product.stock_quantity > 0;
+
+// Helper to check if product is out of stock
+const isOutOfStock = (product: Product) =>
+  product.track_stock &&
+  typeof product.stock_quantity === 'number' &&
+  product.stock_quantity <= 0;
+
 // =========================================================================
 // RENDER
 // =========================================================================
@@ -1152,6 +1256,41 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
         </div>
       )}
 
+      {/* Low Stock Alert Banner */}
+      {(lowStockProducts.length > 0 || outOfStockProducts.length > 0) && (
+        <div className={`rounded-xl p-3 mb-4 flex items-center gap-3 ${
+          outOfStockProducts.length > 0
+            ? 'bg-red-500/10 border border-red-500/30'
+            : 'bg-amber-500/10 border border-amber-500/30'
+        }`}>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+            outOfStockProducts.length > 0 ? 'bg-red-500/20' : 'bg-amber-500/20'
+          }`}>
+            <svg className={`w-4 h-4 ${outOfStockProducts.length > 0 ? 'text-red-400' : 'text-amber-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            {outOfStockProducts.length > 0 && (
+              <p className="text-red-400 text-sm font-medium">
+                {outOfStockProducts.length} item{outOfStockProducts.length > 1 ? 's' : ''} out of stock
+              </p>
+            )}
+            {lowStockProducts.length > 0 && (
+              <p className="text-amber-400 text-sm">
+                {lowStockProducts.length} item{lowStockProducts.length > 1 ? 's' : ''} running low
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => setShowProductsManager(true)}
+            className="text-xs text-zinc-400 hover:text-white px-2 py-1 bg-zinc-800 rounded-lg transition flex-shrink-0"
+          >
+            Manage
+          </button>
+        </div>
+      )}
+
       {/* Products Grid or Manual Entry */}
       {!showManualEntry ? (
         <>
@@ -1175,32 +1314,45 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
               </div>
             ) : (
               <div className="mb-6">
-                {/* Search Bar */}
-                <div className="mb-4 relative">
-                  <input
-                    id="tp-search-bar"
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      setActiveCategory(null);
-                    }}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 pr-12 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
-                  />
-                  <button
-                    onClick={() => setShowProductsGrid(!showProductsGrid)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition"
-                    title={showProductsGrid ? 'Collapse products' : 'Expand products'}
-                  >
-                    <svg
-                      className={`w-4 h-4 text-zinc-400 transition-transform ${showProductsGrid ? '' : 'rotate-180'}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                {/* Search Bar with Barcode Scan */}
+                <div className="mb-4 flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      id="tp-search-bar"
+                      type="text"
+                      placeholder="Search products..."
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setActiveCategory(null);
+                      }}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 pr-12 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+                    />
+                    <button
+                      onClick={() => setShowProductsGrid(!showProductsGrid)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition"
+                      title={showProductsGrid ? 'Collapse products' : 'Expand products'}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={showProductsGrid ? "M19 9l-7 7-7-7" : "M5 15l7-7 7 7"} />
+                      <svg
+                        className={`w-4 h-4 text-zinc-400 transition-transform ${showProductsGrid ? '' : 'rotate-180'}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={showProductsGrid ? "M19 9l-7 7-7-7" : "M5 15l7-7 7 7"} />
+                      </svg>
+                    </button>
+                  </div>
+                  {/* Barcode Scan Button */}
+                  <button
+                    onClick={() => setShowBarcodeScanner(true)}
+                    className="bg-zinc-900 border border-zinc-800 hover:border-emerald-500 rounded-xl px-4 py-3 transition flex items-center gap-2"
+                    title="Scan barcode"
+                  >
+                    <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                     </svg>
+                    <span className="hidden sm:inline text-zinc-400 text-sm">Scan</span>
                   </button>
                 </div>
 
@@ -1258,33 +1410,55 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
                 <div id="tp-products-grid" className={`grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-3 gap-3 items-end max-h-[calc(100vh-170px)] overflow-y-auto overflow-x-hidden ${!showProductsGrid ? 'hidden' : ''}`}>
                   {filteredProducts.map((product) => {
                     const inCart = cart.find(item => item.product_id === product.product_id);
+                    const productOutOfStock = isOutOfStock(product);
+                    const productLowStock = isLowStock(product);
                     return (
                       <button
                         key={product.product_id}
-                        onClick={() => addToCart(product)}
-                        className={`relative bg-zinc-900 hover:bg-zinc-800 border rounded-2xl p-3 text-center transition-all active:scale-95 cursor-pointer flex flex-col justify-between min-h-[120px] ${
-                          inCart ? 'border-emerald-500 bg-emerald-500/10' : 'border-zinc-800'
+                        onClick={() => !productOutOfStock && addToCart(product)}
+                        disabled={productOutOfStock}
+                        className={`relative bg-zinc-900 border rounded-2xl p-3 text-center transition-all flex flex-col justify-between min-h-[120px] ${
+                          productOutOfStock
+                            ? 'border-red-500/50 opacity-60 cursor-not-allowed'
+                            : productLowStock
+                            ? 'border-amber-500/50 hover:bg-zinc-800 active:scale-95 cursor-pointer'
+                            : inCart
+                            ? 'border-emerald-500 bg-emerald-500/10 hover:bg-zinc-800 active:scale-95 cursor-pointer'
+                            : 'border-zinc-800 hover:bg-zinc-800 active:scale-95 cursor-pointer'
                         }`}
                       >
-                        {inCart && (
-                          <div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-xs font-bold text-black">
+                        {/* Cart quantity badge */}
+                        {inCart && !productOutOfStock && (
+                          <div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-xs font-bold text-black z-10">
                             {inCart.quantity}
+                          </div>
+                        )}
+                        {/* Out of stock badge */}
+                        {productOutOfStock && (
+                          <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-red-500 rounded-full text-[10px] font-bold text-white z-10">
+                            OUT
+                          </div>
+                        )}
+                        {/* Low stock badge */}
+                        {productLowStock && !productOutOfStock && (
+                          <div className="absolute -top-2 -left-2 px-1.5 py-0.5 bg-amber-500 rounded-full text-[10px] font-bold text-black z-10">
+                            {product.stock_quantity}
                           </div>
                         )}
                         <div className="w-full flex justify-center mb-2">
                           <div className="w-10 h-10 flex items-center justify-center">
                             {product.image_url ? (
-                              <img src={product.image_url} alt={product.name} className="w-10 h-10 rounded-lg object-cover" />
+                              <img src={product.image_url} alt={product.name} className={`w-10 h-10 rounded-lg object-cover ${productOutOfStock ? 'grayscale' : ''}`} />
                             ) : product.icon_id && getIconById(product.icon_id) ? (
-                              <div className="w-8 h-8 text-emerald-400" dangerouslySetInnerHTML={{ __html: getIconById(product.icon_id)!.svg }} />
+                              <div className={`w-8 h-8 ${productOutOfStock ? 'text-zinc-500' : 'text-emerald-400'}`} dangerouslySetInnerHTML={{ __html: getIconById(product.icon_id)!.svg }} />
                             ) : (
-                              <span className="text-2xl">{getProductEmoji(product)}</span>
+                              <span className={`text-2xl ${productOutOfStock ? 'grayscale opacity-50' : ''}`}>{getProductEmoji(product)}</span>
                             )}
                           </div>
                         </div>
                         <div className="flex-1 flex flex-col justify-between">
-                          <p className="text-xs font-medium truncate mb-1">{product.name}</p>
-                          <p className="text-emerald-400 text-sm font-semibold">£{product.price.toFixed(2)}</p>
+                          <p className={`text-xs font-medium truncate mb-1 ${productOutOfStock ? 'text-zinc-500' : ''}`}>{product.name}</p>
+                          <p className={`text-sm font-semibold ${productOutOfStock ? 'text-zinc-500' : 'text-emerald-400'}`}>£{product.price.toFixed(2)}</p>
                         </div>
                       </button>
                     );
@@ -1831,6 +2005,7 @@ setTxHash(txHash);
 setReceiptId(receiptId || null);
 setRlusdAmount(rlusdAmount || null);
 setLastOrder([...cart]);
+decrementStockForCart(cart); // Decrement stock for sold items
 setStatus('success');
 setSoundPaymentId(null);
 if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
@@ -2023,6 +2198,18 @@ setError(error);
     </button>
   </div>
 </div>
+)}
+
+{/* Barcode Scanner Modal */}
+{showBarcodeScanner && (
+  <BarcodeScanner
+    onScan={handleBarcodeScan}
+    onError={(error) => {
+      setError(error);
+      setTimeout(() => setError(null), 3000);
+    }}
+    onClose={() => setShowBarcodeScanner(false)}
+  />
 )}
 
 </main>

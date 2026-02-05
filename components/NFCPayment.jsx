@@ -25,8 +25,14 @@ export default function NFCPayment() {
         setLastUID(serialNumber);
         setStatus('processing');
 
+        // Validate NFC UID format before using in URL
+        if (!/^[0-9A-Fa-f:]+$/.test(serialNumber)) {
+          setError('Invalid NFC UID format');
+          setStatus('idle');
+          return;
+        }
         // Call your API
-        window.location.href = `https://api.dltpays.com/api/v1/nfc/tap/${serialNumber}`;
+        window.location.href = `https://api.dltpays.com/api/v1/nfc/tap/${encodeURIComponent(serialNumber)}`;
       });
 
       ndef.addEventListener('readingerror', () => {
@@ -44,7 +50,12 @@ export default function NFCPayment() {
   const manualTest = () => {
     const uid = prompt('Enter NFC UID (or use test123):', '04:5B:07:0A:FD:75:80');
     if (uid) {
-      window.location.href = `https://api.dltpays.com/api/v1/nfc/tap/${uid}`;
+      // Validate NFC UID format before using in URL
+      if (!/^[0-9A-Fa-f:]+$/.test(uid)) {
+        setError('Invalid NFC UID format. Only hex characters and colons allowed.');
+        return;
+      }
+      window.location.href = `https://api.dltpays.com/api/v1/nfc/tap/${encodeURIComponent(uid)}`;
     }
   };
 

@@ -59,7 +59,7 @@ const [connectingXaman, setConnectingXaman] = useState(false);
   const getOnboardingStep = () => {
   if (!walletAddress) return 'connect_wallet';
   if (!walletStatus) return 'loading';
-  if (!walletStatus?.funded || walletStatus?.xrp_balance < 1.5) return 'fund_wallet';
+  if (!walletStatus?.funded || walletStatus?.xrp_balance < 2) return 'fund_wallet';
     if (!walletStatus?.rlusd_trustline || !walletStatus?.usdc_trustline) return 'add_trustlines';
     if (!autoSignEnabled && (loginMethod === 'web3auth' || storagePrefix === 'vendor')) return 'enable_autopay';
     return 'complete';
@@ -477,7 +477,7 @@ if (currentStep === 'complete') {
   { 
     id: 1, 
     name: 'Fund Wallet', 
-    complete: walletAddress && walletStatus ? walletStatus?.funded && (walletStatus?.xrp_balance || 0) >= 1.5 : false,
+    complete: walletAddress && walletStatus ? walletStatus?.funded && (walletStatus?.xrp_balance || 0) >= 2 : false,
     active: currentStep === 'fund_wallet'
   },
     { 
@@ -714,7 +714,7 @@ safeSetItem(methodKey, 'crossmark');
               </div>
               <div>
                 <h3 className="text-xl font-bold text-white">Add XRP to Activate</h3>
-                <p className="text-zinc-400">Send at least 1.5 XRP to fund your wallet</p>
+                <p className="text-zinc-400">Send at least 2 XRP to fund your wallet</p>
               </div>
             </div>
 
@@ -726,11 +726,11 @@ safeSetItem(methodKey, 'crossmark');
                   <p className="text-2xl font-bold text-white mt-1">{walletStatus?.xrp_balance?.toFixed(4) || '0.0000'} <span className="text-zinc-400 text-lg">XRP</span></p>
                 </div>
                 <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-                  (walletStatus?.xrp_balance || 0) >= 1.5 
-                    ? 'bg-emerald-500/20 text-emerald-400' 
+                  (walletStatus?.xrp_balance || 0) >= 2
+                    ? 'bg-emerald-500/20 text-emerald-400'
                     : 'bg-amber-500/20 text-amber-400'
                 }`}>
-                  {(walletStatus?.xrp_balance || 0) >= 1.5 ? 'Funded' : `Need ${(1.5 - (walletStatus?.xrp_balance || 0)).toFixed(2)} more`}
+                  {(walletStatus?.xrp_balance || 0) >= 2 ? 'Funded' : `Need ${(2 - (walletStatus?.xrp_balance || 0)).toFixed(2)} more`}
                 </div>
               </div>
             </div>
@@ -818,7 +818,7 @@ safeSetItem(methodKey, 'crossmark');
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="text-blue-300 text-sm">
-                1.5 XRP covers the XRPL base reserve (1 XRP) plus trustline reserves. Keep at least 1.2 XRP to stay active.
+                2 XRP covers the XRPL base reserve (1 XRP), trustline reserves (0.4 XRP), signer reserve (0.2 XRP), and fees.
               </p>
             </div>
           </div>

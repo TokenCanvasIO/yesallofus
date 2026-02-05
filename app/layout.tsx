@@ -72,8 +72,8 @@ export default function RootLayout({
   <link rel="manifest" href="/manifest.json" />
   <link rel="icon" href="/favicon.ico" sizes="48x48" />
   <meta name="theme-color" content="#0d0d0d" />
-        <script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" async></script>
-        <script src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" type="module" async></script>
+        <script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" integrity="sha384-Ho6dQ/7zeNb3YLEjkHXfgTs3EaMyOZpvMlrlxt61f9cP6G2lFbM1qUejGpcfBGe5" crossOrigin="anonymous" async></script>
+        <script src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" integrity="sha384-0tJ0COb3mGA+nNRGyeNBpc0+dTFkmc7FyS3s+NbecgMYi+GA2J1LVnAB7QYljrPl" crossOrigin="anonymous" type="module" async></script>
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-13PHKRLJ2R"></script>
         <script
           dangerouslySetInnerHTML={{
@@ -88,6 +88,20 @@ export default function RootLayout({
         />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {process.env.NODE_ENV === 'production' && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function() {
+                  var noop = function() {};
+                  console.log = noop;
+                  console.warn = noop;
+                  console.debug = noop;
+                })();
+              `,
+            }}
+          />
+        )}
         <TourProvider>
           {children}
         </TourProvider>

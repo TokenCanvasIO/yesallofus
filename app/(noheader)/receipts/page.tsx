@@ -278,11 +278,15 @@ const exportCSV = () => {
 
 // Export to PDF
 const exportPDF = () => {
+  // HTML escape helper to prevent XSS in document.write output
+  const esc = (str: string): string =>
+    str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
   const printContent = `
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Sales Report - ${storeName}</title>
+      <title>Sales Report - ${esc(storeName)}</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -381,32 +385,32 @@ const exportPDF = () => {
     </head>
     <body>
       <div class="header">
-        ${storeLogo 
-          ? `<img src="${storeLogo}" alt="${storeName}" class="logo">`
+        ${storeLogo
+          ? `<img src="${esc(storeLogo)}" alt="${esc(storeName)}" class="logo">`
           : `<img src="https://yesallofus.com/dltpayslogo1.png" alt="YesAllOfUs" class="logo">`
         }
         <div>
-          <div class="title">${storeLogo ? storeName : 'YesAllOfUs'}</div>
+          <div class="title">${storeLogo ? esc(storeName) : 'YesAllOfUs'}</div>
           <div class="subtitle">Sales Report - ${dateFilter === 'today' ? 'Today' : dateFilter === 'week' ? 'This Week' : dateFilter === 'month' ? 'This Month' : 'All Time'}</div>
-          ${!storeLogo ? `<div class="subtitle">${storeName}</div>` : ''}
+          ${!storeLogo ? `<div class="subtitle">${esc(storeName)}</div>` : ''}
         </div>
       </div>
-      
+
       <div class="stats">
         <div class="stat-item">
-          <div class="stat-value">${filteredReceipts.length}</div>
+          <div class="stat-value">${esc(String(filteredReceipts.length))}</div>
           <div class="stat-label">Transactions</div>
         </div>
         <div class="stat-item">
-          <div class="stat-value">£${totalRevenue.toFixed(2)}</div>
+          <div class="stat-value">£${esc(totalRevenue.toFixed(2))}</div>
           <div class="stat-label">Total Revenue</div>
         </div>
         <div class="stat-item">
-          <div class="stat-value">£${avgTransaction.toFixed(2)}</div>
+          <div class="stat-value">£${esc(avgTransaction.toFixed(2))}</div>
           <div class="stat-label">Average Sale</div>
         </div>
       </div>
-      
+
       <table>
         <thead>
           <tr>
@@ -420,11 +424,11 @@ const exportPDF = () => {
         <tbody>
           ${filteredReceipts.map(r => `
             <tr>
-              <td>${r.receipt_number}</td>
-              <td>${new Date(r.paid_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
-              <td>${r.items.map(i => `${i.name} x${i.quantity}`).join(', ')}</td>
-              <td class="amount">£${r.total.toFixed(2)}</td>
-              <td>${r.payment_method === 'xaman_qr' ? '📱 Xaman' : r.payment_method === 'web3auth' ? '🔐 Web3Auth' : '💳 NFC'}</td>
+              <td>${esc(r.receipt_number)}</td>
+              <td>${esc(new Date(r.paid_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</td>
+              <td>${r.items.map(i => `${esc(i.name)} x${esc(String(i.quantity))}`).join(', ')}</td>
+              <td class="amount">£${esc(r.total.toFixed(2))}</td>
+              <td>${r.payment_method === 'xaman_qr' ? 'Xaman' : r.payment_method === 'web3auth' ? 'Web3Auth' : 'NFC'}</td>
             </tr>
           `).join('')}
         </tbody>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { getAuthHeaders } from '@/lib/walletAuth';
 
 interface TapToPaySettingsProps {
   walletAddress: string;
@@ -15,18 +16,18 @@ const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1/nfc';
 const registerSoundDevice = async (wallet: string) => {
   try {
     // Check if already registered
-    const existingId = localStorage.getItem('yesallofus_sound_id');
+    const existingId = sessionStorage.getItem('yesallofus_sound_id');
     if (existingId) {
       console.log('🔊 Sound device already registered:', existingId);
       return;
     }
     const soundId = 'snd_' + (crypto.randomUUID ? crypto.randomUUID().slice(0,8) : Math.random().toString(36).slice(2,10));
     const secretKey = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-    localStorage.setItem('yesallofus_sound_id', soundId);
-    localStorage.setItem('yesallofus_sound_secret', secretKey);
+    sessionStorage.setItem('yesallofus_sound_id', soundId);
+    sessionStorage.setItem('yesallofus_sound_secret', secretKey);
     await fetch('https://api.dltpays.com/nfc/api/v1/sound/register', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(wallet)) },
       body: JSON.stringify({ wallet_address: wallet, sound_id: soundId, secret_key: secretKey })
     });
     console.log('🔊 Sound device registered:', soundId);
@@ -60,7 +61,9 @@ export default function TapToPaySettings({
     
     setLoading(true);
     try {
-      const res = await fetch(`${NFC_API_URL}/customer/autosign-status/${walletAddress}`);
+      const res = await fetch(`${NFC_API_URL}/customer/autosign-status/${walletAddress}`, {
+        headers: await getAuthHeaders(walletAddress),
+      });
       const data = await res.json();
       if (data.success) {
         // API now checks XRPL as source of truth
@@ -97,11 +100,11 @@ export default function TapToPaySettings({
       // Get platform signer address from API
       const settingsRes = await fetch(`${NFC_API_URL}/customer/setup-autosign`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress)) },
         body: JSON.stringify({ wallet_address: walletAddress })
       });
       const settingsData = await settingsRes.json();
-      
+
       if (settingsData.error) {
         throw new Error(settingsData.error);
       }
@@ -115,22 +118,7 @@ export default function TapToPaySettings({
       // If signer already exists, just verify
       if (settingsData.signer_exists) {
         setAutoSignEnabled(true);
-
-      // Register sound device for sound payments
-      try {
-        const soundId = 'snd_' + (crypto.randomUUID ? crypto.randomUUID().slice(0,8) : Math.random().toString(36).slice(2,10));
-        const secretKey = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-        localStorage.setItem('yesallofus_sound_id', soundId);
-        localStorage.setItem('yesallofus_sound_secret', secretKey);
-        await fetch('https://api.dltpays.com/nfc/api/v1/sound/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ wallet_address: walletAddress, sound_id: soundId, secret_key: secretKey })
-        });
-        console.log('🔊 Sound device registered:', soundId);
-      } catch (soundErr) {
-        console.warn('Sound registration failed:', soundErr);
-      }
+        await registerSoundDevice(walletAddress);
         setSuccess('Tap-and-Pay is already enabled!');
         setSettingUp(false);
         return;
@@ -171,24 +159,8 @@ export default function TapToPaySettings({
       await checkAutoSignStatus();
 
       setAutoSignEnabled(true);
-
-      // Register sound device for sound payments
-      try {
-        const soundId = 'snd_' + (crypto.randomUUID ? crypto.randomUUID().slice(0,8) : Math.random().toString(36).slice(2,10));
-        const secretKey = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-        localStorage.setItem('yesallofus_sound_id', soundId);
-        localStorage.setItem('yesallofus_sound_secret', secretKey);
-        await fetch('https://api.dltpays.com/nfc/api/v1/sound/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ wallet_address: walletAddress, sound_id: soundId, secret_key: secretKey })
-        });
-        console.log('🔊 Sound device registered:', soundId);
-      } catch (soundErr) {
-        console.warn('Sound registration failed:', soundErr);
-      }
-      setSuccess('Tap-and-Pay enabled! You can now pay by tapping your NFC card or using sound payments.');
       await registerSoundDevice(walletAddress);
+      setSuccess('Tap-and-Pay enabled! You can now pay by tapping your NFC card or using sound payments.');
       setTermsAccepted(false);
       onAutoSignEnabled?.();
 
@@ -216,7 +188,7 @@ export default function TapToPaySettings({
       // Get platform signer address from API
       const settingsRes = await fetch(`${NFC_API_URL}/customer/setup-autosign`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress)) },
         body: JSON.stringify({ wallet_address: walletAddress })
       });
       const settingsData = await settingsRes.json();
@@ -232,22 +204,7 @@ export default function TapToPaySettings({
 
       if (settingsData.signer_exists) {
         setAutoSignEnabled(true);
-
-      // Register sound device for sound payments
-      try {
-        const soundId = 'snd_' + (crypto.randomUUID ? crypto.randomUUID().slice(0,8) : Math.random().toString(36).slice(2,10));
-        const secretKey = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-        localStorage.setItem('yesallofus_sound_id', soundId);
-        localStorage.setItem('yesallofus_sound_secret', secretKey);
-        await fetch('https://api.dltpays.com/nfc/api/v1/sound/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ wallet_address: walletAddress, sound_id: soundId, secret_key: secretKey })
-        });
-        console.log('🔊 Sound device registered:', soundId);
-      } catch (soundErr) {
-        console.warn('Sound registration failed:', soundErr);
-      }
+        await registerSoundDevice(walletAddress);
         setSuccess('Tap-and-Pay is already enabled!');
         setSettingUp(false);
         return;
@@ -281,24 +238,8 @@ export default function TapToPaySettings({
       await checkAutoSignStatus();
 
       setAutoSignEnabled(true);
-
-      // Register sound device for sound payments
-      try {
-        const soundId = 'snd_' + (crypto.randomUUID ? crypto.randomUUID().slice(0,8) : Math.random().toString(36).slice(2,10));
-        const secretKey = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-        localStorage.setItem('yesallofus_sound_id', soundId);
-        localStorage.setItem('yesallofus_sound_secret', secretKey);
-        await fetch('https://api.dltpays.com/nfc/api/v1/sound/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ wallet_address: walletAddress, sound_id: soundId, secret_key: secretKey })
-        });
-        console.log('🔊 Sound device registered:', soundId);
-      } catch (soundErr) {
-        console.warn('Sound registration failed:', soundErr);
-      }
-      setSuccess('Tap-and-Pay enabled! You can now pay by tapping your NFC card or using sound payments.');
       await registerSoundDevice(walletAddress);
+      setSuccess('Tap-and-Pay enabled! You can now pay by tapping your NFC card or using sound payments.');
       setTermsAccepted(false);
       onAutoSignEnabled?.();
 
@@ -325,7 +266,7 @@ export default function TapToPaySettings({
       // Step 1: Check with API if revoke is needed
       const revokeRes = await fetch(`${NFC_API_URL}/customer/revoke-autosign`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress)) },
         body: JSON.stringify({ wallet_address: walletAddress })
       });
       const revokeData = await revokeRes.json();
@@ -385,7 +326,7 @@ export default function TapToPaySettings({
         // Step 3: Confirm revoke with backend
         await fetch(`${NFC_API_URL}/customer/confirm-revoke`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress)) },
           body: JSON.stringify({
             wallet_address: walletAddress,
             tx_hash: txHash

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { safeGetItem, safeSetItem, safeRemoveItem, safeGetJSON, safeSetJSON } from '@/lib/safeStorage';
+import { getAuthHeaders } from '@/lib/walletAuth';
 import StoreActivity from '@/components/StoreActivity';
 import WalletFunding from '@/components/WalletFunding';
 import Script from 'next/script';
@@ -125,6 +126,12 @@ const [progressHidden, setProgressHidden] = useState(false);
 const [showDeleteModal, setShowDeleteModal] = useState(false);
 const [deleting, setDeleting] = useState(false);
 
+  // Helper to build headers with ECDSA auth
+  const authHeaders = async (extra?: Record<string, string>) => {
+    const auth = await getAuthHeaders(walletAddress || '');
+    return { ...auth, ...extra };
+  };
+
 // Effect (add with other effects)
 useEffect(() => {
   if (store?.store_id && !loading) {
@@ -155,14 +162,16 @@ const toggleSection = (id: string) => {
   const refreshWalletStatus = async () => {
   if (!walletAddress) return;
   try {
-    const res = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${walletAddress}`);
+    const res = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${walletAddress}`, {
+      headers: await getAuthHeaders(walletAddress || ''),
+    });
     const data = await res.json();
     if (data.success) {
       setWalletXrpBalance(data.xrp_balance || 0);
       setWalletRlusdBalance(data.rlusd_balance || 0);
       setWalletNeedsFunding(!data.funded);
       setWalletNeedsTrustline(!data.rlusd_trustline);
-      
+
       // Set walletStatus for OnboardingSetup
       setWalletStatus({
         funded: data.funded,
@@ -225,7 +234,7 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
     const res = await fetch(`https://api.dltpays.com/nfc/api/v1/store/${store.store_id}/logo`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
       body: JSON.stringify({
         logo_url: logoUrl,
         wallet_address: walletAddress
@@ -255,7 +264,7 @@ const removeLogo = async () => {
   try {
     const res = await fetch(`https://api.dltpays.com/nfc/api/v1/store/${store.store_id}/logo`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
       body: JSON.stringify({
         logo_url: null,
         wallet_address: walletAddress
@@ -306,14 +315,14 @@ const setMilestone = async (milestoneId: string) => {
   try {
     const res = await fetch(`${API_URL}/store/${store.store_id}/milestone`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
       body: JSON.stringify({
         milestone: milestoneId,
         wallet_address: walletAddress
       })
     });
     const data = await res.json();
-    
+
     if (data.success && data.new) {
       setCelebrateMilestone(milestoneId);
     }
@@ -350,7 +359,18 @@ useEffect(() => {
 // It will be saved to Firebase in loadOrCreateStore
 const wpReturn = params.get('wordpress_return') || safeGetItem('wordpress_return');
 if (wpReturn) {
-    safeSetItem('wordpress_return', wpReturn);
+    // Validate domain against allowlist to prevent open redirect
+    const ALLOWED_RETURN_DOMAINS = ['yesallofus.com', 'www.yesallofus.com', 'dltpays.com', 'www.dltpays.com'];
+    try {
+        const returnUrl = new URL(wpReturn);
+        if (ALLOWED_RETURN_DOMAINS.includes(returnUrl.hostname)) {
+            safeSetItem('wordpress_return', wpReturn);
+        } else {
+            console.error('Blocked wordpress_return to disallowed domain:', returnUrl.hostname);
+        }
+    } catch {
+        console.error('Invalid wordpress_return URL:', wpReturn);
+    }
 }
 
       // Check for referral code (from store referral link)
@@ -394,7 +414,9 @@ useEffect(() => {
   const checkMilestones = async () => {
     try {
       // Check for first affiliate and payouts
-      const countRes = await fetch(`${API_URL}/store/${store.store_id}/affiliate-count?wallet_address=${walletAddress}`);
+      const countRes = await fetch(`${API_URL}/store/${store.store_id}/affiliate-count?wallet_address=${walletAddress}`, {
+        headers: await getAuthHeaders(walletAddress || ''),
+      });
       const countData = await countRes.json();
       
       if (countData.success) {
@@ -408,7 +430,9 @@ useEffect(() => {
       }
 
       // Check for first referred vendor
-      const vendorRes = await fetch(`${API_URL}/store/${store.store_id}/referred-vendors`);
+      const vendorRes = await fetch(`${API_URL}/store/${store.store_id}/referred-vendors`, {
+        headers: await getAuthHeaders(walletAddress || ''),
+      });
       const vendorData = await vendorRes.json();
       if (vendorData.success && vendorData.count > 0) {
         setMilestone('first_partner_signed');
@@ -455,26 +479,29 @@ useEffect(() => {
   console.log('Wallet useEffect triggered:', { walletType, walletAddress, store: !!store });
   if (walletAddress && store) {
     // Check wallet funding status
-    fetch(`${API_URL}/wallet/status/${walletAddress}`)
-      .then(res => res.json())
-      .then(data => {
-  console.log('Wallet status response:', data);
-  if (data.success) {
-    console.log('Setting XRP balance:', data.xrp_balance);
-    console.log('Setting RLUSD balance:', data.rlusd_balance);
-    setWalletXrpBalance(data.xrp_balance || 0);
-    setWalletRlusdBalance(data.rlusd_balance || 0);
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/wallet/status/${walletAddress}`, {
+          headers: await getAuthHeaders(walletAddress || ''),
+        });
+        const data = await res.json();
+        console.log('Wallet status response:', data);
+        if (data.success) {
+          console.log('Setting XRP balance:', data.xrp_balance);
+          console.log('Setting RLUSD balance:', data.rlusd_balance);
+          setWalletXrpBalance(data.xrp_balance || 0);
+          setWalletRlusdBalance(data.rlusd_balance || 0);
 
-    setWalletStatus({
-      funded: data.funded,
-      xrp_balance: data.xrp_balance || 0,
-      rlusd_trustline: data.rlusd_trustline || false,
-      rlusd_balance: data.rlusd_balance || 0,
-      usdc_trustline: data.usdc_trustline || false,
-      usdc_balance: data.usdc_balance || 0,
-      auto_signing_enabled: data.auto_signing_enabled || false
-    });
-          
+          setWalletStatus({
+            funded: data.funded,
+            xrp_balance: data.xrp_balance || 0,
+            rlusd_trustline: data.rlusd_trustline || false,
+            rlusd_balance: data.rlusd_balance || 0,
+            usdc_trustline: data.usdc_trustline || false,
+            usdc_balance: data.usdc_balance || 0,
+            auto_signing_enabled: data.auto_signing_enabled || false
+          });
+
           if (!data.funded) {
             setWalletNeedsFunding(true);
             setWalletNeedsTrustline(false);
@@ -486,8 +513,10 @@ useEffect(() => {
             setWalletNeedsTrustline(false);
           }
         }
-      })
-      .catch(console.error);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
   }
 }, [walletType, walletAddress, store]);
 
@@ -578,7 +607,9 @@ useEffect(() => {
     }
 
     // Normal flow - check if wallet has existing store
-    const res = await fetch(`${API_URL}/store/by-wallet/${wallet}`);
+    const res = await fetch(`${API_URL}/store/by-wallet/${wallet}`, {
+      headers: await getAuthHeaders(wallet),
+    });
     const data = await res.json();
 
     if (data.success && data.store) {
@@ -597,7 +628,7 @@ useEffect(() => {
       if (wpReturn && !data.store.platform_return_url) {
         await fetch(`${API_URL}/store/set-platform-return`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(wallet)) },
           body: JSON.stringify({
             store_id: data.store.store_id,
             wallet_address: wallet,
@@ -726,7 +757,7 @@ if (wpReturn) {
   // Save to Firebase
   fetch(`${API_URL}/store/set-platform-return`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
     body: JSON.stringify({
       store_id: data.store_id,
       wallet_address: walletAddress,
@@ -752,7 +783,7 @@ setStep('dashboard');
     try {
       const res = await fetch(`${API_URL}/store/regenerate-secret`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
         body: JSON.stringify({
           store_id: store.store_id,
           wallet_address: walletAddress
@@ -780,7 +811,7 @@ setStep('dashboard');
     try {
       const res = await fetch(`${API_URL}/store/settings`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
         body: JSON.stringify({
           store_id: store.store_id,
           wallet_address: walletAddress,
@@ -852,7 +883,7 @@ setStep('dashboard');
 
       const res = await fetch(`${API_URL}/store/disconnect-wallet`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
         body: JSON.stringify({
           store_id: store.store_id,
           wallet_address: walletAddress
@@ -882,19 +913,25 @@ setStep('dashboard');
   // =========================================================================
   const signOut = async () => {
     // Clear Web3Auth session if applicable
-    if (walletType === 'web3auth') {
-      try {
-        const { logoutWeb3Auth } = await import('@/lib/web3auth');
-        await logoutWeb3Auth();
-      } catch (e) {
-        console.error('Web3Auth logout error:', e);
-      }
+    try {
+      const { logoutWeb3Auth } = await import('@/lib/web3auth');
+      await logoutWeb3Auth();
+    } catch (e) {
+      console.error('Web3Auth logout error:', e);
     }
-    
+
+    // Clear wallet auth state
+    try {
+      const { clearWalletAuth } = await import('@/lib/walletAuth');
+      clearWalletAuth();
+    } catch (e) {
+      console.error('clearWalletAuth error:', e);
+    }
+
     // Clear session storage
     safeRemoveItem('vendorWalletAddress');
     safeRemoveItem('vendorLoginMethod');
-    
+
     // Reset state
     setWalletAddress(null);
     setWalletType(null);
@@ -925,9 +962,11 @@ setStep('dashboard');
       console.log('Address:', address);
 
       // Check if wallet needs RLUSD setup
-      const walletStatusRes = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${address}`);
+      const walletStatusRes = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${address}`, {
+        headers: await getAuthHeaders(walletAddress || ''),
+      });
       const walletStatusData = await walletStatusRes.json();
-      
+
       if (walletStatusData.success && walletStatusData.funded && !walletStatusData.rlusd_trustline) {
         console.log('Setting up RLUSD for wallet via Crossmark...');
         
@@ -950,7 +989,7 @@ await new Promise(resolve => setTimeout(resolve, 2000));
       // Get platform signer address from API
       const settingsRes = await fetch(`${API_URL}/xaman/setup-autosign`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
         body: JSON.stringify({ store_id: store.store_id })
       });
       const settingsData = await settingsRes.json();
@@ -962,9 +1001,11 @@ await new Promise(resolve => setTimeout(resolve, 2000));
 
       // If signer already exists, go straight to verification
       if (settingsData.signer_exists) {
-        const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`);
+        const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`, {
+          headers: await getAuthHeaders(walletAddress || ''),
+        });
         const verifyData = await verifyRes.json();
-        
+
         if (verifyData.auto_signing_enabled) {
           setStore({
             ...store,
@@ -1026,7 +1067,9 @@ try {
 }
 
       // Verify the setup
-      const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`);
+      const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`, {
+        headers: await getAuthHeaders(walletAddress || ''),
+      });
       const verifyData = await verifyRes.json();
 
       if (!verifyData.auto_signing_enabled) {
@@ -1036,7 +1079,7 @@ try {
       // Update store settings with limits
       await fetch(`${API_URL}/store/settings`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
         body: JSON.stringify({
           store_id: store.store_id,
           wallet_address: address,
@@ -1088,9 +1131,11 @@ await refreshWalletStatus();
     }
 
     // Check if wallet needs RLUSD setup
-    const walletStatusRes = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${walletAddress}`);
+    const walletStatusRes = await fetch(`https://api.dltpays.com/api/v1/wallet/status/${walletAddress}`, {
+      headers: await getAuthHeaders(walletAddress || ''),
+    });
     const walletStatusData = await walletStatusRes.json();
-    
+
     if (walletStatusData.success && walletStatusData.funded && !walletStatusData.rlusd_trustline) {
       // POSITIVE MESSAGE instead of just console.log
       setError(null);
@@ -1119,11 +1164,11 @@ await new Promise(resolve => setTimeout(resolve, 2000));
     // Get platform signer address from API
     const settingsRes = await fetch(`${API_URL}/xaman/setup-autosign`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
       body: JSON.stringify({ store_id: store.store_id })
     });
     const settingsData = await settingsRes.json();
-    
+
     if (settingsData.error) {
       throw new Error(settingsData.error);
     }
@@ -1138,9 +1183,11 @@ await new Promise(resolve => setTimeout(resolve, 2000));
 
     // If signer already exists, just verify
     if (settingsData.signer_exists) {
-      const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`);
+      const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`, {
+        headers: await getAuthHeaders(walletAddress || ''),
+      });
       const verifyData = await verifyRes.json();
-      
+
       if (verifyData.auto_signing_enabled) {
         setStore({
           ...store,
@@ -1191,14 +1238,16 @@ await new Promise(resolve => setTimeout(resolve, 2000));
     for (let attempt = 1; attempt <= 5; attempt++) {
       await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
       
-      const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`);
+      const verifyRes = await fetch(`${API_URL}/xaman/verify-autosign?store_id=${store.store_id}`, {
+        headers: await getAuthHeaders(walletAddress || ''),
+      });
       const verifyData = await verifyRes.json();
-      
+
       if (verifyData.auto_signing_enabled) {
         verified = true;
         break;
       }
-      
+
       if (attempt < 5) {
         setSetupProgress(`Confirming on XRPL... (attempt ${attempt + 1}/5)`);
       }
@@ -1211,7 +1260,7 @@ await new Promise(resolve => setTimeout(resolve, 2000));
     // Update store settings
     await fetch(`${API_URL}/store/settings`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
       body: JSON.stringify({
         store_id: store.store_id,
         wallet_address: walletAddress,
@@ -1254,7 +1303,7 @@ await refreshWalletStatus();
     // Step 1: Get revoke status from API
     const res = await fetch(`${API_URL}/store/revoke-autosign`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
       body: JSON.stringify({
         store_id: store.store_id,
         wallet_address: walletAddress
@@ -1262,7 +1311,7 @@ await refreshWalletStatus();
     });
 
     const data = await res.json();
-    
+
     if (!data.success) {
       throw new Error(data.error || 'Failed to revoke');
     }
@@ -1315,7 +1364,7 @@ setCustomerAutoSignEnabled(false);
       // Step 3: Confirm with backend
       await fetch(`${API_URL}/store/confirm-revoke`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
         body: JSON.stringify({
           store_id: store.store_id,
           wallet_address: walletAddress,
@@ -1349,7 +1398,7 @@ setCustomerAutoSignEnabled(false);
   try {
     const res = await fetch(`${API_URL}/store/delete`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
       body: JSON.stringify({
         store_id: store.store_id,
         wallet_address: walletAddress,
@@ -2372,15 +2421,15 @@ onClick={async () => {
         showAmounts={showAmounts}
         onToggleAmounts={() => setShowAmounts(!showAmounts)}
         onRefresh={refreshWalletStatus}
-        onSuccess={() => {
-          fetch(`${API_URL}/wallet/status/${walletAddress}`)
-            .then(res => res.json())
-            .then(data => {
-              if (data.success) {
-                setWalletXrpBalance(data.xrp_balance || 0);
-                setWalletRlusdBalance(data.rlusd_balance || 0);
-              }
-            });
+        onSuccess={async () => {
+          const res = await fetch(`${API_URL}/wallet/status/${walletAddress}`, {
+            headers: await getAuthHeaders(walletAddress || ''),
+          });
+          const data = await res.json();
+          if (data.success) {
+            setWalletXrpBalance(data.xrp_balance || 0);
+            setWalletRlusdBalance(data.rlusd_balance || 0);
+          }
         }}
       />
     </CollapsibleSection>
@@ -2560,7 +2609,7 @@ onClick={async () => {
     try {
       await fetch(`${API_URL}/display/${store.store_id}/status`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
         body: JSON.stringify({ status: 'signup' })
       });
     } catch (err) {
@@ -2949,7 +2998,7 @@ onClick={async () => {
     </div>
     <p className="text-zinc-400 text-sm mb-4">
       {walletNeedsFunding
-        ? 'Step 1: Fund your wallet with at least 1.5 XRP to continue.'
+        ? 'Step 1: Fund your wallet with at least 2 XRP to continue.'
         : walletNeedsTrustline
           ? 'Step 2: Add the RLUSD trustline to receive payments.'
           : walletType === 'web3auth' && !store.auto_signing_enabled
@@ -2961,10 +3010,22 @@ onClick={async () => {
       onClick={async (e) => {
         e.preventDefault();
         const targetUrl = store.platform_return_url;
+        // Validate redirect domain against allowlist
+        const ALLOWED_RETURN_DOMAINS = ['yesallofus.com', 'www.yesallofus.com', 'dltpays.com', 'www.dltpays.com'];
+        try {
+          const parsedTarget = new URL(targetUrl);
+          if (!ALLOWED_RETURN_DOMAINS.includes(parsedTarget.hostname)) {
+            alert('Redirect blocked: untrusted destination.');
+            return;
+          }
+        } catch {
+          alert('Invalid return URL.');
+          return;
+        }
         try {
           const tokenRes = await fetch(`${API_URL}/store/generate-claim-token`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
             body: JSON.stringify({
               store_id: store.store_id,
               wallet_address: walletAddress,
@@ -2976,7 +3037,7 @@ onClick={async () => {
           }
           await fetch(`${API_URL}/store/clear-platform-return`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
             body: JSON.stringify({
               store_id: store.store_id,
               wallet_address: walletAddress,

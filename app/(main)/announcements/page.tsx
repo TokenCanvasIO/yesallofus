@@ -78,7 +78,7 @@ export default function Announcements() {
                   <li>Real XRPL wallet created automatically via Web3Auth MPC</li>
                   <li>Private keys split across nodes — never stored whole</li>
                   <li>0 XRP to start your wallet.</li>
-                   <li>Commissions held until wallet is funded (1.5 XRP)</li>
+                   <li>Commissions held until wallet is funded (2 XRP)</li>
                   <li>24/7 automatic payouts — no browser session needed</li>
                 </ul>
                 <p className="text-zinc-500 text-sm mt-4">

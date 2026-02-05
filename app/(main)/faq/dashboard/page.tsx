@@ -2946,7 +2946,7 @@ onClick={async () => {
     </div>
     <p className="text-zinc-400 text-sm mb-4">
       {walletNeedsFunding
-        ? 'Step 1: Fund your wallet with at least 1.5 XRP to continue.'
+        ? 'Step 1: Fund your wallet with at least 2 XRP to continue.'
         : walletNeedsTrustline
           ? 'Step 2: Add the RLUSD trustline to receive payments.'
           : walletType === 'web3auth' && !store.auto_signing_enabled
