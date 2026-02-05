@@ -20,12 +20,28 @@ interface Store {
   store_url?: string;
 }
 
-export default function CustomerSignup({ 
-  storeId, 
-  storeName, 
+function isValidRedirectUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  // Allow relative URLs (starting with '/' but not '//' which is protocol-relative)
+  if (url.startsWith('/') && !url.startsWith('//')) return url;
+  // For absolute URLs, validate against allowed domains
+  const ALLOWED_REDIRECT_DOMAINS = ['yesallofus.com', 'www.yesallofus.com', 'dltpays.com', 'www.dltpays.com'];
+  try {
+    const parsed = new URL(url);
+    if (ALLOWED_REDIRECT_DOMAINS.includes(parsed.hostname)) return url;
+  } catch {
+    // Invalid URL — reject
+  }
+  return undefined;
+}
+
+export default function CustomerSignup({
+  storeId,
+  storeName,
   referrer = 'direct',
-  redirectUrl 
+  redirectUrl: rawRedirectUrl
 }: CustomerSignupProps) {
+  const redirectUrl = isValidRedirectUrl(rawRedirectUrl);
   const [step, setStep] = useState<'welcome' | 'form' | 'wallet' | 'nfc' | 'success'>('welcome');
   const [formData, setFormData] = useState({
     firstName: '',

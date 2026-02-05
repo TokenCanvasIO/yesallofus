@@ -43,13 +43,13 @@ export default function LinkNFCCard({ walletAddress, onCardLinked, noBorder = fa
     if (walletAddress) {
       const existingSoundId = sessionStorage.getItem('yesallofus_sound_id');
       if (!existingSoundId) {
-        const soundId = 'snd_' + Math.random().toString(36).slice(2,6);
-        const secretKey = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+        const soundId = 'snd_' + crypto.randomUUID().slice(0, 8);
+        const secretKey = crypto.randomUUID();
 
         sessionStorage.setItem('yesallofus_sound_id', soundId);
         sessionStorage.setItem('yesallofus_sound_secret', secretKey);
         
-        fetch(`${NFC_API_URL}/sound/register`, {
+        authenticatedFetch(walletAddress, `${NFC_API_URL}/sound/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

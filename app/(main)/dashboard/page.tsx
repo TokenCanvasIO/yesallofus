@@ -1423,10 +1423,14 @@ setCustomerAutoSignEnabled(false);
   setDeleting(false);
 };
 
+  const SENSITIVE_FIELDS = ['api_key', 'secret', 'store_id'];
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
     setCopied(field);
     setTimeout(() => setCopied(null), 2000);
+    if (SENSITIVE_FIELDS.includes(field)) {
+      setTimeout(() => navigator.clipboard.writeText(''), 30000);
+    }
   };
 
   const SocialIcon = ({ provider }: { provider: string | null }) => {
