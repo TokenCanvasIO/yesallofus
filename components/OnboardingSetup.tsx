@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/safeStorage';
+import { getAuthHeaders } from '@/lib/walletAuth';
 import { QRCodeSVG } from 'qrcode.react';
 import SuccessMessage from './SuccessMessage';
 
@@ -363,7 +364,7 @@ if (response?.response?.data?.resp?.result?.validated) {
 
       const settingsRes = await fetch('https://api.dltpays.com/nfc/api/v1/nfc/customer/setup-autosign', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
         body: JSON.stringify({ wallet_address: walletAddress })
       });
       const settingsData = await settingsRes.json();
@@ -375,7 +376,7 @@ if (response?.response?.data?.resp?.result?.validated) {
         try {
           await fetch('https://api.dltpays.com/nfc/api/v1/nfc/customer/enable-autosign', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(walletAddress || '')) },
             body: JSON.stringify({
               wallet_address: walletAddress,
               max_transaction: 25

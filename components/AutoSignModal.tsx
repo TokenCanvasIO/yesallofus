@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { getAuthHeaders } from '@/lib/walletAuth';
 
 // L7: Map technical errors to user-friendly messages
 const sanitizeError = (error: string): string => {
@@ -97,7 +98,7 @@ export default function AutoSignModal({
       setProgress('Preparing tap-to-pay...');
       const settingsRes = await fetch('https://api.dltpays.com/nfc/api/v1/nfc/customer/setup-autosign', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(wallet)) },
         body: JSON.stringify({ wallet_address: wallet })
       });
       const settingsData = await settingsRes.json();
@@ -107,7 +108,7 @@ export default function AutoSignModal({
       if (settingsData.signer_exists) {
         await fetch('https://api.dltpays.com/nfc/api/v1/nfc/customer/enable-autosign', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders(wallet)) },
           body: JSON.stringify({ wallet_address: wallet, max_transaction: 25 })
         });
         onSuccess();
