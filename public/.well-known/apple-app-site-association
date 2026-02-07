@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "PCR88FD66P.com.yesallofus.ios",
+        "paths": ["/pay/*"]
+      },
+      {
+        "appID": "PCR88FD66P.com.yesallofus.vendorpos",
+        "paths": ["/pay/*"]
+      }
+    ]
+  }
+}
