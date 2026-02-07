@@ -172,3 +172,6 @@ export function hasValidAuthToken(walletAddress: string): boolean {
   const cached = authTokenCache.get(walletAddress);
   return cached !== undefined && Date.now() < cached.expires_at;
 }
+
+// Alias for ECDSA migration compatibility
+export const getAuthHeaders = getWalletAuthHeadersAsync;
