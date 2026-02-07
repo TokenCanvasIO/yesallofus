@@ -3,7 +3,7 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.yesallofus.android",
+      "package_name": "com.yesallofus.customer",
       "sha256_cert_fingerprints": ["64:9A:E8:4D:6E:27:18:E1:A9:52:78:21:2C:5B:46:8C:25:43:59:61:D8:89:8E:79:85:42:C0:25:86:83:B7:55"]
     }
   }
