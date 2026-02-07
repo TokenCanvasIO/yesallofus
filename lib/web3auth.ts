@@ -85,8 +85,19 @@ export async function getPrivateKey(): Promise<string | null> {
   try {
     const web3auth = await getWeb3Auth();
     if (!web3auth?.connected || !web3auth.provider) return null;
-    const key = await web3auth.provider.request({ method: "private_key" }) as string;
-    return key || null;
+    const key = await web3auth.provider.request({ method: "private_key" });
+    // Ensure key is a string (XRPL provider might return different types)
+    if (!key) return null;
+    if (typeof key === 'string') return key;
+    // Handle case where key might be a hex buffer or BigInt
+    if (key instanceof Uint8Array) {
+      return Array.from(key).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    if (typeof key === 'bigint') {
+      return key.toString(16);
+    }
+    console.warn('Unexpected private key type:', typeof key);
+    return null;
   } catch (error) {
     console.error("Failed to get private key:", error);
     return null;

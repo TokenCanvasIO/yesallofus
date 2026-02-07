@@ -93,12 +93,29 @@ export default function AutoSignModal({
         throw new Error('No wallet found');
       }
 
+      // Verify auth is ready before proceeding (wait for private key to be available)
+      const { getPrivateKey } = await import('@/lib/web3auth');
+      let authReady = false;
+      for (let i = 0; i < 5; i++) {
+        const key = await getPrivateKey();
+        if (key && typeof key === 'string') {
+          authReady = true;
+          break;
+        }
+        await new Promise(r => setTimeout(r, 500));
+      }
+      if (!authReady) {
+        throw new Error('Authentication not ready. Please try again.');
+      }
+
       setWalletAddress(wallet);
       setStep('setup');
       setProgress('Checking wallet status...');
 
       // Check wallet status (funded + trustline)
-      const statusRes = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${wallet}`);
+      const statusRes = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${wallet}`, {
+        headers: await getAuthHeaders(wallet)
+      });
       const statusData = await statusRes.json();
 
       if (statusData.wallet_not_funded) {

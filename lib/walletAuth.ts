@@ -172,7 +172,7 @@ export async function getAuthHeaders(walletAddress: string): Promise<Record<stri
 
   try {
     const rawKey = await getPrivateKey();
-    if (!rawKey) {
+    if (!rawKey || typeof rawKey !== 'string') {
       console.warn('No Web3Auth private key available for ECDSA signing');
       return {};
     }
