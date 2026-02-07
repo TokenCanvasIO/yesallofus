@@ -20,6 +20,10 @@ export async function updateCustomerDisplay(
   tipsEnabled?: boolean,
   vendorWallet?: string
 ) {
+  if (!vendorWallet) {
+    console.warn('Display update skipped - no vendor wallet yet');
+    return;
+  }
   try {
     await fetch(`${API_URL}/display/update`, {
       method: 'POST',
