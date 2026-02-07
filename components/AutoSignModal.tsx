@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { getAuthHeaders } from '@/lib/walletAuth';
-import { safeRemoveItem } from '@/lib/safeStorage';
 
 // L7: Map technical errors to user-friendly messages
 const sanitizeError = (error: string): string => {
@@ -57,30 +56,13 @@ export default function AutoSignModal({
         throw new Error('Failed to initialize login');
       }
 
-      // Always try to connect - handles stale sessions
-      try {
-        if (!web3auth.connected) {
-          await web3auth.connect();
-        } else if (!web3auth.provider) {
-          // Connected but no provider = stale session, reconnect
-          await web3auth.logout().catch(() => {});
-          await web3auth.connect();
-        }
-      } catch (connectError: any) {
-        console.error('Web3Auth connect error:', connectError);
-        // Clear stale cached data so user can try fresh login
-        safeRemoveItem('walletAddress');
-        safeRemoveItem('loginMethod');
-        safeRemoveItem('socialProvider');
-        throw new Error('Session expired. Please try again.');
+      // Check if already logged in
+      if (!web3auth.connected) {
+        await web3auth.connect();
       }
 
       if (!web3auth.provider) {
-        // Clear stale data
-        safeRemoveItem('walletAddress');
-        safeRemoveItem('loginMethod');
-        safeRemoveItem('socialProvider');
-        throw new Error('Login failed. Please try again.');
+        throw new Error('Login failed');
       }
 
       // Get wallet address
@@ -93,29 +75,12 @@ export default function AutoSignModal({
         throw new Error('No wallet found');
       }
 
-      // Verify auth is ready before proceeding (wait for private key to be available)
-      const { getPrivateKey } = await import('@/lib/web3auth');
-      let authReady = false;
-      for (let i = 0; i < 5; i++) {
-        const key = await getPrivateKey();
-        if (key && typeof key === 'string') {
-          authReady = true;
-          break;
-        }
-        await new Promise(r => setTimeout(r, 500));
-      }
-      if (!authReady) {
-        throw new Error('Authentication not ready. Please try again.');
-      }
-
       setWalletAddress(wallet);
       setStep('setup');
       setProgress('Checking wallet status...');
 
       // Check wallet status (funded + trustline)
-      const statusRes = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${wallet}`, {
-        headers: await getAuthHeaders(wallet)
-      });
+      const statusRes = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${wallet}`);
       const statusData = await statusRes.json();
 
       if (statusData.wallet_not_funded) {
@@ -199,11 +164,11 @@ export default function AutoSignModal({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">Enable Instant Payments</h2>
+          <h2 className="text-xl font-bold text-white mb-2">Wallet Not Set Up</h2>
           <p className="text-zinc-400 text-sm">
-            {step === 'login'
-              ? 'Sign in with your social account to enable payments.'
-              : 'Setting up instant payments...'}
+            {step === 'login' 
+              ? 'Sign in to enable tap-to-pay for your NFC card.'
+              : 'Setting up tap-to-pay...'}
           </p>
         </div>
 
@@ -233,7 +198,7 @@ export default function AutoSignModal({
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                {step === 'login' ? 'Sign In to Enable Payments' : 'Enable Payments'}
+                {step === 'login' ? 'Sign In & Enable Tap-to-Pay' : 'Enable Tap-to-Pay'}
               </>
             )}
           </button>
@@ -248,7 +213,7 @@ export default function AutoSignModal({
         </div>
 
         <p className="text-zinc-500 text-xs text-center mt-4">
-          This enables instant payments up to £25 per transaction.
+          This authorizes automatic payments up to £25 per transaction.
         </p>
       </div>
     </div>

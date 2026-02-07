@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/safeStorage';
+import { safeGetItem, safeSetItem } from '@/lib/safeStorage';
 import AutoSignModal from './AutoSignModal';
 
 const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1';
@@ -76,25 +76,12 @@ export default function InstantPay({
       try {
         const stored = safeGetItem('walletAddress');
         const method = safeGetItem('loginMethod');
-
+        
         if (stored && method === 'web3auth') {
-          // Verify Web3Auth session is still valid
-          const { getWeb3Auth } = await import('@/lib/web3auth');
-          const web3auth = await getWeb3Auth();
-
-          // If not connected or no provider, session is stale - stay on login
-          if (!web3auth?.connected || !web3auth?.provider) {
-            console.log('Web3Auth session stale, clearing cached data');
-            safeRemoveItem('walletAddress');
-            safeRemoveItem('loginMethod');
-            safeRemoveItem('socialProvider');
-            return; // Stay on 'login' step
-          }
-
           setWalletAddress(stored);
           const res = await fetch(`${NFC_API_URL}/nfc/customer/autosign-status/${stored}`);
           const data = await res.json();
-
+          
           if (data.auto_sign_enabled) {
             setStep('ready');
           } else {
@@ -103,10 +90,6 @@ export default function InstantPay({
         }
       } catch (err) {
         console.error('Session check error:', err);
-        // Clear potentially stale data on error
-        safeRemoveItem('walletAddress');
-        safeRemoveItem('loginMethod');
-        safeRemoveItem('socialProvider');
       }
     };
     checkSession();
