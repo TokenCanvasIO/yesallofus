@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { safeGetItem, safeSetItem } from '@/lib/safeStorage';
+import { refreshWalletAuth, getWalletAuthHeadersAsync } from '@/lib/walletAuth';
 import AutoSignModal from './AutoSignModal';
 
 const NFC_API_URL = 'https://api.dltpays.com/nfc/api/v1';
@@ -79,7 +80,9 @@ export default function InstantPay({
         
         if (stored && method === 'web3auth') {
           setWalletAddress(stored);
-          const res = await fetch(`${NFC_API_URL}/nfc/customer/autosign-status/${stored}`);
+          await refreshWalletAuth(stored);
+          const headers = await getWalletAuthHeadersAsync(stored);
+          const res = await fetch(`${NFC_API_URL}/nfc/customer/autosign-status/${stored}`, { headers });
           const data = await res.json();
           
           if (data.auto_sign_enabled) {
@@ -204,9 +207,11 @@ export default function InstantPay({
       
       setWalletAddress(address);
 
-      const res = await fetch(`${NFC_API_URL}/nfc/customer/autosign-status/${address}`);
+      await refreshWalletAuth(address);
+      const headers = await getWalletAuthHeadersAsync(address);
+      const res = await fetch(`${NFC_API_URL}/nfc/customer/autosign-status/${address}`, { headers });
       const data = await res.json();
-      
+
       if (data.auto_sign_enabled) {
         setStep('ready');
         setTimeout(() => {
@@ -253,9 +258,11 @@ export default function InstantPay({
       safeSetItem('loginMethod', 'web3auth');
       
       setWalletAddress(address);
-      
+
       // Check auto-sign status before allowing payment
-      const res = await fetch(`${NFC_API_URL}/nfc/customer/autosign-status/${address}`);
+      await refreshWalletAuth(address);
+      const headers = await getWalletAuthHeadersAsync(address);
+      const res = await fetch(`${NFC_API_URL}/nfc/customer/autosign-status/${address}`, { headers });
       const data = await res.json();
       
       if (data.auto_sign_enabled) {
