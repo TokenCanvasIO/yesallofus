@@ -72,7 +72,7 @@ export default function RootLayout({
   <link rel="manifest" href="/manifest.json" />
   <link rel="icon" href="/favicon.ico" sizes="48x48" />
   <meta name="theme-color" content="#0d0d0d" />
-        <script src="https://unpkg.com/@crossmarkio/sdk/dist/umd/index.js" crossOrigin="anonymous" async></script>
+        <script src="https://cdn.jsdelivr.net/npm/@crossmarkio/sdk@0.4.0/pack/umd/index.js" crossOrigin="anonymous" async></script>
         <script src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" crossOrigin="anonymous" type="module" async></script>
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-13PHKRLJ2R"></script>
         <script
