@@ -178,7 +178,7 @@ export async function getAuthHeaders(walletAddress: string): Promise<Record<stri
     }
 
     // Derive XRPL keypair from Web3Auth key
-    const keypair = await deriveXrplKeypair(rawKey);
+    const keypair = await deriveXrplKeypair(String(rawKey));
 
     // Build message and hash
     const timestamp = Date.now().toString();
