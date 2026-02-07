@@ -1744,7 +1744,7 @@ return (
   }}
 />
     <div className="min-h-screen bg-transparent text-white font-sans relative z-0 overflow-x-hidden">
-      <Script src="https://unpkg.com/@aspect-dev/crossmark-sdk@1.0.5/dist/umd/index.js" />
+      <Script src="https://unpkg.com/@crossmarkio/sdk/dist/umd/index.js" />
 
       {/* Celebration Toast */}
   {celebrateMilestone && (
