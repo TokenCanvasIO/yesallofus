@@ -335,6 +335,17 @@ if (storeId && walletAddress) {
 fetchProducts();
     }
   }, [storeId, walletAddress]);
+
+// Auto-open products manager if redirected from dashboard with view=import
+useEffect(() => {
+  if (typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('view') === 'import') {
+      setShowProductsManager(true);
+    }
+  }
+}, []);
+
 const fetchProducts = async () => {
 setLoadingProducts(true);
 try {

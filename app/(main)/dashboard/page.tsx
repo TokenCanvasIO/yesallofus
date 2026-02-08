@@ -80,6 +80,15 @@ const [runTour, setRunTour] = useState(false);
   const [trustlineConfirmed, setTrustlineConfirmed] = useState(false);
   const [xamanUserToken, setXamanUserToken] = useState<string | null>(null);
 
+  // Token-based auto-login (from POS app redirect)
+  const [tokenLoading, setTokenLoading] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).has('token');
+    }
+    return false;
+  });
+  const [tokenChecked, setTokenChecked] = useState(false);
+
   // Web3Auth specific state
   const [socialProvider, setSocialProvider] = useState<string | null>(null);
 
@@ -473,6 +482,48 @@ useEffect(() => {
 
     return () => clearInterval(interval);
   }, [polling, loginId]);
+
+  // Token-based auto-login (from POS app redirect) — runs once on mount
+  useEffect(() => {
+    if (tokenChecked) return;
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const view = params.get('view');
+    if (!token) {
+      setTokenLoading(false);
+      setTokenChecked(true);
+      return;
+    }
+
+    setTokenLoading(true);
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/store/by-dashboard-token/${token}`);
+        const data = await res.json();
+
+        if (data.success && data.store) {
+          setWalletAddress(data.wallet_address);
+          setStore(data.store);
+          setNewSecret(null);
+          if (data.store.commission_rates) setCommissionRates(data.store.commission_rates);
+          if (data.store.daily_limit) setDailyLimit(data.store.daily_limit);
+          if (data.store.auto_sign_max_single_payout) setMaxSinglePayout(data.store.auto_sign_max_single_payout);
+          setStep('dashboard');
+
+          if (view === 'import') {
+            router.push('/take-payment?view=import');
+            return;
+          }
+        } else {
+          setError(data.error || 'Invalid or expired token');
+        }
+      } catch {
+        setError('Failed to authenticate with token');
+      }
+      setTokenLoading(false);
+      setTokenChecked(true);
+    })();
+  }, [tokenChecked]);
 
   // Check wallet status on load (Web3Auth and Xaman)
 useEffect(() => {
@@ -1489,6 +1540,20 @@ setCustomerAutoSignEnabled(false);
         );
     }
   };
+
+  // =========================================================================
+  // TOKEN LOADING SCREEN
+  // =========================================================================
+  if (tokenLoading) {
+    return (
+      <div className="min-h-screen bg-[#0d0d0d] text-white font-sans flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-zinc-500 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-zinc-400">Signing you in...</p>
+        </div>
+      </div>
+    );
+  }
 
   // =========================================================================
   // LOGIN SCREEN
