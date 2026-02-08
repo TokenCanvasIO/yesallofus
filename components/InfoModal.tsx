@@ -49,8 +49,8 @@ const infoContent: Record<string, InfoContent> = {
   'payout-method': {
     title: 'Payout Method',
     what: 'How your store pays affiliate commissions - automatic or manual approval.',
-    why: 'Auto-sign means 24/7 instant payouts. Manual means you approve each one.',
-    how: 'Connect a wallet and enable auto-sign for the best affiliate experience.',
+    why: 'Automatic payments means 24/7 instant payouts. Manual means you approve each one.',
+    how: 'Connect a wallet and enable payments for the best affiliate experience.',
     tip: 'Instant payouts keep your affiliates motivated and engaged!'
   },
   'pending-customers': {
@@ -68,10 +68,10 @@ const infoContent: Record<string, InfoContent> = {
     tip: 'Your money grows even when you sleep!'
   },
   'auto-sign': {
-    title: 'Auto-Sign',
-    what: 'Automatic transaction signing for instant affiliate payouts.',
+    title: 'Payments',
+    what: 'Automatic payments for instant affiliate payouts.',
     why: 'No manual approval needed - commissions pay out 24/7 instantly.',
-    how: 'Enable auto-sign with your wallet, set limits, and forget about it.',
+    how: 'Enable payments with your wallet, set limits, and forget about it.',
     tip: 'Instant payouts = happy affiliates = more referrals!'
   },
   'commission-rates': {
@@ -133,8 +133,8 @@ const infoContent: Record<string, InfoContent> = {
     tip: 'You are connected to the RLUSD payment network!'
   },
   'auto_sign_enabled': {
-    title: 'Auto-Sign Enabled',
-    what: 'Your wallet automatically signs transactions for instant payouts.',
+    title: 'Payments Enabled',
+    what: 'Your wallet processes transactions automatically for instant payouts.',
     why: 'Affiliates receive commissions instantly without manual approval.',
     how: 'You enabled this by signing a transaction that authorizes the platform.',
     tip: 'Your affiliates love instant payments - great choice!'
@@ -201,7 +201,7 @@ const infoContent: Record<string, InfoContent> = {
     title: 'Tap-to-Pay',
     what: 'Enable your phone to make contactless payments.',
     why: 'Pay at any participating vendor by tapping your phone.',
-    how: 'Enable auto-sign and set a spending limit to activate tap-to-pay.',
+    how: 'Enable payments and set a spending limit to activate tap-to-pay.',
     tip: 'No card needed - your phone is your wallet!'
   },
   'browser-wallet': {
@@ -238,7 +238,7 @@ const infoContent: Record<string, InfoContent> = {
     title: 'Tap to Pay Enabled',
     what: 'Your phone can now make contactless payments.',
     why: 'Pay instantly at any participating vendor with just a tap.',
-    how: 'You enabled auto-sign which allows automatic payment approval.',
+    how: 'You enabled automatic payments which allows instant payment approval.',
     tip: 'Shopping just got a whole lot faster!'
   },
   'nfc_card_added': {

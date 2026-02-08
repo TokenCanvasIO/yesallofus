@@ -27,7 +27,7 @@ const milestoneConfig: Record<string, { title: string; message: string; icon: Re
     )
   },
   auto_sign_enabled: {
-    title: 'Auto-Sign Enabled!',
+    title: 'Payments Enabled!',
     message: 'Payouts will process automatically 24/7.',
     icon: (
       <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

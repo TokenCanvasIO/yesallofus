@@ -580,6 +580,25 @@ useEffect(() => {
       } catch (err) {
         console.error(err);
       }
+
+      // Check XRPL autosign status directly (most reliable source)
+      if (walletType === 'web3auth' || walletType === 'crossmark') {
+        try {
+          const authHeaders = await getAuthHeaders(walletAddress || '');
+          const asRes = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${walletAddress}`, {
+            headers: authHeaders
+          });
+          const asData = await asRes.json();
+          if (asData.success && asData.auto_sign_enabled) {
+            setCustomerAutoSignEnabled(true);
+            if (store && !store.auto_signing_enabled) {
+              setStore((prev: any) => prev ? { ...prev, auto_signing_enabled: true } : prev);
+            }
+          }
+        } catch (err) {
+          console.error('Auto-sign status check failed:', err);
+        }
+      }
     })();
   }
 }, [walletType, walletAddress, store]);
@@ -1171,7 +1190,7 @@ await refreshWalletStatus();
       safeSetItem('vendorLoginMethod', 'crossmark');
       setAutoSignTermsAccepted(false);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to enable auto-sign';
+      const message = err instanceof Error ? err.message : 'Failed to enable payments';
       setError(message);
     }
     setSettingUpAutoSign(false);
@@ -1347,7 +1366,7 @@ setSetupProgress(null);
 await refreshWalletStatus();
 
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to enable auto-sign';
+    const message = err instanceof Error ? err.message : 'Failed to enable payments';
     setError(message);
     setSetupProgress(null);
   }
@@ -1358,7 +1377,7 @@ await refreshWalletStatus();
   // REVOKE AUTO-SIGN
   // =========================================================================
   const revokeAutoSign = async () => {
-  if (!confirm('Disable auto-signing? You will need to manually approve each payout.')) return;
+  if (!confirm('Disable automatic payments? You will need to manually approve each payout.')) return;
 
   setLoading(true);
   setError(null);
@@ -1448,7 +1467,7 @@ setCustomerAutoSignEnabled(false);
     }
     
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to revoke auto-sign';
+    const message = err instanceof Error ? err.message : 'Failed to disable payments';
     setError(message);
   }
   setLoading(false);
@@ -1724,8 +1743,8 @@ return (
   )
 },
   { 
-    id: 'auto-sign', 
-    label: 'Auto-Sign', 
+    id: 'auto-sign',
+    label: 'Payments',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
@@ -2130,7 +2149,7 @@ return (
           <div>
             <div className="flex items-center gap-2">
               <span className="text-green-500 text-sm" style={{ textShadow: '0 0 8px rgba(34,197,94,0.9)' }}>●</span>
-              <span className="text-green-500 text-sm font-medium">Auto-Sign Active</span>
+              <span className="text-green-500 text-sm font-medium">Payments Enabled</span>
             </div>
             <p className="text-zinc-500 text-sm font-mono">
               {store.wallet_address?.substring(0, 8)}...{store.wallet_address?.slice(-6)}
@@ -2142,7 +2161,7 @@ return (
           disabled={loading}
           className="text-zinc-400 hover:text-red-400 text-sm transition-colors whitespace-nowrap"
         >
-          Revoke Auto-Sign
+          Disable Payments
         </button>
       </div>
 
@@ -2231,9 +2250,9 @@ return (
       </div>
 
       <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-        <p className="text-yellow-400 font-medium">Enable Auto-Sign to process payouts</p>
+        <p className="text-yellow-400 font-medium">Enable Payments to process payouts</p>
         <p className="text-zinc-400 text-sm">
-          Complete the auto-sign setup below to start paying affiliates automatically.
+          Complete the payment setup below to start paying affiliates automatically.
         </p>
       </div>
     </div>
@@ -2246,7 +2265,7 @@ return (
       <div>
         <div className="flex items-center gap-2">
           <span className="text-orange-500 text-sm" style={{ textShadow: '0 0 8px rgba(249,115,22,0.9)' }}>●</span>
-          <span className="text-orange-500 text-sm font-medium">Connected - Enable Auto-Sign</span>
+          <span className="text-orange-500 text-sm font-medium">Connected - Enable Payments</span>
         </div>
         <p className="text-zinc-500 text-sm font-mono">
           {store.wallet_address?.substring(0, 8)}...{store.wallet_address?.slice(-6)}
@@ -2262,15 +2281,15 @@ return (
     </button>
   </div>
   <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
-    <p className="text-orange-400 font-medium">Enable Auto-Sign to process payouts</p>
+    <p className="text-orange-400 font-medium">Enable Payments to process payouts</p>
     <p className="text-zinc-400 text-sm">
-      Scroll down to enable auto-sign for automatic affiliate payouts.
+      Scroll down to enable payments for automatic affiliate payouts.
     </p>
-    <button 
+    <button
       onClick={() => scrollToSection('auto-sign')}
       className="mt-2 text-orange-400 hover:text-orange-300 text-sm underline"
     >
-      Go to Auto-Sign Setup →
+      Go to Payment Setup →
     </button>
   </div>
 </div>
@@ -2308,7 +2327,7 @@ return (
 <div className="border-t border-zinc-800 pt-4 mt-4">
   <p className="text-zinc-400 text-sm mb-2">Prefer automatic payouts?</p>
   <p className="text-zinc-500 text-xs">
-    Enable auto-sign below to process payouts automatically with Crossmark.
+    Enable payments below to process payouts automatically with Crossmark.
   </p>
 </div>
 )}
@@ -2420,7 +2439,7 @@ onClick={async () => {
           <span className="font-semibold">Connect Crossmark</span>
         </div>
         <p className="text-zinc-400 text-sm">
-          Browser extension. Enable auto-sign for automatic payouts.
+          Browser extension. Enable payments for automatic payouts.
         </p>
 </button>
 )}
@@ -2576,17 +2595,22 @@ onClick={async () => {
 {/* ============================================================= */}
 {!store.auto_signing_enabled && walletType !== 'xaman' && (
   <div id="auto-sign" className="bg-zinc-900/95 border border-zinc-800 rounded-xl p-6">
-    <h2 className="text-lg font-bold mb-4">Enable Auto-Sign</h2>
+    <h2 className="text-lg font-bold mb-4">Enable Payments</h2>
                 <p className="text-zinc-400 text-sm mb-4">
                   Process affiliate payouts automatically without manual approval for each transaction.
                 </p>
 
                 {/* Security Notice */}
                 <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 mb-4">
-                  <p className="text-orange-400 text-sm font-bold mb-2">⚠️ Security Notice</p>
+                  <p className="text-orange-400 text-sm font-bold mb-2 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-orange-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                    Security Notice
+                  </p>
                   <p className="text-orange-300/90 text-sm mb-3">
-                    Auto-sign allows YesAllofUs to sign RLUSD transactions from your wallet
-                    automatically, without requiring manual approval for each payout.
+                    Enabling payments allows YesAllOfUs to process payouts from your wallet
+                    automatically, without requiring manual approval for each transaction.
                   </p>
                   <p className="text-orange-300/80 text-sm mb-3">
                     While we take every precaution to secure our systems, there is always inherent risk
@@ -2636,7 +2660,7 @@ onClick={async () => {
                   <span className="text-zinc-300 text-sm">
                     I have read and agree to the{' '}
                     <a href="/terms" target="_blank" className="text-blue-400 hover:underline">Terms & Conditions</a>{' '}
-                    for auto-signing.
+                    for automatic payments.
                   </span>
                 </label>
 
@@ -2657,7 +2681,12 @@ onClick={async () => {
     {setupProgress || 'Setting up...'}
   </span>
 ) : (
-      '🔐 Sign to Enable Auto-Sign'
+      <span className="flex items-center justify-center gap-2">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+        </svg>
+        Enable Payments
+      </span>
     )}
   </button>
 ) : (
@@ -2676,7 +2705,12 @@ onClick={async () => {
                         Setting up...
                       </span>
                     ) : (
-                      '🔐 Sign with Crossmark to Enable Auto-Sign'
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                        </svg>
+                        Enable Payments with Crossmark
+                      </span>
                     )}
                   </button>
                 )}
@@ -3084,7 +3118,7 @@ onClick={async () => {
         : walletNeedsTrustline
           ? 'Step 2: Add the RLUSD trustline to receive payments.'
           : walletType === 'web3auth' && !store.auto_signing_enabled
-            ? 'Step 3: Enable auto-sign to process payouts automatically.'
+            ? 'Step 3: Enable payments to process payouts automatically.'
             : 'Your wallet is ready to receive affiliate commissions.'}
     </p>
     <a

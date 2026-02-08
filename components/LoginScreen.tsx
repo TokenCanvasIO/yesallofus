@@ -563,7 +563,7 @@ const completeCustomerSignup = async (wallet: string) => {
 
         {/* Title */}
 <h3 className="font-bold text-center mb-2 lg:text-lg xl:text-xl">Crossmark</h3>
-<p className="text-zinc-500 text-xs lg:text-sm xl:text-base text-center mb-4">Browser extension with auto-sign</p>
+<p className="text-zinc-500 text-xs lg:text-sm xl:text-base text-center mb-4">Browser extension with automatic payments</p>
 
 {/* Connect Button */}
 <div className="mt-4 pt-4 border-t border-zinc-800">

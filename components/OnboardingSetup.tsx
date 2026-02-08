@@ -556,7 +556,7 @@ if (currentStep === 'complete') {
           {/* Message for Crossmark/Xaman vendors */}
           {storagePrefix === 'vendor' && (loginMethod === 'crossmark' || loginMethod === 'xaman') && !autoSignEnabled && (
             <p className="hidden lg:block text-amber-400 text-xs pl-4 max-w-[220px] flex-shrink-0">
-              Complete Auto-Sign Below
+              Complete Payment Setup
             </p>
           )}
         </div>
@@ -564,7 +564,7 @@ if (currentStep === 'complete') {
         {/* Mobile message for Crossmark/Xaman vendors */}
         {storagePrefix === 'vendor' && (loginMethod === 'crossmark' || loginMethod === 'xaman') && !autoSignEnabled && (
           <p className="lg:hidden text-amber-400 text-xs text-center px-6 pt-6 pb-2">
-            Complete Auto-Sign Below
+            Complete Payment Setup
           </p>
         )}
       </div>

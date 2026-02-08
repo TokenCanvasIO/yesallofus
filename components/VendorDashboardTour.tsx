@@ -31,7 +31,7 @@ export const tourSteps = [
       {
         icon: null,
         title: 'Payout Method',
-        content: 'Connect your wallet and set up how you pay affiliates. Choose between auto-sign for automatic payouts or manual approval.',
+        content: 'Connect your wallet and set up how you pay affiliates. Choose between automatic payments or manual approval.',
         selector: '#payout-method',
         side: 'bottom' as const,
         showControls: true,
