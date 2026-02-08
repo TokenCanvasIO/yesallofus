@@ -519,6 +519,10 @@ useEffect(() => {
           await refreshWalletAuth(data.wallet_address);
 
           if (view === 'import') {
+            // Persist to sessionStorage so take-payment page can read it
+            safeSetItem('vendorWalletAddress', data.wallet_address);
+            safeSetItem('storeData', JSON.stringify(data.store));
+            safeSetItem('vendorLoginMethod', data.store.login_method || 'web3auth');
             router.push('/take-payment?view=import');
             return;
           }

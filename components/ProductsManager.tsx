@@ -31,6 +31,7 @@ interface Product {
 interface ProductsManagerProps {
   storeId: string;
   walletAddress: string;
+  autoOpenImport?: boolean;
 }
 
 const API_URL = 'https://api.dltpays.com/nfc/api/v1';
@@ -90,7 +91,7 @@ function ProductIcon({ product, size = 40 }: { product: Product; size?: number }
   );
 }
 
-export default function ProductsManager({ storeId, walletAddress }: ProductsManagerProps) {
+export default function ProductsManager({ storeId, walletAddress, autoOpenImport }: ProductsManagerProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -119,6 +120,13 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
 
   // CSV Import/Export
   const [showImportModal, setShowImportModal] = useState(false);
+
+  // Auto-open import modal when redirected from POS bulk import
+  useEffect(() => {
+    if (autoOpenImport) {
+      setShowImportModal(true);
+    }
+  }, [autoOpenImport]);
 
   // Inventory History
   const [showHistoryModal, setShowHistoryModal] = useState(false);

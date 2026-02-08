@@ -175,6 +175,7 @@ const [cart, setCart] = useState<CartItem[]>([]);
 const [loadingProducts, setLoadingProducts] = useState(true);
 // UI State
 const [showProductsManager, setShowProductsManager] = useState(false);
+const [autoOpenImport, setAutoOpenImport] = useState(false);
 const [showManualEntry, setShowManualEntry] = useState(false);
 const [manualAmount, setManualAmount] = useState('');
 // Payment State
@@ -336,12 +337,13 @@ fetchProducts();
     }
   }, [storeId, walletAddress]);
 
-// Auto-open products manager if redirected from dashboard with view=import
+// Auto-open products manager + CSV import modal if redirected from POS with view=import
 useEffect(() => {
   if (typeof window !== 'undefined') {
     const params = new URLSearchParams(window.location.search);
     if (params.get('view') === 'import') {
       setShowProductsManager(true);
+      setAutoOpenImport(true);
     }
   }
 }, []);
@@ -1207,7 +1209,7 @@ className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition"
 </button>
 </div>
 <div className="p-4 flex-1">
-<ProductsManager storeId={storeId} walletAddress={walletAddress} />
+<ProductsManager storeId={storeId} walletAddress={walletAddress} autoOpenImport={autoOpenImport} />
 </div>
 {/* Live Conversion Widget - Shows actual payment amount */}
 <div className="px-4 pb-6 flex justify-center">
