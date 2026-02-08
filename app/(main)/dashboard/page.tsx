@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { safeGetItem, safeSetItem, safeRemoveItem, safeGetJSON, safeSetJSON } from '@/lib/safeStorage';
-import { getAuthHeaders } from '@/lib/walletAuth';
+import { getAuthHeaders, refreshWalletAuth } from '@/lib/walletAuth';
 import StoreActivity from '@/components/StoreActivity';
 import WalletFunding from '@/components/WalletFunding';
 import Script from 'next/script';
@@ -509,6 +509,9 @@ useEffect(() => {
           if (data.store.daily_limit) setDailyLimit(data.store.daily_limit);
           if (data.store.auto_sign_max_single_payout) setMaxSinglePayout(data.store.auto_sign_max_single_payout);
           setStep('dashboard');
+
+          // Bootstrap HMAC auth for protected API calls
+          await refreshWalletAuth(data.wallet_address);
 
           if (view === 'import') {
             router.push('/take-payment?view=import');

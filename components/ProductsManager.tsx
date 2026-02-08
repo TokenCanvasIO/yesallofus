@@ -7,6 +7,7 @@ import { Theme } from 'emoji-picker-react';
 import { foodIcons, foodIconCategories, findIconForProduct, getIconById, FoodIcon } from '@/lib/foodIcons';
 import CSVImportModal from './CSVImportModal';
 import InventoryHistoryModal from './InventoryHistoryModal';
+import { getAuthHeaders } from '@/lib/walletAuth';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
@@ -154,9 +155,10 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
         low_stock_threshold: parseInt(row.low_stock_threshold) || 5
       }));
 
+      const authHeaders = await getAuthHeaders(walletAddress);
       const res = await fetch(`${API_URL}/store/${storeId}/products/bulk`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           wallet_address: walletAddress,
           products
@@ -262,9 +264,10 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
         ? `${API_URL}/store/${storeId}/products/${editingProduct.product_id}`
         : `${API_URL}/store/${storeId}/products`;
 
+      const authHeaders = await getAuthHeaders(walletAddress);
       const res = await fetch(url, {
         method: editingProduct ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           wallet_address: walletAddress,
           name: formName.trim(),
@@ -291,9 +294,10 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
   const handleDelete = async (product: Product) => {
     if (!confirm(`Delete "${product.name}"?`)) return;
     try {
+      const authHeaders = await getAuthHeaders(walletAddress);
       const res = await fetch(`${API_URL}/store/${storeId}/products/${product.product_id}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({ wallet_address: walletAddress })
       });
       const data = await res.json();
