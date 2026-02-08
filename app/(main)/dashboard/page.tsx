@@ -2087,7 +2087,7 @@ return (
     key={`${celebrateMilestone}-${progressHidden}`}
     storeId={store.store_id} 
     walletAddress={walletAddress || ''}
-    autoSignEnabled={store.auto_signing_enabled}
+    autoSignEnabled={store.auto_signing_enabled || customerAutoSignEnabled || walletStatus?.auto_signing_enabled}
     onMilestoneAchieved={(milestone) => setCelebrateMilestone(milestone)}
     onInfoClick={openInfo}
     onDismiss={() => setProgressHidden(true)}

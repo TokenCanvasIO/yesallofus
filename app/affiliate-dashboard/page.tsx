@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/safeStorage';
-import { authenticatedFetch, refreshWalletAuth } from '@/lib/walletAuth';
+import { authenticatedFetch, refreshWalletAuth, getAuthHeaders } from '@/lib/walletAuth';
 import PayoutsTable from '@/components/PayoutsTable';
 import DashboardHeader from "@/components/DashboardHeader";
 import QRCodeModal from '@/components/QRCodeModal';
@@ -340,7 +340,10 @@ useEffect(() => {
   const checkAutoSignStatus = async (wallet: string, method: string) => {
     if (method !== 'web3auth') return;
     try {
-      const res = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${wallet}`);
+      const authHeaders = await getAuthHeaders(wallet);
+      const res = await fetch(`https://api.dltpays.com/nfc/api/v1/nfc/customer/autosign-status/${wallet}`, {
+        headers: authHeaders
+      });
       const data = await res.json();
       if (data.success) {
         setAutoSignEnabled(data.auto_sign_enabled);
@@ -538,7 +541,13 @@ useEffect(() => {
     try {
       const res = await fetch(`${API_URL}/wallet/status/${wallet}`);
       const data = await res.json();
-      if (data.success) setWalletStatus(data);
+      if (data.success) {
+        setWalletStatus(data);
+        // Sync auto-sign from wallet status if XRPL confirms it
+        if (data.auto_signing_enabled) {
+          setAutoSignEnabled(true);
+        }
+      }
     } catch (err) {
       console.error('Failed to fetch wallet status:', err);
     }
