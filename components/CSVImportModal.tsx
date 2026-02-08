@@ -411,8 +411,12 @@ export default function CSVImportModal({
                 </p>
                 {result.errors.length > 0 && (
                   <ul className="mt-3 text-sm text-red-400 space-y-1 max-h-32 overflow-y-auto">
-                    {result.errors.slice(0, 10).map((err, i) => (
-                      <li key={i} className="truncate">{err}</li>
+                    {result.errors.slice(0, 10).map((err: any, i: number) => (
+                      <li key={i} className="truncate">
+                        {typeof err === 'object' && err !== null
+                          ? `Row ${err.row}${err.name ? `: ${err.name}` : ''} — ${err.reason}`
+                          : String(err)}
+                      </li>
                     ))}
                     {result.errors.length > 10 && (
                       <li className="text-zinc-500">...and {result.errors.length - 10} more errors</li>

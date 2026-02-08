@@ -127,7 +127,8 @@ export default function ProductsManager({ storeId, walletAddress }: ProductsMana
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/store/${storeId}/products?wallet_address=${walletAddress}`);
+      const authHeaders = await getAuthHeaders(walletAddress);
+      const res = await fetch(`${API_URL}/store/${storeId}/products?wallet_address=${walletAddress}`, { headers: authHeaders });
       const data = await res.json();
       if (data.success) setProducts(data.products);
       else setError(data.error || 'Failed to load products');

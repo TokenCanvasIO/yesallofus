@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { getAuthHeaders } from '@/lib/walletAuth';
 
 const API_URL = 'https://api.dltpays.com/api/v1';
 
@@ -60,9 +61,10 @@ export default function StoreActivity({ storeId, walletAddress, showAmounts = fa
     setLoading(true);
     try {
       // L4: Use Promise.allSettled to handle partial failures gracefully
+      const authHeaders = await getAuthHeaders(walletAddress);
       const [affResult, payResult] = await Promise.allSettled([
-        fetch(`${API_URL}/store/${storeId}/affiliates?wallet=${walletAddress}`),
-        fetch(`${API_URL}/store/${storeId}/payouts?wallet=${walletAddress}`)
+        fetch(`${API_URL}/store/${storeId}/affiliates?wallet=${walletAddress}`, { headers: authHeaders }),
+        fetch(`${API_URL}/store/${storeId}/payouts?wallet=${walletAddress}`, { headers: authHeaders })
       ]);
 
       // Handle affiliates response

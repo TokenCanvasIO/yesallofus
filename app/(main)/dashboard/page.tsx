@@ -192,6 +192,11 @@ const toggleSection = (id: string) => {
         auto_signing_enabled: data.auto_signing_enabled || false
       });
       
+      // Sync store auto_signing_enabled if XRPL confirms it
+      if (data.auto_signing_enabled && store && !store.auto_signing_enabled) {
+        setStore((prev: any) => prev ? { ...prev, auto_signing_enabled: true } : prev);
+      }
+
       // Check milestones
       if (data.funded) {
         setMilestone('wallet_funded');
@@ -555,6 +560,11 @@ useEffect(() => {
             usdc_balance: data.usdc_balance || 0,
             auto_signing_enabled: data.auto_signing_enabled || false
           });
+
+          // Sync store auto_signing_enabled if XRPL confirms it
+          if (data.auto_signing_enabled && store && !store.auto_signing_enabled) {
+            setStore((prev: any) => prev ? { ...prev, auto_signing_enabled: true } : prev);
+          }
 
           if (!data.funded) {
             setWalletNeedsFunding(true);
@@ -2089,7 +2099,7 @@ return (
   <OnboardingSetup
     walletAddress={walletAddress}
     walletStatus={walletStatus}
-    autoSignEnabled={store?.auto_signing_enabled || customerAutoSignEnabled}
+    autoSignEnabled={store?.auto_signing_enabled || customerAutoSignEnabled || walletStatus?.auto_signing_enabled}
     loginMethod={walletType}
     onSetupComplete={() => { setCustomerAutoSignEnabled(true); setSetupComplete(true); }}
     onRefreshWallet={refreshWalletStatus}
